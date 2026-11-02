@@ -3,7 +3,7 @@ window.PAGE = async () => {
   const { $, $$, esc, fmtNum, fmtHype, toast, errMsg } = APP, C = CFG, E = C.econ, L = C.limits;
   const F = { image: '', name: '', symbol: '', description: '', x: '', telegram: '', website: '', chains: ['hyper'], creatorTaxBps: 0, buyback: false, devBuy: 0, creatorSol: '' };
   let step = 1, busy = false;
-  const setStep = (s) => { step = s; $('#st1').classList.toggle('hidden', s !== 1); $('#st2').classList.toggle('hidden', s !== 2); $$('.steps span').forEach((x) => { const n = +x.dataset.st; x.classList.toggle('on', n === s); x.classList.toggle('ok', n < s); }); scrollTo({ top: 0, behavior: 'smooth' }); };
+  const setStep = () => {}; // single page now
   // identity
   const hasLink = (s) => /(https?:\/\/|www\.|\.(com|xyz|io|net|org|fun|app|gg|me)\b|t\.me|x\.com)/i.test(s);
   const drop = $('#drop'), fi = $('#f-img');
@@ -12,7 +12,8 @@ window.PAGE = async () => {
   ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); })); ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); if (ev === 'drop') readImg(e.dataTransfer.files[0]); }));
   const bind = (id, key, n, max, up) => { const el = $(id); el.oninput = () => { let v = el.value; if (up) v = v.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (max) v = v.slice(0, max); if (up) el.value = v; F[key] = v.trim(); if (n) $(n).textContent = `${v.length}/${max}`; if (key === 'description') { const bad = hasLink(v); $('#desc-err').classList.toggle('hidden', !bad); el.classList.toggle('err', bad); } preview(); }; };
   bind('#f-name', 'name', '#n-name', L.name); bind('#f-sym', 'symbol', '#n-sym', L.ticker, true); bind('#f-desc', 'description', '#n-desc', L.desc); bind('#f-x', 'x'); bind('#f-tg', 'telegram'); bind('#f-web', 'website');
-  $('#next').onclick = () => { if (!F.name) return toast('Give the coin a name', 'err'); if (!F.symbol) return toast('Give the coin a ticker', 'err'); if (hasLink(F.description)) return toast('Remove the link from the description', 'err'); for (const [k, re] of [['x', /^https?:\/\/(x|twitter)\.com\/.+/i], ['telegram', /^https?:\/\/t\.me\/.+/i], ['website', /^https?:\/\/.+\..+/i]]) if (F[k] && !re.test(F[k])) return toast(`Check the ${k} link`, 'err'); setStep(2); };
+  const validate = () => { if (!F.name) { toast('Give the coin a name', 'err'); $('#f-name').focus(); return false; } if (!F.symbol) { toast('Give the coin a ticker', 'err'); $('#f-sym').focus(); return false; } if (hasLink(F.description)) { toast('Remove the link from the description', 'err'); return false; } for (const [k, re] of [['x', /^https?:\/\/(x|twitter)\.com\/.+/i], ['telegram', /^https?:\/\/t\.me\/.+/i], ['website', /^https?:\/\/.+\..+/i]]) if (F[k] && !re.test(F[k])) { toast(`Check the ${k} link`, 'err'); return false; } return true; };
+  $('#next').onclick = validate;
   $('#back').onclick = () => setStep(1);
   // economics
   const chs = $('#f-chains'); chs.innerHTML = C.chains.map((c) => `<button type="button" data-c="${c.key}" class="${F.chains.includes(c.key) ? 'on' : ''}"><img src="${c.logo}" alt=""><div><b>${c.name}</b><small>${c.key === 'hyper' ? 'your wallet signs here' : 'opened for you, same price'}</small></div><span class="tick"></span></button>`).join('');
@@ -21,6 +22,7 @@ window.PAGE = async () => {
   $$('#f-tax button').forEach((b) => b.onclick = () => { $$('#f-tax button').forEach((x) => x.classList.toggle('on', x === b)); F.creatorTaxBps = +b.dataset.t; cost(); preview(); });
   $('#f-bb').onclick = (e) => { e.stopPropagation(); F.buyback = !F.buyback; $('#f-bb').classList.toggle('on', F.buyback); preview(); };
   $('#f-dev').oninput = (e) => { F.devBuy = Math.max(0, parseFloat(e.target.value) || 0); cost(); };
+  $$('#f-qd button').forEach((b) => b.onclick = () => { $('#f-dev').value = +b.dataset.v ? b.dataset.v : ''; F.devBuy = +b.dataset.v; cost(); });
   $('#f-solw').oninput = (e) => { F.creatorSol = e.target.value.trim(); };
   $('#sol-use').onclick = async () => { if (!APP.W.sol.connected) await APP.W.sol.connect(); if (APP.W.sol.connected) { F.creatorSol = APP.W.sol.address; $('#f-solw').value = F.creatorSol; } };
   function cost() {
@@ -38,14 +40,13 @@ window.PAGE = async () => {
   function preview() {
     $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Coin name'; $('#pv-t').innerHTML = `$${esc(F.symbol || 'SYMBOL')} · ${F.chains.map((c) => `<img src="${C.chainOf(c).logo}" alt="">${C.chainOf(c).short}`).join(' · ')}`; $('#pv-d').textContent = F.description || '';
     $('#pv-l').innerHTML = [['x', 'X'], ['telegram', 'Telegram'], ['website', 'Website']].filter(([k]) => F[k]).map(([, l]) => `<span class="badge">${l}</span>`).join('') + F.chains.map((c) => `<span class="badge ac"><img src="${C.chainOf(c).logo}" alt="" style="width:12px;height:12px;border-radius:50%">${C.chainOf(c).name}</span>`).join('');
-    $('#next').textContent = F.symbol ? `Continue with $${F.symbol}` : 'Continue';
-    $('#pv-sup').textContent = '1B'; $('#pv-fee').textContent = `${(1 + F.creatorTaxBps / 100).toFixed(F.creatorTaxBps % 100 ? 1 : 0)}% static · 10s sniper tax${F.buyback ? ' · buyback' : ''}`;
+    $('#pv-sup').textContent = '1B'; $('#pv-fee').textContent = `${(1 + F.creatorTaxBps / 100).toFixed(F.creatorTaxBps % 100 ? 1 : 0)}% · 10s snipe tax${F.buyback ? ' · buyback' : ''}`;
     
   }
   async function launch() {
-    if ($('#dev-hint').dataset.over) return toast('The opening buy is over the 5% cap', 'err');
+    if (!validate()) return; if ($('#dev-hint').dataset.over) return toast('The opening buy is over the 5% cap', 'err');
     
-    busy = true; const b = $('#go'); b.disabled = true; b.textContent = 'Confirm in your wallet…'; const P = $('#prog'); const mark = (s, cls) => { const d = P.querySelector(`[data-s="${s}"]`); d.classList.remove('on', 'ok'); d.classList.add(cls); };
+    busy = true; const b = $('#go'); b.disabled = true; b.textContent = 'Confirm in your wallet…'; const P = $('#prog'); P.classList.add('show'); const mark = (s, cls) => { const d = P.querySelector(`[data-s="${s}"]`); d.classList.remove('on', 'ok'); d.classList.add(cls); };
     mark('sign', 'on');
     try {
       const r = await DATA.launch(F); mark('sign', 'ok'); mark('hyper', 'ok'); $('#go-msg').innerHTML = `Launched. <a class="ac" href="${APP.tokenUrl(r.addr)}">Open ${esc(F.symbol)}</a>`; toast(`${F.symbol} is live on HyperEVM`, 'ok');

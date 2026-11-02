@@ -1,63 +1,77 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Create New Coin | GODMODE</title><meta name="description" content="Launch a coin on HyperEVM, paired with HYPE, liquidity locked, 1% fee with 70% to you.">
+<title>Create a coin | GODMODE</title><meta name="description" content="Launch a coin on HyperEVM, paired with HYPE, liquidity locked, 1% fee with 70% to you.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#0f1a1f">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/ui.css?v=17">
+<link rel="stylesheet" href="/ui.css?v=18">
 <style>
-#pg-launch{max-width:680px;margin:0 auto;padding:18px 0 40px}
-#pg-launch .herot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 0 16px}#pg-launch .herot h1{font-size:26px;letter-spacing:-.02em}#pg-launch .herot p{font-size:14px;color:var(--fg-3);margin-top:4px}
-#pg-launch .steps{display:flex;gap:6px;flex:none}#pg-launch .steps span{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:500;color:var(--fg-3)}#pg-launch .steps span.on{background:var(--mint-dim);border-color:rgba(80,210,193,.5);color:var(--mint)}#pg-launch .steps span.ok{color:var(--up);border-color:rgba(31,166,125,.4)}#pg-launch .steps span i{font-style:normal;font-weight:700}
-#pg-launch .card{margin-bottom:12px}#pg-launch .card .bd{padding:18px}#pg-launch .card .hd small{font-weight:400;font-size:13px;color:var(--fg-3);margin-left:auto}
-#pg-launch .idrow{display:grid;grid-template-columns:160px minmax(0,1fr);gap:14px;align-items:stretch}
-#pg-launch .drop{display:flex;min-width:0;width:100%;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:1;border:1.5px dashed var(--line-3);border-radius:12px;background:var(--bg);color:var(--fg-3);font-size:12.5px;text-align:center;cursor:pointer;overflow:hidden;padding:10px}#pg-launch .drop:hover,#pg-launch .drop.over{border-color:var(--mint);color:var(--mint)}#pg-launch .drop img{width:100%;height:100%;object-fit:cover;border-radius:8px}#pg-launch .drop svg{width:26px;height:26px}#pg-launch .drop span{display:block;max-width:100%;line-height:1.35}
-#pg-launch .stack{display:grid;gap:10px;align-content:start}
-#pg-launch label.l{display:flex;justify-content:space-between;font-size:13px;font-weight:500;color:var(--fg-2);margin:0 0 6px}#pg-launch label.l span{color:var(--fg-3);font-weight:400}
-#pg-launch .ipw.sym .pre{position:absolute;left:14px;top:0;height:48px;display:flex;align-items:center;color:var(--fg-3);font-size:16px}#pg-launch .ipw.sym .inp{padding-left:30px}
-#pg-launch .three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
-#pg-launch .fld{margin-top:14px}
-/* fee strategy presets */
-#pg-launch .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}#pg-launch .opts button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);text-align:left}#pg-launch .opts button b{font-size:16px;font-weight:700}#pg-launch .opts button small{font-size:12px;color:var(--fg-3)}#pg-launch .opts button.on{border-color:var(--mint);background:var(--mint-dim)}#pg-launch .opts button.on b{color:var(--mint)}
-#pg-launch .tog{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg);margin-top:12px}#pg-launch .tog b{display:block;font-size:14px;font-weight:600}#pg-launch .tog small{display:block;font-size:12.5px;color:var(--fg-3);margin-top:2px}
-.cb{width:22px;height:22px;border:1.5px solid var(--line-3);border-radius:6px;background:var(--card);flex:none;display:inline-flex;align-items:center;justify-content:center}.cb.on{background:var(--mint);border-color:var(--mint)}.cb.on::after{content:"";width:6px;height:11px;border:solid var(--mint-ink);border-width:0 2px 2px 0;transform:rotate(45deg);margin-top:-3px}
-#pg-launch .prev .pvc{display:flex;gap:12px;align-items:center}#pg-launch .prev .pvc img{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--card2)}#pg-launch .prev .pvc b{display:block;font-size:17px;font-weight:700}#pg-launch .prev .pvc small{font-size:13px;color:var(--fg-3);display:flex;align-items:center;gap:6px}#pg-launch .prev .pvc small img{width:14px;height:14px;border-radius:50%}
-#pg-launch .prev .bar{margin:14px 0 8px}#pg-launch .prev .kv{padding:9px 0;font-size:14px}
-#pg-launch .prog{margin-top:14px;display:flex;flex-direction:column;gap:7px}#pg-launch .prog div{display:flex;gap:9px;align-items:center;font-size:14px;color:var(--fg-3)}#pg-launch .prog div i{width:8px;height:8px;border-radius:50%;background:var(--card3)}#pg-launch .prog div.on{color:var(--fg)}#pg-launch .prog div.on i{background:var(--mint);box-shadow:0 0 0 3px var(--mint-dim)}#pg-launch .prog div.ok{color:var(--fg)}#pg-launch .prog div.ok i{background:var(--up)}
-#pg-launch .nav2{display:flex;gap:10px;margin-top:4px}#pg-launch .nav2 .btn{height:50px;border-radius:12px;font-size:16px;font-weight:600}#pg-launch .nav2 .go{flex:1}
-#pg-launch .pvd{margin:10px 0 0;font-size:14px;color:var(--fg-2)}#pg-launch .pvl{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-@media(max-width:560px){#pg-launch .herot{flex-direction:column;align-items:flex-start}#pg-launch .idrow{grid-template-columns:120px minmax(0,1fr)}#pg-launch .drop{font-size:11px;padding:8px}#pg-launch .three{grid-template-columns:1fr}#pg-launch .opts{grid-template-columns:repeat(2,1fr)}}
+#pg-launch{padding:26px 0 48px}
+#pg-launch h1{font-size:24px;letter-spacing:-.02em}#pg-launch .sub{font-size:14px;color:var(--fg-3);margin-top:6px;max-width:520px;line-height:1.5}
+.lg{display:grid;grid-template-columns:minmax(0,1fr);gap:28px;align-items:start;margin-top:8px}@media(min-width:1000px){.lg{grid-template-columns:minmax(0,1fr) 340px;gap:48px}}
+.frm section{padding:24px 0;border-bottom:1px solid var(--line-2)}.frm section:first-of-type{padding-top:18px}.frm section:last-of-type{border-bottom:0}
+.frm h2{font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}.frm h2 i{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;background:var(--mint-dim);color:var(--mint);font-size:11px;font-style:normal;font-weight:700}.frm h2 small{margin-left:auto;font-size:12.5px;font-weight:400;color:var(--fg-3)}
+.frm .sd{font-size:13px;color:var(--fg-3);margin:6px 0 16px;line-height:1.5}
+.frm label.l{display:flex;justify-content:space-between;font-size:12.5px;font-weight:500;color:var(--fg-2);margin:0 0 6px}.frm label.l span{color:var(--fg-3);font-weight:400}
+.frm .inp{height:44px;border-radius:9px;background:var(--card);font-size:14.5px}.frm textarea.inp{min-height:88px}.frm .ipw .suf{height:44px}
+.idrow{display:grid;grid-template-columns:128px minmax(0,1fr);gap:18px;align-items:start}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:128px;height:128px;border:1.5px dashed var(--line-3);border-radius:28px;background:var(--card);color:var(--fg-3);font-size:11.5px;text-align:center;cursor:pointer;overflow:hidden;padding:10px;transition:border-color .15s}.drop:hover,.drop.over{border-color:var(--mint);color:var(--mint)}.drop img{width:100%;height:100%;object-fit:cover;border-radius:22px}.drop svg{width:22px;height:22px}.drop span{display:block;line-height:1.35}
+.stack{display:grid;gap:12px}.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.ipw.sym .pre{position:absolute;left:14px;top:0;height:44px;display:flex;align-items:center;color:var(--fg-3);font-size:15px}.ipw.sym .inp{padding-left:28px}
+.opts{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.opts button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;border:1px solid var(--line);border-radius:10px;background:var(--card)}.opts button b{font-size:15px;font-weight:600}.opts button{min-width:0}.opts button small{font-size:11px;color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.opts button:hover{border-color:var(--line-3)}.opts button.on{border-color:var(--mint);background:var(--mint-dim)}.opts button.on b{color:var(--mint)}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px}.tog b{display:block;font-size:14px;font-weight:600}.tog small{display:block;font-size:12.5px;color:var(--fg-3);margin-top:2px;line-height:1.45}
+.sw{position:relative;width:42px;height:24px;border-radius:999px;background:var(--card3);border:1px solid var(--line);flex:none;transition:background .15s}.sw::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--fg-3);transition:transform .15s,background .15s}.sw.on{background:var(--mint);border-color:var(--mint)}.sw.on::after{transform:translateX(18px);background:var(--mint-ink)}
+.qd{display:flex;gap:6px;margin-top:8px}.qd button{height:28px;padding:0 10px;border:1px solid var(--line);border-radius:7px;font-size:12px;color:var(--fg-2);background:var(--card)}.qd button:hover{border-color:var(--line-3);color:var(--fg)}
+.terms{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 18px}.terms div span{display:block;font-size:11.5px;color:var(--fg-3);font-weight:500}.terms div b{display:block;font-size:13px;font-weight:500;margin-top:2px}
+.side2{position:sticky;top:24px;display:flex;flex-direction:column;gap:14px}
+.pv{border:1px solid var(--line-2);border-radius:14px;background:var(--card);padding:16px}.pv .pvc{display:flex;gap:12px;align-items:center}.pv .pvc img{width:48px;height:48px;border-radius:12px;object-fit:cover;background:var(--card2)}.pv .pvc b{display:block;font-size:16px;font-weight:600}.pv .pvc small{font-size:13px;color:var(--fg-3);display:flex;align-items:center;gap:5px}.pv .pvc small img{width:13px;height:13px;border-radius:50%}
+.pv .pvd{margin:12px 0 0;font-size:13px;color:var(--fg-2);line-height:1.5}.pv .pvl{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.pv .pvl:empty{display:none}.pv .pvd:empty{display:none}
+.pv .kv{padding:8px 0;font-size:13px}.pv .kvs{margin-top:12px;border-top:1px solid var(--line-2);padding-top:4px}
+.cost{border:1px solid var(--line-2);border-radius:14px;background:var(--card);padding:16px}.cost .kv{padding:7px 0;font-size:13px;border:0}.cost .kv.tot{border-top:1px solid var(--line-2);margin-top:4px;padding-top:11px;font-size:14px}.cost .kv.tot b{font-weight:600}
+.cost .go{width:100%;height:48px;border-radius:11px;font-size:15px;margin-top:12px}
+.prog{display:none;margin-top:12px;flex-direction:column;gap:6px}.prog.show{display:flex}.prog div{display:flex;gap:9px;align-items:center;font-size:13px;color:var(--fg-3)}.prog div i{width:7px;height:7px;border-radius:50%;background:var(--card3)}.prog div.on{color:var(--fg)}.prog div.on i{background:var(--mint);box-shadow:0 0 0 3px var(--mint-dim)}.prog div.ok{color:var(--fg)}.prog div.ok i{background:var(--up)}
+@media(max-width:620px){.idrow{grid-template-columns:104px minmax(0,1fr);gap:12px}.drop{width:104px;height:104px;border-radius:22px;font-size:10.5px}.three{grid-template-columns:1fr}.opts{grid-template-columns:repeat(3,1fr)}.opts button small{font-size:10px}.terms{grid-template-columns:1fr 1fr}.side2{position:static}}
 </style>
 </head><body data-page="launch">
 <header id="top"></header>
 <main><div class="wrap"><div id="pg-launch">
-  <div class="herot"><div><h1>Create New Coin</h1><p>One transaction on HyperEVM. HYPE pair, 100% of the supply in a locked pool, fees to you.</p></div><div class="steps"><span class="on" data-st="1"><i>1</i>Coin</span><span data-st="2"><i>2</i>Fees &amp; launch</span></div></div>
-  <div id="st1">
-    <div class="card"><div class="hd"><span>Identity</span><small>Fixed after launch</small></div><div class="bd">
-      <div class="idrow"><label class="drop" id="drop" for="f-img"><input id="f-img" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Upload image<br>JPG, PNG, GIF, WEBP · 5 MB</span></label>
-        <div class="stack"><div><label class="l" for="f-name">Coin name <span id="n-name">0/32</span></label><input class="inp" id="f-name" maxlength="32" placeholder="e.g. Hyper Cat" autocomplete="off"></div><div><label class="l" for="f-sym">Symbol <span id="n-sym">0/10</span></label><div class="ipw sym"><span class="pre">$</span><input class="inp" id="f-sym" maxlength="10" placeholder="HCAT" autocomplete="off" style="text-transform:uppercase"></div></div><div class="chs hidden" id="f-chains"></div></div></div>
-      <div class="fld" id="acc-desc"><label class="l" for="f-desc">Description <span id="n-desc">0/256</span></label><textarea class="inp" id="f-desc" maxlength="256" placeholder="What the coin is about. Links go in the fields below."></textarea><p class="hint err hidden" id="desc-err">Links are not allowed in the description.</p></div>
-      <div class="three"><div><label class="l" for="f-x">X <span>optional</span></label><input class="inp" id="f-x" placeholder="https://x.com/…" autocomplete="off"></div><div><label class="l" for="f-tg">Telegram <span>optional</span></label><input class="inp" id="f-tg" placeholder="https://t.me/…" autocomplete="off"></div><div><label class="l" for="f-web">Website <span>optional</span></label><input class="inp" id="f-web" placeholder="https://" autocomplete="off"></div></div>
-    </div></div>
-    <div class="nav2"><button class="btn pri go" id="next">Continue</button></div>
-  </div>
-  <div id="st2" class="hidden">
-    <div class="card"><div class="hd"><span>Fee strategy</span><small>1% base · 70% to you</small></div><div class="bd">
-      <label class="l">Creator fee on top of the 1% <span>fixed for good, shown on the coin page</span></label><div class="opts" id="f-tax"></div><p class="hint" id="tax-hint" style="margin-top:12px"></p>
-      <div class="tog"><div><b>Buyback</b><small>Half of your fee share buys the coin back from its own pool; the coins vest to you over 5 years.</small></div><button class="cb" id="f-bb" type="button" aria-label="Buyback"></button></div>
-    </div></div>
-    <div class="card"><div class="hd"><span>Opening buy</span><small>Optional · up to 5% of the supply</small></div><div class="bd">
-      <label class="l" for="f-dev">Buy in the launch transaction <span>exempt from the snipe tax</span></label><div class="ipw"><input class="inp" id="f-dev" inputmode="decimal" placeholder="0" autocomplete="off"><span class="suf">HYPE</span></div><p class="hint" id="dev-hint" style="margin-top:8px"></p>
-      <div class="hidden"><input id="f-solw"><button id="sol-use" type="button"></button></div>
-    </div></div>
-    <div class="card"><div class="hd"><span>Pool</span><small>Uniswap v4 · HYPE pair</small></div><div class="bd" style="padding-top:6px;padding-bottom:6px"><div class="kv"><span>Supply</span><b>1B, all of it in the pool</b></div><div class="kv"><span>Opening market cap</span><b>50 HYPE</b></div><div class="kv"><span>Positions</span><b>20% to 200 · 30% to 1,000 · 50% tail</b></div><div class="kv"><span>Lock</span><b>Forever, no withdraw function</b></div><div class="kv"><span>Snipe tax</span><b>99% → 0 over the first 10 s</b></div><div class="kv"><span>Volatility fee</span><b>3% for 2 min after a 10% move</b></div></div></div>
-    <div class="card prev" id="prev"><div class="hd"><span>Review</span><small>HyperEVM</small></div><div class="bd"><div class="pvc"><img id="pv-img" src="/img/logo.svg" alt=""><div><b id="pv-n">Coin name</b><small id="pv-t">$SYMBOL</small></div></div>
-      <p class="pvd" id="pv-d"></p><div class="pvl" id="pv-l"></div>
-      <div class="kv" style="margin-top:10px"><span>Liquidity pool</span><b>100% of supply, locked</b></div><div class="kv"><span>Fees</span><b id="pv-fee">1% static · 10s sniper tax</b></div><div class="kv"><span>Supply</span><b id="pv-sup">1B</b></div><div class="kv"><span>Launch fee</span><b id="c-fee"></b></div><div class="kv"><span>Opening buy</span><b id="c-dev">—</b></div><div class="kv"><span>Gas (about)</span><b id="c-gas">…</b></div><div class="kv"><span>Total from your wallet</span><b id="c-tot"></b></div>
-      <div class="prog" id="prog"><div data-s="sign"><i></i>Sign the launch</div><div data-s="hyper"><i></i>Pool is live on HyperEVM</div><div data-s="done"><i></i>Open the coin</div></div></div></div>
-    <div class="nav2"><button class="btn line" id="back">Back</button><button class="btn pri go" id="go">Connect to deploy</button></div><p class="hint" id="go-msg" style="margin-top:8px"></p>
-    <span id="pv-addr" class="hidden"></span>
+  <h1>Create a coin</h1><p class="sub">One transaction on HyperEVM. The whole supply goes into a locked Uniswap v4 pool paired with HYPE, and 70% of every fee comes back to you.</p>
+  <div class="lg">
+    <form class="frm" id="st1" autocomplete="off" onsubmit="return false">
+      <section>
+        <h2><i>1</i>Identity<small>fixed after launch</small></h2><p class="sd">Name, symbol, image and description cannot change later.</p>
+        <div class="idrow"><label class="drop" id="drop" for="f-img"><input id="f-img" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Upload image<br>square · 5 MB</span></label>
+          <div class="stack"><div><label class="l" for="f-name">Name <span id="n-name">0/32</span></label><input class="inp" id="f-name" maxlength="32" placeholder="Hyper Cat"></div><div><label class="l" for="f-sym">Symbol <span id="n-sym">0/10</span></label><div class="ipw sym"><span class="pre">$</span><input class="inp" id="f-sym" maxlength="10" placeholder="HCAT" style="text-transform:uppercase"></div></div><div class="chs hidden" id="f-chains"></div></div></div>
+        <div style="margin-top:12px" id="acc-desc"><label class="l" for="f-desc">Description <span id="n-desc">0/256</span></label><textarea class="inp" id="f-desc" maxlength="256" placeholder="What the coin is about. Links go below."></textarea><p class="hint err hidden" id="desc-err">Links are not allowed in the description.</p></div>
+        <div class="three"><div><label class="l" for="f-x">X <span>optional</span></label><input class="inp" id="f-x" placeholder="https://x.com/…"></div><div><label class="l" for="f-tg">Telegram <span>optional</span></label><input class="inp" id="f-tg" placeholder="https://t.me/…"></div><div><label class="l" for="f-web">Website <span>optional</span></label><input class="inp" id="f-web" placeholder="https://"></div></div>
+      </section>
+      <div id="st2">
+      <section>
+        <h2><i>2</i>Fees<small>1% base · 70% to you</small></h2><p class="sd">Every swap pays 1%, split 70/30 between you and the protocol. Add a creator fee on top if you want more; it is fixed for good and shown on the coin page.</p>
+        <div class="opts" id="f-tax"></div><p class="hint" id="tax-hint" style="margin-top:10px"></p>
+        <div class="tog"><div><b>Buyback</b><small>Half of your fee share buys the coin back from its own pool. The coins vest to you over 5 years.</small></div><button class="sw" id="f-bb" type="button" aria-label="Buyback"></button></div>
+      </section>
+      <section>
+        <h2><i>3</i>Opening buy<small>optional · up to 5% of supply</small></h2><p class="sd">Lands in the launch transaction, before anyone else can trade. Exempt from the snipe tax.</p>
+        <div class="ipw"><input class="inp" id="f-dev" inputmode="decimal" placeholder="0"><span class="suf">HYPE</span></div><div class="qd" id="f-qd"><button type="button" data-v="0.1">0.1</button><button type="button" data-v="0.5">0.5</button><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="0">none</button></div><p class="hint" id="dev-hint" style="margin-top:8px"></p>
+        <div class="hidden"><input id="f-solw"><button id="sol-use" type="button"></button></div>
+      </section>
+      <section>
+        <h2><i>4</i>Pool terms<small>same for every coin</small></h2><p class="sd">Set by the protocol. Nothing here is a choice, and nothing can be withdrawn.</p>
+        <div class="terms"><div><span>Pair</span><b>HYPE · Uniswap v4</b></div><div><span>Supply</span><b>1B, all in the pool</b></div><div><span>Opening market cap</span><b>50 HYPE</b></div><div><span>Positions</span><b>20% → 200 · 30% → 1,000 · 50% tail</b></div><div><span>Snipe tax</span><b>99% → 0 over 10 s</b></div><div><span>Volatility fee</span><b>3% for 2 min after a 10% move</b></div></div>
+      </section>
+      </div>
+      <button id="next" class="hidden" type="button">Continue</button><button id="back" class="hidden" type="button">Back</button>
+    </form>
+    <aside class="side2">
+      <div class="pv" id="prev"><div class="pvc"><img id="pv-img" src="/img/logo.svg" alt=""><div><b id="pv-n">Coin name</b><small id="pv-t">$SYMBOL</small></div></div><p class="pvd" id="pv-d"></p><div class="pvl" id="pv-l"></div>
+        <div class="kvs"><div class="kv"><span>Fees</span><b id="pv-fee">1% · 10s snipe tax</b></div><div class="kv"><span>Supply</span><b id="pv-sup">1B</b></div><div class="kv"><span>Liquidity</span><b>100% locked</b></div></div></div>
+      <div class="cost"><div class="kv"><span>Launch fee</span><b id="c-fee"></b></div><div class="kv"><span>Opening buy</span><b id="c-dev">—</b></div><div class="kv"><span>Gas (about)</span><b id="c-gas">…</b></div><div class="kv tot"><span>Total from your wallet</span><b id="c-tot"></b></div>
+        <button class="btn pri go" id="go">Connect to deploy</button><p class="hint" id="go-msg" style="margin-top:8px"></p>
+        <div class="prog" id="prog"><div data-s="sign"><i></i>Sign the launch</div><div data-s="hyper"><i></i>Pool is live on HyperEVM</div><div data-s="done"><i></i>Open the coin</div></div></div>
+      <span id="pv-addr" class="hidden"></span>
+    </aside>
   </div>
 </div></div></main>
 <footer id="foot"></footer>
-<script src="/config.js?v=17"></script><script src="/demo.js?v=17"></script><script src="/app.js?v=17"></script><script src="/pg-launch.js?v=17"></script>
+<script src="/config.js?v=18"></script><script src="/demo.js?v=18"></script><script src="/app.js?v=18"></script><script src="/pg-launch.js?v=18"></script>
 </body></html>
