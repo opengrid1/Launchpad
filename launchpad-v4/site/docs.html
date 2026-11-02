@@ -6,8 +6,8 @@
 <style>
 /* Docs: a separate surface. Measured from the reference docs site: #f4f4f4 page, Inter 400, Instrument Serif
    display, 920px nav, 1100px layout (223px sidebar + 857px content), 28px floating cards at 72% white. */
-:root{--ink:#111;--ink-55:rgba(17,17,17,.55);--ink-40:rgba(17,17,17,.4);--line:rgba(17,17,17,.1);--bg:#f4f4f4;--lime:#d4fc50;--lime-soft:#f3ffd4;--lime-line:rgba(172,203,67,.35)}
-[data-theme=dark]{--ink:#f5f5f5;--ink-55:rgba(245,245,245,.6);--ink-40:rgba(245,245,245,.45);--line:rgba(245,245,245,.12);--bg:#0b0b0b;--lime-soft:rgba(212,252,80,.12);--lime-line:rgba(212,252,80,.3)}
+:root{--ink:#111;--ink-55:rgba(17,17,17,.55);--ink-40:rgba(17,17,17,.4);--line:rgba(17,17,17,.1);--bg:#f4f4f4;--lime:#50d2c1;--lime-soft:#e4f8f4;--lime-line:rgba(80,210,193,.4)}
+[data-theme=dark]{--ink:#f5f5f5;--ink-55:rgba(245,245,245,.6);--ink-40:rgba(245,245,245,.45);--line:rgba(245,245,245,.12);--bg:#0b0b0b;--lime-soft:rgba(80,210,193,.12);--lime-line:rgba(80,210,193,.35)}
 *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Inter",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}h1,h2,h3,p,ul,ol,dl,dd{margin:0}
 .float{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.8);border-radius:28px}[data-theme=dark] .float{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)}
@@ -15,7 +15,7 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;backgroun
 .brand{display:flex;align-items:center;gap:10px;height:40px;font-weight:500}.brand img{width:40px;height:40px;border-radius:12px}
 .srch{margin:0 auto;display:flex;align-items:center;gap:10px;width:340px;max-width:340px;height:48px;padding:12px 14px;border-radius:999px;background:#fff;color:var(--ink-55);font-size:14px;text-align:left}.srch svg{width:16px;height:16px;flex:none}.srch span{flex:1}.srch kbd{font:400 11px "Inter",sans-serif;color:var(--ink-40);background:#ececec;border:1px solid var(--line);border-radius:8px;padding:4px 8px}
 .nav-right{display:flex;align-items:center;gap:8px}.ib{width:40px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center}.ib svg{width:16px;height:16px}
-.open{display:flex;align-items:center;height:39px;padding:10px 16px;border-radius:999px;background:var(--lime);font-size:15px;font-weight:500;color:#111}
+.open{display:flex;align-items:center;height:39px;padding:10px 16px;border-radius:999px;background:var(--lime);font-size:15px;font-weight:500;color:#07211e}
 [data-theme=dark] .srch,[data-theme=dark] .ib,[data-theme=dark] .row,[data-theme=dark] pre{background:#151515;border-color:var(--line)}[data-theme=dark] .srch kbd{background:#222}[data-theme=dark] .ver a.on{color:#111}
 main{max-width:1180px;margin:0 auto;padding:0 40px}
 .hero{margin:34px 0 6px;padding:54px}.hero h1{font:400 68px/68px "Instrument Serif",Georgia,serif;letter-spacing:-.03em;max-width:626px;margin-top:14px}
@@ -98,7 +98,7 @@ price = (sqrtPriceX96 / 2 ** 96) ** 2</code></pre></div></section>
   </div>
   <footer><div class="fcard float"><div class="fgrid"><div><b>GODMODE</b><p>Launch and explore fixed-supply tokens on HyperEVM. Your wallet submits every transaction. GODMODE does not custody assets.</p></div><div><h4>Docs</h4><a href="#overview">Overview</a><a href="#contracts">Contracts</a><a href="#events">Onchain events</a><a href="#trading">Trading and pricing</a><a href="#support">Support</a></div><div><h4>Product</h4><a href="/">Explore</a><a href="/creator">Profile</a><a href="/launch">Create</a></div><div><h4>Risk notice</h4><p>Transactions are submitted through your wallet and may be irreversible. Tokens can be volatile or lose all value. GODMODE does not provide custody, warranties, or financial advice.</p></div></div><div class="fbot"><span>© 2026 GODMODE.</span><span id="d-x"></span></div></div></footer>
 </main>
-<script src="/config.js?v=25"></script>
+<script src="/config.js?v=26"></script>
 <script>
 (function(){const C=window.CFG,c=C.chain.contracts;const rows=[['Factory','',c.factory],['Hook','',c.hook],['Locker','',c.locker],['Fee escrow','',c.escrow],['Buyback vault','',c.vault],['PoolManager','Uniswap v4',c.poolManager],['PositionManager','Uniswap v4',c.positionManager]];
 const ic='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
