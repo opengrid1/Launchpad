@@ -8,7 +8,8 @@ window.PAGE = async () => {
   const trc = (t, i) => `<li class="trc"><a href="${tokenUrl(t)}"><span class="art"><img src="${t.img}" alt=""></span><span class="nm"><em>${i + 1}</em>${esc(t.name)}</span><span class="fig"><b>${fmtUsd(t.mcapUsd)}</b><span class="${t.c24 >= 0 ? 'up' : 'dn'}">${fmtPct(t.c24, false)}</span></span></a></li>`;
   const row = (t) => `<a class="r" href="${tokenUrl(t)}"><span class="mk"><img src="${t.img}" alt="" loading="lazy"></span><span class="id"><span class="nm"><b>${esc(t.name)}</b><em>${esc(t.symbol)}</em></span><span class="meta"><span class="cr"><i class="cmark">${t.creator.slice(2, 4).toUpperCase()}</i>${shortAddr(t.creator)}</span><time>${t.age}</time></span></span><span class="pair hm"><img src="${C.chain.logo}" alt="">HYPE</span><span class="hm">${spark(t)}</span><span class="mc">${fmtUsd(t.mcapUsd)}</span></a>`;
   const card = (t) => `<a class="gc" href="${tokenUrl(t)}"><span class="art"><img src="${t.img}" alt="" loading="lazy"></span><span class="nm">${esc(t.name)}<em>${esc(t.symbol)}</em></span><span class="fig"><b>${fmtUsd(t.mcapUsd)}</b>${spark(t, 70, 24)}</span></a>`;
-  const list = () => { let ts = DATA.tokens(); if (sort === 'active') ts = ts.filter((t) => t.lastTs > Date.now() / 1000 - 3600); return ts.sort(KEY[sort] || KEY.mcap); };
+  const qq = (qs.get('q') || '').trim().toLowerCase();
+  const list = () => { let ts = DATA.tokens(); if (qq) ts = ts.filter((t) => t.name.toLowerCase().includes(qq) || t.symbol.toLowerCase().includes(qq) || t.addr.includes(qq)); if (sort === 'active') ts = ts.filter((t) => t.lastTs > Date.now() / 1000 - 3600); return ts.sort(KEY[sort] || KEY.mcap); };
   // marquee
   const mq = $('#h-mq'); let off = 0, lapW = 0, last = 0, paused = false, raf = 0; const SPEED = 40;
   function laps() { const top = DATA.tokens().slice().sort(KEY.trend).slice(0, 10); const one = top.map(trc).join(''); mq.innerHTML = `<ol class="lap">${one}</ol><ol class="lap" aria-hidden="true">${one}</ol>`; lapW = mq.firstElementChild.getBoundingClientRect().width; }
@@ -19,13 +20,13 @@ window.PAGE = async () => {
     laps();
     const ts = list();
     $('#h-list').classList.toggle('hidden', view !== 'list'); $('#h-cards').classList.toggle('hidden', view !== 'grid');
-    if (view === 'list') $('#h-grid').innerHTML = ts.slice(0, shown).map(row).join('') || `<div class="empty">No launches yet.</div>`;
+    if (view === 'list') $('#h-grid').innerHTML = ts.slice(0, shown).map(row).join('') || `<div class="empty">${qq ? `Nothing matches “${esc(qq)}”.` : 'No launches yet.'}</div>`;
     else $('#h-cards').innerHTML = ts.slice(0, shown).map(card).join('');
     $('#h-more').classList.toggle('hidden', ts.length <= shown);
     $$('#h-tabs [data-sort]').forEach((x) => x.classList.toggle('on', x.dataset.sort === sort));
     $$('#h-view [data-v]').forEach((x) => x.classList.toggle('on', x.dataset.v === view));
   }
-  $$('#h-tabs [data-sort]').forEach((b) => b.onclick = () => { sort = b.dataset.sort; shown = 30; history.replaceState(null, '', '?sort=' + sort); render(); });
+  $$('#h-tabs [data-sort]').forEach((b) => b.onclick = () => { sort = b.dataset.sort; shown = 30; history.replaceState(null, '', '?sort=' + sort + (qq ? '&q=' + encodeURIComponent(qq) : '')); render(); });
   $$('#h-view [data-v]').forEach((b) => b.onclick = () => { view = b.dataset.v; try { localStorage.setItem('view', view); } catch {} render(); });
   $('#h-more').onclick = () => { shown += 30; render(); };
   if (qs.get('focus')) setTimeout(() => APP.search(), 50);
