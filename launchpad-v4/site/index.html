@@ -5,14 +5,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/ui.css?v=15">
 <style>
-#pg-home .createrow{display:flex;justify-content:center;margin:14px 0 0}@media(min-width:900px){#pg-home .createrow{display:none}}
 #pg-home .filters{display:flex;align-items:center;gap:8px;margin:14px 0 12px}#pg-home .filters .pillrow{margin:0;flex:1}#pg-home .psearch{position:relative;flex:none;width:40px;transition:width .2s}#pg-home .psearch.open{width:200px}#pg-home .psearch input{width:100%;height:34px;padding:0 10px 0 34px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13px;color:var(--fg);outline:0}#pg-home .psearch input:focus{border-color:var(--mint)}#pg-home .psearch svg{position:absolute;left:11px;top:9px;width:16px;height:16px;color:var(--fg-3);pointer-events:none}
 #pg-home .pager{display:flex;justify-content:center;gap:6px;margin:18px 0 10px}
 </style>
 </head><body data-page="home">
 <header id="top"></header><div id="tape"></div>
 <main><div class="wrap"><div id="pg-home">
-  <div class="createrow"><a class="btn pri" href="/launch">+ Create</a></div>
   <a class="banner" href="/docs"><div><span class="k">HyperEVM · HYPE pair</span><b>Launch with locked liquidity and 70% of fees to you</b><span>No bonding curve. One pool from block one, snipe tax, volatility fee.</span></div><span class="btn pri sm">How it works</span><em>⚡</em></a>
   <div class="sec-t">Trending Now <em>🔥</em></div>
   <div class="trend" id="h-trend"></div>

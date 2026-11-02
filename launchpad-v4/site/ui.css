@@ -88,4 +88,4 @@ main{flex:1;min-width:0}.wrap{width:100%;max-width:var(--wrap);margin:0 auto;pad
 .sk{background:linear-gradient(90deg,var(--card2),var(--card3),var(--card2));background-size:200% 100%;animation:sk 1.2s infinite;border-radius:8px;color:transparent!important}@keyframes sk{to{background-position:-200% 0}}
 ::selection{background:var(--mint-dim)}
 
-@media(max-width:899px){.hm2{display:none}#top .btn.pri.hm2{display:none}}
+@media(max-width:899px){.hm2{display:none}#top .btn.pri.hm2{display:inline-flex;height:34px;padding:0 12px;font-size:13px}#top .brand{font-size:17px}#top .wrap{gap:8px}}
