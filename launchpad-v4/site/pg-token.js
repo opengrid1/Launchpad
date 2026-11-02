@@ -25,7 +25,10 @@ window.PAGE = async () => {
     </div>
     <div class="dock"><div class="df"><small>${esc(x.symbol)}</small><b id="t-mpx"></b></div><div class="da"><button class="btn" data-ms="sell">Sell</button><button class="btn pri" data-ms="buy">Buy</button></div></div>`;
   $('#t-img').src = x.img; $('#t-name').textContent = x.name; $('#t-sym').textContent = x.symbol;
-  $$('.dock [data-ms]').forEach((b) => b.onclick = () => { side = b.dataset.ms; renderTrade(); $('#trade').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+  let host = null; // when set, the trade panel renders inside the mobile sheet
+  function openSheet(s) { side = s; amt = ''; const ov = document.createElement('div'); ov.className = 'shov'; ov.innerHTML = `<div class="shc" role="dialog" aria-modal="true"><div class="shh"><p>${esc(x.symbol)}</p><h2 id="sh-h2"></h2></div><div class="shb"><p class="venue">Trades on the Uniswap v4 pool.</p><div id="sh-trade"></div></div></div>`; ov.onclick = (e) => { if (e.target === ov) closeSheet(); }; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; host = $('#sh-trade', ov); renderTrade(); }
+  function closeSheet() { const ov = $('.shov'); if (ov) ov.remove(); document.body.style.overflow = ''; host = null; renderTrade(); }
+  $$('.dock [data-ms]').forEach((b) => b.onclick = () => openSheet(b.dataset.ms));
   CHART.mount($('#t-chart'), addr, chain, $('#t-ctl'));
   function renderHead() {
     const p = x.byChain[chain];
@@ -48,7 +51,8 @@ window.PAGE = async () => {
       ${f.kind === 'snipe' ? `<div class="live"><span>${f.left}s left</span><div class="bar dn"><i style="width:${(f.left / E.snipeSeconds) * 100}%"></i></div></div>` : f.kind === 'vol' ? `<div class="live"><span>${f.left}s left</span><div class="bar warn"><i style="width:${(f.left / E.volDecaySec) * 100}%"></i></div><span>back to ${(f.bps / 100).toFixed(1)}%</span></div>` : `<div class="live">Rises to ${E.volPeakBps / 100}% for ${E.volDecaySec / 60} min after a ${E.volThresholdBps / 100}% move in ${E.volWindowSec}s. Fixed at launch.</div>`}`;
   }
   function renderTrade() {
-    const el = $('#t-trade'), me = APP.W.connected ? APP.W.address : '', bal = DATA.balance(addr, chain, me), hbal = me ? DATA.hypeBalance(chain) : 0, p = x.byChain[chain];
+    const el = host || $('#t-trade'), me = APP.W.connected ? APP.W.address : '', bal = DATA.balance(addr, chain, me), hbal = me ? DATA.hypeBalance(chain) : 0, p = x.byChain[chain];
+    const h2 = $('#sh-h2'); if (h2) h2.textContent = `${side === 'buy' ? 'Buy' : 'Sell'} ${x.symbol}`;
     const v = parseFloat(amt) || 0; const q = side === 'buy' ? DATA.quoteBuy(addr, chain, v) : DATA.quoteSell(addr, chain, v);
     const have = side === 'buy' ? hbal : bal; const quick = [['25%', have * 0.25], ['50%', have * 0.5], ['75%', have * 0.75], ['Max', have]];
     el.innerHTML = `<div class="seg bs" style="margin-top:0"><button class="on" data-m="market">Market</button><button data-m="limit">Limit</button></div><div class="seg bs" style="margin-top:20px"><button class="${side === 'buy' ? 'on' : ''}" data-s="buy">Buy</button><button class="${side === 'sell' ? 'on' : ''}" data-s="sell">Sell</button></div>
@@ -58,14 +62,14 @@ window.PAGE = async () => {
       <button class="btn w pri go" id="t-go" style="margin-top:0"></button>`;
     $$('[data-s]', el).forEach((b) => b.onclick = () => { side = b.dataset.s; amt = ''; renderTrade(); }); $$('[data-m="limit"]', el).forEach((b) => b.onclick = () => toast('Limit orders are not available yet', 'info'));
     $$('[data-q]', el).forEach((b) => b.onclick = () => { const k = +b.dataset.q; amt = k > 0 ? String(+k.toFixed(6)) : ''; renderTrade(); });
-    $$('[data-sl]', el).forEach((b) => b.onclick = (e) => { e.preventDefault(); slip = +b.dataset.sl; const d = $('details', el); const open = d.open; renderTrade(); $('details', $('#t-trade')).open = open; });
-    const inp = $('#t-amt', el); inp.oninput = () => { amt = inp.value; const pos = inp.selectionStart; const d = $('details', el).open; renderTrade(); const n = $('#t-amt'); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} $('details', $('#t-trade')).open = d; };
+    $$('[data-sl]', el).forEach((b) => b.onclick = (e) => { e.preventDefault(); slip = +b.dataset.sl; const open = $('details', el).open; renderTrade(); $('details', host || $('#t-trade')).open = open; });
+    const inp = $('#t-amt', el); inp.oninput = () => { amt = inp.value; const pos = inp.selectionStart; const d = $('details', el).open; renderTrade(); const h = host || $('#t-trade'); const n = $('#t-amt', h); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} $('details', h).open = d; };
     const go = $('#t-go', el);
     if (busy) { go.disabled = true; go.textContent = 'Confirm in your wallet…'; return; }
     if (!me) { go.textContent = 'Sign in'; go.onclick = () => APP.W.connect(); return; }
     if (!APP.W.chainOk) { go.textContent = 'Switch to HyperEVM'; go.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; }
     go.textContent = side === 'buy' ? 'Buy' : 'Sell'; go.disabled = !(v > 0);
-    go.onclick = async () => { busy = true; renderTrade(); try { const r = side === 'buy' ? await DATA.buy(addr, chain, v, q.tokens * (1 - slip / 100)) : await DATA.sell(addr, chain, v, q.hype * (1 - slip / 100)); toast(`${side === 'buy' ? 'Bought' : 'Sold'} ${fmtNum(r.tokens, 0)} ${x.symbol} for ${fmtNum(r.hype, 4)} HYPE`, 'ok'); amt = ''; } catch (e) { toast(errMsg(e), 'err'); } busy = false; renderAll(); };
+    go.onclick = async () => { busy = true; renderTrade(); try { const r = side === 'buy' ? await DATA.buy(addr, chain, v, q.tokens * (1 - slip / 100)) : await DATA.sell(addr, chain, v, q.hype * (1 - slip / 100)); toast(`${side === 'buy' ? 'Bought' : 'Sold'} ${fmtNum(r.tokens, 0)} ${x.symbol} for ${fmtNum(r.hype, 4)} HYPE`, 'ok'); amt = ''; if (host) closeSheet(); } catch (e) { toast(errMsg(e), 'err'); } busy = false; renderAll(); };
   }
   const arrow = (up) => `<svg viewBox="0 0 24 24" fill="none" stroke="${up ? '#00c805' : '#ff5000'}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${up ? '<path d="M7 17L17 7M9 7h8v8"/>' : '<path d="M7 7l10 10M17 9v8H9"/>'}</svg>`;
   function renderTab() {
@@ -75,6 +79,6 @@ window.PAGE = async () => {
   }
   $$('#t-tabs button').forEach((b) => b.onclick = () => { tab = b.dataset.t; renderTab(); });
   function renderAll() { x = DATA.token(addr) || x; renderHead(); renderFee(); renderTrade(); renderTab(); CHART.update(); }
-  renderAll(); APP.onUpdate(() => { x = DATA.token(addr) || x; renderHead(); renderFee(); if (!busy && document.activeElement !== $('#t-amt')) renderTrade(); renderTab(); CHART.update(); }); APP.onWallet(renderTrade);
+  renderAll(); APP.onUpdate(() => { x = DATA.token(addr) || x; renderHead(); renderFee(); if (!busy && !(document.activeElement && document.activeElement.id === 't-amt')) renderTrade(); renderTab(); CHART.update(); }); APP.onWallet(renderTrade);
   setInterval(renderFee, 1000);
 };
