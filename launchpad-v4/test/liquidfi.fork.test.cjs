@@ -10,12 +10,14 @@
 const { ethers } = require('ethers');
 const fs = require('fs'), path = require('path');
 const A = new Proxy({}, { get: (_, n) => JSON.parse(fs.readFileSync(path.join(__dirname, '../artifacts', n + '.json'), 'utf8')) });
-const POSM_ABI = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/position-manager.sourcify.json'), 'utf8')).abi;
+const POSM_J = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/position-manager.sourcify.json'), 'utf8')), POSM_ABI = POSM_J.abi;
 const P = new ethers.JsonRpcProvider(process.env.FORK_RPC || 'http://127.0.0.1:8547', undefined, { staticNetwork: true, cacheTimeout: -1, batchMaxCount: 1 });
 const KEYS = ['0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a', '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6', '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a'];
 const [owner, creator, bob, sniper, alice] = KEYS.map((k) => new ethers.NonceManager(new ethers.Wallet(k, P)));
 for (const w of [owner, creator, bob, sniper, alice]) w.address = w.signer.address;
-const PM = '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', POSM = '0x0d7Ab5B3db668128Aff6F70C4eBC71D7d4DA9bf9';
+// FORK_NET=elysium: Uniswap's PoolManager on Elysium and no PositionManager there, so the test deploys the official build.
+const NETS = { hyperevm: { pm: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', posm: '0x0d7Ab5B3db668128Aff6F70C4eBC71D7d4DA9bf9', weth9: '0x5555555555555555555555555555555555555555' }, elysium: { pm: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', posm: null, weth9: '0xba876237b0f021a6c6d852d6c26e107997cc5e81' } };
+const NETC = NETS[process.env.FORK_NET || 'hyperevm']; const PM = NETC.pm; let POSM = NETC.posm;
 const PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3', C2 = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 const E18 = 10n ** 18n, Z = ethers.ZeroAddress, fmt = (v) => Number(ethers.formatEther(v)).toLocaleString('en-US', { maximumFractionDigits: 6 });
 const LAUNCH_FEE = ethers.parseEther('0.005');
@@ -41,7 +43,8 @@ const mcapOf = (sqrt, supply) => { const p = (Number(sqrt) / 2 ** 96) ** 2; retu
 
 (async () => {
   const blk = await P.getBlock('latest');
-  log(`fork of chain ${(await P.getNetwork()).chainId} at block ${blk.number}; PoolManager code ${((await P.getCode(PM)).length - 2) / 2} B, PositionManager code ${((await P.getCode(POSM)).length - 2) / 2} B`);
+  log(`fork of chain ${(await P.getNetwork()).chainId} (${process.env.FORK_NET || 'hyperevm'}) at block ${blk.number}; PoolManager ${PM} code ${((await P.getCode(PM)).length - 2) / 2} B`);
+  if (!POSM) { const init = POSM_J.creationBytecode.recompiledBytecode + ethers.AbiCoder.defaultAbiCoder().encode(['address', 'address', 'uint256', 'address', 'address'], [PM, PERMIT2, 300000, Z, NETC.weth9]).slice(2); const tx = await owner.sendTransaction({ data: init }); const rc = await tx.wait(); POSM = rc.contractAddress; gasLog.push(['deploy PositionManager (official build)', rc.gasUsed]); log(`  deployed the official PositionManager build at ${POSM}`); }
   const posm = new ethers.Contract(POSM, POSM_ABI, owner);
 
   // ---- 1. deploy and wire

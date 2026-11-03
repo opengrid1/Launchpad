@@ -33,7 +33,7 @@ window.PAGE = async () => {
     $('#pv-mc').textContent = `${E.openMcapHype + net > E.openMcapHype ? fmtNum((E.openMcapHype + net) ** 2 / E.openMcapHype, 1) : E.openMcapHype} HYPE`;
     goBtn();
   }
-  function goBtn() { const b = $('#go'); if (busy) return; if (!APP.W.connected) { b.textContent = 'Sign in to launch'; b.onclick = () => APP.W.connect(); return; } if (!APP.W.chainOk) { b.textContent = 'Switch to HyperEVM'; b.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; } b.textContent = 'Launch'; b.onclick = launch; }
+  function goBtn() { const b = $('#go'); if (busy) return; if (!APP.W.connected) { b.textContent = 'Sign in to launch'; b.onclick = () => APP.W.connect(); return; } if (!APP.W.chainOk) { b.textContent = 'Switch to ' + C.chain.name; b.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; } b.textContent = 'Launch'; b.onclick = launch; }
   function preview() {
     $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your token'; $('#pv-t').innerHTML = `<span>${esc(F.symbol || 'TICKER')}</span><span class="badge">HYPE pair</span>`; $('#pv-d').textContent = F.description || 'A line or two about the token goes here.';
     $('#pv-l').innerHTML = [['x', 'X'], ['telegram', 'Telegram'], ['website', 'Website']].filter(([k]) => F[k]).map(([, l]) => `<span class="badge">${l}</span>`).join('');
@@ -44,7 +44,7 @@ window.PAGE = async () => {
     busy = true; const b = $('#go'); b.disabled = true; b.textContent = 'Confirm in your wallet…'; const P = $('#prog'); P.classList.add('show'); const mark = (s, cls) => { const d = P.querySelector(`[data-s="${s}"]`); d.classList.remove('on', 'ok'); d.classList.add(cls); };
     mark('sign', 'on');
     try {
-      const r = await DATA.launch(F); mark('sign', 'ok'); mark('hyper', 'ok'); const gm = $('#go-msg'); gm.classList.remove('hidden'); gm.innerHTML = `Launched. <a class="ac" href="${APP.tokenUrl(r.addr)}">Open ${esc(F.symbol)}</a>`; toast(`${F.symbol} is live on HyperEVM`, 'ok');
+      const r = await DATA.launch(F); mark('sign', 'ok'); mark('hyper', 'ok'); const gm = $('#go-msg'); gm.classList.remove('hidden'); gm.innerHTML = `Launched. <a class="ac" href="${APP.tokenUrl(r.addr)}">Open ${esc(F.symbol)}</a>`; toast(`${F.symbol} is live on ${C.chain.name}`, 'ok');
       mark('done', 'on');
       setTimeout(() => { location.href = APP.tokenUrl(r.addr); }, 1800);
     } catch (e) { toast(errMsg(e), 'err'); mark('sign', ''); busy = false; b.disabled = false; goBtn(); }

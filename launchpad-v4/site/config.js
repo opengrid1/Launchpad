@@ -1,14 +1,16 @@
 /* Launchpad site configuration. Rename the brand here only.
-   One chain: HyperEVM, every coin paired with native HYPE.
+   One chain: Elysium (99901), every coin paired with native HYPE.
    mode: 'demo' runs the whole site on generated data (demo.js) until the contracts are deployed;
    'live' reads the contracts in `chains[].contracts` through chain.js (not written yet, see SPEC.md). */
 window.CFG = {
-  brand: 'LiquidFi', tagline: 'Launch on HyperEVM. HYPE pair, locked liquidity, 1% fee, 70% to the creator.',
+  brand: 'LiquidFi', tagline: 'Launch on Elysium. HYPE pair, locked liquidity, 1% fee, 70% to the creator.',
   x: 'https://x.com/', site: '',
   mode: 'demo',
   chains: [
-    { key: 'hyper', evm: true, id: 999, hex: '0x3e7', name: 'HyperEVM', short: 'HyperEVM', quote: 'HYPE', rpc: 'https://rpc.hyperliquid.xyz/evm', explorer: 'https://hyperevmscan.io', logo: '/img/hyper.png', color: '#97fce4', blockSec: 1, main: true,
-      contracts: { factory: '', hook: '', locker: '', escrow: '', vault: '', poolManager: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', positionManager: '0x0d7Ab5B3db668128Aff6F70C4eBC71D7d4DA9bf9' } },
+    // Elysium (chain 99901, gas in HYPE). The key stays 'hyper' because the pages use it as the HYPE-chain key.
+    // positionManager is ours (Uniswap's official build), filled in by deploy-liquidfi.cjs's output.
+    { key: 'hyper', evm: true, id: 99901, hex: '0x1863d', name: 'Elysium', short: 'Elysium', quote: 'HYPE', rpc: 'https://rpc-live.elysp.com', explorer: 'https://scan.elysp.com/#', logo: '/img/hyper.png', color: '#97fce4', blockSec: 1, main: true,
+      contracts: { factory: '', hook: '', locker: '', escrow: '', vault: '', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', positionManager: '' } },
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
   /* the launch economics from SPEC.md, the same on both chains, shown on the forms and the token page */

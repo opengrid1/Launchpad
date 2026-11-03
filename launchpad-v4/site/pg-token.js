@@ -67,7 +67,7 @@ window.PAGE = async () => {
     const go = $('#t-go', el);
     if (busy) { go.disabled = true; go.textContent = 'Confirm in your wallet…'; return; }
     if (!me) { go.textContent = 'Sign in'; go.onclick = () => APP.W.connect(); return; }
-    if (!APP.W.chainOk) { go.textContent = 'Switch to HyperEVM'; go.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; }
+    if (!APP.W.chainOk) { go.textContent = 'Switch to ' + C.chain.name; go.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; }
     go.textContent = side === 'buy' ? 'Buy' : 'Sell'; go.disabled = !(v > 0);
     go.onclick = async () => { busy = true; renderTrade(); try { const r = side === 'buy' ? await DATA.buy(addr, chain, v, q.tokens * (1 - slip / 100)) : await DATA.sell(addr, chain, v, q.hype * (1 - slip / 100)); toast(`${side === 'buy' ? 'Bought' : 'Sold'} ${fmtNum(r.tokens, 0)} ${x.symbol} for ${fmtNum(r.hype, 4)} HYPE`, 'ok'); amt = ''; if (host) closeSheet(); } catch (e) { toast(errMsg(e), 'err'); } busy = false; renderAll(); };
   }
