@@ -34,7 +34,7 @@
   }
   function mkToken(i, ageSec) {
     const [n, s, em] = NAMES[i % NAMES.length], col = COLORS[i % COLORS.length], created = now() - ageSec;
-    const t = { addr: addrV(), mint: saddr(), name: n, symbol: s, emoji: em, img: i % 4 === 3 ? '' : logoFor(s, col, em, i), desc: pick(DESC), links: { x: rnd() > .4 ? 'https://x.com/' + s.toLowerCase() : '', tg: rnd() > .5 ? 'https://t.me/' + s.toLowerCase() : '', web: rnd() > .7 ? 'https://' + s.toLowerCase() + '.xyz' : '' },
+    const t = { addr: addrV(), mint: saddr(), name: n, symbol: s, emoji: em, img: logoFor(s, col, em, i), desc: pick(DESC), links: { x: rnd() > .4 ? 'https://x.com/' + s.toLowerCase() : '', tg: rnd() > .5 ? 'https://t.me/' + s.toLowerCase() : '', web: rnd() > .7 ? 'https://' + s.toLowerCase() + '.xyz' : '' },
       creator: i % 5 === 0 ? DEMO : addr(), creatorSol: saddr(), createdAt: created, creatorTaxBps: pick([0, 0, 0, 100, 200, 500]), buyback: rnd() > .6, chains: ['hyper'], pools: {} };
     for (const c of t.chains) { t.pools[c] = mkPool(c); t.pools[c].lockedIds = c === 'sol' ? [saddr()] : [1 + i * 3, 2 + i * 3, 3 + i * 3]; }
     const wallets = { hyper: Array.from({ length: 8 + Math.floor(rnd() * 30) }, addr), sol: Array.from({ length: 6 + Math.floor(rnd() * 24) }, saddr) }; if (i % 3 === 1) wallets.hyper.push(DEMO, DEMO);
