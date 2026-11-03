@@ -33,12 +33,28 @@ const HOOK_FLAGS = (1n << 13n) | (1n << 6n) | (1n << 2n), FLAG_MASK = (1n << 14n
 // gas measured on the fork test, for the dry run where estimates against placeholder addresses revert
 const MEASURED = { PositionManager: 4_700_000n, PonsV2FeeEscrow: 493_535n, LiquidFiHook: 4_323_289n, PonsV2BuybackVault: 1_102_306n, LiquidFiLocker: 1_021_028n, LiquidFiToken: 759_223n, LiquidFiFactory: 4_522_025n, call: 60_000n, addLaunchConfig: 218_726n };
 
+// The public Elysium RPC rate-limits (429 / -32005 "rate limited"); retry with backoff. A resent raw transaction the node
+// already has ("already known", "nonce too low") resolves to its own hash so the deploy carries on.
+const RATE = /rate.?limit|429|too many|-32005|not ready|timeout|ECONNRESET|socket hang up/i;
+class RetryProvider extends ethers.JsonRpcProvider {
+  async send(method, params) {
+    for (let i = 0; ; i++) {
+      try { return await super.send(method, params); } catch (e) {
+        const msg = (e.shortMessage || "") + " " + (e.message || "") + " " + JSON.stringify(e.error || e.info || "");
+        if (method === "eth_sendRawTransaction" && i > 0 && /already known|nonce too low|known transaction/i.test(msg)) return ethers.keccak256(params[0]);
+        if (i >= 8 || !RATE.test(msg)) throw e;
+        await new Promise((r) => setTimeout(r, 1000 * 2 ** Math.min(i, 4)));
+      }
+    }
+  }
+}
+
 (async () => {
   const netName = process.argv.includes("--network") ? process.argv[process.argv.indexOf("--network") + 1] : "elysium";
   let N = NET[netName]; if (!N) throw new Error("unknown network " + netName);
   if (netName === "local") N = { ...NET[process.env.FORK_OF || "elysium"], rpc: NET.local.rpc, chainId: null };
   const send = process.argv.includes("--send");
-  const P = new ethers.JsonRpcProvider(N.rpc, N.chainId ?? undefined, { staticNetwork: !!N.chainId, cacheTimeout: -1, batchMaxCount: 1 });
+  const P = new RetryProvider(N.rpc, N.chainId ?? undefined, { staticNetwork: !!N.chainId, cacheTimeout: -1, batchMaxCount: 1, pollingInterval: 2000 });
   const keyFile = process.env.KEYFILE || path.join(__dirname, "../contracts/.env.deployer.v3");
   const keyLine = fs.readFileSync(keyFile, "utf8").match(/PRIVATE_KEY=(0x)?([0-9a-fA-F]{64})/);
   if (!keyLine) throw new Error("no PRIVATE_KEY in " + keyFile);
