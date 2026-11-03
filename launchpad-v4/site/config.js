@@ -10,7 +10,7 @@ window.CFG = {
     // Elysium (chain 99901, gas in HYPE). The key stays 'hyper' because the pages use it as the HYPE-chain key.
     // positionManager is ours (Uniswap's official build), filled in by deploy-liquidfi.cjs's output.
     { key: 'hyper', evm: true, id: 99901, hex: '0x1863d', name: 'Elysium', short: 'Elysium', quote: 'HYPE', rpc: 'https://rpc-live.elysp.com', explorer: 'https://scan.elysp.com/#', logo: '/img/hyper.png', color: '#97fce4', blockSec: 1, main: true,
-      contracts: { factory: '', hook: '', locker: '', escrow: '', vault: '', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', positionManager: '' } },
+      contracts: { factory: '0x13757D66782ecA93A86A2A8B6cEEc74f10322b05', hook: '0xAA13d56014297e31d799D05406dA55F4c9256044', locker: '0x4DFB13BC1264f7bcA5Ed464E338C1A5ADC47C5d0', escrow: '0xb7C76c44e4fA523071cAD82E5865Bdf133097b38', vault: '0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', positionManager: '0x73a3098520404f4eA174788Bab5f0E04810e6460', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
   /* the launch economics from SPEC.md, the same on both chains, shown on the forms and the token page */
