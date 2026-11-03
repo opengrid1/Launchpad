@@ -57,7 +57,7 @@ main{flex:1;min-width:0}.wrap{width:100%;max-width:var(--wrap);margin:0 auto;pad
 .badge{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;background:var(--inset);border:1px solid var(--line);font-size:13px;line-height:15.6px;font-weight:600;color:var(--ink-80);white-space:nowrap}.badge.ac,.badge.vio,.badge.teal,.badge.new{background:var(--acid-quiet);border-color:transparent;color:var(--ink)}.badge.up{background:var(--acid-quiet);border-color:transparent;color:var(--ink)}.badge.dn{background:var(--dn-quiet);border-color:transparent;color:var(--ink)}.badge.warn{background:var(--warn-quiet);border-color:transparent;color:var(--ink)}.badge.sm{padding:2px 8px;font-size:11px;line-height:13px}
 .badge i{width:6px;height:6px;border-radius:50%;background:currentColor}.badge i.live{animation:lp 1.6s infinite}@keyframes lp{50%{opacity:.3}}
 .mark{display:flex;align-items:center;justify-content:center;background:var(--inset);border-radius:12px;overflow:hidden;flex:none}.mark img{width:100%;height:100%;object-fit:cover}
-.cmark{width:16px;height:16px;border-radius:50%;background:var(--inset);display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:var(--ink-2);font-style:normal;flex:none}
+.cmark{width:16px;height:16px;border-radius:50%;background:var(--inset) center/62% no-repeat;display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:var(--ink-2);font-style:normal;flex:none}
 /* fields */
 .inp{width:100%;height:44px;padding:0 16px;border:1px solid var(--line);border-radius:13px;background:var(--inset);color:var(--ink);outline:0;font-size:15px;font-weight:600}.inp:focus{border-color:var(--ink)}.inp::placeholder{color:var(--ink-2);opacity:.7}textarea.inp{height:84px;padding:12px 16px;resize:vertical;line-height:18px}.inp.err{border-color:var(--dn)}
 .ipw{position:relative}.ipw .suf{position:absolute;right:16px;top:0;height:44px;display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--ink-2)}
@@ -103,3 +103,15 @@ body.srch-open #top .brand,body.srch-open #top .sp{visibility:hidden}.msr{positi
 .sk{background:linear-gradient(90deg,var(--inset),rgba(12,21,0,.1),var(--inset));background-size:200% 100%;animation:sk 1.2s infinite;border-radius:8px;color:transparent!important}@keyframes sk{to{background-position:-200% 0}}
 ::selection{background:var(--acid-quiet)}
 @media(max-width:999px){.hm2{display:none}.wrap{padding:0 24px}}
+
+/* rows: flat grid rows with 1px separators, shared by the board and the profile */
+.rows{display:flex;flex-direction:column}.rows .rh,.rows .r{display:grid;grid-template-columns:40px minmax(0,1fr) 64px 120px 104px;gap:16px;align-items:center}
+.rows .rh{padding:8px 12px;border-bottom:1px solid var(--line)}.rows .rh span{font-size:13px;line-height:15.6px;color:var(--ink-2)}.rows .rh span:first-child{grid-column:2}.rows .rh .ra{text-align:right}
+.rows .r{padding:12px;border-radius:13px;border-bottom:1px solid var(--line);cursor:pointer;color:inherit}.rows .r:hover{background:var(--inset)}
+.rows .mk{width:40px;height:40px;border-radius:12px;background:var(--inset);overflow:hidden}.rows .mk img{width:40px;height:40px;object-fit:cover}
+.rows .id{display:flex;flex-direction:column;gap:3px;min-width:0}.rows .nm{display:flex;align-items:baseline;gap:8px;min-width:0}.rows .nm b{font-size:17px;line-height:21.25px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rows .nm em{font-style:normal;font-size:15px;line-height:18px;color:var(--ink-2);font-weight:600}
+.rows .meta{display:flex;align-items:center;gap:12px;font-size:13px;line-height:15.6px;color:var(--ink-2);white-space:nowrap;overflow:hidden}.rows .meta .cr{display:inline-flex;align-items:center;gap:4px}.rows .meta time{font-variant-numeric:tabular-nums}
+.rows .pair{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-80)}.rows .pair img{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(11,11,11,.08)}
+.rows svg.sp{display:block;width:120px;height:36px;margin-left:auto}
+.rows .mc{text-align:right;font-size:15px;line-height:18px;font-weight:600;font-variant-numeric:tabular-nums}
+@media(max-width:999px){.rows .rh{display:none}.rows .rh,.rows .r{grid-template-columns:40px minmax(0,1fr) auto}.rows .hm{display:none}.rows .nm em{display:none}}

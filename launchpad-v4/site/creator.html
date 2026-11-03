@@ -1,22 +1,35 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><script data-theme-boot>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Profile | LiquidFi</title><meta name="description" content="Your coins, your fees. 70% of every 1% fee goes to the creator, claimable any time on HyperEVM.">
+<title>Profile | LiquidFi</title><meta name="description" content="A wallet's holdings, activity, launches and creator fees on LiquidFi. 70% of every 1% fee goes to the creator, claimable any time on HyperEVM.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f5f5f7">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="/ui.css?v=31">
+<link rel="stylesheet" href="/ui.css?v=32">
 <style>
-#pg-creator{padding:40px 0 120px;display:flex;flex-direction:column;gap:24px}#pg-creator h1{font-size:44px;line-height:44px;letter-spacing:-.04em}#pg-creator .sub{color:var(--ink-80);font-size:15px;line-height:18px;max-width:612px;margin-top:16px}
-#pg-creator .top{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}#pg-creator .top .sbox{padding:20px;border:1px solid var(--line);border-radius:24px;background:var(--surface);box-shadow:var(--shadow)}
-#pg-creator .claim{display:flex;align-items:center;gap:16px;padding:20px;flex-wrap:wrap}#pg-creator .claim b{font-size:22px;line-height:26.4px;font-weight:800;letter-spacing:-.04em}#pg-creator .claim .btn{margin-left:auto}
-#pg-creator .panel .tbl td{height:52px}#pg-creator .tbl .av{width:32px;height:32px;border-radius:10px;display:inline-block;vertical-align:middle;margin-right:8px}
-@media(max-width:999px){#pg-creator{padding:16px 0 120px}#pg-creator h1{font-size:32px;line-height:32px}#pg-creator .top{grid-template-columns:1fr 1fr}}
+#pg-creator{padding:40px 0 120px;display:flex;flex-direction:column;gap:24px}
+.phd{display:flex;flex-direction:column;gap:16px}.back{display:flex;align-items:center;gap:4px;height:24px;font-size:13px;line-height:15.6px;color:var(--ink-2)}.back svg{width:14px;height:14px;stroke-width:1.75}
+.ptop{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:0 12px;height:80px}.pav{width:80px;height:80px;border-radius:12px;background:var(--inset) center/60% no-repeat;flex:none}
+.btn.sec{background:transparent;border:1px solid rgba(12,21,0,.3);color:var(--ink);font-weight:800;padding:0 20px;gap:8px;display:inline-flex;align-items:center;height:44px;border-radius:13px;font-size:15px}.btn.sec svg{width:16px;height:16px;stroke-width:1.75}[data-theme=dark] .btn.sec{border-color:rgba(253,254,249,.3)}
+.pid{display:flex;flex-direction:column;gap:8px;padding:0 12px}.pid h1{font-size:28px;line-height:32.2px;letter-spacing:-.04em;font-weight:800}
+.phandle{display:flex;align-items:center;gap:12px;height:26px;font-size:15px;line-height:18px;color:var(--ink-80);min-width:0}.phandle .addr{max-width:min(100%,420px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.phandle .chips{display:flex;gap:4px;flex:none}.chip{width:26px;height:26px;border-radius:50%;background:var(--inset);display:grid;place-items:center;color:var(--ink-80)}.chip svg{width:12px;height:12px;stroke-width:1.75}.chip:hover{background:var(--inset-2)}
+.pmeta{display:flex;align-items:center;gap:6px;font-size:13px;line-height:15.6px;color:var(--ink-80)}.pmeta svg{width:14px;height:14px;stroke-width:1.75}
+.ptabs{display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:31px}.ptabs .tb{display:flex;align-items:center;gap:4px;height:40px;margin-bottom:-9px;overflow-x:auto;scrollbar-width:none}.ptabs .tb::-webkit-scrollbar{display:none}.ptabs .tb button{height:40px;padding:0 8px;display:flex;align-items:center;gap:8px;font-size:15px;line-height:18px;font-weight:600;color:var(--ink-80);position:relative;white-space:nowrap}.ptabs .tb button.on{color:var(--ink)}.ptabs .tb button.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ink)}.ptabs .tb button i{font-style:normal;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.hold{display:flex;flex-direction:column;gap:24px}.pchart{display:flex;flex-direction:column;gap:16px;padding:0 12px 8px;border-bottom:1px solid var(--line)}.pch{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pfig{display:flex;flex-direction:column;gap:2px}.pfig b{font-size:32px;line-height:35.2px;letter-spacing:-.04em;font-weight:800;font-variant-numeric:tabular-nums}.pfig span{font-size:13px;line-height:15.6px;font-variant-numeric:tabular-nums}
+.rng{display:flex;align-items:center;gap:2px;height:36px;padding:3px;border-radius:999px;background:var(--inset);flex:none}.rng button{height:30px;padding:0 12px;border-radius:999px;font-size:13px;line-height:15.6px;font-weight:600;color:var(--ink-80)}.rng button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(12,21,0,.08)}
+.pcv{height:200px}.pcv canvas{display:block;width:100%;height:200px}
+.rows .cell{text-align:right;font-size:15px;line-height:18px;font-weight:600;font-variant-numeric:tabular-nums}.rows .cell.muted{color:var(--ink-2)}
+.rows.hold .rh,.rows.hold .r{grid-template-columns:40px minmax(0,1fr) 100px 100px 104px 116px}
+.rows.act .rh,.rows.act .r{grid-template-columns:36px minmax(0,1fr) 104px 112px 104px 72px 28px}.rows.act .r{cursor:default}.rows.act .mk,.rows.act .mk img{width:36px;height:36px}.rows.act .nm a{color:inherit}.rows .side{display:flex;align-items:center;gap:4px;font-size:15px;line-height:18px;font-weight:600}.rows .side svg{width:14px;height:14px;stroke-width:1.75}.rows .txl{display:flex;justify-content:center;color:var(--ink-2)}.rows .txl svg{width:14px;height:14px;stroke-width:1.75}
+.pstats{display:flex;flex-wrap:wrap;gap:8px 16px;padding:0 12px 16px;font-size:13px;line-height:15.6px;color:var(--ink-80)}
+.feesw{display:flex;flex-direction:column;gap:20px}.fcard{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:20px 24px;border-radius:24px;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}.fcopy{display:flex;flex-direction:column;gap:8px}.fcopy .lab{font-size:13px;line-height:15.6px;color:var(--ink-80)}.fcopy b{font-size:32px;line-height:35.2px;letter-spacing:-.04em;font-weight:800;font-variant-numeric:tabular-nums}
+.rows.fees .rh,.rows.fees .r{grid-template-columns:40px minmax(0,1fr) 140px 140px}
+.pempty{padding:40px 12px;font-size:15px;line-height:18px;color:var(--ink-80);display:flex;flex-direction:column;align-items:flex-start;gap:16px}.pempty .acts{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:999px){#pg-creator{padding:16px 0 120px}.pid h1{font-size:24px;line-height:28px}.pch{flex-direction:column}.pfig b{font-size:26px;line-height:29px}.ptabs{height:auto}.ptabs .tb{width:100%}
+  .rows.hold .rh,.rows.hold .r{grid-template-columns:40px minmax(0,1fr) auto auto}.rows.act .rh,.rows.act .r{grid-template-columns:36px minmax(0,1fr) auto auto}.rows.act .age{display:none}.rows.fees .rh,.rows.fees .r{grid-template-columns:40px minmax(0,1fr) auto}.rows.act .nm em,.rows.fees .nm em,.rows.hold .nm em{display:none}.fcard{flex-direction:column;align-items:flex-start;gap:16px}}
 </style>
 </head><body data-page="creator">
 <header id="top"></header>
-<main><div class="wrap"><div id="pg-creator">
-  <h1>Profile</h1><p class="sub">Your launches and creator fees. Every trade on a token you launched pays you 70% of the 1% pool fee, plus all of your creator fee. Claim any time.</p>
-  <div id="c-body"></div>
-</div></div></main>
+<main><div class="wrap"><div id="pg-creator"></div></div></main>
 <footer id="foot"></footer>
-<script src="/config.js?v=31"></script><script src="/demo.js?v=31"></script><script src="/glyphs.js?v=31"></script><script src="/app.js?v=31"></script><script src="/pg-creator.js?v=31"></script>
+<script src="/config.js?v=32"></script><script src="/demo.js?v=32"></script><script src="/glyphs.js?v=32"></script><script src="/app.js?v=32"></script><script src="/pg-creator.js?v=32"></script>
 </body></html>
