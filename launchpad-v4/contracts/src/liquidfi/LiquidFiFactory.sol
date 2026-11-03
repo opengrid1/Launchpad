@@ -118,6 +118,7 @@ contract LiquidFiFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     uint256 private constant MAX_NAME_BYTES = 64;
     uint256 private constant MAX_SYMBOL_BYTES = 20;
     uint256 private constant MAX_DESCRIPTION_BYTES = 1_024;
+    uint256 private constant MAX_LOGO_BYTES = 512; // a URL (ipfs:// or https://), never inline image data
 
     error InvalidLaunchConfigId();
     error InvalidLaunchConfig();
@@ -131,6 +132,7 @@ contract LiquidFiFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     error ZeroAddress();
     error OwnershipCannotBeRenounced();
     error InvalidTokenParams();
+    error LogoRequired();
     error LinkInDescription();
     error TokenNotFound();
     error NotCreatorFeeRecipient();
@@ -653,6 +655,8 @@ contract LiquidFiFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         uint256 s = bytes(p.symbol).length;
         if (n == 0 || n > MAX_NAME_BYTES || s == 0 || s > MAX_SYMBOL_BYTES) revert InvalidTokenParams();
         if (bytes(p.description).length > MAX_DESCRIPTION_BYTES) revert InvalidTokenParams();
+        uint256 l = bytes(p.logo).length;
+        if (l == 0 || l > MAX_LOGO_BYTES) revert LogoRequired(); // every token launches with an image
         if (p.creatorTaxBps > maxCreatorTaxBps) revert CreatorTaxTooHigh();
         if (_hasLink(bytes(p.description))) revert LinkInDescription();
     }

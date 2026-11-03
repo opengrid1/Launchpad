@@ -1,3 +1,4 @@
 node_modules/
 artifacts/*.json
 !artifacts/.gitkeep
+deployments/*.progress.json

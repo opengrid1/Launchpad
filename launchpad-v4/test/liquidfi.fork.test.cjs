@@ -202,6 +202,7 @@ const mcapOf = (sqrt, supply) => { const p = (Number(sqrt) / 2 ** 96) ** 2; retu
   await reverts('opening buy above 5% of supply', factory.connect(creator).launch.staticCall({ ...fresh(), openingBuy: ethers.parseEther('5') }, 0, { value: LAUNCH_FEE + ethers.parseEther('5') }), IF, 'OpeningBuyTooLarge');
   await reverts('creator fee above 10%', factory.connect(creator).launch.staticCall({ ...fresh(), creatorTaxBps: 1100 }, 0, { value: LAUNCH_FEE + base.openingBuy }), IF, 'CreatorTaxTooHigh');
   await reverts('stale economics digest', factory.connect(creator).launch.staticCall({ ...fresh(), expectedEconomics: ethers.id('old') }, 0, { value: LAUNCH_FEE + base.openingBuy }), IF, 'LaunchEconomicsMismatch');
+  await reverts('launch without a logo', factory.connect(creator).launch.staticCall({ ...fresh(), logo: '' }, 0, { value: LAUNCH_FEE + base.openingBuy }), IF, 'LogoRequired');
   await reverts('wrong value', factory.connect(creator).launch.staticCall(fresh(), 0, { value: LAUNCH_FEE }), IF, 'LaunchFeeNotPaid');
   const pmI = new ethers.Interface(['error WrappedError(address target, bytes4 selector, bytes reason, bytes details)']);
   try { await new ethers.Contract(PM, ['function initialize((address,address,uint24,int24,address),uint160) returns (int24)'], bob).initialize.staticCall([Z, tok2, 0, 60, hookAddr], 2n ** 96n); ok(false, 'someone else initialized a pool on the hook'); }
