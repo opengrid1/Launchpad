@@ -90,7 +90,7 @@
   W.addressFor = (chain) => (chain === 'sol' ? (S.connected ? S.address : '') : (W.connected ? W.address : ''));
   async function autoConnect() {
     const n = localStorage.getItem('wallet'); await new Promise((r) => setTimeout(r, 250));
-    if (n) { const p = W.providers.find((p) => p.info.name === n); try { if (p) { const accs = await p.provider.request({ method: 'eth_accounts' }); if (accs && accs[0]) await useProvider(p.provider, n); } else if (n === 'Demo wallet' && C.mode === 'demo') W.connect(); } catch {} }
+    if (n) { const p = W.providers.find((p) => p.info.name === n); try { if (p) { const accs = await p.provider.request({ method: 'eth_accounts' }); if (accs && accs[0]) await useProvider(p.provider, n); } else if (window.ethereum && n !== 'Demo wallet') { const accs = await window.ethereum.request({ method: 'eth_accounts' }); if (accs && accs[0]) await useProvider(window.ethereum, n); } else if (n === 'Demo wallet' && C.mode === 'demo') W.connect(); } catch {} }
     const sn = localStorage.getItem('solwallet'); if (sn) { if (sn === 'Demo wallet' && C.mode === 'demo') S.connect(); else { const w = solProviders().find((x) => x.name === sn); if (w) try { await w.p.connect({ onlyIfTrusted: true }); S.address = w.p.publicKey.toString(); S.short = shortAddr(S.address); S.connected = true; S.provider = w.p; S.name = sn; emitW(); } catch {} } }
   }
   APP.isAdmin = () => W.connected && W.address === C.admin.toLowerCase();

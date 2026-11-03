@@ -12,10 +12,10 @@ window.PAGE = async () => {
   const list = () => { let ts = DATA.tokens(); if (qq) ts = ts.filter((t) => t.name.toLowerCase().includes(qq) || t.symbol.toLowerCase().includes(qq) || t.addr.includes(qq)); if (sort === 'active') ts = ts.filter((t) => t.lastTs > Date.now() / 1000 - 3600); return ts.sort(KEY[sort] || KEY.mcap); };
   // marquee
   const mq = $('#h-mq'); let off = 0, lapW = 0, last = 0, paused = false, raf = 0; const SPEED = 40;
-  function laps() { const top = DATA.tokens().slice().sort(KEY.trend).slice(0, 10); const one = top.map(trc).join(''); mq.innerHTML = `<ol class="lap">${one}</ol><ol class="lap" aria-hidden="true">${one}</ol>`; lapW = mq.firstElementChild.getBoundingClientRect().width; }
+  function laps() { const top = DATA.tokens().slice().sort(KEY.trend).slice(0, 10); const one = top.map(trc).join(''); mq.innerHTML = `<ol class="lap">${one}</ol>`; const w1 = mq.firstElementChild.getBoundingClientRect().width; if (w1 <= mq.parentElement.getBoundingClientRect().width) { lapW = 0; off = 0; mq.style.transform = ''; return; } mq.insertAdjacentHTML('beforeend', `<ol class="lap" aria-hidden="true">${one}</ol>`); lapW = w1; } // a second lap only when the first overflows: few coins sit still
   function tick(ts) { if (last && !paused && lapW) { off += (ts - last) / 1000 * SPEED; if (off >= lapW) off -= lapW; mq.style.transform = `translateX(${-off}px)`; } last = ts; raf = requestAnimationFrame(tick); }
   mq.parentElement.onmouseenter = () => { paused = true; }; mq.parentElement.onmouseleave = () => { paused = false; };
-  $('#h-tl').onclick = () => { off -= 200; if (off < 0) off += lapW; mq.style.transform = `translateX(${-off}px)`; }; $('#h-tr').onclick = () => { off += 200; if (off >= lapW) off -= lapW; mq.style.transform = `translateX(${-off}px)`; };
+  $('#h-tl').onclick = () => { if (!lapW) return; off -= 200; if (off < 0) off += lapW; mq.style.transform = `translateX(${-off}px)`; }; $('#h-tr').onclick = () => { if (!lapW) return; off += 200; if (off >= lapW) off -= lapW; mq.style.transform = `translateX(${-off}px)`; };
   function render() {
     laps();
     const ts = list();

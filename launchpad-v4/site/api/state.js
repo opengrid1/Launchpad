@@ -1,0 +1,155 @@
+// GET /api/state: every LiquidFi token on Elysium with its pool state, trades, holders and fee accounting, built from
+// event logs (factory, hook, escrow, vault, PoolManager filtered to our pools, the tokens' Transfers). A warm instance
+// keeps the logs and only reads new blocks; the CDN caches the answer for a few seconds so visitors never hit the RPC.
+const { ethers, NET, rpc, multicall, getLogs } = require('./_lib');
+
+const ev = (s) => ethers.id(s);
+const T = {
+  launched: ev('TokenLaunched(address,address,bytes32,uint256,address,uint16,bool,uint256[3])'),
+  metadata: ev('TokenMetadata(address,string,string,string,string,(string,string,string,string,string))'),
+  recipient: ev('CreatorFeeRecipientUpdated(address,address,address)'),
+  buyback: ev('BuybackEnabledUpdated(address,bool,address)'),
+  init: ev('Initialize(bytes32,address,address,uint24,int24,address,uint160,int24)'),
+  modify: ev('ModifyLiquidity(bytes32,address,int24,int24,int256,bytes32)'),
+  swap: ev('Swap(bytes32,address,int128,int128,uint160,uint128,int24,uint24)'),
+  hookFee: ev('HookFeeCollected(bytes32,address,uint256,uint256)'),
+  surcharge: ev('SurchargeApplied(bytes32,uint256,uint256)'),
+  spike: ev('VolatilitySpike(bytes32,uint160,uint160)'),
+  swept: ev('PoolFeesSwept(bytes32,uint256,uint256,uint256,uint256)'),
+  transfer: ev('Transfer(address,address,uint256)'),
+  credited: ev('Credited(address,address,uint256)'),
+  claimed: ev('Claimed(address,uint256)'),
+  locked: ev('Locked(address,address,uint256,uint256)'),
+  released: ev('Released(address,uint256,uint256)'),
+};
+const AC = ethers.AbiCoder.defaultAbiCoder();
+const addrOf = (topic) => ethers.getAddress('0x' + topic.slice(26));
+const dec = (types, data) => AC.decode(types, data);
+const HOOK_I = new ethers.Interface(['function poolTerms(bytes32) view returns (uint40 launchedAt, uint16 snipeStartBps, uint32 snipeSeconds, uint16 volThresholdBps, uint32 volWindow, uint16 volExtraBps, uint32 volDecay)', 'function launches(bytes32) view returns (bool registered, bool memecoinIsCurrency0, address memecoin, address quoteToken, address creator, address buybackCreatorRecipient, address protocolFeeRecipient, uint16 creatorTaxBps, uint16 protocolFeeShareBps, uint16 buybackBurnBps, uint16 hookFeeBps, uint16 maxInternalPriceImpactBps, bool buybackEnabled)']);
+const Q96 = 2 ** 96, f18 = (v) => Number(ethers.formatEther(v));
+
+// the cache a warm instance keeps between requests
+const S = { skew: 0, last: NET.fromBlock - 1, factory: [], hook: [], escrow: [], vault: [], pm: [], transfers: [], tokens: new Map(), byPool: new Map(), terms: new Map(), pending: null, at: 0 };
+
+async function logsRange(filter, from, to) {
+  try { return await getLogs({ ...filter, fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) }); }
+  catch (e) { if (to - from < 50 || !/range|limit|too many|exceed|large/i.test(e.message)) throw e; const mid = Math.floor((from + to) / 2); return [...(await logsRange(filter, from, mid)), ...(await logsRange(filter, mid + 1, to))]; }
+}
+// Elysium's logs carry blockTimestamp; for RPCs without it, read each block's header once
+const blockTs = new Map();
+async function stamp(logs) {
+  const need = [...new Set(logs.filter((l) => !l.blockTimestamp).map((l) => l.blockNumber))].filter((n) => !blockTs.has(n));
+  for (const n of need) { const b = await rpc('eth_getBlockByNumber', [n, false]); blockTs.set(n, b.timestamp); }
+  for (const l of logs) if (!l.blockTimestamp) l.blockTimestamp = blockTs.get(l.blockNumber);
+  return logs;
+}
+const byOrder = (a, b) => (parseInt(a.blockNumber, 16) - parseInt(b.blockNumber, 16)) || (parseInt(a.logIndex, 16) - parseInt(b.logIndex, 16));
+
+async function sync() {
+  const hb = await rpc('eth_getBlockByNumber', ['latest', false]);
+  const head = parseInt(hb.number, 16); S.skew = parseInt(hb.timestamp, 16) - Math.floor(Date.now() / 1000); // chain clock minus ours
+  if (head <= S.last) return;
+  const from = S.last + 1;
+  // one call for the four protocol contracts, split by address
+  const core = await stamp(await logsRange({ address: [NET.factory, NET.hook, NET.escrow, NET.vault] }, from, head));
+  const of = (a) => core.filter((l) => l.address.toLowerCase() === a.toLowerCase());
+  const fac = of(NET.factory), hook = of(NET.hook), esc = of(NET.escrow), vault = of(NET.vault);
+  for (const l of fac) {
+    if (l.topics[0] === T.launched) {
+      const [cfgId, rec, tax, bb, ids] = dec(['uint256', 'address', 'uint16', 'bool', 'uint256[3]'], l.data);
+      const t = { addr: addrOf(l.topics[1]), creator: addrOf(l.topics[2]), poolId: l.topics[3], configId: Number(cfgId), feeRecipient: rec, taxBps: Number(tax), buyback: bb, posIds: ids.map(String), createdAt: parseInt(l.blockTimestamp, 16), block: parseInt(l.blockNumber, 16), tx: l.transactionHash };
+      S.tokens.set(t.addr.toLowerCase(), t); S.byPool.set(t.poolId, t);
+    } else if (l.topics[0] === T.metadata) {
+      const t = S.tokens.get(addrOf(l.topics[1]).toLowerCase()); if (!t) continue;
+      const [name, symbol, logo, desc, so] = dec(['string', 'string', 'string', 'string', '(string,string,string,string,string)'], l.data);
+      Object.assign(t, { name, symbol, logo, desc, socials: { x: so[0], tg: so[1], discord: so[2], web: so[3], farcaster: so[4] } });
+    } else if (l.topics[0] === T.recipient && l.topics.length === 4) {
+      const t = S.tokens.get(addrOf(l.topics[1]).toLowerCase()); if (t) t.feeRecipient = addrOf(l.topics[3]);
+    } else if (l.topics[0] === T.buyback && l.topics.length === 3) {
+      const t = S.tokens.get(addrOf(l.topics[1]).toLowerCase()); if (t) t.buyback = dec(['bool'], l.data)[0];
+    }
+  }
+  S.factory.push(...fac); S.hook.push(...hook); S.escrow.push(...esc); S.vault.push(...vault);
+  const pools = [...S.byPool.keys()], addrs = [...S.tokens.values()].map((t) => t.addr);
+  if (pools.length) {
+    for (let i = 0; i < pools.length; i += 100) S.pm.push(...await stamp(await logsRange({ address: NET.poolManager, topics: [[T.init, T.modify, T.swap], pools.slice(i, i + 100)] }, from, head)));
+    for (let i = 0; i < addrs.length; i += 100) S.transfers.push(...await logsRange({ address: addrs.slice(i, i + 100), topics: [T.transfer] }, from, head));
+    const fresh = pools.filter((p) => !S.terms.has(p));
+    if (fresh.length) {
+      const r = await multicall(fresh.flatMap((p) => [[NET.hook, HOOK_I, 'poolTerms', [p]], [NET.hook, HOOK_I, 'launches', [p]]]));
+      fresh.forEach((p, i) => { const pt = r[2 * i], li = r[2 * i + 1]; if (!pt) return; S.terms.set(p, { launchedAt: Number(pt[0]), snipeStartBps: Number(pt[1]), snipeSeconds: Number(pt[2]), volThresholdBps: Number(pt[3]), volWindow: Number(pt[4]), volExtraBps: Number(pt[5]), volDecay: Number(pt[6]), hookFeeBps: li ? Number(li[10]) : 100, protocolShareBps: li ? Number(li[8]) : 3000, buybackBps: li ? Number(li[9]) : 5000 }); });
+    }
+  }
+  for (const k of ['pm', 'transfers', 'hook']) S[k].sort(byOrder);
+  S.last = head;
+}
+
+function build() {
+  const pm = S.pm, PM = NET.poolManager.toLowerCase();
+  const txTransfers = new Map(); // tx -> transfers in order
+  const bal = {}; // token -> holder -> wei
+  for (const l of S.transfers) {
+    const tok = l.address.toLowerCase(), from = addrOf(l.topics[1]).toLowerCase(), to = addrOf(l.topics[2]).toLowerCase(), v = BigInt(l.data);
+    (txTransfers.get(l.transactionHash) || txTransfers.set(l.transactionHash, []).get(l.transactionHash)).push({ tok, from, to, v });
+    const b = bal[tok] || (bal[tok] = {}); if (from !== ethers.ZeroAddress) b[from] = (b[from] || 0n) - v; b[to] = (b[to] || 0n) + v;
+  }
+  const hookByTx = new Map(); for (const l of S.hook) (hookByTx.get(l.transactionHash) || hookByTx.set(l.transactionHash, []).get(l.transactionHash)).push(l);
+  const pool = {}; // poolId -> { sqrt, tick, ranges, lastSpike }
+  const trades = [];
+  for (const l of pm) {
+    const id = l.topics[1], P = pool[id] || (pool[id] = { sqrt: null, tick: 0, ranges: {}, lastSpike: 0 }), t = S.byPool.get(id); if (!t) continue;
+    if (l.topics[0] === T.init) { const [, , , sq, tick] = dec(['uint24', 'int24', 'address', 'uint160', 'int24'], l.data); P.sqrt = sq; P.tick = Number(tick); }
+    else if (l.topics[0] === T.modify) { const [lo, hi, d] = dec(['int24', 'int24', 'int256', 'bytes32'], l.data); const k = lo + ':' + hi; P.ranges[k] = (P.ranges[k] || 0n) + d; }
+    else if (l.topics[0] === T.swap) {
+      const [a0, a1, sq, , tick] = dec(['int128', 'int128', 'uint160', 'uint128', 'int24', 'uint24'], l.data); P.sqrt = sq; P.tick = Number(tick);
+      const buy = a0 < 0n, li = parseInt(l.logIndex, 16);
+      const hk = (hookByTx.get(l.transactionHash) || []).filter((h) => h.topics[1] === id && parseInt(h.logIndex, 16) > li);
+      const fe = hk.find((h) => h.topics[0] === T.hookFee), su = hk.find((h) => h.topics[0] === T.surcharge);
+      const [, feeAmt, taxAmt] = fe ? dec(['address', 'uint256', 'uint256'], fe.data) : [null, 0n, 0n];
+      const [volBps, snipeBps] = su ? dec(['uint256', 'uint256'], su.data).map(Number) : [0, 0];
+      const hypeGross = f18(buy ? -a0 : a0), tokGross = f18(buy ? a1 : -a1), cut = f18(feeAmt + taxAmt);
+      const avg = tokGross > 0 ? hypeGross / tokGross : 0, sqf = Number(sq) / Q96, px = sqf > 0 ? 1 / (sqf * sqf) : 0;
+      // the trader: who the pool's tokens went to (following one more hop), or who paid them in
+      const tt = (txTransfers.get(l.transactionHash) || []).filter((x) => x.tok === t.addr.toLowerCase());
+      let wallet = '';
+      const HK = NET.hook.toLowerCase();
+      if (buy) { const out = tt.filter((x) => x.from === PM && x.to !== HK).sort((x, y) => (y.v > x.v ? 1 : -1))[0]; wallet = out ? out.to : ''; const hop = out && tt.find((x) => x.from === out.to && x.to !== PM && x.to !== HK); if (hop) wallet = hop.to; }
+      else { const inn = tt.find((x) => x.to === PM); wallet = inn ? inn.from : ''; }
+      const gross = buy ? tokGross : hypeGross;
+      trades.push({ t: t.addr.toLowerCase(), tx: l.transactionHash, w: wallet, b: buy ? 1 : 0, h: buy ? hypeGross : hypeGross - cut, k: buy ? tokGross - cut : tokGross, f: buy ? cut * avg : cut, ft: f18(feeAmt) * (buy ? avg : 1), fx: f18(taxAmt) * (buy ? avg : 1), fb: gross > 0 ? Math.round(cut / gross * 1e4) : 0, s: snipeBps, v: volBps, p: px, ts: parseInt(l.blockTimestamp, 16), blk: parseInt(l.blockNumber, 16) });
+    }
+  }
+  for (const l of S.hook) if (l.topics[0] === T.spike) { const P = pool[l.topics[1]]; if (P) P.lastSpike = parseInt(l.blockTimestamp, 16); }
+  // fee accounting per pool: accrued from HookFeeCollected (creator part valued in HYPE), swept from PoolFeesSwept
+  const swept = {}; for (const l of S.hook) if (l.topics[0] === T.swept) { const [p, b, c] = dec(['uint256', 'uint256', 'uint256', 'uint256'], l.data); const s = swept[l.topics[1]] || (swept[l.topics[1]] = { protocol: 0, buyback: 0, creator: 0 }); s.protocol += f18(p); s.buyback += f18(b); s.creator += f18(c); }
+  const credit = {}; for (const l of S.escrow) { if (l.topics[0] !== T.credited && l.topics[0] !== T.claimed) continue; const w = addrOf(l.topics[1]).toLowerCase(), c = credit[w] || (credit[w] = { credited: 0, claimed: 0 }); if (l.topics[0] === T.credited) c.credited += f18(dec(['uint256'], l.data)[0]); else if (l.topics[0] === T.claimed) c.claimed += f18(dec(['uint256'], l.data)[0]); }
+  const vest = {}; for (const l of S.vault) { if (l.topics[0] !== T.locked && l.topics[0] !== T.released) continue; const tok = addrOf(l.topics[1]).toLowerCase(), v = vest[tok] || (vest[tok] = { locked: 0, released: 0 }); if (l.topics[0] === T.locked) v.locked += f18(dec(['uint256', 'uint256'], l.data)[0]); else if (l.topics[0] === T.released) { const [c, p] = dec(['uint256', 'uint256'], l.data); v.released += f18(c + p); } }
+
+  const tokens = [...S.tokens.values()].filter((t) => t.name).map((t) => {
+    const P = pool[t.poolId] || { sqrt: null, tick: 0, ranges: {}, lastSpike: 0 }, terms = S.terms.get(t.poolId) || null;
+    const b = bal[t.addr.toLowerCase()] || {};
+    const holders = Object.entries(b).filter(([, v]) => v > 0n).map(([w, v]) => [w, f18(v)]).sort((x, y) => y[1] - x[1]).slice(0, 500);
+    return { addr: t.addr.toLowerCase(), creator: t.creator.toLowerCase(), feeRecipient: t.feeRecipient.toLowerCase(), poolId: t.poolId, configId: t.configId, taxBps: t.taxBps, buyback: t.buyback, posIds: t.posIds, createdAt: t.createdAt, block: t.block, tx: t.tx,
+      name: t.name, symbol: t.symbol, logo: t.logo, desc: t.desc, socials: t.socials,
+      sqrtP: P.sqrt != null ? P.sqrt.toString() : null, tick: P.tick, ranges: Object.entries(P.ranges).filter(([, v]) => v > 0n).map(([k, v]) => { const [lo, hi] = k.split(':').map(Number); return { lo, hi, liq: v.toString() }; }),
+      lastSpike: P.lastSpike, terms, swept: swept[t.poolId] || { protocol: 0, buyback: 0, creator: 0 }, vest: vest[t.addr.toLowerCase()] || { locked: 0, released: 0 },
+      holders, holderCount: Object.values(b).filter((v) => v > 0n).length };
+  });
+  return { chainId: NET.chainId, block: S.last, at: Math.floor(Date.now() / 1000), skew: S.skew, poolManager: NET.poolManager.toLowerCase(), tokens, trades, escrow: credit };
+}
+
+module.exports = async (req, res) => {
+  try {
+    if (!S.pending && Date.now() - S.at > 2500) S.pending = sync().then(() => { S.at = Date.now(); }).finally(() => { S.pending = null; });
+    if (S.pending) await S.pending;
+    const body = JSON.stringify(build());
+    res.setHeader('content-type', 'application/json');
+    res.setHeader('cache-control', 'public, max-age=0, s-maxage=3, stale-while-revalidate=30');
+    res.setHeader('access-control-allow-origin', '*');
+    res.end(body);
+  } catch (e) {
+    res.statusCode = 503; res.setHeader('content-type', 'application/json'); res.setHeader('cache-control', 'no-store');
+    res.end(JSON.stringify({ error: e.message }));
+  }
+};
+module.exports._state = S; module.exports._build = build; module.exports._sync = sync;

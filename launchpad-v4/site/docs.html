@@ -86,8 +86,16 @@ footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:gr
         <p>Deployed addresses on Elysium. The factory and locker serve current launches.</p>
         <div class="rows" id="d-contracts"></div></div></section>
       <section id="events"><h2>Onchain events</h2><div class="body">
-        <p>For a trust-minimized integration, index the factory's <code class="i">Launched</code> event, register each emitted pool, and index its <code class="i">Swap</code> events. Onchain events are the authoritative source of truth.</p>
-        <p class="note">Event signatures are published here once the contracts are deployed.</p></div></section>
+        <p>For a trust-minimized integration, index the factory's <code class="i">TokenLaunched</code> event, register each emitted pool, and index its <code class="i">Swap</code> events on the PoolManager. Onchain events are the authoritative source of truth.</p>
+        <ul>
+          <li>Factory: <code class="i">TokenLaunched(address indexed token, address indexed creator, bytes32 indexed poolId, uint256 launchConfigId, address creatorFeeRecipient, uint16 creatorTaxBps, bool buybackEnabled, uint256[3] positionIds)</code></li>
+          <li>Factory: <code class="i">TokenMetadata(address indexed token, string name, string symbol, string logo, string description, (string twitter, string telegram, string discord, string website, string farcaster) socials)</code></li>
+          <li>PoolManager: <code class="i">Swap(bytes32 indexed id, address indexed sender, int128 amount0, int128 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick, uint24 fee)</code></li>
+          <li>Hook: <code class="i">HookFeeCollected(bytes32 indexed poolId, address currency, uint256 feeAmount, uint256 taxAmount)</code></li>
+          <li>Hook: <code class="i">SurchargeApplied(bytes32 indexed poolId, uint256 volatilityBps, uint256 snipeBps)</code></li>
+          <li>Hook: <code class="i">PoolFeesSwept(bytes32 indexed poolId, uint256 protocolAmount, uint256 buybackAmount, uint256 creatorAmount, uint256 tokensLocked)</code></li>
+          <li>Fee escrow: <code class="i">Credited(address indexed recipient, address indexed depositor, uint256 amount)</code> and <code class="i">Claimed(address indexed recipient, uint256 amount)</code></li>
+        </ul></div></section>
       <section id="state"><h2>Reading token state</h2><div class="body">
         <p>Every launch is one token, one pool and three locked positions. Read the pool from the PoolManager and the positions from the locker; the hook exposes the fee terms and the protection window for each token.</p>
         <pre><code>// price, in HYPE per token, from the pool's sqrtPriceX96
@@ -102,7 +110,7 @@ price = (sqrtPriceX96 / 2 ** 96) ** 2</code></pre></div></section>
   </div>
   <footer><div class="fcard float"><div class="fgrid"><div><b>LiquidFi</b><p>Launch and explore fixed-supply tokens on Elysium. Your wallet submits every transaction. LiquidFi does not custody assets.</p></div><div><h4>Docs</h4><a href="#overview">Overview</a><a href="#contracts">Contracts</a><a href="#events">Onchain events</a><a href="#trading">Trading and pricing</a><a href="#support">Support</a></div><div><h4>Product</h4><a href="/">Explore</a><a href="/creator">Profile</a><a href="/launch">Create</a></div><div><h4>Risk notice</h4><p>Transactions are submitted through your wallet and may be irreversible. Tokens can be volatile or lose all value. LiquidFi does not provide custody, warranties, or financial advice.</p></div></div><div class="fbot"><span>© 2026 LiquidFi.</span><span id="d-x"></span></div></div></footer>
 </main>
-<script src="/config.js?v=38"></script>
+<script src="/config.js?v=41"></script>
 <script>
 (function(){const C=window.CFG,c=C.chain.contracts;const rows=[['Factory','',c.factory],['Hook','',c.hook],['Locker','',c.locker],['Fee escrow','',c.escrow],['Buyback vault','',c.vault],['PoolManager','Uniswap v4',c.poolManager],['PositionManager','Uniswap v4',c.positionManager]];
 const ic='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
