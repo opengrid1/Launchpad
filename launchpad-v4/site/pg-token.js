@@ -24,7 +24,7 @@ window.PAGE = async () => {
       </aside>
     </div>
     <div class="dock"><div class="df"><small>${esc(x.symbol)}</small><b id="t-mpx"></b></div><div class="da"><button class="btn" data-ms="sell">Sell</button><button class="btn pri" data-ms="buy">Buy</button></div></div>`;
-  $('#t-img').src = x.img; $('#t-name').textContent = x.name; $('#t-sym').textContent = x.symbol;
+  $('#t-img').src = x.img; $('#t-img').dataset.sym = x.symbol; $('#t-img').dataset.addr = x.addr; $('#t-name').textContent = x.name; $('#t-sym').textContent = x.symbol;
   let host = null; // when set, the trade panel renders inside the mobile sheet
   function openSheet(s) { side = s; amt = ''; const ov = document.createElement('div'); ov.className = 'shov'; ov.innerHTML = `<div class="shc" role="dialog" aria-modal="true"><div class="shh"><p>${esc(x.symbol)}</p><h2 id="sh-h2"></h2></div><div class="shb"><p class="venue">Trades on the Uniswap v4 pool.</p><div id="sh-trade"></div></div></div>`; ov.onclick = (e) => { if (e.target === ov) closeSheet(); }; document.body.appendChild(ov); document.body.style.overflow = 'hidden'; host = $('#sh-trade', ov); renderTrade(); }
   function closeSheet() { const ov = $('.shov'); if (ov) ov.remove(); document.body.style.overflow = ''; host = null; renderTrade(); }
