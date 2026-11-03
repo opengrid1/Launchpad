@@ -8,7 +8,9 @@
     "router": "node build/router-compile.cjs",
     "test:fork": "node test/fork.test.cjs",
     "deploy": "node deploy.cjs",
-    "keeper": "node keeper/keeper.cjs"
+    "keeper": "node keeper/keeper.cjs",
+    "build:liquidfi": "node build/compile-liquidfi.cjs",
+    "test:liquidfi": "node test/liquidfi.fork.test.cjs"
   },
   "dependencies": {
     "ethers": "^6.17.0",
