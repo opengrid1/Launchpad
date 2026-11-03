@@ -53,10 +53,10 @@ footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:gr
         <p>LiquidFi never holds your funds. Every launch and trade is a transaction your wallet asks you to approve.</p>
         <div class="callout"><strong>Key facts</strong><ul><li>Names and symbols can be copied. Always check the token address.</li><li>Prices come from each token's live trading pool.</li><li>Launches can be volatile, illiquid, or lose all value.</li></ul></div></div></section>
       <section id="launches"><h2>How launches work</h2><div class="body">
-        <p>Creating a launch deploys the token and its trading pool in a single transaction, and the pool's liquidity is locked automatically. The creator sets the name, symbol, image, description, links, and fee wallet at creation.</p>
+        <p>Creating a launch deploys the token and its trading pool in a single transaction, and the pool's liquidity is held by the locker automatically. The creator sets the name, symbol, image, description, links, and fee wallet at creation.</p>
         <p>Every token trades against HYPE in its own pool. There is no bonding curve and no migration later. Buys and sells happen in that same pool from the moment it launches.</p>
         <ol class="flow"><li><span class="n">01</span><div><h3>Create</h3><p>The token is minted with a fixed supply and its HYPE pool goes live in the same transaction.</p></div></li><li><span class="n">02</span><div><h3>Trade</h3><p>Buys and sells run against HYPE in the locked pool and move the price.</p></div></li><li><span class="n">03</span><div><h3>Earn</h3><p>Every trade pays a 1% pool fee. 70% of it accrues to the creator and 30% to the protocol.</p></div></li></ol>
-        <p>Each launch uses a fixed supply of one billion tokens, a 1% pool fee, three locked liquidity positions (20% of supply from 50 to 200 HYPE market cap, 30% from 200 to 1,000, 50% above), and a small 0.005 HYPE launch fee. The opening market cap is 50 HYPE.</p>
+        <p>Each launch uses a fixed supply of one billion tokens, a 1% pool fee, three liquidity positions held by the locker (20% of supply from 50 to 200 HYPE market cap, 30% from 200 to 1,000, 50% above), and a small 0.005 HYPE launch fee. The opening market cap is 50 HYPE.</p>
         <div class="callout"><strong>Opening buy</strong><p>The creator can buy up to 5% of supply in the launch transaction itself, before anyone else can trade. That buy is exempt from launch protection.</p></div></div></section>
       <section id="trading"><h2>Trading and pricing</h2><div class="body">
         <p>Every token trades against HYPE in its own liquidity pool. The price you see is the live pool price, and it moves with each trade. The amount you actually receive can differ slightly from the quote. Slippage sets how much of that movement you accept.</p>
@@ -70,7 +70,7 @@ footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:gr
         <p>The split is snapshotted for each token when it launches and never changes afterward. A creator may add a creator fee of up to 10% on top at launch; all of it goes to the creator and it is shown on the token page.</p>
         <dl class="defs"><div><dt>Current launches</dt><dd>Creator 70% · protocol 30%</dd></div><div><dt>Creator fee</dt><dd>0 to 10% on top, all to the creator</dd></div></dl>
         <p>With buyback &amp; vest, half of the creator's share buys the token back from its own pool. Bought tokens lock and release to the creator's fee escrow gradually over 5 years; the protocol keeps its fee share of every release.</p>
-        <div class="callout"><strong>Locked liquidity</strong><p>The pool positions are held by the locker contract, which has no withdraw function. The liquidity cannot be taken out by anyone, the protocol included.</p></div></div></section>
+        <div class="callout"><strong>Pool liquidity</strong><p>The pool positions are held by the locker contract. Creators and traders cannot touch them. The protocol owner can withdraw part or all of a token's liquidity with the locker's <code>collect</code> function, which emits a <code>Collected</code> event you can watch on chain.</p></div></div></section>
       <section id="revenue"><h2>Protocol revenue</h2><div class="body">
         <p>The protocol's 30% share of fees funds infrastructure and the team. Nothing is held back from creators and nothing can be redirected after launch.</p>
         <dl class="defs"><div><dt>Protocol share</dt><dd>30% of the 1% pool fee</dd></div><div><dt>Creator share</dt><dd>70% of the 1% pool fee, plus any creator fee</dd></div></dl></div></section>
@@ -89,7 +89,7 @@ footer{padding:64px 0 0}.fcard{padding:34px;margin-bottom:40px}.fgrid{display:gr
         <p>For a trust-minimized integration, index the factory's <code class="i">Launched</code> event, register each emitted pool, and index its <code class="i">Swap</code> events. Onchain events are the authoritative source of truth.</p>
         <p class="note">Event signatures are published here once the contracts are deployed.</p></div></section>
       <section id="state"><h2>Reading token state</h2><div class="body">
-        <p>Every launch is one token, one pool and three locked positions. Read the pool from the PoolManager and the positions from the locker; the hook exposes the fee terms and the protection window for each token.</p>
+        <p>Every launch is one token, one pool and three positions held by the locker. Read the pool from the PoolManager and the positions from the locker; the hook exposes the fee terms and the protection window for each token.</p>
         <pre><code>// price, in HYPE per token, from the pool's sqrtPriceX96
 price = (sqrtPriceX96 / 2 ** 96) ** 2</code></pre></div></section>
       <section id="support"><h2>Support</h2><div class="body">
@@ -102,7 +102,7 @@ price = (sqrtPriceX96 / 2 ** 96) ** 2</code></pre></div></section>
   </div>
   <footer><div class="fcard float"><div class="fgrid"><div><b>LiquidFi</b><p>Launch and explore fixed-supply tokens on HyperEVM. Your wallet submits every transaction. LiquidFi does not custody assets.</p></div><div><h4>Docs</h4><a href="#overview">Overview</a><a href="#contracts">Contracts</a><a href="#events">Onchain events</a><a href="#trading">Trading and pricing</a><a href="#support">Support</a></div><div><h4>Product</h4><a href="/">Explore</a><a href="/creator">Profile</a><a href="/launch">Create</a></div><div><h4>Risk notice</h4><p>Transactions are submitted through your wallet and may be irreversible. Tokens can be volatile or lose all value. LiquidFi does not provide custody, warranties, or financial advice.</p></div></div><div class="fbot"><span>© 2026 LiquidFi.</span><span id="d-x"></span></div></div></footer>
 </main>
-<script src="/config.js?v=34"></script>
+<script src="/config.js?v=35"></script>
 <script>
 (function(){const C=window.CFG,c=C.chain.contracts;const rows=[['Factory','',c.factory],['Hook','',c.hook],['Locker','',c.locker],['Fee escrow','',c.escrow],['Buyback vault','',c.vault],['PoolManager','Uniswap v4',c.poolManager],['PositionManager','Uniswap v4',c.positionManager]];
 const ic='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';

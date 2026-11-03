@@ -12,8 +12,9 @@ graduation, no community takeover, admin powers 1:1 with Pons, plus a volatility
 3. Liquidity: 100% of the supply minted into three positions through the official PositionManager at
    launch, from the starting price upward: 20% of supply from 50 to 200 HYPE market cap, 30% from 200 to
    1,000, 50% from 1,000 to the max tick. No team or creator allocation.
-4. Lock: the three position NFTs go to the locker, which has no withdraw path; pool fee is 0 so there are
-   no LP fees to collect. Liquidity is locked forever.
+4. Lock: the three position NFTs go to the locker. Pool fee is 0 so there are no LP fees to collect. Nobody but
+   the protocol owner can touch the positions; the owner keeps the OneHook-style `collect` (item 23a). This is
+   disclosed on the docs and on every token page as "held by the protocol", not "locked forever".
 5. Opening buy: the creator may buy in the same transaction, capped at 5% of the supply; the hook's snipe
    tax exempts the creator for that buy only.
 6. Launch fee 0.005 HYPE to the protocol fee recipient (owner-settable).
@@ -65,6 +66,10 @@ graduation, no community takeover, admin powers 1:1 with Pons, plus a volatility
 22. Sweep operator, launch fee, launch enabled switch, creator whitelist, pair-asset approvals (v1 ships
     HYPE only; other quote assets can be approved later).
 23. Creator-fee-recipient override with a 3-day timelock, and the delayed rescue paths, exactly as in Pons.
+23a. Hybrid with OneHook (decided 2026-11-03): the locker exposes `collect(token, bps, recipient)`, owner only,
+    which decreases the three positions of that token by `bps` (1 to 10,000) in proportion and sends the
+    withdrawn tokens and HYPE to `recipient`, with a `Collected` event. Same signature and behaviour as
+    OneHook's factory `collect`. Expect scanners to flag it; the site says so plainly.
 24. Ownable2Step on hook, factory, locker, vault, escrow. Owner 0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b.
 
 ## 6. Platform and operations
