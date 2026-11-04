@@ -2,9 +2,13 @@
   "name": "liquidfi-site",
   "private": true,
   "description": "LiquidFi static site and its API functions (state indexer, logo upload, fee sweep keeper)",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.4.0",
     "@vercel/blob": "2.8.2",
-    "ethers": "6.13.4"
+    "ethers": "6.13.4",
+    "zod": "4.6.7"
   }
 }

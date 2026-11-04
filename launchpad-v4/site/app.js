@@ -99,7 +99,7 @@
 
   // ---- shell: fixed rail on desktop, 56px top rail on mobile, right-aligned footer
   const page = document.body.dataset.page || '';
-  const NAVL = [['/launch', 'Create a token', 'plus', 'launch'], ['/', 'Launches', 'rocket', 'home'], ['/creator', 'Profile', 'user', 'creator'], ['/docs', 'Docs', 'book', 'docs']];
+  const NAVL = [['/launch', 'Create a token', 'plus', 'launch'], ['/', 'Launches', 'rocket', 'home'], ['/trends', 'Trending', 'flame', 'trends'], ['/creator', 'Profile', 'user', 'creator'], ['/docs', 'Docs', 'book', 'docs']];
   function renderShell() {
     let side = $('#side'); if (!side) { side = document.createElement('aside'); side.id = 'side'; document.body.prepend(side); }
     side.innerHTML = `<a class="brand" href="/"><img src="/img/logo.svg" alt=""><span>${esc(C.brand)}</span></a><div class="srw" id="side-search"><label class="srch">${ic('search')}<input id="s-q-d" type="search" placeholder="Search" aria-label="Search tokens" autocomplete="off" spellcheck="false"><kbd>/</kbd><button class="sclr hidden" type="button" aria-label="Clear">${ic('x')}</button></label><div class="spanel hidden" id="s-panel-d" role="listbox"></div></div><nav>${NAVL.map(([h, l, i, k]) => `<a href="${h}" class="${page === k ? 'on' : ''}">${ic(i)}${l}</a>`).join('')}</nav><div class="sbot"><div class="kvs"><span>HYPE</span><b id="hype-px">${fmtUsd(APP.hypeUsd)}</b></div><div class="kvs"><span>Gas</span><b><span id="gas-px">…</span> gwei</b></div><div class="rowb" id="theme-row" role="button" tabindex="0">${ic('theme')}Theme<span class="tsw" id="theme-sw"><span data-th="light" role="button" aria-label="Light">${ic('sun')}</span><span data-th="dark" role="button" aria-label="Dark">${ic('moon')}</span></span></div><span id="wallet-btn-s"></span></div>`;
