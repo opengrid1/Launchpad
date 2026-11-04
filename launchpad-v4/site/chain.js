@@ -16,7 +16,7 @@
     factory: new X.Interface(['function launch((string name,string symbol,string logo,string description,(string twitter,string telegram,string discord,string website,string farcaster) socials,address creatorFeeRecipient,uint16 creatorTaxBps,bool buybackEnabled,bytes32 expectedEconomics,bytes32 salt,uint256 openingBuy,uint256 minTokensOut) params, uint256 launchConfigId) payable returns (address)', 'function previewLaunchEconomics(uint256) view returns (bytes32)', 'function launchFee() view returns (uint256)', 'function launchEnabled() view returns (bool)', 'function canLaunch(address) view returns (bool)', 'event TokenLaunched(address indexed token, address indexed creator, bytes32 indexed poolId, uint256 launchConfigId, address creatorFeeRecipient, uint16 creatorTaxBps, bool buybackEnabled, uint256[3] positionIds)', 'error NotWhitelisted()', 'error LaunchFeeNotPaid()', 'error LogoRequired()', 'error InvalidTokenParams()', 'error LinkInDescription()', 'error CreatorTaxTooHigh()', 'error OpeningBuyTooLarge()', 'error EconomicsMismatch()', 'error LaunchConfigDisabled()']),
     erc20: new X.Interface(['function balanceOf(address) view returns (uint256)', 'function allowance(address,address) view returns (uint256)', 'function approve(address,uint256) returns (bool)']),
     permit2: new X.Interface(['function allowance(address,address,address) view returns (uint160 amount, uint48 expiration, uint48 nonce)', 'function approve(address token, address spender, uint160 amount, uint48 expiration)']),
-    router: new X.Interface(['function execute(bytes commands, bytes[] inputs, uint256 deadline) payable']),
+    router: new X.Interface(['function execute(bytes commands, bytes[] inputs, uint256 deadline) payable', 'error V4TooLittleReceived(uint256 minAmountOutReceived, uint256 amountReceived)', 'error V4TooMuchRequested(uint256 maxAmountInRequested, uint256 amountRequested)', 'error DeadlinePassed(uint256 deadline)', 'error WrappedError(address target, bytes4 selector, bytes reason, bytes details)']),
     escrow: new X.Interface(['function claim() returns (uint256)', 'function balanceOf(address) view returns (uint256)']),
     mc: new X.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])', 'function getEthBalance(address) view returns (uint256)']),
   };
@@ -44,9 +44,10 @@
     while (Date.now() - t0 < ms) { const r = await rpc('eth_getTransactionReceipt', [hash], 3, C.chain.key).catch(() => null); if (r) { if (parseInt(r.status, 16) !== 1) throw new Error('Transaction reverted on ' + C.chain.name); return r; } await new Promise((s) => setTimeout(s, 1500)); }
     throw new Error('Still waiting for the transaction after 4 minutes; check it on the explorer');
   }
+  const ERR = { V4TooLittleReceived: 'The price moved past your slippage. Raise the slippage or trade a smaller amount.', DeadlinePassed: 'The transaction waited too long. Try again.', OpeningBuyTooLarge: 'The opening buy is over 5% of the supply.', LogoRequired: 'Add an image for the token.', LinkInDescription: 'Remove the link from the description.', NotWhitelisted: 'Launches are paused right now.' };
   function revertText(e) {
     const d = e && (e.data || (e.info && e.info.error && e.info.error.data) || (e.error && e.error.data));
-    if (typeof d === 'string' && d.length >= 10) for (const f of Object.values(I)) { try { const p = f.parseError(d); if (p) return p.name; } catch {} }
+    if (typeof d === 'string' && d.length >= 10) for (const f of Object.values(I)) { try { const p = f.parseError(d); if (p) return ERR[p.name] || p.name; } catch {} }
     const m = APP.errMsg(e); if (/timed? ?out|busy|unavailable/i.test(m)) return C.chain.name + "'s RPC is busy, so the wallet could not send. Try again in a moment.";
     return m;
   }
@@ -112,15 +113,30 @@
     if (T.snipeSeconds && el >= 0 && el < T.snipeSeconds) { const s = T.snipeStartBps >> Math.floor((el * 14) / T.snipeSeconds); const sn = Math.min(s, 9900 - base - t.taxBps); return { kind: 'snipe', bps: base + t.taxBps, snipeBps: sn, left: T.snipeSeconds - el, total: base + t.taxBps + sn, extraBps: 0 }; }
     return { kind: extra > 0 ? 'vol' : 'base', bps: base + t.taxBps, extraBps: extra, left, total: base + t.taxBps + extra };
   }
+  // A trade that itself moves the price past the volatility threshold (against the price at the start of the hook's
+  // window) pays the full volatility fee on that same trade: the hook reads the price after the swap.
+  function selfSpike(t, sqEnd) {
+    const T = t.terms || {}; if (!T.volExtraBps || !T.volThresholdBps || !sqEnd) return false;
+    const n = now(t.net); if (T.snipeSeconds && n - T.launchedAt < T.snipeSeconds) return false;
+    const trs = TR.get(t.addr) || [], th = T.volThresholdBps / 1e4, sq0 = poolOf(t).sq;
+    let pxRef = startPx(t); for (let i = trs.length - 1; i >= 0; i--) if (trs[i].ts <= n - (T.volWindow || 60)) { pxRef = trs[i].p; break; }
+    const refs = [sq0, pxRef > 0 ? 1 / Math.sqrt(pxRef) : 0].filter((x) => x > 0);
+    return refs.some((r) => { const ratio = (sqEnd / r) ** 2; return ratio >= 1 + th || ratio <= 1 - th; });
+  }
+  function cutFor(t, fs, sqEnd, buy) { // total basis points the hook takes from this trade's output
+    const T = t.terms || {}; let extra = fs.extraBps || 0;
+    if (fs.kind !== 'snipe' && selfSpike(t, sqEnd)) extra = Math.max(extra, T.volExtraBps || 0);
+    return fs.kind === 'snipe' ? (buy ? Math.min(9900, fs.total) : fs.bps) : Math.min(9900, fs.bps + extra);
+  }
   function quoteBuy(a, chain, hypeIn) {
     const t = BY.get(low(a)); const px = t ? pxOf(poolOf(t).sq) : 0; if (!t || !(hypeIn > 0)) return { tokens: 0, fee: 0, snipe: 0, px, impact: 0, feeBps: 0 };
-    const fs = feeState(a), snipe = fs.kind === 'snipe' ? fs.snipeBps : 0, cutBps = Math.min(9900, fs.total);
-    const sim = swapSim(t, true, hypeIn * 1e18), gross = sim.out / 1e18, tokens = gross * (1 - cutBps / 1e4), avg = gross > 0 ? hypeIn / gross : px;
+    const fs = feeState(a), snipe = fs.kind === 'snipe' ? fs.snipeBps : 0;
+    const sim = swapSim(t, true, hypeIn * 1e18), cutBps = cutFor(t, fs, sim.sq, true), gross = sim.out / 1e18, tokens = gross * (1 - cutBps / 1e4), avg = gross > 0 ? hypeIn / gross : px;
     return { tokens, fee: gross * ((cutBps - snipe) / 1e4) * avg, snipe: gross * (snipe / 1e4) * avg, feeBps: cutBps, px, impact: px ? (pxOf(sim.sq) / px - 1) * 100 : 0 };
   }
   function quoteSell(a, chain, tokensIn) {
     const t = BY.get(low(a)); const px = t ? pxOf(poolOf(t).sq) : 0; if (!t || !(tokensIn > 0)) return { hype: 0, fee: 0, px, impact: 0, feeBps: 0 };
-    const fs = feeState(a), cutBps = fs.kind === 'snipe' ? fs.bps : fs.total; const sim = swapSim(t, false, tokensIn * 1e18), gross = sim.out / 1e18;
+    const fs = feeState(a), sim = swapSim(t, false, tokensIn * 1e18), cutBps = cutFor(t, fs, sim.sq, false), gross = sim.out / 1e18;
     return { hype: gross * (1 - cutBps / 1e4), fee: gross * cutBps / 1e4, feeBps: cutBps, px, impact: px ? (pxOf(sim.sq) / px - 1) * 100 : 0 };
   }
 
