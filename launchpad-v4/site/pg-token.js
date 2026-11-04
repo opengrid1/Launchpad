@@ -3,6 +3,7 @@
 window.PAGE = async () => {
   const { $, $$, esc, ic, fmtNum, fmtUsd, fmtHype, fmtPrice, fmtPct, shortAddr, ago, fmtDate, toast, errMsg } = APP, C = CFG, E = C.econ;
   const addr = APP.pathAddr(); let x = DATA.token(addr);
+  if (!x && /^0x[0-9a-fA-F]{40}$/.test(addr || '')) { $('#pg-token').innerHTML = '<div class="empty">Loading the coin…</div>'; x = await DATA.find(addr); }
   if (x && x.net && x.net !== C.chain.key) await APP.setChain(x.net, false); // the token's chain: wallet, explorer and gas follow it
   const root = $('#pg-token'); if (!x) { root.innerHTML = `<div class="empty">No coin at this address.<br><a class="ac" href="/">Back home</a></div>`; return; }
   document.title = `${x.name} ($${x.symbol}) | ${C.brand}`;
