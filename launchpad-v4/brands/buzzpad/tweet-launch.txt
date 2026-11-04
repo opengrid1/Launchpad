@@ -20,8 +20,8 @@ For the first 10 seconds after launch, buys pay a snipe tax that starts at 99% a
 
 If the price moves more than 10% within a minute, an extra fee of up to 2% kicks in and fades out over 2 minutes. This slows down sudden pumps and dumps.
 
-Not sure what to launch? The Trending page shows what people are searching for, reading and betting on right now, and turns any topic into a coin idea with a name, ticker and logo. One click and it's ready to launch.
-
 Every BuzzPad contract is open source and verified on Etherscan. You don't have to trust us, you can read the code yourself.
 
 Catch the buzz. Launch it on Ethereum.
+
+buzzpad.fun

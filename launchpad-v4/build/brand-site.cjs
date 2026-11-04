@@ -26,6 +26,7 @@ for (const f of [".vercelignore"]) if (fs.existsSync(path.join(SITE, f))) fs.cop
 if (keep) fs.cpSync(keep, LINK, { recursive: true });
 fs.copyFileSync(path.join(B, "config.js"), path.join(OUT, "config.js"));
 const IMG = path.join(B, "img"); if (fs.existsSync(IMG)) for (const f of fs.readdirSync(IMG)) fs.copyFileSync(path.join(IMG, f), path.join(OUT, "img", f));
+for (const f of spec.drop || []) fs.rmSync(path.join(OUT, f), { force: true }); // features this brand leaves out
 if (spec.theme) fs.appendFileSync(path.join(OUT, "ui.css"), "\n/* brand: " + spec.name + " */\n" + spec.theme + "\n");
 
 const chainWords = /HYPE|Hyper|Elysium|ETH|Ethereum/;

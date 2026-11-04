@@ -1,0 +1,9 @@
+$BUZZPAD is live on Ethereum.
+
+The official token of BuzzPad, launched on our own launchpad the same way every coin is: straight into a Uniswap v4 pool paired with ETH, liquidity locked from the first block, no bonding curve and no migration.
+
+Fees from $BUZZPAD go to the BuzzPad treasury.
+
+CA: 0xfab958b20153139e62dae50dbfa4e03fc6f5f144
+
+buzzpad.fun
