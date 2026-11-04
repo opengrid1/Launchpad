@@ -120,6 +120,12 @@ window.PAGE = async () => {
   const guard = (fn) => async () => { try { await fn(); } catch (e) { APP.toast(APP.errMsg(e), 'err'); } };
 
   // ---- render
+  // every launched token (from the indexer), one click to open its tools
+  function tokList() {
+    const ts = window.DATA && DATA.tokens ? DATA.tokens() : [];
+    if (!ts.length) return `<span class="hint">${live ? 'No tokens launched yet.' : 'Tokens appear here once the contracts are live.'}</span>`;
+    return ts.slice(0, 50).map((t) => `<button class="tk${lc(T.addr) === t.addr ? ' on' : ''}" data-pick="${t.addr}"><img src="${esc(t.img)}" alt=""><span><b>${esc(t.name)}</b><i>${esc(t.symbol)} · ${APP.fmtNum(t.mcap, 1)} HYPE</i></span></button>`).join('');
+  }
   const setRow = (title, now, desc, id, value, suf, act, owner = 'factory', extra = '') => `<div class="set"><div class="sl"><b>${title}</b><span><span class="now">Now ${now}.</span> ${desc}</span></div><div class="sr"><div class="ipw"><input class="inp" id="${id}" value="${esc(value)}" inputmode="decimal" autocomplete="off">${suf ? `<span class="suf">${suf}</span>` : ''}</div><button class="btn sm" data-act="${act}" ${ctl(owner)}>Save</button>${extra}</div></div>`;
   const ctl = (k) => (!live || isOwner(k) ? '' : 'disabled title="Only the owner of this contract can do this"');
   function render() {
@@ -168,7 +174,8 @@ window.PAGE = async () => {
       <div class="row-end"><button class="btn sm" data-act="sweep" ${live && lc(s.feeSweepOperator) === m ? '' : 'disabled title="Only the fee sweep operator or the creator can sweep"'}>Sweep fees</button><button class="btn sm" data-act="rescue" ${ctl('hook')}>Rescue fees</button>${t.rec.buybackEnabled ? `<button class="btn sm" data-act="bbOff" ${ctl('factory')}>Turn buyback off</button>` : ''}</div>
       <div class="sub"><b>Collect liquidity</b><span class="hint">Removes this share of each locked position and sends both sides to the recipient. It cannot be undone and it moves the token's price.</span><div class="grid2"><div class="fld"><label for="a-cbps">Share of liquidity</label><div class="ipw"><input class="inp" id="a-cbps" placeholder="10" inputmode="decimal"><span class="suf">%</span></div></div><div class="fld"><label for="a-crec">Recipient</label><input class="inp" id="a-crec" value="${esc(m || '')}" spellcheck="false"></div></div><div class="row-end"><button class="btn sm warn" data-act="collect" ${ctl('locker')}>Collect</button></div></div>
       <div class="sub"><b>Creator fee recipient</b><span class="hint">For a creator who lost their key. The change waits 3 days, then anyone can execute it within the next 3 days. You can cancel it meanwhile.</span>${t.pend ? `<div class="note-w">Change to ${link(t.pend.newRecipient)} proposed. It can run from ${APP.fmtDate(Number(t.pend.effectiveAt))} until ${APP.fmtDate(Number(t.pend.expiresAt))}.</div><div class="row-end"><button class="btn sm" data-act="recExec">Execute</button><button class="btn sm" data-act="recCancel" ${ctl('factory')}>Cancel</button></div>` : `<div class="sr"><div class="ipw"><input class="inp" id="a-newrec" placeholder="0x… new recipient" spellcheck="false"></div><button class="btn sm" data-act="recSet" ${ctl('factory')}>Propose</button></div>`}</div>`;
-    const tokens = `<section class="acard"><div class="h"><div><h2>Token tools</h2><p>Look up a launched token to sweep or rescue its fees, collect liquidity, or recover its creator fee recipient.</p></div></div>
+    const tokens = `<section class="acard"><div class="h"><div><h2>Token tools</h2><p>Pick a launched token, or paste its address, to collect liquidity, sweep or rescue its fees, or recover its creator fee recipient.</p></div></div>
+      <div class="toklist" id="a-toklist">${tokList()}</div>
       <div class="sr"><div class="ipw"><input class="inp" id="a-tok" placeholder="0x… token address" value="${esc(T.addr)}" spellcheck="false" autocomplete="off"></div><button class="btn sm pri" data-act="tokLoad">Look up</button></div>${tokenBody}</section>`;
 
     const cfgRows = s.configs.map((c, n) => !c ? '' : `<div class="cfg"><b>#${n}</b><span>${APP.fmtNum(Number(E.formatEther(c.supply)))}</span><span>${APP.fmtNum(Number(E.formatEther(c.startMcap)))} HYPE</span><span class="c-x">${APP.fmtNum(Number(E.formatEther(c.band1Mcap)))} / ${APP.fmtNum(Number(E.formatEther(c.band2Mcap)))} HYPE</span><span class="c-x">${pct(c.band0Bps)} / ${pct(c.band1Bps)} / ${pct(10000 - c.band0Bps - c.band1Bps)}</span><span>${c.tickSpacing}</span><span>${c.enabled ? 'On' : 'Off'}</span><span class="act"><button class="btn sm" data-cfg="${n}" ${ctl('factory')}>${c.enabled ? 'Turn off' : 'Turn on'}</button></span></div>`).join('');
@@ -230,4 +237,6 @@ window.PAGE = async () => {
   try { await load(); } catch (e) { root.innerHTML = `<div class="acard gate"><p>Could not read the contracts: ${esc(APP.errMsg(e))}</p><button class="btn" onclick="location.reload()">Try again</button></div>`; return; }
   render();
   APP.onWallet(render);
+  APP.onUpdate(() => { const el = $('#a-toklist'); if (el) el.innerHTML = tokList(); }); // keeps typed inputs, refreshes the list
+  root.addEventListener('click', (e) => { const b = e.target.closest('[data-pick]'); if (!b) return; guard(async () => { T.addr = ethers.getAddress(b.dataset.pick); T.info = null; render(); T.info = await loadToken(T.addr); render(); const c = $('#a-cbps'); if (c) c.scrollIntoView({ block: 'center', behavior: 'smooth' }); })(); });
 };
