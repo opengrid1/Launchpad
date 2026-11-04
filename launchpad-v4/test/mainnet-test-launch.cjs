@@ -4,7 +4,7 @@
 const fs = require('fs');
 const SITE = '/home/user/Launchpad/launchpad-v4/site';
 const { ethers, NET, rpc, multicall, sendViaInbox, sleep } = require(SITE + '/api/_lib');
-const B = 'https://godmode-pad.vercel.app';
+const B = 'https://www.liquidfi.fun';
 const key = fs.readFileSync('/home/user/Launchpad/contracts/.env.deployer.v3', 'utf8').match(/PRIVATE_KEY=(0x)?([0-9a-fA-F]{64})/)[2];
 const w = new ethers.Wallet('0x' + key); const me = w.address;
 const UR = '0xA13f7611115752DEB2B13813BDDE16A5073e4b45', PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3', QUOTER = '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5';

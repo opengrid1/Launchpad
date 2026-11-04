@@ -3,7 +3,7 @@
    The site reads the LiquidFi contracts in `chains[].contracts` through chain.js and the /api/state indexer. */
 window.CFG = {
   brand: 'LiquidFi', tagline: 'Launch on Elysium. HYPE pair, locked liquidity, 1% fee, 70% to the creator.',
-  x: 'https://x.com/liquidfi_fun', site: '',
+  x: 'https://x.com/liquidfi_fun', site: 'https://liquidfi.fun',
   mode: 'live',
   chains: [
     // Elysium (chain 99901, gas in HYPE). The key stays 'hyper' because the pages use it as the HYPE-chain key.
