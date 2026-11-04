@@ -10,7 +10,7 @@ window.PAGE = async () => {
   const exp = (kind, v) => `${C.chain.explorer}/${kind}/${v}`;
   const usd = (hype) => fmtUsd((Number(hype) || 0) * APP.hypeUsd);
   const spark = (t, w = 120, h = 36) => { const cs = DATA.candles(t.addr, 900, 'hyper').slice(-40); if (cs.length < 2) return `<svg class="sp" viewBox="0 0 ${w} ${h}"></svg>`; const v = cs.map((b) => b.c), lo = Math.min(...v), hi = Math.max(...v), rg = hi - lo || hi || 1; const pts = v.map((y, i) => `${(i / (v.length - 1) * (w - 2) + 1).toFixed(1)},${((h - 2) - (y - lo) / rg * (h - 4) + 1).toFixed(1)}`).join(' '); const col = v[v.length - 1] >= v[0] ? '#16b364' : '#ef4444'; return `<svg class="sp" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`; };
-  const tokenRow = (t) => `<a class="r" href="${tokenUrl(t)}"><span class="mk"><img src="${t.img}" alt="" data-sym="${esc(t.symbol)}" data-addr="${t.addr}" loading="lazy"></span><span class="id"><span class="nm"><b>${esc(t.name)}</b><em>${esc(t.symbol)}</em></span><span class="meta"><span class="cr">${APP.cmark(t.creator)}${shortAddr(t.creator)}</span><time>${t.age}</time></span></span><span class="pair hm"><img src="${C.chain.logo}" alt="">HYPE</span><span class="hm">${spark(t)}</span><span class="mc">${fmtUsd(t.mcapUsd)}</span></a>`;
+  const tokenRow = (t) => `<a class="r" href="${tokenUrl(t)}"><span class="mk"><img src="${t.img}" alt="" data-sym="${esc(t.symbol)}" data-addr="${t.addr}" loading="lazy"></span><span class="id"><span class="nm"><b>${esc(t.name)}</b><em>${esc(t.symbol)}</em></span><span class="meta"><span class="cr">${APP.cmark(t.creator)}${shortAddr(t.creator)}</span><time>${t.age}</time></span></span><span class="pair hm"><img src="${C.chainOf(t.net).logo}" alt="">${esc(t.chainName || C.chain.name)}</span><span class="hm">${spark(t)}</span><span class="mc">${fmtUsd(t.mcapUsd)}</span></a>`;
 
   // portfolio value over the range, from the wallet's own trades and each token's candles
   function series(w, days) {
@@ -53,7 +53,7 @@ window.PAGE = async () => {
   function launches(w) {
     if (!w.launches.length) return `<div class="pempty">No launches yet.${mine() ? ` <a class="ac" href="/launch">Create a token</a>.` : ''}</div>`;
     const cap = w.launches.reduce((s, t) => s + t.mcapUsd, 0);
-    return `<div class="rows"><div class="pstats"><span>${w.launches.length} launched</span><span>combined market cap ${fmtUsd(cap)}</span></div><div class="rh"><span>Token</span><span>Pair</span><span class="ra">Graph</span><span class="ra">Market cap</span></div>${w.launches.map(tokenRow).join('')}</div>`;
+    return `<div class="rows"><div class="pstats"><span>${w.launches.length} launched</span><span>combined market cap ${fmtUsd(cap)}</span></div><div class="rh"><span>Token</span><span>Chain</span><span class="ra">Graph</span><span class="ra">Market cap</span></div>${w.launches.map(tokenRow).join('')}</div>`;
   }
   function fees(w) {
     const c = DATA.creator(w.address), me = mine();

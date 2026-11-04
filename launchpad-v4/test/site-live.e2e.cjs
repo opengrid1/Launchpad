@@ -4,7 +4,7 @@ const http = require('http'), fs = require('fs'), path = require('path');
 const SP = '/tmp/claude-0/-home-user-Launchpad/2c15f8d4-9629-5fde-b76e-4ea97bf2ebee/scratchpad', ROOT = '/home/user/Launchpad/launchpad-v4/site', OUT = SP + '/shots';
 const NODE = 'http://127.0.0.1:8548', D = require(SP + '/lqf-local.json');
 const USER = '0x90F79bf6EB2c4f870365E785982E1f101E93b906'; // hardhat account 3
-Object.assign(process.env, { ELYSIUM_RPC: NODE, LQF_FACTORY: D.factory, LQF_HOOK: D.hook, LQF_LOCKER: D.locker, LQF_ESCROW: D.feeEscrow, LQF_VAULT: D.buybackVault, LQF_FROM_BLOCK: "0", LOCAL_UPLOAD_DIR: SP + '/uploads', LOCAL_UPLOAD_BASE: '', DIRECT_SEND: '1', CRON_SECRET: 'local', SWEEP_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' });
+Object.assign(process.env, { ELYSIUM_RPC: NODE, LQF_FACTORY: D.factory, LQF_HOOK: D.hook, LQF_LOCKER: D.locker, LQF_ESCROW: D.feeEscrow, LQF_VAULT: D.buybackVault, LQF_FROM_BLOCK: "0", LOCAL_UPLOAD_DIR: SP + '/uploads', LOCAL_UPLOAD_BASE: '', DIRECT_SEND: '1', LQF_ONLY: 'elysium', CRON_SECRET: 'local', SWEEP_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' });
 const { ethers } = require(ROOT + '/node_modules/ethers');
 const API = { state: require(ROOT + '/api/state.js'), upload: require(ROOT + '/api/upload.js'), sweep: require(ROOT + '/api/sweep.js') };
 const K = { factory: D.factory, hook: D.hook, locker: D.locker, escrow: D.feeEscrow, vault: D.buybackVault, poolManager: D.poolManager, positionManager: D.positionManager, multicall: '0xcA11bde05977b3631167028862bE2a173976CA11', router: '0xA13f7611115752DEB2B13813BDDE16A5073e4b45' };
@@ -15,7 +15,7 @@ const srv = http.createServer(async (req, res) => {
   if (p.startsWith('/logos/')) { const f = path.join(SP, 'uploads', p); if (fs.existsSync(f)) { res.writeHead(200, { 'content-type': MIME[path.extname(f)] }); return fs.createReadStream(f).pipe(res); } }
   if (p.startsWith('/token/')) p = '/token.html'; if (p === '/') p = '/index.html'; if (!path.extname(p)) p += '.html';
   const f = path.join(ROOT, p); if (!fs.existsSync(f)) { res.writeHead(404); return res.end('nf'); }
-  let body = fs.readFileSync(f); if (p === '/config.js') body = String(body).replace("rpc: 'https://rpc-live.elysp.com'", `rpc: '${NODE}'`).replace(/contracts: \{[^}]*\}/, 'contracts: ' + JSON.stringify(K));
+  let body = fs.readFileSync(f); if (p === '/config.js') body = String(body).replace(/chains: \[[\s\S]*?\n  \],\n/, () => `chains: [ { key: 'elysium', evm: true, id: 99901, hex: '0x1863d', name: 'Elysium', short: 'Elysium', quote: 'HYPE', rpc: '${NODE}', explorer: 'https://scan.elysp.com/#', logo: '/img/hyper.png', blockSec: 1, main: true, contracts: ${JSON.stringify(K)} } ],\n`);
   res.writeHead(200, { 'content-type': MIME[path.extname(f)] || 'application/octet-stream' }); res.end(body);
 });
 srv.listen(8791, async () => {
@@ -84,7 +84,7 @@ srv.listen(8791, async () => {
     await pg.screenshot({ path: OUT + '/live-token-trades.png', fullPage: true });
     // 5. keeper sweeps, creator claims
     const sres = await new Promise((done) => { const r = { h: {}, setHeader() {}, end(b) { done(JSON.parse(b)); } }; API.sweep({ headers: { authorization: 'Bearer local' } }, r); });
-    ok(sres.swept && sres.swept.length === 1 && sres.swept[0].status === 1, 'keeper swept the pool: ' + JSON.stringify(sres).slice(0, 200));
+    const sw = sres.elysium || {}; ok(sw.swept && sw.swept.length === 1 && sw.swept[0].status === 1, 'keeper swept the pool: ' + JSON.stringify(sres).slice(0, 200));
     await pg.goto(B + '/creator'); await pg.waitForTimeout(2500); await waitFor(async () => { await pg.click('[data-tab="fees"]').catch(() => {}); return pg.evaluate((w) => DATA.creator(w).claimable > 0 && !!document.querySelector('#p-claim'), USER.toLowerCase()); }, 30000);
     const cl = await pg.evaluate((w) => DATA.creator(w), USER.toLowerCase());
     ok(cl.claimable > 0, 'creator fees claimable in the escrow: ' + cl.claimable.toFixed(6) + ' HYPE; lifetime ' + cl.lifetime.toFixed(6));

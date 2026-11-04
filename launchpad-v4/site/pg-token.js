@@ -3,6 +3,7 @@
 window.PAGE = async () => {
   const { $, $$, esc, ic, fmtNum, fmtUsd, fmtHype, fmtPrice, fmtPct, shortAddr, ago, fmtDate, toast, errMsg } = APP, C = CFG, E = C.econ;
   const addr = APP.pathAddr(); let x = DATA.token(addr);
+  if (x && x.net && x.net !== C.chain.key) await APP.setChain(x.net, false); // the token's chain: wallet, explorer and gas follow it
   const root = $('#pg-token'); if (!x) { root.innerHTML = `<div class="empty">No coin at this address.<br><a class="ac" href="/">Back home</a></div>`; return; }
   document.title = `${x.name} ($${x.symbol}) | ${C.brand}`;
   const chain = 'hyper'; let side = 'buy', tab = 'trades', amt = '', slip = 1, busy = false;
@@ -32,7 +33,7 @@ window.PAGE = async () => {
   CHART.mount($('#t-chart'), addr, chain, $('#t-ctl'));
   function renderHead() {
     const p = x.byChain[chain];
-    $('#t-meta').innerHTML = `<span class="cr">by <a href="${ex('address', x.creator)}" target="_blank" rel="noopener">${APP.cmark(x.creator)}${shortAddr(x.creator)}</a></span><time>${x.age} ago</time><span>HYPE pair</span><button class="ia" id="t-copy" title="Copy address">${shortAddr(x.addr)}${ic('copy')}</button><a class="ia" href="${ex('address', x.addr)}" target="_blank" rel="noopener" title="Explorer">${ic('ext')}</a>${x.links.web ? `<a class="ia ic" href="${esc(x.links.web)}" target="_blank" rel="noopener" title="Website">${ic('globe')}</a>` : ''}${x.links.x ? `<a class="ia ic" href="${esc(x.links.x)}" target="_blank" rel="noopener" title="X">${ic('xl')}</a>` : ''}${x.links.tg ? `<a class="ia ic" href="${esc(x.links.tg)}" target="_blank" rel="noopener" title="Telegram">${ic('tg')}</a>` : ''}`;
+    $('#t-meta').innerHTML = `<span class="cr">by <a href="${ex('address', x.creator)}" target="_blank" rel="noopener">${APP.cmark(x.creator)}${shortAddr(x.creator)}</a></span><time>${x.age} ago</time><span>HYPE pair · ${esc(x.chainName || C.chain.name)}</span><button class="ia" id="t-copy" title="Copy address">${shortAddr(x.addr)}${ic('copy')}</button><a class="ia" href="${ex('address', x.addr)}" target="_blank" rel="noopener" title="Explorer">${ic('ext')}</a>${x.links.web ? `<a class="ia ic" href="${esc(x.links.web)}" target="_blank" rel="noopener" title="Website">${ic('globe')}</a>` : ''}${x.links.x ? `<a class="ia ic" href="${esc(x.links.x)}" target="_blank" rel="noopener" title="X">${ic('xl')}</a>` : ''}${x.links.tg ? `<a class="ia ic" href="${esc(x.links.tg)}" target="_blank" rel="noopener" title="Telegram">${ic('tg')}</a>` : ''}`;
     $('#t-copy').onclick = () => APP.copy(x.addr, 'Address copied');
     $('#t-mcb').textContent = fmtUsd(x.mcapUsd); $('#t-pxb').innerHTML = `${fmtUsd(p.pxUsd)} price`; $('#t-mpx').innerHTML = fmtUsd(p.pxUsd);
     $('#t-px').innerHTML = `<b>${fmtUsd(p.pxUsd)}</b><span><em class="${x.c24 >= 0 ? 'up' : 'dn'}">${fmtPct(x.c24, false)} 24h</em> · ${fmtPrice(p.px)} HYPE</span>`;

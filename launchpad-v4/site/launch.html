@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><script data-theme-boot>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Launch a token | LiquidFi</title><meta name="description" content="Launch a token on Elysium, paired with HYPE, liquidity locked, 1% fee with 70% to you.">
+<title>Launch a token | LiquidFi</title><meta name="description" content="Launch a token on HyperEVM or Elysium, paired with HYPE, liquidity locked, 1% fee with 70% to you.">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#f5f5f7">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
-<link rel="stylesheet" href="/ui.css?v=44">
+<link rel="stylesheet" href="/ui.css?v=46">
 <style>
 #pg-launch{padding:40px 0 120px;display:flex;flex-direction:column;gap:24px}
 .hero{display:flex;flex-direction:column;gap:16px}.hero h1{font-size:56px;line-height:56px;letter-spacing:-.04em}.hero p{font-size:15px;line-height:18px;color:var(--ink-80);max-width:612px}
@@ -18,6 +18,7 @@
 /* economics (step 2) */
 .sel{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:1px solid var(--line);border-radius:13px;background:var(--inset);font-size:15px;font-weight:600}.sel img{width:18px;height:18px;border-radius:50%}.sel .dt{color:var(--ink-2);font-weight:600}.sel svg{margin-left:auto;width:14px;height:14px;color:var(--ink-2)}
 .ipw .suf.pct{right:16px}
+#f-net{align-self:flex-start}#f-net button[disabled]{opacity:.45;cursor:not-allowed}
 .inset{display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:20px;background:var(--inset)}.inset>.cap{font-size:13px;line-height:15.6px;color:var(--ink-2);margin:-28px 0 0 4px;padding:0 0 12px}
 .chk{display:flex;align-items:flex-start;gap:12px;cursor:pointer}.chk .bx{width:20px;height:20px;border-radius:6px;border:1px solid var(--line-3);background:var(--surface);flex:none;margin-top:2px;display:inline-flex;align-items:center;justify-content:center}.chk.on .bx{background:var(--ink);border-color:var(--ink)}.chk.on .bx::after{content:"";width:5px;height:9px;border:solid var(--bg);border-width:0 2px 2px 0;transform:rotate(45deg);margin-top:-2px}.chk .tx{display:flex;flex-direction:column;gap:4px}.chk .tx b{font-size:15px;line-height:18px;font-weight:600}.chk .tx small{font-size:13px;line-height:15.6px;color:var(--ink-2)}
 .adv summary{list-style:none;display:flex;align-items:center;gap:8px;font-size:13px;line-height:15.6px;color:var(--ink-2);cursor:pointer}.adv summary::-webkit-details-marker{display:none}.adv summary svg{width:14px;height:14px;transition:transform .15s}.adv[open] summary svg{transform:rotate(90deg)}.adv .st{display:flex;flex-direction:column;gap:8px;padding:12px 0 0 22px}.adv .st p{font-size:13px;line-height:15.6px;color:var(--ink-2)}
@@ -33,7 +34,7 @@
 </head><body data-page="launch">
 <header id="top"></header>
 <main><div class="wrap"><div id="pg-launch">
-  <section class="hero"><h1>Launch a token on LiquidFi.</h1><p>Two steps on Elysium. Give it a name and a face, choose what it trades against, and the pool opens the moment you sign.</p></section>
+  <section class="hero"><h1>Launch a token on LiquidFi.</h1><p>Two steps on HyperEVM or Elysium. Give it a name and a face, choose what it trades against, and the pool opens the moment you sign.</p></section>
   <div class="wiz">
     <form class="wcard" autocomplete="off" onsubmit="return false">
       <div class="whead"><div class="steps"><span class="on" data-st="1"><i>1</i>Identity</span><span data-st="2"><i>2</i>Economics</span></div><h2 id="w-h2">Give it a name and a face.</h2></div>
@@ -46,7 +47,8 @@
         <div class="wact"><button class="btn pri" id="next" type="button">Continue</button></div>
       </div>
       <div class="fields hidden" id="st2">
-        <div class="fld"><label class="l">Paired with</label><div class="sel"><img src="/img/hyper.png" alt="">HYPE<span class="dt">Hyperliquid</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div><p class="note">Buyers pay in HYPE in the pool from the moment it launches. The pair cannot change later.</p></div>
+        <div class="fld"><label class="l">Network</label><div class="seg lg" id="f-net" role="radiogroup" aria-label="Network"></div><p class="note" id="net-note"></p></div>
+        <div class="fld"><label class="l">Paired with</label><div class="sel"><img src="/img/hyper.png" alt="">HYPE<span class="dt" id="pair-net">Hyperliquid</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div><p class="note">Buyers pay in HYPE in the pool from the moment it launches. The pair cannot change later.</p></div>
         <div class="fld"><label class="l" for="f-wallet">Creator fee wallet</label><input class="inp" id="f-wallet" placeholder="0x"><p class="note">Defaults to your wallet.</p></div>
         <div class="frow"><div class="fld"><label class="l" for="f-tax">Creator fee</label><div class="ipw"><input class="inp" id="f-tax" inputmode="decimal" placeholder="0"><span class="suf">%</span></div><p class="note" id="tax-hint">Up to 10.0% of each trade.</p></div><div class="fld"><label class="l" for="f-dev">Opening buy</label><div class="ipw"><input class="inp" id="f-dev" inputmode="decimal" placeholder="0"><span class="suf">HYPE</span></div><p class="note" id="dev-hint">Optional. Buys first, in the same transaction as the launch.</p></div></div>
         <div class="fld"><label class="l">Where your creator fees go</label><div class="inset">
@@ -55,7 +57,7 @@
         </div></div>
         <details class="adv"><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>How buyback &amp; vest works</summary><div class="st"><p>The slice comes out of your fee share only: 50% of what you'd otherwise receive, after the protocol's cut.</p><p>Bought tokens vest linearly over 5 years; the protocol keeps its fee share of every release.</p><p>If the pool is too thin, the earmarked fees return to you instead.</p></div></details>
         <p class="terms" id="w-terms">Launch fee 0.005 HYPE. Opens at 50 HYPE. Pool fee 1.0%.</p>
-        <div class="prog" id="prog"><div data-s="sign"><i></i>Sign the launch</div><div data-s="hyper"><i></i>Pool is live on Elysium</div><div data-s="done"><i></i>Open the token</div></div>
+        <div class="prog" id="prog"><div data-s="sign"><i></i>Sign the launch</div><div data-s="hyper"><i></i>Pool is live on Uniswap v4</div><div data-s="done"><i></i>Open the token</div></div>
         <div class="wact"><button class="btn back" id="back" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Back</button><button class="btn pri" id="go" type="button">Sign in to launch</button></div><p class="hint hidden" id="go-msg" style="text-align:right"></p>
         <span class="hidden" id="c-fee"></span><span class="hidden" id="c-dev"></span><span class="hidden" id="c-gas"></span><span class="hidden" id="c-tot"></span><div class="hidden"><input id="f-solw"><button id="sol-use" type="button"></button></div>
       </div>
@@ -69,5 +71,5 @@
   </div>
 </div></div></main>
 <footer id="foot"></footer>
-<script src="/config.js?v=44"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script><script src="/chain.js?v=44"></script><script src="/glyphs.js?v=44"></script><script src="/app.js?v=44"></script><script src="/pg-launch.js?v=44"></script>
+<script src="/config.js?v=46"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script><script src="/chain.js?v=46"></script><script src="/glyphs.js?v=46"></script><script src="/app.js?v=46"></script><script src="/pg-launch.js?v=46"></script>
 </body></html>

@@ -1,7 +1,10 @@
-// GET /api/state: every LiquidFi token on Elysium with its pool state, trades, holders and fee accounting, built from
-// event logs (factory, hook, escrow, vault, PoolManager filtered to our pools, the tokens' Transfers). A warm instance
-// keeps the logs and only reads new blocks; the CDN caches the answer for a few seconds so visitors never hit the RPC.
-const { ethers, NET, rpc, multicall, getLogs } = require('./_lib');
+// GET /api/state?chain=hyperevm|elysium: every LiquidFi token on that chain with its pool state, trades, holders and fee
+// accounting, built from event logs (factory, hook, escrow, vault, PoolManager filtered to our pools, the tokens'
+// Transfers). A warm instance keeps the logs and only reads new blocks, in pages where the RPC caps the range
+// (HyperEVM: 1,000 blocks); a snapshot in the Blob store lets a cold instance resume instead of rereading from the
+// deploy block. The CDN caches the answer for a few seconds so visitors never hit the RPC.
+const L = require('./_lib');
+const { ethers, netOf } = L;
 
 const ev = (s) => ethers.id(s);
 const T = {
@@ -28,8 +31,19 @@ const dec = (types, data) => AC.decode(types, data);
 const HOOK_I = new ethers.Interface(['function poolTerms(bytes32) view returns (uint40 launchedAt, uint16 snipeStartBps, uint32 snipeSeconds, uint16 volThresholdBps, uint32 volWindow, uint16 volExtraBps, uint32 volDecay)', 'function launches(bytes32) view returns (bool registered, bool memecoinIsCurrency0, address memecoin, address quoteToken, address creator, address buybackCreatorRecipient, address protocolFeeRecipient, uint16 creatorTaxBps, uint16 protocolFeeShareBps, uint16 buybackBurnBps, uint16 hookFeeBps, uint16 maxInternalPriceImpactBps, bool buybackEnabled)']);
 const Q96 = 2 ** 96, f18 = (v) => Number(ethers.formatEther(v));
 
+function makeIndexer(NET) {
+const rpc = (m, p) => L.rpc(NET, m, p), multicall = (c) => L.multicall(NET, c);
+const LOGNET = NET.logRpc ? { ...NET, rpc: NET.logRpc, name: NET.name + ' logs' } : null;
+let logFails = 0; // after repeated failures of the log RPC, read the main RPC in its capped pages
+async function getLogs(f) {
+  if (LOGNET && logFails < 3) { try { const r = await L.rpc(LOGNET, 'eth_getLogs', [f], 3); logFails = 0; return r; } catch (e) { logFails++; console.warn(NET.key, 'log rpc', e.message); } }
+  const from = parseInt(f.fromBlock, 16), to = parseInt(f.toBlock, 16), cap = NET.fallbackRange || 0;
+  if (!cap || to - from < cap) return L.rpc(NET, 'eth_getLogs', [f]);
+  const out = []; for (let a = from; a <= to; a += cap) out.push(...await L.rpc(NET, 'eth_getLogs', [{ ...f, fromBlock: '0x' + a.toString(16), toBlock: '0x' + Math.min(to, a + cap - 1).toString(16) }]));
+  return out;
+}
 // the cache a warm instance keeps between requests
-const S = { skew: 0, last: NET.fromBlock - 1, factory: [], hook: [], escrow: [], vault: [], pm: [], transfers: [], tokens: new Map(), byPool: new Map(), terms: new Map(), pending: null, at: 0 };
+const S = { skew: 0, last: NET.fromBlock - 1, factory: [], hook: [], escrow: [], vault: [], pm: [], transfers: [], tokens: new Map(), byPool: new Map(), terms: new Map(), pending: null, at: 0, loaded: false, savedAt: 0, savedLast: 0 };
 
 async function logsRange(filter, from, to) {
   try { return await getLogs({ ...filter, fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) }); }
@@ -45,11 +59,49 @@ async function stamp(logs) {
 }
 const byOrder = (a, b) => (parseInt(a.blockNumber, 16) - parseInt(b.blockNumber, 16)) || (parseInt(a.logIndex, 16) - parseInt(b.logIndex, 16));
 
-async function sync() {
+// snapshots: state/<chain>-<block>.json in the Blob store, the newest one wins
+const SNAP_KEYS = ['last', 'skew', 'factory', 'hook', 'escrow', 'vault', 'pm', 'transfers'];
+async function loadSnapshot() {
+  S.loaded = true; if (!process.env.BLOB_READ_WRITE_TOKEN) return;
+  try {
+    const { list } = require('@vercel/blob'); const { blobs } = await list({ prefix: `state/${NET.key}-` });
+    const best = blobs.map((b) => ({ b, n: Number((b.pathname.match(/-(\d+)\.json$/) || [])[1] || 0) })).sort((x, y) => y.n - x.n)[0];
+    if (!best || best.n <= S.last) return;
+    const j = await (await fetch(best.b.url, { cache: 'no-store' })).json();
+    if (j.v !== 1 || j.factory !== NET.factory) return;
+    for (const k of SNAP_KEYS) S[k] = j.s[k];
+    S.tokens = new Map(j.s.tokens.map((t) => [t.addr.toLowerCase(), t])); S.byPool = new Map([...S.tokens.values()].map((t) => [t.poolId, t])); S.terms = new Map(j.s.terms);
+    S.savedLast = S.last;
+  } catch (e) { console.warn('snapshot load', NET.key, e.message); }
+}
+async function saveSnapshot() {
+  if (!process.env.BLOB_READ_WRITE_TOKEN || S.last <= S.savedLast || Date.now() - S.savedAt < 120000) return;
+  S.savedAt = Date.now();
+  try {
+    const { put, list, del } = require('@vercel/blob');
+    const body = JSON.stringify({ v: 1, factory: NET.factory, s: { ...Object.fromEntries(SNAP_KEYS.map((k) => [k, S[k]])), tokens: [...S.tokens.values()], terms: [...S.terms.entries()] } });
+    await put(`state/${NET.key}-${S.last}.json`, body, { access: 'public', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 60 });
+    S.savedLast = S.last;
+    const { blobs } = await list({ prefix: `state/${NET.key}-` }); const old = blobs.filter((b) => !b.pathname.endsWith(`-${S.last}.json`)).map((b) => b.url); if (old.length) await del(old);
+  } catch (e) { console.warn('snapshot save', NET.key, e.message); }
+}
+
+const within = (p, ms, what) => Promise.race([p, new Promise((r) => setTimeout(() => { console.warn(NET.key, what, 'timed out'); r(); }, ms))]);
+async function sync(deadline = Date.now() + 35000) {
+  const t0 = Date.now();
+  if (!S.loaded) { await within(loadSnapshot(), 8000, 'snapshot load'); console.log(NET.key, 'snapshot', S.last, Date.now() - t0 + 'ms'); }
   const hb = await rpc('eth_getBlockByNumber', ['latest', false]);
   const head = parseInt(hb.number, 16); S.skew = parseInt(hb.timestamp, 16) - Math.floor(Date.now() / 1000); // chain clock minus ours
-  if (head <= S.last) return;
-  const from = S.last + 1;
+  // pages of at most maxRange blocks (the whole range when the RPC has no cap), up to maxChunks per request
+  let pages = 0;
+  for (let n = 0; n < (NET.maxChunks || 1) && S.last < head && Date.now() < deadline; n++) {
+    const from = S.last + 1, to = NET.maxRange ? Math.min(head, from + NET.maxRange - 1) : head;
+    await syncRange(from, to); S.last = to; pages++;
+  }
+  console.log(NET.key, 'synced', pages, 'pages to', S.last, 'head', head, Date.now() - t0 + 'ms');
+  await within(saveSnapshot(), 8000, 'snapshot save');
+}
+async function syncRange(from, head) {
   // one call for the four protocol contracts, split by address
   const core = await stamp(await logsRange({ address: [NET.factory, NET.hook, NET.escrow, NET.vault] }, from, head));
   const of = (a) => core.filter((l) => l.address.toLowerCase() === a.toLowerCase());
@@ -81,7 +133,6 @@ async function sync() {
     }
   }
   for (const k of ['pm', 'transfers', 'hook']) S[k].sort(byOrder);
-  S.last = head;
 }
 
 function build() {
@@ -138,11 +189,20 @@ function build() {
   return { chainId: NET.chainId, block: S.last, at: Math.floor(Date.now() / 1000), skew: S.skew, poolManager: NET.poolManager.toLowerCase(), tokens, trades, escrow: credit };
 }
 
+  return { S, sync, build, NET };
+}
+
+const IDX = {};
+const indexer = (key) => { const net = netOf(key); if (!net) return null; return IDX[key] || (IDX[key] = makeIndexer(net)); };
+
 module.exports = async (req, res) => {
   try {
-    if (!S.pending && Date.now() - S.at > 2500) S.pending = sync().then(() => { S.at = Date.now(); }).finally(() => { S.pending = null; });
+    const key = (req.query && req.query.chain) || new URL(req.url || '/', 'http://x').searchParams.get('chain') || 'elysium';
+    const X = indexer(key); if (!X) { res.statusCode = 400; res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ error: 'unknown chain' })); }
+    const S = X.S;
+    if (!S.pending && Date.now() - S.at > 2500) S.pending = X.sync().then(() => { S.at = Date.now(); }).finally(() => { S.pending = null; });
     if (S.pending) await S.pending;
-    const body = JSON.stringify(build());
+    const body = JSON.stringify({ chain: key, ...X.build() });
     res.setHeader('content-type', 'application/json');
     res.setHeader('cache-control', 'public, max-age=0, s-maxage=3, stale-while-revalidate=30');
     res.setHeader('access-control-allow-origin', '*');
@@ -152,4 +212,4 @@ module.exports = async (req, res) => {
     res.end(JSON.stringify({ error: e.message }));
   }
 };
-module.exports._state = S; module.exports._build = build; module.exports._sync = sync;
+module.exports.indexer = indexer;

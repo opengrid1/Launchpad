@@ -1,30 +1,57 @@
-// Shared by the API functions: the LiquidFi addresses on Elysium, a JSON-RPC client that rides out the public RPC's
-// rate limits, Multicall3 reads, and posting signed transactions straight to Elysium's inbox on HyperEVM (the public
-// RPC's relay refuses big transactions and is often busy). Env overrides exist for the local test chain.
+// Shared by the API functions: the LiquidFi deployments per chain, a JSON-RPC client that rides out public RPC rate
+// limits, Multicall3 reads, and sending signed transactions (Elysium: straight to its inbox on HyperEVM, since the
+// public RPC relay refuses big transactions and is often busy; HyperEVM: to its RPC). Env overrides exist for the
+// local test chain (they apply to the Elysium entry).
 const { ethers } = require('ethers');
 
 const E = process.env;
-const NET = {
-  rpc: E.ELYSIUM_RPC || 'https://rpc-live.elysp.com',
-  chainId: Number(E.ELYSIUM_CHAIN_ID || 99901),
-  factory: E.LQF_FACTORY || '0x13757D66782ecA93A86A2A8B6cEEc74f10322b05',
-  hook: E.LQF_HOOK || '0xAA13d56014297e31d799D05406dA55F4c9256044',
-  locker: E.LQF_LOCKER || '0x4DFB13BC1264f7bcA5Ed464E338C1A5ADC47C5d0',
-  escrow: E.LQF_ESCROW || '0xb7C76c44e4fA523071cAD82E5865Bdf133097b38',
-  vault: E.LQF_VAULT || '0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC',
-  poolManager: E.LQF_POOL_MANAGER || '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1',
-  multicall: E.LQF_MULTICALL || '0xcA11bde05977b3631167028862bE2a173976CA11',
-  fromBlock: Number(E.LQF_FROM_BLOCK || 311758), // the factory's deploy block
-  parent: { rpc: E.HYPEREVM_RPC || 'https://rpc.hyperliquid.xyz/evm', chainId: 999, inbox: E.ELYSIUM_INBOX || '0xce59f8b65ad41c9dae4c07a0571a39824bd92cff' },
+const NETS = {
+  elysium: {
+    key: 'elysium', name: 'Elysium',
+    rpc: E.ELYSIUM_RPC || 'https://rpc-live.elysp.com',
+    chainId: Number(E.ELYSIUM_CHAIN_ID || 99901),
+    factory: E.LQF_FACTORY || '0x13757D66782ecA93A86A2A8B6cEEc74f10322b05',
+    hook: E.LQF_HOOK || '0xAA13d56014297e31d799D05406dA55F4c9256044',
+    locker: E.LQF_LOCKER || '0x4DFB13BC1264f7bcA5Ed464E338C1A5ADC47C5d0',
+    escrow: E.LQF_ESCROW || '0xb7C76c44e4fA523071cAD82E5865Bdf133097b38',
+    vault: E.LQF_VAULT || '0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC',
+    poolManager: E.LQF_POOL_MANAGER || '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1',
+    quoter: E.LQF_QUOTER || '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5',
+    multicall: E.LQF_MULTICALL || '0xcA11bde05977b3631167028862bE2a173976CA11',
+    fromBlock: Number(E.LQF_FROM_BLOCK || 311758), // the factory's deploy block
+    maxRange: 0, maxChunks: 1, // eth_getLogs takes any range
+    parent: E.DIRECT_SEND ? null : { rpc: E.HYPEREVM_RPC || 'https://rpc.hyperliquid.xyz/evm', chainId: 999, inbox: E.ELYSIUM_INBOX || '0xce59f8b65ad41c9dae4c07a0571a39824bd92cff' },
+  },
+  hyperevm: {
+    key: 'hyperevm', name: 'HyperEVM',
+    rpc: E.HYPEREVM_RPC || 'https://rpc.hyperliquid.xyz/evm',
+    chainId: 999,
+    factory: '0xC875D815044Ef2bBD4E286e2DbB54AF9a98Ba8A0',
+    hook: '0xBAF9961BA462Abee6d4F86D9509C0BDd15f9A044',
+    locker: '0x2e2804A111bCe151aA097a5376b44cBABfEc5D2b',
+    escrow: '0x4f1e73B94B43B0EC7Da292dF9CC333bB863CF9b2',
+    vault: '0x789Add57A12b92DEC1a2D1C9dc62360d42Be6051',
+    poolManager: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F',
+    quoter: '0x108Bfe38532C98f8Cd8D7Ab49c9dDAa3675a1c5e',
+    multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
+    fromBlock: 50356087,
+    // logs come from an RPC without the official endpoint's 1,000-block cap (and with blockTimestamp); if it fails, the
+    // official one is read in 1,000-block pages
+    logRpc: E.HYPEREVM_LOG_RPC || 'https://rpc.hyperlend.finance', fallbackRange: 1000,
+    maxRange: 200000, maxChunks: 10,
+    parent: null,
+  },
 };
+if (E.LQF_ONLY) for (const k of Object.keys(NETS)) if (!E.LQF_ONLY.split(',').includes(k)) delete NETS[k]; // tests: one chain
+const netOf = (key) => NETS[key] || null;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let rid = 0;
-async function rpc(method, params, tries = 8) {
+async function rpc(net, method, params, tries = 6) {
   let last;
   for (let i = 0; i < tries; i++) {
     try {
-      const r = await fetch(NET.rpc, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: ++rid, method, params }), signal: AbortSignal.timeout(15000) });
+      const r = await fetch(net.rpc, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: ++rid, method, params }), signal: AbortSignal.timeout(10000) });
       const j = await r.json().catch(() => null);
       if (j && !j.error) return j.result;
       last = (j && j.error && j.error.message) || 'HTTP ' + r.status;
@@ -32,36 +59,35 @@ async function rpc(method, params, tries = 8) {
     } catch (e) { last = e.message; if (!/rate|limit|busy|not ready|timed out|unavailable|fetch|abort|HTTP/i.test(last)) throw e; }
     await sleep(Math.min(6000, 500 * 2 ** i) + Math.random() * 300);
   }
-  throw new Error('Elysium RPC unavailable: ' + last);
+  throw new Error(net.name + ' RPC unavailable: ' + last);
 }
 
 const MC = new ethers.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])']);
 // calls: [address, Interface, fn, args]; returns decoded results (single values unwrapped), null for a failed call
-async function multicall(calls) {
+async function multicall(net, calls) {
   const out = [];
   for (let i = 0; i < calls.length; i += 150) {
     const part = calls.slice(i, i + 150);
     const data = MC.encodeFunctionData('aggregate3', [part.map(([t, I, f, a]) => [t, true, I.encodeFunctionData(f, a || [])])]);
-    const [res] = MC.decodeFunctionResult('aggregate3', await rpc('eth_call', [{ to: NET.multicall, data }, 'latest']));
+    const [res] = MC.decodeFunctionResult('aggregate3', await rpc(net, 'eth_call', [{ to: net.multicall, data }, 'latest']));
     res.forEach(([ok, rd], k) => { if (!ok) return out.push(null); try { const r = part[k][1].decodeFunctionResult(part[k][2], rd); out.push(r.length === 1 ? r[0] : r); } catch { out.push(null); } });
   }
   return out;
 }
 
-async function getLogs(filter) { return rpc('eth_getLogs', [filter]); }
-
-// Posts a transaction signed for Elysium to its HyperEVM inbox (message kind 4) and waits for the Elysium receipt.
-async function sendViaInbox(wallet, tx) {
-  const L = new ethers.JsonRpcProvider(NET.rpc, NET.chainId, { staticNetwork: true, batchMaxCount: 1 });
-  if (E.DIRECT_SEND) { const t = await wallet.connect(L).sendTransaction(tx); const r = await t.wait(); return { hash: t.hash, status: r.status, gasUsed: Number(r.gasUsed) }; } // local test chain
-  const H = new ethers.JsonRpcProvider(NET.parent.rpc, NET.parent.chainId, { staticNetwork: true });
-  const nonce = parseInt(await rpc('eth_getTransactionCount', [wallet.address, 'latest']), 16);
-  const raw = await wallet.signTransaction({ type: 2, chainId: BigInt(NET.chainId), nonce, maxFeePerGas: ethers.parseUnits('0.3', 'gwei'), maxPriorityFeePerGas: 0n, value: 0n, ...tx });
+// Sends a transaction from `wallet` on `net` and waits for its receipt. Elysium transactions are posted to its HyperEVM
+// inbox (message kind 4), paid from the same address on HyperEVM.
+async function sendTx(net, wallet, tx) {
+  const L = new ethers.JsonRpcProvider(net.rpc, net.chainId, { staticNetwork: true, batchMaxCount: 1 });
+  if (!net.parent) { const fee = await L.getFeeData(); const t = await wallet.connect(L).sendTransaction({ maxFeePerGas: (fee.maxFeePerGas ?? fee.gasPrice) * 2n, maxPriorityFeePerGas: fee.maxPriorityFeePerGas ?? 0n, ...tx }); const r = await t.wait(); return { hash: t.hash, status: r.status, gasUsed: Number(r.gasUsed) }; }
+  const H = new ethers.JsonRpcProvider(net.parent.rpc, net.parent.chainId, { staticNetwork: true });
+  const nonce = parseInt(await rpc(net, 'eth_getTransactionCount', [wallet.address, 'latest']), 16);
+  const raw = await wallet.signTransaction({ type: 2, chainId: BigInt(net.chainId), nonce, maxFeePerGas: ethers.parseUnits('0.3', 'gwei'), maxPriorityFeePerGas: 0n, value: 0n, ...tx });
   const hash = ethers.keccak256(raw);
   const data = new ethers.Interface(['function sendL2Message(bytes)']).encodeFunctionData('sendL2Message', ['0x04' + raw.slice(2)]);
-  const p = await wallet.connect(H).sendTransaction({ to: NET.parent.inbox, data, gasLimit: 250000n }); await p.wait();
-  for (let i = 0; i < 60; i++) { await sleep(3000); const r = await rpc('eth_getTransactionReceipt', [hash]).catch(() => null); if (r) return { hash, parent: p.hash, status: parseInt(r.status, 16), gasUsed: parseInt(r.gasUsed, 16) }; }
+  const p = await wallet.connect(H).sendTransaction({ to: net.parent.inbox, data, gasLimit: 250000n }); await p.wait();
+  for (let i = 0; i < 60; i++) { await sleep(3000); const r = await rpc(net, 'eth_getTransactionReceipt', [hash]).catch(() => null); if (r) return { hash, parent: p.hash, status: parseInt(r.status, 16), gasUsed: parseInt(r.gasUsed, 16) }; }
   return { hash, parent: p.hash, status: null };
 }
 
-module.exports = { ethers, NET, rpc, multicall, getLogs, sendViaInbox, sleep };
+module.exports = { ethers, NETS, netOf, rpc, multicall, sendTx, sleep };

@@ -35,7 +35,7 @@ window.PAGE = async () => {
   }
   function goBtn() { const b = $('#go'); if (busy) return; if (!APP.W.connected) { b.textContent = 'Sign in to launch'; b.onclick = () => APP.W.connect(); return; } if (!APP.W.chainOk) { b.textContent = 'Switch to ' + C.chain.name; b.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; } b.textContent = 'Launch'; b.onclick = launch; }
   function preview() {
-    $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your token'; $('#pv-t').innerHTML = `<span>${esc(F.symbol || 'TICKER')}</span><span class="badge">HYPE pair</span>`; $('#pv-d').textContent = F.description || 'A line or two about the token goes here.';
+    $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your token'; $('#pv-t').innerHTML = `<span>${esc(F.symbol || 'TICKER')}</span><span class="badge">HYPE pair · ${esc(C.chain.name)}</span>`; $('#pv-d').textContent = F.description || 'A line or two about the token goes here.';
     $('#pv-l').innerHTML = [['x', 'X'], ['telegram', 'Telegram'], ['website', 'Website']].filter(([k]) => F[k]).map(([, l]) => `<span class="badge">${l}</span>`).join('');
     $('#pv-fee').textContent = `${F.creatorTaxBps / 100}%${F.buyback ? ' · buyback & vest' : ''}`;
   }
@@ -49,6 +49,15 @@ window.PAGE = async () => {
       setTimeout(() => { location.href = APP.tokenUrl(r.addr); }, 1800);
     } catch (e) { toast(errMsg(e), 'err'); mark('sign', ''); busy = false; b.disabled = false; goBtn(); }
   }
+  // network: which chain the token launches on (the active chain); chains not live yet show as soon
+  function nets() {
+    const el = $('#f-net'); if (!el) return;
+    el.innerHTML = C.chains.map((c) => `<button type="button" role="radio" aria-checked="${c.key === C.chain.key}" class="${c.key === C.chain.key ? 'on' : ''}" data-net="${c.key}" ${C.live(c) ? '' : 'disabled title="Soon"'}>${esc(c.name)}${C.live(c) ? '' : ' · soon'}</button>`).join('');
+    $$('[data-net]', el).forEach((b) => b.onclick = async () => { await APP.setChain(b.dataset.net); nets(); preview(); goBtn(); });
+    const n = $('#net-note'); if (n) n.textContent = `The pool opens on Uniswap v4 on ${C.chain.name}, chain ${C.chain.id}. Gas and the launch fee are paid in HYPE on ${C.chain.name}.`;
+    const pn = $('#pair-net'); if (pn) pn.textContent = C.chain.name;
+  }
+  nets();
   APP.onWallet(() => { goBtn(); preview(); if (APP.W.connected && !$('#f-wallet').value) $('#f-wallet').placeholder = APP.W.address; }); APP.onUpdate(cost);
   cost(); preview();
 };

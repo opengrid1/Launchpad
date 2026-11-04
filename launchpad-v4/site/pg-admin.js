@@ -133,7 +133,7 @@ window.PAGE = async () => {
     const pendingMine = live ? OWNED.filter(([k]) => lc(S.owners[k].pending) === m && m) : [];
     const anyOwner = live && OWNED.some(([k]) => lc(S.owners[k].owner) === m);
     const allowed = !live || (m && (anyOwner || pendingMine.length || m === lc(C.admin)));
-    const head = `<section class="ahd"><h1>Admin</h1><p>Owner controls for the ${esc(C.brand)} contracts on ${esc(C.chain.name)}. Every change is a transaction from the owner wallet, and the contracts check that.</p><div class="bdg">${live ? `<span class="badge ok"><i></i>Live on ${esc(C.chain.name)}</span>` : '<span class="badge warn"><i></i>Preview. Contracts not deployed yet, nothing is sent.</span>'}${m ? `<span class="badge">${esc(shortAddr(m))}${anyOwner ? ' · owner' : pendingMine.length ? ' · ownership offered' : ''}</span>` : ''}</div></section>`;
+    const head = `<section class="ahd"><h1>Admin</h1><p>Owner controls for the ${esc(C.brand)} contracts on ${esc(C.chain.name)}. Every change is a transaction from the owner wallet, and the contracts check that.</p><div class="bdg"><span class="seg" id="a-net">${C.chains.map((c) => `<button type="button" data-anet="${c.key}" class="${c.key === C.chain.key ? 'on' : ''}">${esc(c.name)}</button>`).join('')}</span>${live ? `<span class="badge ok"><i></i>Live on ${esc(C.chain.name)}</span>` : '<span class="badge warn"><i></i>Preview. Contracts not deployed yet, nothing is sent.</span>'}${m ? `<span class="badge">${esc(shortAddr(m))}${anyOwner ? ' · owner' : pendingMine.length ? ' · ownership offered' : ''}</span>` : ''}</div></section>`;
     if (!allowed) {
       root.innerHTML = head + `<div class="acard gate">${!m ? `<p>Sign in with the owner wallet to manage the contracts.</p><button class="btn pri" id="g-in">${ic('wallet')}Sign in</button>` : `<p>${esc(shortAddr(m))} does not own these contracts. Sign in with the owner wallet, ${esc(shortAddr(C.admin))}.</p>`}</div>`;
       const b = $('#g-in'); if (b) b.onclick = W.connect; return;
@@ -188,6 +188,7 @@ window.PAGE = async () => {
   }
 
   function bind() {
+    $$('[data-anet]', root).forEach((b) => b.onclick = () => { if (b.dataset.anet === C.chain.key) return; C.useChain(b.dataset.anet); location.reload(); }); // each chain has its own contracts
     $$('[data-accept]', root).forEach((b) => b.onclick = guard(async () => { const k = b.dataset.accept; await after(await send('Accept ' + k, k, 'acceptOwnership')); }));
     const aa = $('#acc-all'); if (aa) aa.onclick = guard(async () => { if (!live) return send('Accept all'); for (const [k] of OWNED) if (lc(S.owners[k].pending) === me()) { if (!(await send('Accept ' + k, k, 'acceptOwnership'))) break; } await after(true); });
     $$('[data-cfg]', root).forEach((b) => b.onclick = guard(async () => { const n = Number(b.dataset.cfg), c = S.configs[n]; await after(await send((c.enabled ? 'Turn off' : 'Turn on') + ' config #' + n, 'factory', 'updateLaunchConfig', [n, { ...c, enabled: !c.enabled }])); }));
