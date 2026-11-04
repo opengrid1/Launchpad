@@ -41,9 +41,30 @@ const NETS = {
     maxRange: 200000, maxChunks: 10,
     parent: null,
   },
+  // Ethereum mainnet (the BuzzPad brand): Uniswap's v4 deployment; the stack's addresses come from the env until deployed
+  ethereum: {
+    key: 'ethereum', name: 'Ethereum',
+    rpc: E.ETH_RPC || 'https://ethereum-rpc.publicnode.com',
+    chainId: 1,
+    factory: E.ETH_FACTORY || '',
+    hook: E.ETH_HOOK || '',
+    locker: E.ETH_LOCKER || '',
+    escrow: E.ETH_ESCROW || '',
+    vault: E.ETH_VAULT || '',
+    poolManager: '0x000000000004444c5dc75cB358380D2e3dE08A90',
+    quoter: '0x52F0E24D1c21C8A0cB1e5a5dD6198556BD9E1203',
+    multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
+    fromBlock: Number(E.ETH_FROM_BLOCK || 0),
+    logRpc: E.ETH_LOG_RPC || '', fallbackRange: 1000,
+    maxRange: 50000, maxChunks: 10,
+    minSweep: '0.0005', // ETH: a sweep costs real gas on mainnet
+    parent: null,
+  },
 };
+for (const k of Object.keys(NETS)) if (!NETS[k].factory) delete NETS[k]; // not deployed (yet)
 if (E.LQF_ONLY) for (const k of Object.keys(NETS)) if (!E.LQF_ONLY.split(',').includes(k)) delete NETS[k]; // tests: one chain
 const netOf = (key) => NETS[key] || null;
+const defaultNet = () => Object.keys(NETS)[0] || 'elysium';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let rid = 0;
@@ -90,4 +111,4 @@ async function sendTx(net, wallet, tx) {
   return { hash, parent: p.hash, status: null };
 }
 
-module.exports = { ethers, NETS, netOf, rpc, multicall, sendTx, sleep };
+module.exports = { ethers, NETS, netOf, defaultNet, rpc, multicall, sendTx, sleep };

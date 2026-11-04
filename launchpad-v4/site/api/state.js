@@ -86,7 +86,7 @@ async function saveSnapshot() {
   } catch (e) { console.warn('snapshot save', NET.key, e.message); }
 }
 
-const within = (p, ms, what) => Promise.race([p, new Promise((r) => setTimeout(() => { console.warn(NET.key, what, 'timed out'); r(); }, ms))]);
+const within = (p, ms, what) => { let t; return Promise.race([p.finally(() => clearTimeout(t)), new Promise((r) => { t = setTimeout(() => { console.warn(NET.key, what, 'timed out'); r(); }, ms); })]); };
 async function sync(deadline = Date.now() + 35000) {
   const t0 = Date.now();
   if (!S.loaded) { await within(loadSnapshot(), 8000, 'snapshot load'); console.log(NET.key, 'snapshot', S.last, Date.now() - t0 + 'ms'); }
@@ -197,7 +197,7 @@ const indexer = (key) => { const net = netOf(key); if (!net) return null; return
 
 module.exports = async (req, res) => {
   try {
-    const key = (req.query && req.query.chain) || new URL(req.url || '/', 'http://x').searchParams.get('chain') || 'elysium';
+    const key = (req.query && req.query.chain) || new URL(req.url || '/', 'http://x').searchParams.get('chain') || L.defaultNet();
     const X = indexer(key); if (!X) { res.statusCode = 400; res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ error: 'unknown chain' })); }
     const S = X.S;
     if (!S.pending && Date.now() - S.at > 2500) S.pending = X.sync().then(() => { S.at = Date.now(); }).finally(() => { S.pending = null; });

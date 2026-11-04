@@ -1,0 +1,24 @@
+{
+  "name": "BuzzPad",
+  "theme": ":root{--acid:#ffc53d;--acid-hover:#f5b200;--acid-ink:#2a1a00;--acid-quiet:rgba(255,197,61,.2)}",
+  "themeColor": "#f5f5f7",
+  "replace": [
+    ["20% of supply from 50 to 200 HYPE market cap, 30% from 200 to 1,000, 50% above", "20% of supply from 1.75 to 7 ETH market cap, 30% from 7 to 35, 50% above"],
+    ["LiquidFi runs on two chains: HyperEVM, and Elysium, the HYPE-gas chain that settles to HyperEVM. A token lives on the chain it launched on. Tokens launch directly into Uniswap v4 and are quoted against HYPE only.", "BuzzPad runs on Ethereum mainnet. Tokens launch directly into Uniswap v4 and are quoted against ETH only."],
+    ["<dl class=\"defs\"><div><dt>Network</dt><dd>HyperEVM</dd></div><div><dt>Chain ID</dt><dd>999</dd></div><div><dt>Public RPC</dt><dd>https://rpc.hyperliquid.xyz/evm</dd></div><div><dt>Explorer</dt><dd>hyperevmscan.io</dd></div></dl>", "<dl class=\"defs\"><div><dt>Network</dt><dd>Ethereum</dd></div><div><dt>Chain ID</dt><dd>1</dd></div><div><dt>Public RPC</dt><dd>https://ethereum-rpc.publicnode.com</dd></div><div><dt>Explorer</dt><dd>etherscan.io</dd></div></dl>"],
+    ["<dl class=\"defs\"><div><dt>Network</dt><dd>Elysium</dd></div><div><dt>Chain ID</dt><dd>99901</dd></div><div><dt>Public RPC</dt><dd>https://rpc-live.elysp.com</dd></div><div><dt>Explorer</dt><dd>scan.elysp.com</dd></div></dl>", ""],
+    ["Two steps on HyperEVM or Elysium.", "Two steps on Ethereum."],
+    ["on HyperEVM and Elysium", "on Ethereum"],
+    ["on HyperEVM or Elysium", "on Ethereum"],
+    ["<span class=\"dt\" id=\"pair-net\">Hyperliquid</span>", "<span class=\"dt\" id=\"pair-net\">Ethereum</span>"],
+    ["/img/hyper.png", "/img/eth.svg"],
+    ["0.005 HYPE", "0.0002 ETH"],
+    ["50 HYPE", "1.75 ETH"],
+    ["HYPE", "ETH"],
+    ["LiquidFi Coin", "Buzz Coin"],
+    ["liquidfi.fun", "buzzpad.fun"],
+    ["LiquidFi", "BuzzPad"]
+  ],
+  "files": "html,js",
+  "skipFiles": ["config.js", "abi.js", "glyphs.js"]
+}

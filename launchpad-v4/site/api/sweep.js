@@ -22,7 +22,7 @@ async function sweepChain(NET, wallet) {
   const pools = S.tokens.map((t) => ({ poolId: t.poolId, token: t.addr, buyback: t.buyback, px: t.sqrtP ? 1 / (Number(t.sqrtP) / 2 ** 96) ** 2 : 0 }));
   if (!pools.length) return { pools: 0, due: 0, swept: [] };
   const Z = ethers.ZeroAddress, r = await multicall(NET, pools.flatMap((p) => [[NET.hook, HOOK_I, 'pendingFees', [p.poolId, p.token]], [NET.hook, HOOK_I, 'pendingFees', [p.poolId, Z]], [NET.hook, HOOK_I, 'pendingCreatorTax', [p.poolId, p.token]], [NET.hook, HOOK_I, 'pendingCreatorTax', [p.poolId, Z]], [NET.hook, HOOK_I, 'pendingBuyback', [p.poolId, p.token]], [NET.hook, HOOK_I, 'pendingBuyback', [p.poolId, Z]]]));
-  const due = pools.map((p, i) => { const [ft, fh, tt, th, bt, bh] = r.slice(6 * i, 6 * i + 6).map((v) => v || 0n); const worth = fh + th + BigInt(Math.floor(Number(ft + tt) * p.px)); return { ...p, ft, tt, bt, bh, worth }; }).filter((p) => p.worth >= MIN_HYPE);
+  const due = pools.map((p, i) => { const [ft, fh, tt, th, bt, bh] = r.slice(6 * i, 6 * i + 6).map((v) => v || 0n); const worth = fh + th + BigInt(Math.floor(Number(ft + tt) * p.px)); return { ...p, ft, tt, bt, bh, worth }; }).filter((p) => p.worth >= (NET.minSweep && !process.env.SWEEP_MIN_HYPE ? ethers.parseEther(NET.minSweep) : MIN_HYPE));
   const done = [];
   for (const p of due.slice(0, 20)) {
     // minimums the hook insists on: the token fees' conversion to HYPE (5% slack) and, when buyback is on, the tokens
