@@ -3,7 +3,7 @@
    the deploy (deploy-liquidfi.cjs ethereum). */
 window.CFG = {
   brand: 'BuzzPad', tagline: 'Launch on Ethereum. ETH pair on Uniswap v4, 1% fee, 70% to the creator.',
-  x: '', site: 'https://buzzpad.fun',
+  x: 'https://x.com/buzzpad_fun', site: 'https://buzzpad.fun',
   mode: 'live',
   chains: [
     // Ethereum mainnet: Uniswap's v4 deployment (PoolManager, PositionManager, UniversalRouter, V4Quoter) used as is
