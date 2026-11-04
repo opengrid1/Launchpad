@@ -230,7 +230,7 @@
     async buy(a, chain, hype, minOut) {
       const t = BY.get(low(a)); if (!t) throw new Error('Unknown token'); await onChainOf(t);
       const amountIn = wei(hype), min = wei(Math.max(0, minOut)), hb = hypeBal[t.net];
-      if (hb && hype > hb) throw new Error('Not enough HYPE on ' + C.chain.name);
+      if (hb && hype > hb) throw new Error('Not enough ' + C.chain.quote + ' on ' + C.chain.name);
       const r = await send({ to: KK(t.net).router, data: v4Swap(t, true, amountIn, min), value: amountIn, gasLimit: 700000n }, 'buy');
       await afterTrade(a); return { tx: r.hash, buy: true, hype, tokens: quoteBuy(a, chain, hype).tokens };
     },

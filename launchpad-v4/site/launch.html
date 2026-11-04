@@ -48,9 +48,9 @@
       </div>
       <div class="fields hidden" id="st2">
         <div class="fld"><label class="l">Network</label><div class="seg lg" id="f-net" role="radiogroup" aria-label="Network"></div><p class="note" id="net-note"></p></div>
-        <div class="fld"><label class="l">Paired with</label><div class="sel"><img src="/img/hyper.png" alt="">HYPE<span class="dt" id="pair-net">Hyperliquid</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div><p class="note">Buyers pay in HYPE in the pool from the moment it launches. The pair cannot change later.</p></div>
+        <div class="fld"><label class="l">Paired with</label><div class="sel"><img src="/img/hyper.png" alt="" data-qlogo><span data-q>HYPE</span><span class="dt" id="pair-net">Hyperliquid</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div><p class="note">Buyers pay in <span data-q>HYPE</span> in the pool from the moment it launches. The pair cannot change later.</p></div>
         <div class="fld"><label class="l" for="f-wallet">Creator fee wallet</label><input class="inp" id="f-wallet" placeholder="0x"><p class="note">Defaults to your wallet.</p></div>
-        <div class="frow"><div class="fld"><label class="l" for="f-tax">Creator fee</label><div class="ipw"><input class="inp" id="f-tax" inputmode="decimal" placeholder="0"><span class="suf">%</span></div><p class="note" id="tax-hint">Up to 10.0% of each trade.</p></div><div class="fld"><label class="l" for="f-dev">Opening buy</label><div class="ipw"><input class="inp" id="f-dev" inputmode="decimal" placeholder="0"><span class="suf">HYPE</span></div><p class="note" id="dev-hint">Optional. Buys first, in the same transaction as the launch.</p></div></div>
+        <div class="frow"><div class="fld"><label class="l" for="f-tax">Creator fee</label><div class="ipw"><input class="inp" id="f-tax" inputmode="decimal" placeholder="0"><span class="suf">%</span></div><p class="note" id="tax-hint">Up to 10.0% of each trade.</p></div><div class="fld"><label class="l" for="f-dev">Opening buy</label><div class="ipw"><input class="inp" id="f-dev" inputmode="decimal" placeholder="0"><span class="suf" data-q>HYPE</span></div><p class="note" id="dev-hint">Optional. Buys first, in the same transaction as the launch.</p></div></div>
         <div class="fld"><label class="l">Where your creator fees go</label><div class="inset">
           <label class="chk on" id="f-fw"><span class="bx"></span><span class="tx"><b>Your fee wallet</b><small>Fees accrue to your fee wallet to claim, as today.</small></span></label>
           <label class="chk" id="f-bb"><span class="bx"></span><span class="tx"><b>Buyback &amp; vest</b><small>Spend part of your creator fees buying the token back: bought tokens lock and your share releases to your fee escrow to claim, gradually over 5 years; the protocol keeps part of every release.</small></span></label>
@@ -63,9 +63,9 @@
       </div>
     </form>
     <aside class="pvw"><span class="cap">On the board</span>
-      <div class="pv" id="prev"><div class="ph"><span class="mk"><img id="pv-img" src="/img/logo.svg" alt=""></span><div class="st"><h3 id="pv-n">Your token</h3><div class="pr" id="pv-t"><span>TICKER</span><span class="badge">HYPE pair</span></div></div></div>
+      <div class="pv" id="prev"><div class="ph"><span class="mk"><img id="pv-img" src="/img/logo.svg" alt=""></span><div class="st"><h3 id="pv-n">Your token</h3><div class="pr" id="pv-t"><span>TICKER</span><span class="badge"><span data-q>HYPE</span> pair</span></div></div></div>
         <p class="pvd" id="pv-d">A line or two about the token goes here.</p><div class="pvl" id="pv-l"></div>
-        <dl class="fx" style="margin:0"><div><span>Supply</span><b id="pv-sup">1,000,000,000</b></div><div><span>Opens at</span><b id="pv-mc">50 HYPE</b></div><div><span>Creator fee</span><b id="pv-fee">0%</b></div><div><span>Launch fee</span><b>0.005 HYPE</b></div></dl></div>
+        <dl class="fx" style="margin:0"><div><span>Supply</span><b id="pv-sup">1,000,000,000</b></div><div><span>Opens at</span><b id="pv-mc">50 HYPE</b></div><div><span>Creator fee</span><b id="pv-fee">0%</b></div><div><span>Launch fee</span><b id="pv-lf">0.005 HYPE</b></div></dl></div>
       <span id="pv-addr" class="hidden"></span>
     </aside>
   </div>

@@ -9,7 +9,9 @@
 const fs = require("fs"), path = require("path");
 const { ethers } = require("ethers");
 const E18 = 10n ** 18n;
-const CONFIG = { supply: 1_000_000_000n * E18, startMcap: 50n * E18, band1Mcap: 200n * E18, band2Mcap: 1000n * E18, band0Bps: 2000, band1Bps: 3000, tickSpacing: 200, enabled: true };
+// launch economics per network, in the native currency: the opening market cap and the two band edges (x4, x20)
+const ECON = { HYPE: { start: "50", band1: "200", band2: "1000", fee: "0.005" }, ETH: { start: "1.75", band1: "7", band2: "35", fee: "0.0002" } };
+const configFor = (e) => ({ supply: 1_000_000_000n * E18, startMcap: ethers.parseEther(e.start), band1Mcap: ethers.parseEther(e.band1), band2Mcap: ethers.parseEther(e.band2), band0Bps: 2000, band1Bps: 3000, tickSpacing: 200, enabled: true });
 const NET = {
   elysium: {
     chainId: 99901, rpc: process.env.ELYSIUM_RPC || "https://rpc-live.elysp.com", native: "HYPE",
@@ -26,11 +28,16 @@ const NET = {
     poolManager: "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F", positionManager: "0x0d7Ab5B3db668128Aff6F70C4eBC71D7d4DA9bf9",
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3", create2: "0x4e59b44847b379578588920cA78FbF26c0B4956C", weth9: "0x5555555555555555555555555555555555555555",
   },
-  // a local Hardhat fork of either chain: FORK_OF=elysium|hyperevm (addresses are the forked chain's)
+  // Ethereum mainnet: Uniswap's v4 deployment used as is
+  ethereum: {
+    chainId: 1, rpc: process.env.ETH_RPC || "https://ethereum-rpc.publicnode.com", native: "ETH",
+    poolManager: "0x000000000004444c5dc75cB358380D2e3dE08A90", positionManager: "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+    permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3", create2: "0x4e59b44847b379578588920cA78FbF26c0B4956C", weth9: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  },
+  // a local Hardhat fork of any chain: FORK_OF=elysium|hyperevm|ethereum (addresses are the forked chain's)
   local: { chainId: null, rpc: process.env.FORK_RPC || "http://127.0.0.1:8547", native: "HYPE" },
 };
 const OWNER = process.env.LIQUIDFI_OWNER || "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b"; // protocol owner and fee recipient
-const LAUNCH_FEE = ethers.parseEther(process.env.LAUNCH_FEE || "0.005");
 const SNIPE_SECONDS = Number(process.env.SNIPE_SECONDS || 10);
 const art = (n) => JSON.parse(fs.readFileSync(path.join(__dirname, "artifacts", n + ".json"), "utf8"));
 const HOOK_FLAGS = (1n << 13n) | (1n << 6n) | (1n << 2n), FLAG_MASK = (1n << 14n) - 1n; // beforeInitialize, afterSwap, afterSwapReturnDelta
@@ -58,6 +65,9 @@ class RetryProvider extends ethers.JsonRpcProvider {
   let N = NET[netName]; if (!N) throw new Error("unknown network " + netName);
   if (netName === "local") N = { ...NET[process.env.FORK_OF || "elysium"], rpc: NET.local.rpc, chainId: null, parent: null };
   const send = process.argv.includes("--send");
+  // a new brand needs its own owner wallet: the default one's key has been shared, so Ethereum takes it only when named
+  if (netName === "ethereum" && !process.env.LIQUIDFI_OWNER) throw new Error("set LIQUIDFI_OWNER to the new brand's owner wallet for Ethereum");
+  const E_ = ECON[N.native] || ECON.HYPE, CONFIG = configFor(E_), LAUNCH_FEE = ethers.parseEther(process.env.LAUNCH_FEE || E_.fee);
   const P = new RetryProvider(N.rpc, N.chainId ?? undefined, { staticNetwork: !!N.chainId, cacheTimeout: -1, batchMaxCount: 1, pollingInterval: 2000 });
   const keyFile = process.env.KEYFILE || path.join(__dirname, "../contracts/.env.deployer.v3");
   const keyLine = fs.readFileSync(keyFile, "utf8").match(/PRIVATE_KEY=(0x)?([0-9a-fA-F]{64})/);

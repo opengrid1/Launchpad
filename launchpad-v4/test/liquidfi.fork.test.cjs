@@ -16,7 +16,7 @@ const KEYS = ['0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff8
 const [owner, creator, bob, sniper, alice] = KEYS.map((k) => new ethers.NonceManager(new ethers.Wallet(k, P)));
 for (const w of [owner, creator, bob, sniper, alice]) w.address = w.signer.address;
 // FORK_NET=elysium: Uniswap's PoolManager on Elysium and no PositionManager there, so the test deploys the official build.
-const NETS = { hyperevm: { pm: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', posm: '0x0d7Ab5B3db668128Aff6F70C4eBC71D7d4DA9bf9', weth9: '0x5555555555555555555555555555555555555555' }, elysium: { pm: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', posm: null, weth9: '0xba876237b0f021a6c6d852d6c26e107997cc5e81' } };
+const NETS = { ethereum: { pm: '0x000000000004444c5dc75cB358380D2e3dE08A90', posm: '0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e', weth9: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' }, hyperevm: { pm: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', posm: '0x0d7Ab5B3db668128Aff6F70C4eBC71D7d4DA9bf9', weth9: '0x5555555555555555555555555555555555555555' }, elysium: { pm: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', posm: null, weth9: '0xba876237b0f021a6c6d852d6c26e107997cc5e81' } };
 const NETC = NETS[process.env.FORK_NET || 'hyperevm']; const PM = NETC.pm; let POSM = NETC.posm;
 const PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3', C2 = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 const E18 = 10n ** 18n, Z = ethers.ZeroAddress, fmt = (v) => Number(ethers.formatEther(v)).toLocaleString('en-US', { maximumFractionDigits: 6 });

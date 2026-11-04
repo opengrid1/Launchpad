@@ -1,7 +1,7 @@
 /* Launch form: step 1 identity, step 2 economics (pair, fee wallet, creator fee, opening buy, where fees go),
    live "On the board" preview, one transaction. */
 window.PAGE = async () => {
-  const { $, $$, esc, fmtNum, toast, errMsg } = APP, C = CFG, E = C.econ, L = C.limits;
+  const { $, $$, esc, fmtNum, toast, errMsg } = APP, C = CFG, E = C.econ, L = C.limits, Q = () => C.chain.quote;
   const F = { image: '', name: '', symbol: '', description: '', x: '', telegram: '', website: '', chains: ['hyper'], creatorTaxBps: 0, buyback: false, devBuy: 0, feeWallet: '', creatorSol: '' };
   let busy = false;
   const setStep = (s) => { $('#st1').classList.toggle('hidden', s !== 1); $('#st2').classList.toggle('hidden', s !== 2); $('#w-h2').textContent = s === 1 ? 'Give it a name and a face.' : 'Choose what it trades against.'; $$('.steps span').forEach((x) => { const n = +x.dataset.st; x.classList.toggle('on', n === s); x.classList.toggle('ok', n < s); }); scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -31,13 +31,13 @@ window.PAGE = async () => {
     $('#dev-hint').dataset.over = over ? '1' : '';
     const gasHype = 1_200_000 * (APP.gasGwei || 20) / 1e9; const tot = E.launchFeeHype + F.devBuy + gasHype;
     $('#c-fee').textContent = E.launchFeeHype; $('#c-dev').textContent = F.devBuy; $('#c-gas').textContent = gasHype.toFixed(5); $('#c-tot').textContent = tot.toFixed(5);
-    $('#w-terms').textContent = `Launch fee ${E.launchFeeHype} HYPE. Opens at ${E.openMcapHype} HYPE. Pool fee ${(E.feeBps / 100).toFixed(1)}%.${F.devBuy > 0 ? ` Opening buy ${F.devBuy} HYPE.` : ''}`;
-    $('#pv-mc').textContent = `${E.openMcapHype + net > E.openMcapHype ? fmtNum((E.openMcapHype + net) ** 2 / E.openMcapHype, 1) : E.openMcapHype} HYPE`;
+    $('#w-terms').textContent = `Launch fee ${E.launchFeeHype} ${Q()}. Opens at ${E.openMcapHype} ${Q()}. Pool fee ${(E.feeBps / 100).toFixed(1)}%.${F.devBuy > 0 ? ` Opening buy ${F.devBuy} ${Q()}.` : ''}`;
+    $('#pv-mc').textContent = `${E.openMcapHype + net > E.openMcapHype ? fmtNum((E.openMcapHype + net) ** 2 / E.openMcapHype, 1) : E.openMcapHype} ${Q()}`;
     goBtn();
   }
   function goBtn() { const b = $('#go'); if (busy) return; if (!APP.W.connected) { b.textContent = 'Sign in to launch'; b.onclick = () => APP.W.connect(); return; } if (!APP.W.chainOk) { b.textContent = 'Switch to ' + C.chain.name; b.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; } b.textContent = 'Launch'; b.onclick = launch; }
   function preview() {
-    $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your token'; $('#pv-t').innerHTML = `<span>${esc(F.symbol || 'TICKER')}</span><span class="badge">HYPE pair · ${esc(C.chain.name)}</span>`; $('#pv-d').textContent = F.description || 'A line or two about the token goes here.';
+    $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your token'; $('#pv-t').innerHTML = `<span>${esc(F.symbol || 'TICKER')}</span><span class="badge">${esc(Q())} pair · ${esc(C.chain.name)}</span>`; $('#pv-d').textContent = F.description || 'A line or two about the token goes here.';
     $('#pv-l').innerHTML = [['x', 'X'], ['telegram', 'Telegram'], ['website', 'Website']].filter(([k]) => F[k]).map(([, l]) => `<span class="badge">${l}</span>`).join('');
     $('#pv-fee').textContent = `${F.creatorTaxBps / 100}%${F.buyback ? ' · buyback & vest' : ''}`;
   }
@@ -56,7 +56,7 @@ window.PAGE = async () => {
     const el = $('#f-net'); if (!el) return;
     el.innerHTML = C.chains.map((c) => `<button type="button" role="radio" aria-checked="${c.key === C.chain.key}" class="${c.key === C.chain.key ? 'on' : ''}" data-net="${c.key}" ${C.live(c) ? '' : 'disabled title="Soon"'}>${esc(c.name)}${C.live(c) ? '' : ' · soon'}</button>`).join('');
     $$('[data-net]', el).forEach((b) => b.onclick = async () => { await APP.setChain(b.dataset.net); nets(); preview(); goBtn(); });
-    const n = $('#net-note'); if (n) n.textContent = `The pool opens on Uniswap v4 on ${C.chain.name}, chain ${C.chain.id}. Gas and the launch fee are paid in HYPE on ${C.chain.name}.`;
+    const n = $('#net-note'); if (n) n.textContent = `The pool opens on Uniswap v4 on ${C.chain.name}, chain ${C.chain.id}. Gas and the launch fee are paid in ${Q()} on ${C.chain.name}.`;
     const pn = $('#pair-net'); if (pn) pn.textContent = C.chain.name;
   }
   nets();
