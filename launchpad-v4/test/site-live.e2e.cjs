@@ -68,7 +68,7 @@ srv.listen(8791, async () => {
     await pg.screenshot({ path: OUT + '/live-token.png', fullPage: true });
     // 3. buy N.buy of the quote coin: quote vs result
     await pg.waitForTimeout(11000); // past the 10 s snipe window
-    const qb = await pg.evaluate((a) => DATA.quoteBuy(a, 'hyper', N.buy), addr);
+    const qb = await pg.evaluate(([a, n]) => DATA.quoteBuy(a, 'hyper', n), [addr, N.buy]);
     await pg.fill('#t-amt', String(N.buy)); await pg.waitForTimeout(600); console.log('  panel:', JSON.stringify(await pg.evaluate(() => ({ go: document.querySelector('#t-go').textContent, dis: document.querySelector('#t-go').disabled, conn: APP.W.connected, bal: DATA.hypeBalance('hyper'), ctl: (document.querySelector('#t-ctl')||{}).textContent })))); await pg.click('#t-go');
     const bought = await waitFor(async () => /Bought/.test(await toasts()), 60000); ok(bought, 'buy through the UniversalRouter: ' + (await toasts()).slice(-80));
     const afterBuy = Number(ethers.formatEther(await erc(addr).balanceOf(USER)));
@@ -78,11 +78,12 @@ srv.listen(8791, async () => {
     // 4. sell half (token approval + Permit2 + swap)
     await pg.click('[data-s="sell"]'); await pg.waitForTimeout(300); const sellAmt = Math.floor(got / 2);
     const qs = await pg.evaluate(([a, n]) => DATA.quoteSell(a, 'hyper', n), [addr, sellAmt]);
-    const hype0 = Number(ethers.formatEther(await P.getBalance(USER)));
+    const hype0 = Number(ethers.formatEther(await P.getBalance(USER))), blk0 = await P.getBlockNumber();
     await pg.fill('#t-amt', String(sellAmt)); await pg.waitForTimeout(300); await pg.click('#t-go');
     const sold = await waitFor(async () => /Sold/.test(await toasts()), 90000); ok(sold, 'sell with approvals: ' + (await toasts()).slice(-100));
-    const hype1 = Number(ethers.formatEther(await P.getBalance(USER)));
-    ok(Math.abs((hype1 - hype0) / qs.hype - 1) < 0.01, `sell quote ${qs.hype.toFixed(5)} vs received ${(hype1 - hype0).toFixed(5)} ${N.quote} (gas included)`);
+    let gasPaid = 0n; for (let b = blk0 + 1, top = await P.getBlockNumber(); b <= top; b++) { const bl = await P.getBlock(b, true); for (const tx of bl.prefetchedTransactions) if (tx.from.toLowerCase() === USER.toLowerCase()) { const rc = await P.getTransactionReceipt(tx.hash); gasPaid += rc.gasUsed * rc.gasPrice; } }
+    const hype1 = Number(ethers.formatEther(await P.getBalance(USER) + gasPaid)); // what the sell paid, gas added back
+    ok(Math.abs((hype1 - hype0) / qs.hype - 1) < 0.01, `sell quote ${qs.hype.toFixed(5)} vs received ${(hype1 - hype0).toFixed(5)} ${N.quote} (gas added back)`);
     await waitFor(async () => pg.evaluate((a) => DATA.token(a).trades === 3, addr), 30000);
     const tr = await pg.evaluate((a) => DATA.trades(a).map((t) => [t.buy ? 'buy' : 'sell', t.wallet.slice(0, 8), +t.hype.toFixed(4), Math.round(t.tokens), t.feeBps]), addr);
     ok(tr.length === 3 && tr.every((t) => t[1] === USER.toLowerCase().slice(0, 8)), 'trades with the trader and fee: ' + JSON.stringify(tr));
@@ -95,7 +96,7 @@ srv.listen(8791, async () => {
     ok(cl.claimable > 0, 'creator fees claimable in the escrow: ' + cl.claimable.toFixed(6) + ' ' + N.quote + '; lifetime ' + cl.lifetime.toFixed(6));
     await pg.screenshot({ path: OUT + '/live-creator.png', fullPage: true });
     const claimBtn = await pg.$('#p-claim'); ok(!!claimBtn, 'claim button shown');
-    if (claimBtn) { const e0 = await P.getBalance(USER); await claimBtn.click(); await waitFor(async () => (await P.getBalance(USER)) > e0, 60000); ok((await P.getBalance(USER)) > e0, 'claim paid HYPE to the creator'); }
+    if (claimBtn) { const e0 = await P.getBalance(USER); await claimBtn.click(); await waitFor(async () => (await P.getBalance(USER)) > e0, 60000); ok((await P.getBalance(USER)) > e0, 'claim paid ' + N.quote + ' to the creator'); }
     // 6. board
     await pg.goto(B + '/'); await pg.waitForTimeout(2500); ok(await pg.evaluate(() => DATA.tokens().length === 1), 'board lists the token');
     await pg.screenshot({ path: OUT + '/live-home.png', fullPage: true });
