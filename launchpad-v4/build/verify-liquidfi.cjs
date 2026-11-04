@@ -4,13 +4,13 @@
 // standard-JSON input carries every source the compile read, under the same keys, so the metadata hash matches.
 // Constructor arguments come from the deploy transactions themselves. Then marks launched tokens (EIP-1167 clones of
 // the token implementation) as proxies.
-//   node build/verify-liquidfi.cjs [hyperevm] [token addresses...]
+//   node build/verify-liquidfi.cjs [hyperevm|ethereum] [token addresses...]
 // Reads ETHERSCAN_API_KEY from contracts/.env (never printed).
 const fs = require("fs"), path = require("path");
 const { ethers } = require("ethers");
 const ROOT = path.join(__dirname, "..");
 // the HyperLend RPC keeps old transactions; the official one may not serve them
-const NETS = { hyperevm: { chainId: 999, rpc: "https://rpc.hyperlend.finance" } };
+const NETS = { hyperevm: { chainId: 999, rpc: "https://rpc.hyperlend.finance" }, ethereum: { chainId: 1, rpc: process.env.ETH_RPC || "https://ethereum-rpc.publicnode.com" } };
 const net = process.argv[2] && NETS[process.argv[2]] ? process.argv[2] : "hyperevm", N = NETS[net];
 const extraTokens = process.argv.slice(2).filter((a) => /^0x[0-9a-fA-F]{40}$/.test(a));
 const KEY = (fs.readFileSync(path.join(ROOT, "../contracts/.env"), "utf8").match(/ETHERSCAN_API_KEY=([A-Za-z0-9]+)/) || [])[1];
