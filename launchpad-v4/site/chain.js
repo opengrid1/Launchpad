@@ -151,12 +151,12 @@
   }
   const isPool = (t, w) => { const k = KK(t.net); return w === low(k.poolManager) || w === low(k.locker) || w === low(k.factory) || w === low(k.hook); };
   function view(t) {
-    if (VIEW.has(t.addr)) return VIEW.get(t.addr);
+    const cached = VIEW.get(t.addr); if (cached && cached._usd === APP.hypeUsd) return cached; // rebuilt when the USD price arrives or moves
     const m = poolView(t), T = t.terms || {};
     const v = { addr: t.addr, mint: '', name: t.name, symbol: t.symbol, emoji: '', img: t.logo || APP.defaultImg(t.symbol, t.addr), desc: t.desc, links: { x: (t.socials || {}).x || '', tg: (t.socials || {}).tg || '', web: (t.socials || {}).web || '' }, creator: t.creator, feeRecipient: t.feeRecipient, creatorSol: '', createdAt: t.createdAt, age: APP.ago(t.createdAt), chains: ['hyper'], byChain: { hyper: m }, net: t.net, chainName: C.chainOf(t.net).name,
       px: m.px, pxUsd: m.pxUsd, mcap: m.mcap, mcapUsd: m.mcap * APP.hypeUsd, liqHype: m.liqHype, vol24: m.vol24, volAll: m.volAll, feesAll: m.feesAll, trades: m.trades, buys24: m.buys24, sells24: m.sells24, holders: t.holders.filter(([w]) => !isPool(t, w)).length, c5: m.c5, c1: m.c1, c24: m.c24,
       creatorTaxBps: t.taxBps, buyback: t.buyback, feeBps: T.hookFeeBps ?? E.feeBps, creatorShareBps: 10000 - (T.protocolShareBps ?? E.protocolShareBps), lastTs: m.lastTs, fee: m.fee, tx: t.tx, poolId: t.poolId };
-    VIEW.set(t.addr, v); return v;
+    v._usd = APP.hypeUsd; VIEW.set(t.addr, v); return v;
   }
   function holders(a) {
     const t = BY.get(low(a)); if (!t) return [];

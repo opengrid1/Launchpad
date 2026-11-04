@@ -115,3 +115,5 @@ body.srch-open #top .brand,body.srch-open #top .sp{visibility:hidden}.msr{positi
 .rows svg.sp{display:block;width:120px;height:36px;margin-left:auto}
 .rows .mc{text-align:right;font-size:15px;line-height:18px;font-weight:600;font-variant-numeric:tabular-nums}
 @media(max-width:999px){.rows .rh{display:none}.rows .rh,.rows .r{grid-template-columns:40px minmax(0,1fr) auto}.rows .hm{display:none}.rows .nm em{display:none}}
+
+.ofc{display:inline-flex;align-items:center;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--acid);color:var(--acid-ink);font-size:11px;line-height:16px;font-weight:800;letter-spacing:0;vertical-align:middle;white-space:nowrap;flex:none}
