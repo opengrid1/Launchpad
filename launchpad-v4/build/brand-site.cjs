@@ -10,6 +10,8 @@ const OUT = path.resolve(process.argv[3] || path.join(ROOT, "dist", brand));
 const spec = JSON.parse(fs.readFileSync(path.join(B, "brand.json"), "utf8"));
 const SKIP = new Set(["node_modules", ".vercel", ".env.local", ".env", "uploads"]);
 
+const LINK = path.join(OUT, ".vercel"), keep = fs.existsSync(LINK) ? fs.mkdtempSync(path.join(require("os").tmpdir(), "vl-")) : null; // the Vercel project link survives rebuilds
+if (keep) fs.cpSync(LINK, keep, { recursive: true });
 fs.rmSync(OUT, { recursive: true, force: true });
 (function copy(src, dst) {
   fs.mkdirSync(dst, { recursive: true });
@@ -21,6 +23,7 @@ fs.rmSync(OUT, { recursive: true, force: true });
 })(SITE, OUT);
 for (const f of [".vercelignore"]) if (fs.existsSync(path.join(SITE, f))) fs.copyFileSync(path.join(SITE, f), path.join(OUT, f));
 
+if (keep) fs.cpSync(keep, LINK, { recursive: true });
 fs.copyFileSync(path.join(B, "config.js"), path.join(OUT, "config.js"));
 const IMG = path.join(B, "img"); if (fs.existsSync(IMG)) for (const f of fs.readdirSync(IMG)) fs.copyFileSync(path.join(IMG, f), path.join(OUT, "img", f));
 if (spec.theme) fs.appendFileSync(path.join(OUT, "ui.css"), "\n/* brand: " + spec.name + " */\n" + spec.theme + "\n");
