@@ -36,12 +36,28 @@ async function sweepChain(NET, wallet) {
   return { pools: pools.length, due: due.length, swept: done };
 }
 
+// BuzzPad v2: fees already sit in the hook in the pair currency; anyone may pay them out. Pools owing at least the
+// network's minimum (valued in ETH at the pair's price) are paid out together in one payoutMany.
+const HOOK2_I = new ethers.Interface(['function payoutMany(bytes32[] poolIds)']);
+async function payoutV2(NET, wallet) {
+  const X = state.indexer(NET.key); await X.sync(); const S = X.build();
+  const min = Number(process.env.SWEEP_MIN_HYPE || NET.minSweep || '0.002');
+  const due = S.tokens.filter((t) => t.v === 2 && t.pend).map((t) => { const per = t.pair === ethers.ZeroAddress ? 1 : ((S.pairs || {})[t.pair] || {}).perEth || 0; return { id: t.poolId, worth: per ? (t.pend.creator + t.pend.protocol) / per : 0 }; }).filter((x) => x.worth >= min);
+  if (!due.length) return { due: 0 };
+  const ids = due.slice(0, 40).map((x) => x.id);
+  const r = await sendTx(NET, wallet, { to: NET.v2.hook, data: HOOK2_I.encodeFunctionData('payoutMany', [ids]), gasLimit: BigInt(80000 + 90000 * ids.length) }).catch((e) => ({ error: e.message }));
+  return { due: due.length, paid: ids.length, worthEth: due.slice(0, 40).reduce((s, x) => s + x.worth, 0), ...r };
+}
+
 module.exports = async (req, res) => {
   const send = (code, obj) => { res.statusCode = code; res.setHeader('content-type', 'application/json'); res.setHeader('cache-control', 'no-store'); res.end(JSON.stringify(obj)); };
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.authorization !== 'Bearer ' + secret) return send(401, { error: 'unauthorized' });
   const key = process.env.SWEEP_KEY; if (!key) return send(500, { error: 'SWEEP_KEY is not set' });
   const wallet = new ethers.Wallet(key.startsWith('0x') ? key : '0x' + key), out = {};
-  for (const NET of Object.values(NETS)) { try { out[NET.key] = await sweepChain(NET, wallet); } catch (e) { out[NET.key] = { error: e.message }; } }
+  for (const NET of Object.values(NETS)) {
+    try { out[NET.key] = await sweepChain(NET, wallet); } catch (e) { out[NET.key] = { error: e.message }; }
+    if (NET.v2) { try { out[NET.key + '-v2'] = await payoutV2(NET, wallet); } catch (e) { out[NET.key + '-v2'] = { error: e.message }; } }
+  }
   return send(200, out);
 };

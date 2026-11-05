@@ -2,6 +2,10 @@
    live "On the board" preview, one transaction. */
 window.PAGE = async () => {
   const { $, $$, esc, fmtNum, toast, errMsg } = APP, C = CFG, E = C.econ, L = C.limits, Q = () => C.chain.quote;
+  // v2 pairs (chain.v2.pairs): the native coin, or an ERC-20 such as XMR or AZTEC; PR() is the chosen one
+  const PAIRS = () => (window.DATA && DATA.pairs ? DATA.pairs() : []);
+  const PR = () => PAIRS().find((p) => p.key === F.pair) || null;
+  const ercPair = () => !!(PR() && PR().key !== 'eth');
   const F = { image: '', name: '', symbol: '', description: '', x: '', telegram: '', website: '', chains: ['hyper'], creatorTaxBps: 0, buyback: false, devBuy: 0, feeWallet: '', creatorSol: '' };
   let busy = false;
   const setStep = (s) => { $('#st1').classList.toggle('hidden', s !== 1); $('#st2').classList.toggle('hidden', s !== 2); $('#w-h2').textContent = s === 1 ? 'Give it a name and a face.' : 'Choose what it trades against.'; $$('.steps span').forEach((x) => { const n = +x.dataset.st; x.classList.toggle('on', n === s); x.classList.toggle('ok', n < s); }); scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -23,7 +27,7 @@ window.PAGE = async () => {
   $('#f-wallet').oninput = (e) => { F.feeWallet = e.target.value.trim(); };
   const pick = (bb) => { F.buyback = bb; $('#f-fw').classList.toggle('on', !bb); $('#f-bb').classList.toggle('on', bb); preview(); };
   $('#f-fw').onclick = (e) => { e.preventDefault(); pick(false); }; $('#f-bb').onclick = (e) => { e.preventDefault(); pick(true); };
-  $('#f-dev').oninput = (e) => { F.devBuy = Math.max(0, parseFloat(e.target.value) || 0); cost(); };
+  $('#f-dev').oninput = (e) => { F.devBuy = ercPair() ? 0 : Math.max(0, parseFloat(e.target.value) || 0); cost(); };
   function cost() {
     const maxTok = E.supply * E.maxDevBuyBps / 10000;
     const net = F.devBuy * (1 - (E.feeBps + F.creatorTaxBps) / 10000), tokens = F.devBuy > 0 ? E.supply * (1 - E.openMcapHype / (E.openMcapHype + net)) : 0, over = tokens > maxTok;
@@ -31,13 +35,15 @@ window.PAGE = async () => {
     $('#dev-hint').dataset.over = over ? '1' : '';
     const gasHype = 1_200_000 * (APP.gasGwei || 20) / 1e9; const tot = E.launchFeeHype + F.devBuy + gasHype;
     $('#c-fee').textContent = E.launchFeeHype; $('#c-dev').textContent = F.devBuy; $('#c-gas').textContent = gasHype.toFixed(5); $('#c-tot').textContent = tot.toFixed(5);
-    $('#w-terms').textContent = `Launch fee ${E.launchFeeHype} ${Q()}. Opens at ${E.openMcapHype} ${Q()}. Pool fee ${(E.feeBps / 100).toFixed(1)}%.${F.devBuy > 0 ? ` Opening buy ${F.devBuy} ${Q()}.` : ''}`;
+    if (ercPair()) { $('#dev-hint').textContent = 'The opening buy is available with the ETH pair. Buy right after launch instead.'; $('#dev-hint').dataset.over = ''; }
+    $('#w-terms').textContent = ercPair() ? `Launch fee ${E.launchFeeHype} ${Q()}. Paired with ${PR().sym}, opens at ${fmtNum(PR().open)} ${PR().sym}. Pool fee ${(E.feeBps / 100).toFixed(1)}%, paid in ${PR().sym}.` : `Launch fee ${E.launchFeeHype} ${Q()}. Opens at ${E.openMcapHype} ${Q()}. Pool fee ${(E.feeBps / 100).toFixed(1)}%.${F.devBuy > 0 ? ` Opening buy ${F.devBuy} ${Q()}.` : ''}`;
     $('#pv-mc').textContent = `${E.openMcapHype + net > E.openMcapHype ? fmtNum((E.openMcapHype + net) ** 2 / E.openMcapHype, 1) : E.openMcapHype} ${Q()}`;
+    if (ercPair()) $('#pv-mc').textContent = `${fmtNum(PR().open)} ${PR().sym}`;
     goBtn();
   }
   function goBtn() { const b = $('#go'); if (busy) return; if (!APP.W.connected) { b.textContent = 'Sign in to launch'; b.onclick = () => APP.W.connect(); return; } if (!APP.W.chainOk) { b.textContent = 'Switch to ' + C.chain.name; b.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; } b.textContent = 'Launch'; b.onclick = launch; }
   function preview() {
-    $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your token'; $('#pv-t').innerHTML = `<span>${esc(F.symbol || 'TICKER')}</span><span class="badge">${esc(Q())} pair · ${esc(C.chain.name)}</span>`; $('#pv-d').textContent = F.description || 'A line or two about the token goes here.';
+    $('#pv-img').src = F.image || '/img/logo.svg'; $('#pv-n').textContent = F.name || 'Your token'; $('#pv-t').innerHTML = `<span>${esc(F.symbol || 'TICKER')}</span><span class="badge">${esc(PR() ? PR().sym : Q())} pair · ${esc(C.chain.name)}</span>`; $('#pv-d').textContent = F.description || 'A line or two about the token goes here.';
     $('#pv-l').innerHTML = [['x', 'X'], ['telegram', 'Telegram'], ['website', 'Website']].filter(([k]) => F[k]).map(([, l]) => `<span class="badge">${l}</span>`).join('');
     $('#pv-fee').textContent = `${F.creatorTaxBps / 100}%${F.buyback ? ' · buyback & vest' : ''}`;
   }
@@ -60,6 +66,20 @@ window.PAGE = async () => {
     const pn = $('#pair-net'); if (pn) pn.textContent = C.chain.name;
   }
   nets();
+  // the pair picker replaces the fixed "Paired with" field when the chain has v2 pairs
+  function pairPick() {
+    const ps = PAIRS(); if (!ps.length) return; if (!F.pair) F.pair = ps[0].key;
+    const sel = $('#st2 .sel'), host = sel ? sel.parentElement : $('#f-pair') && $('#f-pair').parentElement; if (!host) return;
+    const html = `<div class="seg lg" id="f-pair" role="radiogroup" aria-label="Pair">${ps.map((p) => `<button type="button" role="radio" aria-checked="${p.key === F.pair}" class="${p.key === F.pair ? 'on' : ''}" data-pair="${p.key}" style="display:inline-flex;align-items:center;gap:6px"><img src="${esc(p.logo)}" alt="" style="width:18px;height:18px;border-radius:50%">${esc(p.sym)}</button>`).join('')}</div>`;
+    if (sel) sel.outerHTML = html; else $('#f-pair').outerHTML = html;
+    const note = host.querySelector('.note'); if (note) note.textContent = ercPair() ? `The pool trades against ${PR().name}. Buyers still pay in ETH: the site swaps ETH to ${PR().sym} and into the coin in one transaction. Fees are paid out in ${PR().sym}. The pair cannot change later.` : 'Buyers pay in ETH in the pool from the moment it launches. The pair cannot change later.';
+    $$('[data-pair]', host).forEach((b) => b.onclick = () => { F.pair = b.dataset.pair; if (ercPair()) { F.devBuy = 0; $('#f-dev').value = ''; } $('#f-dev').disabled = ercPair(); pairPick(); cost(); preview(); });
+    $('#f-dev').disabled = ercPair();
+    // v2 pays creator fees straight out in the pair; it has no buyback & vest
+    const bb = $('#f-bb'); if (bb) { bb.classList.add('hidden'); F.buyback = false; } const adv = $('#st2 details.adv'); if (adv) adv.classList.add('hidden');
+    const fw = $('#f-fw small'); if (fw) fw.textContent = `Paid out in ${PR() ? PR().sym : 'the pair'} straight to your fee wallet, from your profile.`;
+  }
+  pairPick();
   APP.onWallet(() => { goBtn(); preview(); if (APP.W.connected && !$('#f-wallet').value) $('#f-wallet').placeholder = APP.W.address; }); APP.onUpdate(cost);
   cost(); preview();
 };

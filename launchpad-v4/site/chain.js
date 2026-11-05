@@ -18,6 +18,9 @@
     permit2: new X.Interface(['function allowance(address,address,address) view returns (uint160 amount, uint48 expiration, uint48 nonce)', 'function approve(address token, address spender, uint160 amount, uint48 expiration)']),
     router: new X.Interface(['function execute(bytes commands, bytes[] inputs, uint256 deadline) payable', 'error V4TooLittleReceived(uint256 minAmountOutReceived, uint256 amountReceived)', 'error V4TooMuchRequested(uint256 maxAmountInRequested, uint256 amountRequested)', 'error DeadlinePassed(uint256 deadline)', 'error WrappedError(address target, bytes4 selector, bytes reason, bytes details)']),
     escrow: new X.Interface(['function claim() returns (uint256)', 'function balanceOf(address) view returns (uint256)']),
+    // BuzzPad v2: the launch config picks the pair; fees are paid out by the hook in the pair
+    factory2: new X.Interface(['function launch((string name,string symbol,string logo,string description,(string twitter,string telegram,string discord,string website,string farcaster) socials,address creatorFeeRecipient,uint16 creatorTaxBps,bytes32 expectedEconomics,bytes32 salt,uint256 openingBuy,uint256 minTokensOut) params, uint256 launchConfigId) payable returns (address)', 'function previewLaunchEconomics(uint256) view returns (bytes32)', 'function launchFee() view returns (uint256)', 'function launchEnabled() view returns (bool)', 'function canLaunch(address) view returns (bool)', 'event TokenLaunched(address indexed token, address indexed creator, bytes32 indexed poolId, uint256 launchConfigId, address pairToken, address creatorFeeRecipient, uint16 creatorTaxBps, uint256[3] positionIds)', 'error NotWhitelisted()', 'error LaunchFeeNotPaid()', 'error LogoRequired()', 'error InvalidTokenParams()', 'error LinkInDescription()', 'error CreatorTaxTooHigh()', 'error OpeningBuyTooLarge(uint256,uint256)', 'error LaunchEconomicsMismatch(bytes32,bytes32)', 'error LaunchConfigDisabled()', 'error PairTokenValidationFailed()']),
+    hook2: new X.Interface(['function payout(bytes32 poolId) returns (uint256 creatorPaid, uint256 protocolPaid)', 'function pendingCreator(bytes32) view returns (uint256)', 'error ExactOutputSellUnsupported()']),
     mc: new X.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])', 'function getEthBalance(address) view returns (uint256)']),
   };
   const AC = X.AbiCoder.defaultAbiCoder();
@@ -66,9 +69,25 @@
   const myBal = new Map(), hypeBal = {}; let hypeFor = '';
   const stOf = (net) => SS[net] || { tokens: [], trades: [], escrow: {}, block: 0, skew: 0, poolManager: low(KK(net).poolManager) };
   const now = (net) => Math.floor(Date.now() / 1000) + (stOf(net || C.chain.key).skew || 0); // chain time: block timestamps can run ahead of this clock
+  // v2 coins can pair with an ERC-20 (AZTEC, WXMR): their pool math stays in pair units, and every price, volume and
+  // fee the pages show is converted to the chain's native coin at the pair's live price (from the indexer)
+  const ZERO = '0x0000000000000000000000000000000000000000';
+  const V2of = (net) => C.chainOf(net || C.chain.key).v2 || null;
+  const isErc = (t) => t && t.v === 2 && t.pair && t.pair !== ZERO;
+  const pairInfo = (t) => (isErc(t) ? (stOf(t.net).pairs || {})[t.pair] || null : null);
+  const pairMeta = (t) => { const v2 = V2of(t.net); return ((v2 && v2.pairs) || []).find((p) => low(p.addr) === low(t.pair || ZERO)) || { sym: C.chainOf(t.net).quote, logo: C.chainOf(t.net).logo, addr: ZERO }; };
+  const ethPer = (t) => { if (!isErc(t)) return 1; const p = pairInfo(t); return p && p.perEth > 0 ? 1 / p.perEth : 0; };
+  function ethToPair(t, eth) { if (!isErc(t)) return eth; const p = pairInfo(t); if (!p) return 0; if (p.route === 'v2') { const a = eth * 0.997; return (a * p.reservePair) / (p.reserveEth + a); } return eth * p.perEth; }
+  function pairToEth(t, x) { if (!isErc(t)) return x; const p = pairInfo(t); if (!p) return 0; if (p.route === 'v2') { const a = x * 0.997; return (a * p.reserveEth) / (p.reservePair + a); } return (x / p.perEth) * 0.999; }
   function index() {
     ALL = []; BY.clear(); TR.clear(); VIEW = new Map();
-    for (const net of Object.keys(SS)) { for (const t of SS[net].tokens) { t.net = net; ALL.push(t); BY.set(t.addr, t); } for (const tr of SS[net].trades) (TR.get(tr.t) || TR.set(tr.t, []).get(tr.t)).push(tr); }
+    for (const net of Object.keys(SS)) {
+      for (const t of SS[net].tokens) { t.net = net; ALL.push(t); BY.set(t.addr, t); }
+      for (const tr of SS[net].trades) {
+        const t = BY.get(tr.t); if (!tr._eth && isErc(t)) { const k = ethPer(t); tr.h *= k; tr.f *= k; tr.ft *= k; tr.fx *= k; tr.p *= k; tr._eth = 1; }
+        (TR.get(tr.t) || TR.set(tr.t, []).get(tr.t)).push(tr);
+      }
+    }
     for (const a of TR.values()) a.sort((x, y) => x.ts - y.ts || x.blk - y.blk);
   }
   async function load1(net, fresh) {
@@ -102,7 +121,7 @@
   function bandsHeld(t) { // HYPE and tokens sitting in the pool now
     const P = poolOf(t); let h = 0, k = 0; if (!P.sq) return { hype: 0, tokens: 0 };
     for (const r of P.ranges) { const s = Math.min(Math.max(P.sq, r.a), r.b); h += r.L * (1 / s - 1 / r.b) / 1e18; k += r.L * (s - r.a) / 1e18; }
-    return { hype: h, tokens: k };
+    return { hype: h * ethPer(t), tokens: k };
   }
 
   // ---- fees, as the hook applies them
@@ -128,34 +147,50 @@
     if (fs.kind !== 'snipe' && selfSpike(t, sqEnd)) extra = Math.max(extra, T.volExtraBps || 0);
     return fs.kind === 'snipe' ? (buy ? Math.min(9900, fs.total) : fs.bps) : Math.min(9900, fs.bps + extra);
   }
+  // v2: the fee comes off the pair amount before the swap (buys) or after it (sells), priced from the pool's state
+  // before the trade, so a trade never raises its own fee
+  function rateV2(fs, buy) { return fs.kind === 'snipe' ? (buy ? Math.min(9900, fs.total) : fs.bps) : Math.min(9900, fs.bps + (fs.extraBps || 0)); }
+  function quoteBuyV2(t, ethIn) {
+    const raw = pxOf(poolOf(t).sq), px = raw * ethPer(t); if (!(ethIn > 0)) return { tokens: 0, fee: 0, snipe: 0, px, impact: 0, feeBps: 0 };
+    const fs = feeState(t.addr), rate = rateV2(fs, true), snipe = fs.kind === 'snipe' ? Math.min(fs.snipeBps, rate) : 0;
+    const pairIn = ethToPair(t, ethIn), sim = swapSim(t, true, pairIn * (1 - rate / 1e4) * 1e18);
+    return { tokens: sim.out / 1e18, fee: (ethIn * (rate - snipe)) / 1e4, snipe: (ethIn * snipe) / 1e4, feeBps: rate, px, impact: raw ? (pxOf(sim.sq) / raw - 1) * 100 : 0, pairIn };
+  }
+  function quoteSellV2(t, tokensIn) {
+    const raw = pxOf(poolOf(t).sq), px = raw * ethPer(t); if (!(tokensIn > 0)) return { hype: 0, fee: 0, px, impact: 0, feeBps: 0 };
+    const fs = feeState(t.addr), rate = rateV2(fs, false), sim = swapSim(t, false, tokensIn * 1e18), gross = sim.out / 1e18;
+    return { hype: pairToEth(t, gross * (1 - rate / 1e4)), fee: pairToEth(t, (gross * rate) / 1e4), feeBps: rate, px, impact: raw ? (pxOf(sim.sq) / raw - 1) * 100 : 0, pairOut: gross * (1 - rate / 1e4) };
+  }
   function quoteBuy(a, chain, hypeIn) {
-    const t = BY.get(low(a)); const px = t ? pxOf(poolOf(t).sq) : 0; if (!t || !(hypeIn > 0)) return { tokens: 0, fee: 0, snipe: 0, px, impact: 0, feeBps: 0 };
+    const t0 = BY.get(low(a)); if (t0 && t0.v === 2) return quoteBuyV2(t0, hypeIn);
+    const t = t0; const px = t ? pxOf(poolOf(t).sq) : 0; if (!t || !(hypeIn > 0)) return { tokens: 0, fee: 0, snipe: 0, px, impact: 0, feeBps: 0 };
     const fs = feeState(a), snipe = fs.kind === 'snipe' ? fs.snipeBps : 0;
     const sim = swapSim(t, true, hypeIn * 1e18), cutBps = cutFor(t, fs, sim.sq, true), gross = sim.out / 1e18, tokens = gross * (1 - cutBps / 1e4), avg = gross > 0 ? hypeIn / gross : px;
     return { tokens, fee: gross * ((cutBps - snipe) / 1e4) * avg, snipe: gross * (snipe / 1e4) * avg, feeBps: cutBps, px, impact: px ? (pxOf(sim.sq) / px - 1) * 100 : 0 };
   }
   function quoteSell(a, chain, tokensIn) {
-    const t = BY.get(low(a)); const px = t ? pxOf(poolOf(t).sq) : 0; if (!t || !(tokensIn > 0)) return { hype: 0, fee: 0, px, impact: 0, feeBps: 0 };
+    const t = BY.get(low(a)); if (t && t.v === 2) return quoteSellV2(t, tokensIn); const px = t ? pxOf(poolOf(t).sq) : 0; if (!t || !(tokensIn > 0)) return { hype: 0, fee: 0, px, impact: 0, feeBps: 0 };
     const fs = feeState(a), sim = swapSim(t, false, tokensIn * 1e18), cutBps = cutFor(t, fs, sim.sq, false), gross = sim.out / 1e18;
     return { hype: gross * (1 - cutBps / 1e4), fee: gross * cutBps / 1e4, feeBps: cutBps, px, impact: px ? (pxOf(sim.sq) / px - 1) * 100 : 0 };
   }
 
   // ---- views in the shape the pages use
   const trView = (tr) => ({ tx: tr.tx, chain: 'hyper', wallet: tr.w, buy: !!tr.b, hype: tr.h, tokens: tr.k, fee: tr.f, feeBps: tr.fb, snipeBps: tr.s, volBps: tr.v, px: tr.p, ts: tr.ts });
-  function startPx(t) { const r = t.ranges.length ? Math.max(...t.ranges.map((x) => x.hi)) : 0; return r ? pxOf(sqrtAt(r)) : E.openMcapHype / SUPPLY; }
+  function startPx(t) { const r = t.ranges.length ? Math.max(...t.ranges.map((x) => x.hi)) : 0; return r ? pxOf(sqrtAt(r)) * ethPer(t) : E.openMcapHype / SUPPLY; }
   function poolView(t) {
-    const trs = TR.get(t.addr) || [], px = t.sqrtP ? pxOf(poolOf(t).sq) : startPx(t), n = now(t.net), held = bandsHeld(t);
+    const trs = TR.get(t.addr) || [], px = t.sqrtP ? pxOf(poolOf(t).sq) * ethPer(t) : startPx(t), n = now(t.net), held = bandsHeld(t);
     const pxAgo = (s) => { const cut = n - s; for (let i = trs.length - 1; i >= 0; i--) if (trs[i].ts <= cut) return trs[i].p; return t.createdAt <= cut ? (trs[0] ? startPx(t) : px) : startPx(t); };
     let vol24 = 0, volAll = 0, feesAll = 0, buys24 = 0, sells24 = 0; for (const tr of trs) { volAll += tr.h; feesAll += tr.f; if (tr.ts > n - 86400) { vol24 += tr.h; tr.b ? buys24++ : sells24++; } }
     return { chain: 'hyper', px, pxUsd: px * APP.hypeUsd, mcap: px * SUPPLY, liqHype: held.hype + held.tokens * px, hypeInPool: held.hype, vol24, volAll, feesAll, trades: trs.length, buys24, sells24, c5: (px / pxAgo(300) - 1) * 100, c1: (px / pxAgo(3600) - 1) * 100, c24: (px / pxAgo(86400) - 1) * 100, inPool: held.tokens, poolId: t.poolId, lockedIds: t.posIds, fee: feeState(t.addr), lastTs: trs.length ? trs[trs.length - 1].ts : t.createdAt };
   }
-  const isPool = (t, w) => { const k = KK(t.net); return w === low(k.poolManager) || w === low(k.locker) || w === low(k.factory) || w === low(k.hook); };
+  const isPool = (t, w) => { const k = KK(t.net), v2 = V2of(t.net) || {}; return w === low(k.poolManager) || w === low(k.locker) || w === low(k.factory) || w === low(k.hook) || w === low(v2.locker) || w === low(v2.factory) || w === low(v2.hook); };
   function view(t) {
     const cached = VIEW.get(t.addr); if (cached && cached._usd === APP.hypeUsd) return cached; // rebuilt when the USD price arrives or moves
     const m = poolView(t), T = t.terms || {};
     const v = { addr: t.addr, mint: '', name: t.name, symbol: t.symbol, emoji: '', img: t.logo || APP.defaultImg(t.symbol, t.addr), desc: t.desc, links: { x: (t.socials || {}).x || '', tg: (t.socials || {}).tg || '', web: (t.socials || {}).web || '' }, creator: t.creator, feeRecipient: t.feeRecipient, creatorSol: '', createdAt: t.createdAt, age: APP.ago(t.createdAt), chains: ['hyper'], byChain: { hyper: m }, net: t.net, chainName: C.chainOf(t.net).name,
       px: m.px, pxUsd: m.pxUsd, mcap: m.mcap, mcapUsd: m.mcap * APP.hypeUsd, liqHype: m.liqHype, vol24: m.vol24, volAll: m.volAll, feesAll: m.feesAll, trades: m.trades, buys24: m.buys24, sells24: m.sells24, holders: t.holders.filter(([w]) => !isPool(t, w)).length, c5: m.c5, c1: m.c1, c24: m.c24,
-      creatorTaxBps: t.taxBps, buyback: t.buyback, feeBps: T.hookFeeBps ?? E.feeBps, creatorShareBps: 10000 - (T.protocolShareBps ?? E.protocolShareBps), lastTs: m.lastTs, fee: m.fee, tx: t.tx, poolId: t.poolId };
+      creatorTaxBps: t.taxBps, buyback: t.buyback, feeBps: T.hookFeeBps ?? E.feeBps, creatorShareBps: 10000 - (T.protocolShareBps ?? E.protocolShareBps), lastTs: m.lastTs, fee: m.fee, tx: t.tx, poolId: t.poolId,
+      v: t.v || 1, pair: t.pair || ZERO, pairSym: pairMeta(t).sym, pairLogo: pairMeta(t).logo };
     v._usd = APP.hypeUsd; VIEW.set(t.addr, v); return v;
   }
   function holders(a) {
@@ -182,6 +217,7 @@
   // ---- writes
   const deadline = () => BigInt(now() + 900);
   const keyOf = (t) => [X.ZeroAddress, X.getAddress(t.addr), 0, 200, X.getAddress(KK(t.net).hook)];
+  const routeTx = (t, buy, amountIn, minOut) => window.ROUTES.encode({ coin: t.addr, pair: t.pair, hook: V2of(t.net).hook, pairInfo: pairInfo(t), buy, amountIn, minOut, deadline: deadline() });
   const onChainOf = async (t) => { if (C.chain.key !== t.net) await APP.setChain(t.net, false); }; // trade on the token's chain
   function v4Swap(t, buy, amountIn, minOut) {
     const key = keyOf(t), cur0 = X.ZeroAddress, cur1 = X.getAddress(t.addr);
@@ -194,7 +230,12 @@
     return I.router.encodeFunctionData('execute', ['0x10', [AC.encode(['bytes', 'bytes[]'], [actions, params])], deadline()]);
   }
   const wei = (v) => X.parseEther((Math.floor(Number(v) * 1e12) / 1e12).toFixed(12));
-  async function afterTrade(a) { const t = BY.get(low(a)); await Promise.all([load(true, t && t.net), refreshMine(), APP.W.connected ? exactBalance(a, APP.W.address).catch(() => {}) : null]); APP.emit(); }
+  // after a trade, read fresh state until the indexer has the trade's block, so the next quote starts from the new price
+  async function afterTrade(a, blk) {
+    const t = BY.get(low(a)), net = t && t.net;
+    const fresh = (async () => { for (let i = 0; i < 10; i++) { await load(true, net); if (!blk || stOf(net).block >= blk) return; await new Promise((s) => setTimeout(s, 1500)); } })();
+    await Promise.all([fresh, refreshMine(), APP.W.connected ? exactBalance(a, APP.W.address).catch(() => {}) : null]); APP.emit();
+  }
 
   const DATA = window.DATA = {
     mode: 'live',
@@ -224,8 +265,13 @@
     creator(w) {
       w = low(w); const byNet = {}; for (const net of Object.keys(SS)) { const e = SS[net].escrow[w] || { credited: 0, claimed: 0 }; byNet[net] = Math.max(0, e.credited - e.claimed); }
       const claimable = Object.values(byNet).reduce((s, x) => s + x, 0);
-      const mine = ALL.filter((t) => t.name && (t.feeRecipient === w || t.creator === w)).map((t) => { const v = view(t); const acc = creatorAccrued(t); const paid = t.swept.creator + t.swept.buyback, unswept = Math.max(0, acc - paid); return { ...v, creatorFees: Math.max(acc, paid), pending: unswept, unswept, byChainFees: { hyper: acc }, bbVested: t.vest.released }; });
-      return { tokens: mine, lifetime: mine.reduce((s, x) => s + x.creatorFees, 0), pending: claimable, claimable, claimableByChain: byNet, unswept: mine.reduce((s, x) => s + x.unswept, 0) };
+      const mine = ALL.filter((t) => t.name && (t.feeRecipient === w || t.creator === w)).map((t) => {
+        const v = view(t);
+        if (t.v === 2) { const k = ethPer(t), pend = ((t.pend || {}).creator || 0) * k, paid = ((t.paid || {}).creator || 0) * k; return { ...v, creatorFees: pend + paid, pending: pend, unswept: 0, payout: t.feeRecipient === w ? pend : 0, byChainFees: { hyper: pend + paid }, bbVested: 0 }; }
+        const acc = creatorAccrued(t); const paid = t.swept.creator + t.swept.buyback, unswept = Math.max(0, acc - paid); return { ...v, creatorFees: Math.max(acc, paid), pending: unswept, unswept, byChainFees: { hyper: acc }, bbVested: t.vest.released };
+      });
+      const payout = mine.reduce((s, x) => s + (x.payout || 0), 0);
+      return { tokens: mine, lifetime: mine.reduce((s, x) => s + x.creatorFees, 0), pending: claimable + payout, claimable: claimable + payout, claimableByChain: byNet, payout, unswept: mine.reduce((s, x) => s + x.unswept, 0) };
     },
     stats() { const ts = DATA.tokens(); return { launches: ts.length, launches24: ts.filter((t) => t.createdAt > now() - 86400).length, vol24: ts.reduce((s, x) => s + x.vol24, 0), feesAll: ts.reduce((s, x) => s + x.feesAll, 0), creatorsPaid: Object.values(SS).reduce((s, st) => s + Object.values(st.escrow).reduce((u, x) => u + x.credited, 0), 0) }; },
 
@@ -233,8 +279,9 @@
       const t = BY.get(low(a)); if (!t) throw new Error('Unknown token'); await onChainOf(t);
       const amountIn = wei(hype), min = wei(Math.max(0, minOut)), hb = hypeBal[t.net];
       if (hb && hype > hb) throw new Error('Not enough ' + C.chain.quote + ' on ' + C.chain.name);
-      const r = await send({ to: KK(t.net).router, data: v4Swap(t, true, amountIn, min), value: amountIn, gasLimit: 700000n }, 'buy');
-      await afterTrade(a); return { tx: r.hash, buy: true, hype, tokens: quoteBuy(a, chain, hype).tokens };
+      if (isErc(t) && !pairInfo(t)) throw new Error('The ' + pairMeta(t).sym + ' price is still loading, try again in a moment');
+      const r = await send({ to: KK(t.net).router, data: t.v === 2 ? routeTx(t, true, amountIn, min) : v4Swap(t, true, amountIn, min), value: amountIn, gasLimit: 900000n }, 'buy');
+      const q = quoteBuy(a, chain, hype); await afterTrade(a, parseInt(r.receipt.blockNumber, 16)); return { tx: r.hash, buy: true, hype, tokens: q.tokens };
     },
     async sell(a, chain, tokens, minOut) {
       const t = BY.get(low(a)); if (!t) throw new Error('Unknown token'); await onChainOf(t); await APP.W.require(); const me = APP.W.address, UR = KK(t.net).router;
@@ -242,10 +289,11 @@
       const [[allow], p2] = await Promise.all([call(a, I.erc20, 'allowance', [me, PERMIT2], t.net), call(PERMIT2, I.permit2, 'allowance', [me, a, UR], t.net)]);
       if (allow < amount) { APP.toast('Approve the token for trading (once)', 'info', 6000); await send({ to: a, data: I.erc20.encodeFunctionData('approve', [PERMIT2, X.MaxUint256]), gasLimit: 120000n }, 'approve'); }
       if (p2.amount < amount || Number(p2.expiration) < now() + 120) { APP.toast('Allow the swap router through Permit2 (once a month)', 'info', 6000); await send({ to: PERMIT2, data: I.permit2.encodeFunctionData('approve', [a, UR, (1n << 160n) - 1n, BigInt(now() + 30 * 86400)]), gasLimit: 120000n }, 'approve'); }
-      const r = await send({ to: UR, data: v4Swap(t, false, amount, wei(Math.max(0, minOut))), gasLimit: 700000n }, 'sell');
-      await afterTrade(a); return { tx: r.hash, buy: false, tokens, hype: quoteSell(a, chain, tokens).hype };
+      const r = await send({ to: UR, data: t.v === 2 ? routeTx(t, false, amount, wei(Math.max(0, minOut))) : v4Swap(t, false, amount, wei(Math.max(0, minOut))), gasLimit: 900000n }, 'sell');
+      const q = quoteSell(a, chain, tokens); await afterTrade(a, parseInt(r.receipt.blockNumber, 16)); return { tx: r.hash, buy: false, tokens, hype: q.hype };
     },
     async launch(p) {
+      if (V2of(C.chain.key)) return launchV2(p);
       await APP.W.require(); const me = APP.W.address, net = C.chain.key, K = KK(net);
       if (!C.live(C.chain)) throw new Error('LiquidFi is not live on ' + C.chain.name + ' yet');
       if (!p.image) throw new Error('Add an image for the token');
@@ -260,11 +308,31 @@
       for (let i = 0; i < 20 && addr && !BY.has(addr); i++) { await load(true, net); if (!BY.has(addr)) await new Promise((s) => setTimeout(s, 3000)); }
       refreshMine(); return { addr, tx: r.hash };
     },
-    async claim() { // every chain with something claimable, one transaction each, on that chain
-      await APP.W.require(); const by = DATA.creator(APP.W.address).claimableByChain; let got = 0;
+    async claim() { // every chain with something claimable, one transaction each, on that chain; then v2 payouts
+      await APP.W.require(); const cr = DATA.creator(APP.W.address), by = cr.claimableByChain; let got = 0;
       for (const [net, amt] of Object.entries(by)) { if (!(amt > 0)) continue; if (C.chain.key !== net) await APP.setChain(net, false); await send({ to: KK(net).escrow, data: I.escrow.encodeFunctionData('claim()', []), gasLimit: 150000n }, 'claim'); got += amt; }
+      for (const x of cr.tokens) { if (!(x.payout > 0)) continue; const t = BY.get(x.addr); await onChainOf(t); await send({ to: V2of(t.net).hook, data: I.hook2.encodeFunctionData('payout', [t.poolId]), gasLimit: 200000n }, 'payout'); got += x.payout; }
       if (!got) throw new Error('Nothing to claim yet'); await Promise.all([load(true), refreshMine()]); return got; },
   };
+
+  // BuzzPad v2 launch: the pair (p.pair: a key of chain.v2.pairs, default the native coin) picks the launch config; an
+  // opening buy is paid in ETH and only offered with the ETH pair
+  async function launchV2(p) {
+    await APP.W.require(); const me = APP.W.address, net = C.chain.key, V = V2of(net);
+    const pr = (V.pairs || []).find((x) => x.key === (p.pair || 'eth')) || V.pairs[0];
+    if (!p.image) throw new Error('Add an image for the token');
+    const logo = await uploadLogo(p.image);
+    const [econ, fee, enabled, can] = await multicall([[V.factory, I.factory2, 'previewLaunchEconomics', [pr.cfg]], [V.factory, I.factory2, 'launchFee'], [V.factory, I.factory2, 'launchEnabled'], [V.factory, I.factory2, 'canLaunch', [me]]], net);
+    if (!enabled && !can) throw new Error('Launches are paused right now');
+    const opening = pr.addr === ZERO ? wei(p.devBuy || 0) : 0n, salt = X.hexlify(X.randomBytes(32));
+    const params = { name: p.name, symbol: p.symbol, logo, description: p.description || '', socials: { twitter: p.x || '', telegram: p.telegram || '', discord: '', website: p.website || '', farcaster: '' }, creatorFeeRecipient: p.feeWallet && X.isAddress(p.feeWallet) ? X.getAddress(p.feeWallet) : X.ZeroAddress, creatorTaxBps: p.creatorTaxBps || 0, expectedEconomics: econ || X.ZeroHash, salt, openingBuy: opening, minTokensOut: opening > 0n ? 1n : 0n };
+    const r = await send({ to: V.factory, data: I.factory2.encodeFunctionData('launch', [params, pr.cfg]), value: (fee ?? X.parseEther(String(E.launchFeeHype))) + opening, gasLimit: 2500000n }, 'launch');
+    const lg = r.receipt.logs.map((l) => { try { return I.factory2.parseLog(l); } catch { return null; } }).find((x) => x && x.name === 'TokenLaunched');
+    const addr = lg ? low(lg.args.token) : '';
+    for (let i = 0; i < 20 && addr && !BY.has(addr); i++) { await load(true, net); if (!BY.has(addr)) await new Promise((s) => setTimeout(s, 3000)); }
+    refreshMine(); return { addr, tx: r.hash };
+  }
+  DATA.pairs = () => (V2of(C.chain.key) || {}).pairs || [];
 
   // the logo: squared and scaled to 512 px (PNG), uploaded to the Blob store; the URL goes onchain
   async function uploadLogo(dataUrl) {

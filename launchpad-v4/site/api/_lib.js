@@ -59,6 +59,18 @@ const NETS = {
     maxRange: 50000, maxChunks: 10,
     minSweep: '0.0005', // ETH: a sweep costs real gas on mainnet
     parent: null,
+    // BuzzPad v2 (pairs ETH, AZTEC, WXMR; fees paid out in the pair): deployments/buzzpad-v2-ethereum.json
+    v2: E.ETH_V2_FACTORY === '' ? null : {
+      factory: E.ETH_V2_FACTORY || '0xE1fAd7b84dE65B5A0cfaae1B9EEC2569C97e88B0',
+      hook: E.ETH_V2_HOOK || '0x17e71CE8fb92C94C768A4408ef9fC655d0e4a0CC',
+      locker: E.ETH_V2_LOCKER || '0xFb02f7E461Cfb04E1614A0a1D86dF26E39cfE045',
+      fromBlock: Number(E.ETH_V2_FROM_BLOCK || 0),
+    },
+    // the ERC-20 pairs and the pools that price them in ETH
+    pairs: {
+      '0xa27ec0006e59f245217ff08cd52a7e8b169e62d2': { sym: 'AZTEC', route: 'v4', key: ['0x0000000000000000000000000000000000000000', '0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2', 500, 10, '0xd53006d1e3110fD319a79AEEc4c527a0d265E080'] },
+      '0x465e07d6028830124be2e4aa551fbe12805db0f5': { sym: 'XMR', route: 'v2', v2pair: '0x14C10b4BDcCD9d3F8940Fb79E0eE00121391D6dE', weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' },
+    },
   },
 };
 for (const k of Object.keys(NETS)) if (!NETS[k].factory) delete NETS[k]; // not deployed (yet)
