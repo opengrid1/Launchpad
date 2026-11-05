@@ -54,7 +54,7 @@
   }
  ],
  "launchFee": "200000000000000",
- "launchEnabled": false,
+ "launchEnabled": true,
  "fromBlock": 26345957,
  "transactions": {
   "LiquidFiLocker": "0xd635760359e7ceb445cad8b2f9a9f3b6273268441bf1f447c8923b1f701cce59",
