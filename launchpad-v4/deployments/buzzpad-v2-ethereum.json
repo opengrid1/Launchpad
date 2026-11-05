@@ -1,0 +1,75 @@
+{
+ "network": "ethereum",
+ "chainId": 1,
+ "deployer": "0xc4AA37cD211f401402b8Ec092Ba0B6Fd6a947B5B",
+ "owner": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+ "ownershipPending": true,
+ "feeSweepOperator": null,
+ "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+ "positionManager": "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e",
+ "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+ "hook": "0x17e71CE8fb92C94C768A4408ef9fC655d0e4a0CC",
+ "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000000916",
+ "locker": "0xFb02f7E461Cfb04E1614A0a1D86dF26E39cfE045",
+ "tokenImplementation": "0x032dAfedf86aFC3699b3B305F484A3F9752b8012",
+ "factory": "0xE1fAd7b84dE65B5A0cfaae1B9EEC2569C97e88B0",
+ "pairs": {
+  "ETH": "0x0000000000000000000000000000000000000000",
+  "AZTEC": "0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2",
+  "WXMR": "0x465e07d6028830124BE2E4aA551fBe12805dB0f5"
+ },
+ "launchConfigs": [
+  {
+   "pairToken": "0x0000000000000000000000000000000000000000",
+   "supply": "1000000000000000000000000000",
+   "startMcap": "1750000000000000000",
+   "band1Mcap": "7000000000000000000",
+   "band2Mcap": "35000000000000000000",
+   "band0Bps": 2000,
+   "band1Bps": 3000,
+   "tickSpacing": 200,
+   "enabled": true
+  },
+  {
+   "pairToken": "0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2",
+   "supply": "1000000000000000000000000000",
+   "startMcap": "287000000000000000000000",
+   "band1Mcap": "1150000000000000000000000",
+   "band2Mcap": "5750000000000000000000000",
+   "band0Bps": 2000,
+   "band1Bps": 3000,
+   "tickSpacing": 200,
+   "enabled": true
+  },
+  {
+   "pairToken": "0x465e07d6028830124BE2E4aA551fBe12805dB0f5",
+   "supply": "1000000000000000000000000000",
+   "startMcap": "6650000000000000000",
+   "band1Mcap": "26600000000000000000",
+   "band2Mcap": "133000000000000000000",
+   "band0Bps": 2000,
+   "band1Bps": 3000,
+   "tickSpacing": 200,
+   "enabled": true
+  }
+ ],
+ "launchFee": "200000000000000",
+ "launchEnabled": false,
+ "fromBlock": 26345957,
+ "transactions": {
+  "LiquidFiLocker": "0xd635760359e7ceb445cad8b2f9a9f3b6273268441bf1f447c8923b1f701cce59",
+  "BuzzPadHook": "0x7ce7d16cb1c9b5f735f7eb9cfec150dcb3f133ee5b58979416438360d9229dac",
+  "BuzzPadFactory": "0xe421d7ed26ed602bfa0aab742dead96af71fd538eba6e44820a7e4bb0510e3d4",
+  "hook.setFactory": "0x6380f6b0de6bcdba933bcdba779d2976477c661fb21dd8242760700e898f59fc",
+  "locker.setFactory": "0x5e914ef3f138790f74f595241ce4a2ffc6c248a907f21b33142a31d192634cc5",
+  "approve AZTEC": "0x8e1691f35171b555b38335b80295172628e3ad14f645817eb0abcddc133f8e32",
+  "approve WXMR": "0xdecb5462d9a2e230c19f57235701e9aa6c46eb162ade49a5c1bed41478e67aef",
+  "config ETH": "0xd36633af7042570bd22c064ecd668a22069af098441c3c6a0a0cfcf552356671",
+  "config AZTEC": "0xd3cf2f490ed9f4306446cf1751c3d9f612d966f15a7151ae09f728a093756dcc",
+  "config WXMR": "0x46ae0d785aefc04fc3fd9569237a8c973bb44443b0b79dee7c6efb9bcb42b9fc",
+  "hook.transferOwnership": "0xf30fea1b3d1ca2d8dcb709c4bedd098db16fb000f1419dd71e011407b00726aa",
+  "factory.transferOwnership": "0x64ea87852dcb9aee5783beccfdfe01a8a590af298971738069dccbed889562df",
+  "locker.transferOwnership": "0x1c7dd11d36e3d593da0cd852fe54c4d5e63b2a2fb92894440ea848e6e177b3a6"
+ },
+ "deployedAt": "2026-11-05T03:35:51.976Z"
+}
