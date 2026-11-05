@@ -9,6 +9,10 @@ window.PAGE = async () => {
   const live = !!(K.factory && K.hook && K.locker && K.vault && K.escrow);
   const MC = K.multicall || '0xcA11bde05977b3631167028862bE2a173976CA11';
   const I = { factory: new E.Interface(ABI.factory), hook: new E.Interface(ABI.hook), locker: new E.Interface(ABI.locker), vault: new E.Interface(ABI.vault), escrow: new E.Interface(ABI.escrow) };
+  // a second generation of contracts on this chain (CFG chain.v2: factory, hook, locker): ownership and the launch switch
+  const V2 = C.chain.v2 && C.chain.v2.factory ? C.chain.v2 : null;
+  const OWNED2 = V2 ? [['factoryV2', 'Factory v2'], ['hookV2', 'Hook v2'], ['lockerV2', 'Locker v2']] : [];
+  if (V2) { Object.assign(K, { factoryV2: V2.factory, hookV2: V2.hook, lockerV2: V2.locker }); Object.assign(I, { factoryV2: I.factory, hookV2: I.hook, lockerV2: I.locker }); }
   const mcI = new E.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])']);
   const ZERO = E.ZeroAddress, lc = (a) => String(a || '').toLowerCase();
   const OWNED = [['factory', 'Factory'], ['hook', 'Hook'], ['locker', 'Locker'], ['vault', 'Buyback vault']];
@@ -66,6 +70,11 @@ window.PAGE = async () => {
     const h = await readMany([...ids.map((n) => [K.factory, 'factory', 'getLaunchConfig', [n]]), [K.escrow, 'escrow', 'balanceOf', [s.protocolFeeRecipient || ZERO]]]);
     s.configs = ids.map((n) => { const r = h[n]; if (!r) return null; const c = r[0]; return { supply: c.supply, startMcap: c.startMcap, band1Mcap: c.band1Mcap, band2Mcap: c.band2Mcap, band0Bps: Number(c.band0Bps), band1Bps: Number(c.band1Bps), tickSpacing: Number(c.tickSpacing), enabled: c.enabled }; });
     s.escrowBal = h[ids.length] || 0n;
+    if (V2) {
+      const v = await readMany([...OWNED2.flatMap(([k]) => [[K[k], k, 'owner'], [K[k], k, 'pendingOwner']]), [K.factoryV2, 'factoryV2', 'launchEnabled']]);
+      let j = 0; s.v2 = { owners: {} }; for (const [k] of OWNED2) s.v2.owners[k] = { owner: v[j++], pending: v[j++] }; s.v2.launchEnabled = v[j++];
+      Object.assign(s.owners, s.v2.owners);
+    }
     S = s;
   }
   async function loadToken(addr) {
@@ -131,8 +140,9 @@ window.PAGE = async () => {
   function render() {
     const m = me();
     const pendingMine = live ? OWNED.filter(([k]) => lc(S.owners[k].pending) === m && m) : [];
-    const anyOwner = live && OWNED.some(([k]) => lc(S.owners[k].owner) === m);
-    const allowed = !live || (m && (anyOwner || pendingMine.length || m === lc(C.admin)));
+    const anyOwner = live && [...OWNED, ...OWNED2].some(([k]) => S.owners[k] && lc(S.owners[k].owner) === m);
+    const pendingV2 = V2 && S.v2 ? OWNED2.filter(([k]) => lc(S.v2.owners[k].pending) === m && m) : [];
+    const allowed = !live || (m && (anyOwner || pendingMine.length || pendingV2.length || m === lc(C.admin)));
     const head = `<section class="ahd"><h1>Admin</h1><p>Owner controls for the ${esc(C.brand)} contracts on ${esc(C.chain.name)}. Every change is a transaction from the owner wallet, and the contracts check that.</p><div class="bdg"><span class="seg" id="a-net">${C.chains.map((c) => `<button type="button" data-anet="${c.key}" class="${c.key === C.chain.key ? 'on' : ''}">${esc(c.name)}</button>`).join('')}</span>${live ? `<span class="badge ok"><i></i>Live on ${esc(C.chain.name)}</span>` : '<span class="badge warn"><i></i>Preview. Contracts not deployed yet, nothing is sent.</span>'}${m ? `<span class="badge">${esc(shortAddr(m))}${anyOwner ? ' · owner' : pendingMine.length ? ' · ownership offered' : ''}</span>` : ''}</div></section>`;
     if (!allowed) {
       root.innerHTML = head + `<div class="acard gate">${!m ? `<p>Sign in with the owner wallet to manage the contracts.</p><button class="btn pri" id="g-in">${ic('wallet')}Sign in</button>` : `<p>${esc(shortAddr(m))} does not own these contracts. Sign in with the owner wallet, ${esc(shortAddr(C.admin))}.</p>`}</div>`;
@@ -183,7 +193,10 @@ window.PAGE = async () => {
       <div><div class="cfg h"><span>ID</span><span>Supply</span><span>Opens at</span><span class="c-x">Band edges</span><span class="c-x">Supply split</span><span>Spacing</span><span>Status</span><span></span></div>${cfgRows}</div>
       <details class="sub"><summary class="hint" style="cursor:pointer">Add a config</summary><div class="grid4" style="margin-top:12px"><div class="fld"><label for="n-sup">Supply</label><input class="inp" id="n-sup" value="1000000000"></div><div class="fld"><label for="n-start">Opens at</label><div class="ipw"><input class="inp" id="n-start" value="${C.econ.openMcapHype}"><span class="suf">${C.chain.quote}</span></div></div><div class="fld"><label for="n-b1">Band 2 from</label><div class="ipw"><input class="inp" id="n-b1" value="${C.econ.bands[1][0]}"><span class="suf">${C.chain.quote}</span></div></div><div class="fld"><label for="n-b2">Band 3 from</label><div class="ipw"><input class="inp" id="n-b2" value="${C.econ.bands[2][0]}"><span class="suf">${C.chain.quote}</span></div></div><div class="fld"><label for="n-p0">Band 1 supply</label><div class="ipw"><input class="inp" id="n-p0" value="20"><span class="suf">%</span></div></div><div class="fld"><label for="n-p1">Band 2 supply</label><div class="ipw"><input class="inp" id="n-p1" value="30"><span class="suf">%</span></div></div><div class="fld"><label for="n-ts">Tick spacing</label><input class="inp" id="n-ts" value="200"></div></div><div class="row-end" style="margin-top:12px"><button class="btn sm" data-act="cfgAdd" ${ctl('factory')}>Add config</button></div></details></section>`;
 
-    root.innerHTML = head + ownership + launches + fees + earnings + tokens + configs;
+    const v2card = V2 && S.v2 ? `<section class="acard"><div class="h"><div><h2>BuzzPad v2</h2><p>The v2 contracts: ETH, AZTEC and XMR pairs, fees paid out in the pair. Accept ownership of each, then the launch switch is yours.</p></div>${pendingV2.length > 1 ? '<button class="btn sm pri" id="acc-v2">Accept all</button>' : ''}</div>
+      <div class="own"><div class="orow h"><span>Contract</span><span>Address</span><span class="c-own">Owner</span><span class="c-pen">Pending owner</span><span></span></div>${OWNED2.map(([k, n]) => { const o = S.v2.owners[k]; const mineO = lc(o.owner) === m && m, mineP = lc(o.pending) === m && m; return `<div class="orow"><b>${n}</b><span class="mono">${link(K[k])}</span><span class="c-own">${link(o.owner)}${mineO ? '<span class="me">you</span>' : ''}</span><span class="c-pen">${o.pending && o.pending !== ZERO ? link(o.pending) : '<span class="mono">none</span>'}</span><span class="act">${mineP ? `<button class="btn sm pri" data-accept="${k}">Accept</button>` : mineO ? '<span class="badge ok sm">Owner</span>' : ''}</span></div>`; }).join('')}</div>
+      <div class="big"><div class="sl"><b><span class="dot ${S.v2.launchEnabled ? 'on' : ''}"></span>v2 launches are ${S.v2.launchEnabled ? 'on' : 'off'}</b><span>Anyone can launch on the v2 factory while this is on.</span></div><button class="btn sm${S.v2.launchEnabled ? ' warn' : ' pri'}" data-act="toggleV2" ${ctl('factoryV2')}>${S.v2.launchEnabled ? 'Turn v2 launches off' : 'Turn v2 launches on'}</button></div></section>` : '';
+    root.innerHTML = head + v2card + ownership + launches + fees + earnings + tokens + configs;
     bind();
   }
 
@@ -192,7 +205,9 @@ window.PAGE = async () => {
     $$('[data-accept]', root).forEach((b) => b.onclick = guard(async () => { const k = b.dataset.accept; await after(await send('Accept ' + k, k, 'acceptOwnership')); }));
     const aa = $('#acc-all'); if (aa) aa.onclick = guard(async () => { if (!live) return send('Accept all'); for (const [k] of OWNED) if (lc(S.owners[k].pending) === me()) { if (!(await send('Accept ' + k, k, 'acceptOwnership'))) break; } await after(true); });
     $$('[data-cfg]', root).forEach((b) => b.onclick = guard(async () => { const n = Number(b.dataset.cfg), c = S.configs[n]; await after(await send((c.enabled ? 'Turn off' : 'Turn on') + ' config #' + n, 'factory', 'updateLaunchConfig', [n, { ...c, enabled: !c.enabled }])); }));
+    const av2 = $('#acc-v2'); if (av2) av2.onclick = guard(async () => { for (const [k] of OWNED2) if (lc(S.v2.owners[k].pending) === me()) { if (!(await send('Accept ' + k, k, 'acceptOwnership'))) break; } await after(true); });
     const A = {
+      toggleV2: () => send(S.v2.launchEnabled ? 'Turn v2 launches off' : 'Turn v2 launches on', 'factoryV2', 'setLaunchEnabled', [!S.v2.launchEnabled]),
       toggleLaunch: () => send(S.launchEnabled ? 'Turn launches off' : 'Turn launches on', 'factory', 'setLaunchEnabled', [!S.launchEnabled]),
       launchFee: () => { const v = val('a-fee'); if (!v || !(Number(v) >= 0)) throw new Error('Enter a fee in ' + C.chain.quote); return send('Launch fee', 'factory', 'setLaunchFee', [E.parseEther(v)]); },
       maxTax: () => send('Max creator fee', 'factory', 'setMaxCreatorTaxBps', [toBps('a-maxtax', 1000)]),
