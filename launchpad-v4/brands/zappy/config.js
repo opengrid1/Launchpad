@@ -13,7 +13,7 @@ window.CFG = {
         pairs: [ { key: 'eth', sym: 'ETH', name: 'Ether', addr: '0x0000000000000000000000000000000000000000', cfg: 0, open: 1.75, logo: '/img/eth.svg' } ] } },
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
-  official: [],
+  official: ['0xa9dc0d6d667ddc546aa1aab6561aba6c543be486'], // ZAPPY: shown with an Official tag
   /* the launch economics, in ETH (the *Hype names are the quote coin's amounts, kept from the shared code) */
   econ: {
     supply: 1e9, launchFeeHype: 0.0002, maxDevBuyBps: 500,
