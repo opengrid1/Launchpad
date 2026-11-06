@@ -5,8 +5,9 @@
 // (Ownable2Step: the owner accepts, for example from the site's admin page). Launches stay off until turned on.
 // Resumable: steps done are kept in deployments/<brand>-v2-<network>.progress.json.
 //   KEYFILE=../contracts/.env.deployer.zappy OWNER=0x... BRAND=zappy node deploy-v2.cjs --network base [--send]
-// RPC override: RPC=http://127.0.0.1:8549 (a fork). LEVERAGE=1 also deploys the ZappyVault and ZappyMargin (leverage),
-// wires the vault to the margin contract for good, and offers their ownership too; leverage opens stay off.
+// RPC override: RPC=http://127.0.0.1:8549 (a fork). LEVERAGE=1 deploys the ZappyLocker (which lends a coin's passed-band
+// ETH for leverage) in place of the LiquidFiLocker, then the ZappyMargin, wires the locker to it for good, and offers
+// its ownership too; leverage opens stay off.
 const fs = require('fs'), path = require('path');
 const { ethers } = require('ethers');
 const NETS = {
@@ -32,7 +33,7 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   const w = new ethers.Wallet('0x' + key, P), me = w.address;
   const fee = await P.getFeeData();
   console.log(`${netName}: deployer ${me}, ${ethers.formatEther(await P.getBalance(me))} ETH; owner-to-be ${OWNER}; gas ${ethers.formatUnits(fee.gasPrice, 'gwei')} gwei`);
-  const Token = art('LiquidFiToken'), Locker = art('LiquidFiLocker'), Hook = art('BuzzPadHook'), Factory = art('BuzzPadFactory');
+  const Token = art('LiquidFiToken'), Locker = art(process.env.LEVERAGE ? 'ZappyLocker' : 'LiquidFiLocker'), Hook = art('BuzzPadHook'), Factory = art('BuzzPadFactory');
   const lockerInputs = Locker.abi.find((x) => x.type === 'constructor').inputs;
   const lockerInit = Locker.bytecode + AC.encode(lockerInputs.map((i) => i.type), lockerInputs.map((i) => (/owner/i.test(i.name) ? me : N.posm))).slice(2);
   const hookInit = Hook.bytecode + AC.encode(['address', 'address', 'address'], [N.pm, OWNER, me]).slice(2);
@@ -59,7 +60,7 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   };
 
   const tk = N.tokenImpl ? { address: N.tokenImpl } : await step('LiquidFiToken', { data: Token.bytecode });
-  const lk = await step('LiquidFiLocker', { data: lockerInit });
+  const lk = await step(process.env.LEVERAGE ? 'ZappyLocker' : 'LiquidFiLocker', { data: lockerInit });
   await step('BuzzPadHook', { to: N.create2, data: prog.hookSalt + hookInit.slice(2) });
   if (!SEND) { console.log(`dry run: about ${dry} gas for the first steps; add --send`); return; }
   const F = (await step('BuzzPadFactory', { data: Factory.bytecode + AC.encode(['address', 'address', 'address', 'address', 'address', 'address', 'address', 'uint256'], [me, N.pm, N.posm, N.permit2, lk.address, prog.hook, tk.address, ethers.parseEther('0.0002')]).slice(2) })).address;
@@ -70,14 +71,13 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   const owned = [['hook', prog.hook, H], ['factory', F, FI], ['locker', lk.address, LI]];
   let lev = null;
   if (process.env.LEVERAGE) {
-    const Vault = art('ZappyVault'), Margin = art('ZappyMargin'), VI = new ethers.Interface(Vault.abi), MI = new ethers.Interface(Margin.abi);
-    const V = (await step('ZappyVault', { data: Vault.bytecode + AC.encode(['address'], [me]).slice(2) })).address;
-    const M = (await step('ZappyMargin', { data: Margin.bytecode + AC.encode(['address', 'address', 'address'], [me, F, V]).slice(2) })).address;
-    await step('vault.setMargin', { to: V, data: VI.encodeFunctionData('setMargin', [M]) });
-    owned.push(['vault', V, VI], ['margin', M, MI]); lev = { vault: V, margin: M };
+    const Margin = art('ZappyMargin'), MI = new ethers.Interface(Margin.abi);
+    const M = (await step('ZappyMargin', { data: Margin.bytecode + AC.encode(['address', 'address'], [me, F]).slice(2) })).address;
+    await step('locker.setMargin', { to: lk.address, data: LI.encodeFunctionData('setMargin', [M]) });
+    owned.push(['margin', M, MI]); lev = { margin: M };
   }
   for (const [n, a, I] of owned) await step(n + '.transferOwnership', { to: a, data: I.encodeFunctionData('transferOwnership', [OWNER]) });
-  const out = { network: netName, chainId: N.chainId, brand: BRAND, deployer: me, owner: OWNER, ownershipPending: true, poolManager: N.pm, positionManager: N.posm, permit2: N.permit2, hook: prog.hook, hookSalt: prog.hookSalt, locker: lk.address, tokenImplementation: tk.address, factory: F, ...(lev ? { leverage: { ...lev, opensEnabled: false } } : {}), launchConfigs: [Object.fromEntries(Object.entries(ethCfg).map(([k, v]) => [k, typeof v === 'bigint' ? v.toString() : v]))], launchFee: ethers.parseEther('0.0002').toString(), launchEnabled: false, fromBlock: (prog.steps.LiquidFiToken || prog.steps.LiquidFiLocker).block, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
+  const out = { network: netName, chainId: N.chainId, brand: BRAND, deployer: me, owner: OWNER, ownershipPending: true, poolManager: N.pm, positionManager: N.posm, permit2: N.permit2, hook: prog.hook, hookSalt: prog.hookSalt, locker: lk.address, tokenImplementation: tk.address, factory: F, ...(lev ? { leverage: { ...lev, opensEnabled: false } } : {}), launchConfigs: [Object.fromEntries(Object.entries(ethCfg).map(([k, v]) => [k, typeof v === 'bigint' ? v.toString() : v]))], launchFee: ethers.parseEther('0.0002').toString(), launchEnabled: false, fromBlock: (prog.steps.LiquidFiToken || prog.steps.LiquidFiLocker || prog.steps.ZappyLocker).block, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
   fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
   console.log('written', path.relative(__dirname, OUT));
   console.log(`next: ${OWNER} accepts ownership of the ${owned.map((o) => o[0]).join(', ')}, then factory.setLaunchEnabled(true)${lev ? ' and margin.setOpensEnabled(true)' : ''}`);
