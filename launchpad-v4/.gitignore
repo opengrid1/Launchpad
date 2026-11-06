@@ -3,3 +3,6 @@ artifacts/*.json
 !artifacts/.gitkeep
 deployments/*.progress.json
 dist/
+
+# local fork deploy records
+deployments/*-fork.json
