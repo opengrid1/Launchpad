@@ -1,16 +1,18 @@
 // Verifies the BuzzPad v2 deployment on etherscan.io (Etherscan v2 API, chain 1): BuzzPadHook, BuzzPadFactory and
 // the new LiquidFiLocker, compiled exactly as build/compile-buzzpad.cjs does. The standard-JSON input carries every
 // source the compile read, so the metadata hash matches. Constructor arguments come from the deploy transactions.
-//   node build/verify-buzzpad.cjs
+//   node build/verify-buzzpad.cjs                      (BuzzPad v2, Ethereum)
+//   CHAIN_ID=8453 DEP=deployments/zappy-v2-base.json node build/verify-buzzpad.cjs   (Zappy, Base)
 // Reads ETHERSCAN_API_KEY from contracts/.env (never printed).
 const fs = require("fs"), path = require("path");
 const { ethers } = require("ethers");
 const ROOT = path.join(__dirname, "..");
 const KEY = (fs.readFileSync(path.join(ROOT, "../contracts/.env"), "utf8").match(/ETHERSCAN_API_KEY=([A-Za-z0-9]+)/) || [])[1];
 if (!KEY) throw new Error("no ETHERSCAN_API_KEY in contracts/.env");
-const API = "https://api.etherscan.io/v2/api?chainid=1";
-const P = new ethers.JsonRpcProvider(process.env.ETH_RPC || "https://ethereum-rpc.publicnode.com", 1, { staticNetwork: true });
-const dep = JSON.parse(fs.readFileSync(path.join(ROOT, "deployments/buzzpad-v2-ethereum.json"), "utf8"));
+const CHAIN = Number(process.env.CHAIN_ID || 1);
+const API = `https://api.etherscan.io/v2/api?chainid=${CHAIN}`;
+const P = new ethers.JsonRpcProvider(process.env.ETH_RPC || (CHAIN === 8453 ? "https://mainnet.base.org" : "https://ethereum-rpc.publicnode.com"), CHAIN, { staticNetwork: true });
+const dep = JSON.parse(fs.readFileSync(path.join(ROOT, process.env.DEP || "deployments/buzzpad-v2-ethereum.json"), "utf8"));
 const S = JSON.parse(fs.readFileSync(path.join(__dirname, "verified-settings.json"), "utf8"));
 const art = (n) => JSON.parse(fs.readFileSync(path.join(ROOT, "artifacts", n + ".json"), "utf8"));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -39,7 +41,7 @@ async function isVerified(a) { const r = await (await fetch(`${API}&module=contr
 
 (async () => {
   const J = input();
-  for (const [name, addr, d, c2] of [["LiquidFiLocker", dep.locker, "liquidfi", false], ["BuzzPadHook", dep.hook, "buzzpad", true], ["BuzzPadFactory", dep.factory, "buzzpad", false]]) {
+  for (const [name, addr, d, c2] of [...(dep.transactions.LiquidFiToken ? [["LiquidFiToken", dep.tokenImplementation, "liquidfi", false]] : []), ["LiquidFiLocker", dep.locker, "liquidfi", false], ["BuzzPadHook", dep.hook, "buzzpad", true], ["BuzzPadFactory", dep.factory, "buzzpad", false]]) {
     const done = await isVerified(addr); if (done) { console.log(`${name.padEnd(16)} ${addr} already verified (${done})`); continue; }
     const args = await ctorArgs(dep.transactions[name], name, c2);
     let r;
