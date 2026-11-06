@@ -8,14 +8,14 @@ const ROOT = path.join(__dirname, "..");
 const CONTRACTS = path.join(ROOT, "contracts");
 const S = JSON.parse(fs.readFileSync(path.join(__dirname, "verified-settings.json"), "utf8"));
 const hookSettings = Object.values(S).find((s) => /MemeHook/.test(s.fullyQualifiedName)).settings;
-const FILES = [["liquidfi", "LiquidFiToken"], ["liquidfi", "LiquidFiLocker"], ["buzzpad", "BuzzPadHook"], ["buzzpad", "BuzzPadFactory"]];
+const FILES = [["liquidfi", "LiquidFiToken"], ["liquidfi", "LiquidFiLocker"], ["buzzpad", "BuzzPadHook"], ["buzzpad", "BuzzPadFactory"], ["zappy", "ZappyVault"], ["zappy", "ZappyMargin"]];
 const sources = Object.fromEntries(FILES.map(([d, f]) => [`src/${d}/${f}.sol`, { content: fs.readFileSync(path.join(CONTRACTS, "src", d, f + ".sol"), "utf8") }]));
 const findImports = (p) => { const f = [path.join(CONTRACTS, p), path.join(ROOT, p)].find((x) => fs.existsSync(x)); return f ? { contents: fs.readFileSync(f, "utf8") } : { error: "not found: " + p }; };
 const settings = { ...hookSettings, outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object"] } } };
 const t0 = Date.now();
 const out = JSON.parse(solc.compile(JSON.stringify({ language: "Solidity", sources, settings }), { import: findImports }));
 const errs = (out.errors || []).filter((e) => e.severity === "error");
-for (const w of (out.errors || []).filter((e) => e.severity !== "error" && e.sourceLocation && /^src\/(liquidfi|buzzpad)/.test(e.sourceLocation.file))) console.log("warning: " + w.formattedMessage.split("\n")[0]);
+for (const w of (out.errors || []).filter((e) => e.severity !== "error" && e.sourceLocation && /^src\/(liquidfi|buzzpad|zappy)/.test(e.sourceLocation.file))) console.log("warning: " + w.formattedMessage.split("\n")[0]);
 if (errs.length) { console.log(errs.map((e) => e.formattedMessage).join("\n")); process.exit(1); }
 fs.mkdirSync(path.join(ROOT, "artifacts"), { recursive: true });
 let bad = 0;
