@@ -7,7 +7,9 @@
 //   KEYFILE=../contracts/.env.deployer.zappy OWNER=0x... BRAND=zappy node deploy-v2.cjs --network base [--send]
 // RPC override: RPC=http://127.0.0.1:8549 (a fork). LEVERAGE=1 deploys the ZappyLocker (which lends a coin's passed-band
 // ETH for leverage) in place of the LiquidFiLocker, then the ZappyMargin, wires the locker to it for good, and offers
-// its ownership too; leverage opens stay off.
+// its ownership too; leverage opens stay off. STOCKS=brands/zappy/stocks.json (build/rh-stocks.cjs) approves each
+// stock as a pair and adds a launch config for it whose market caps match the ETH config's in USD at the listed
+// prices; config ids follow the list order after the ETH config (#0).
 const fs = require('fs'), path = require('path');
 const { ethers } = require('ethers');
 const NETS = {
@@ -68,6 +70,17 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   await step('hook.setFactory', { to: prog.hook, data: H.encodeFunctionData('setFactory', [F]) });
   await step('locker.setFactory', { to: lk.address, data: LI.encodeFunctionData('setFactory', [F]) });
   await step('config ETH', { to: F, data: FI.encodeFunctionData('addLaunchConfig', [ethCfg]) });
+  const stockPairs = [];
+  if (process.env.STOCKS) {
+    const S = JSON.parse(fs.readFileSync(path.resolve(process.env.STOCKS), 'utf8'));
+    const inPair = (eth, usd) => (eth * BigInt(Math.round(S.ethUsd * 1e6))) / BigInt(Math.round(usd * 1e6)); // ETH wei -> stock wei at the listed prices
+    for (const [i, st] of S.stocks.entries()) {
+      await step('approve ' + st.sym, { to: F, data: FI.encodeFunctionData('setPairTokenApproved', [st.addr, true]) });
+      const cfg = { ...ethCfg, pairToken: st.addr, startMcap: inPair(ethCfg.startMcap, st.usd), band1Mcap: inPair(ethCfg.band1Mcap, st.usd), band2Mcap: inPair(ethCfg.band2Mcap, st.usd) };
+      await step('config ' + st.sym, { to: F, data: FI.encodeFunctionData('addLaunchConfig', [cfg]) });
+      stockPairs.push({ key: st.key, sym: st.sym, name: st.name, addr: st.addr, cfg: i + 1, open: Number(ethers.formatEther(cfg.startMcap)), info: st.info });
+    }
+  }
   const owned = [['hook', prog.hook, H], ['factory', F, FI], ['locker', lk.address, LI]];
   let lev = null;
   if (process.env.LEVERAGE) {
@@ -77,7 +90,7 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
     owned.push(['margin', M, MI]); lev = { margin: M };
   }
   for (const [n, a, I] of owned) await step(n + '.transferOwnership', { to: a, data: I.encodeFunctionData('transferOwnership', [OWNER]) });
-  const out = { network: netName, chainId: N.chainId, brand: BRAND, deployer: me, owner: OWNER, ownershipPending: true, poolManager: N.pm, positionManager: N.posm, permit2: N.permit2, hook: prog.hook, hookSalt: prog.hookSalt, locker: lk.address, tokenImplementation: tk.address, factory: F, ...(lev ? { leverage: { ...lev, opensEnabled: false } } : {}), launchConfigs: [Object.fromEntries(Object.entries(ethCfg).map(([k, v]) => [k, typeof v === 'bigint' ? v.toString() : v]))], launchFee: ethers.parseEther('0.0002').toString(), launchEnabled: false, fromBlock: (prog.steps.LiquidFiToken || prog.steps.LiquidFiLocker || prog.steps.ZappyLocker).block, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
+  const out = { network: netName, chainId: N.chainId, brand: BRAND, deployer: me, owner: OWNER, ownershipPending: true, poolManager: N.pm, positionManager: N.posm, permit2: N.permit2, hook: prog.hook, hookSalt: prog.hookSalt, locker: lk.address, tokenImplementation: tk.address, factory: F, ...(lev ? { leverage: { ...lev, opensEnabled: false } } : {}), ...(stockPairs.length ? { stockPairs } : {}), launchConfigs: [Object.fromEntries(Object.entries(ethCfg).map(([k, v]) => [k, typeof v === 'bigint' ? v.toString() : v]))], launchFee: ethers.parseEther('0.0002').toString(), launchEnabled: false, fromBlock: (prog.steps.LiquidFiToken || prog.steps.LiquidFiLocker || prog.steps.ZappyLocker).block, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
   fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
   console.log('written', path.relative(__dirname, OUT));
   console.log(`next: ${OWNER} accepts ownership of the ${owned.map((o) => o[0]).join(', ')}, then factory.setLaunchEnabled(true)${lev ? ' and margin.setOpensEnabled(true)' : ''}`);

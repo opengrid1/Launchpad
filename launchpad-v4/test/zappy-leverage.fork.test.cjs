@@ -37,8 +37,8 @@ const later = async (s) => { await P.send('evm_increaseTime', [s]); await P.send
   const T = new ethers.Contract(coin, ['function balanceOf(address) view returns (uint256)', 'function approve(address,uint256) returns (bool)'], P);
   await later(20);
   const deadline = () => BigInt(Math.floor(Date.now() / 1000) + 3600 * 24 * 400);
-  const buy = async (w, eth) => (await w.sendTransaction({ to: UR, data: ROUTES.encode({ coin, pair: ethers.ZeroAddress, hook: dep.hook, pairInfo: null, buy: true, amountIn: E(eth), minOut: 1n, deadline: deadline() }), value: E(eth), gasLimit: 900_000n })).wait();
-  const sell = async (w, amt) => (await w.sendTransaction({ to: UR, data: ROUTES.encode({ coin, pair: ethers.ZeroAddress, hook: dep.hook, pairInfo: null, buy: false, amountIn: amt, minOut: 1n, deadline: deadline() }), gasLimit: 900_000n })).wait();
+  const buy = async (w, eth) => (await w.sendTransaction({ to: UR, data: ROUTES.encode({ coin, pair: ethers.ZeroAddress, hook: dep.hook, pairInfo: null, buy: true, amountIn: E(eth), minOut: 1n, deadline: deadline(), hopLayout: true }), value: E(eth), gasLimit: 900_000n })).wait();
+  const sell = async (w, amt) => (await w.sendTransaction({ to: UR, data: ROUTES.encode({ coin, pair: ethers.ZeroAddress, hook: dep.hook, pairInfo: null, buy: false, amountIn: amt, minOut: 1n, deadline: deadline(), hopLayout: true }), gasLimit: 900_000n })).wait();
   await (await T.connect(W.market).approve(PERMIT2, ethers.MaxUint256)).wait();
   await (await W.market.sendTransaction({ to: PERMIT2, data: new ethers.Interface(['function approve(address,address,uint160,uint48)']).encodeFunctionData('approve', [coin, UR, (1n << 160n) - 1n, Number(deadline())]) })).wait();
   const Mt = as('ZappyMargin', dep.leverage.margin, W.trader), Mk = as('ZappyMargin', dep.leverage.margin, W.keeper);

@@ -1,0 +1,920 @@
+{
+ "updated": "2026-11-06T17:57:27.042Z",
+ "ethUsd": 2222.37,
+ "weth": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+ "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+ "stocks": [
+  {
+   "key": "nvda",
+   "sym": "NVDA",
+   "name": "NVIDIA",
+   "addr": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+   "usd": 185.9429,
+   "liquidity": "21021439934983793",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC"
+    ]
+   }
+  },
+  {
+   "key": "aapl",
+   "sym": "AAPL",
+   "name": "Apple",
+   "addr": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+   "usd": 344.1178,
+   "liquidity": "40377800664057096",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9"
+    ]
+   }
+  },
+  {
+   "key": "spcx",
+   "sym": "SPCX",
+   "name": "Space Exploration Technologies Corp",
+   "addr": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+   "usd": 131.2201,
+   "liquidity": "814265198888703003",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     500,
+     "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa"
+    ]
+   }
+  },
+  {
+   "key": "googl",
+   "sym": "GOOGL",
+   "name": "Alphabet Class A",
+   "addr": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+   "usd": 285.3473,
+   "liquidity": "581857262959217",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3"
+    ]
+   }
+  },
+  {
+   "key": "tsla",
+   "sym": "TSLA",
+   "name": "Tesla",
+   "addr": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+   "usd": 357.3564,
+   "liquidity": "265093914841695143",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x322F0929c4625eD5bAd873c95208D54E1c003b2d"
+    ]
+   }
+  },
+  {
+   "key": "amd",
+   "sym": "AMD",
+   "name": "AMD",
+   "addr": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+   "usd": 437.8751,
+   "liquidity": "497790413245699",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC"
+    ]
+   }
+  },
+  {
+   "key": "amzn",
+   "sym": "AMZN",
+   "name": "Amazon",
+   "addr": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+   "usd": 261.3973,
+   "liquidity": "944441873197545070",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x12f190a9F9d7D37a250758b26824B97CE941bF54"
+    ]
+   }
+  },
+  {
+   "key": "msft",
+   "sym": "MSFT",
+   "name": "Microsoft",
+   "addr": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+   "usd": 534.3099,
+   "liquidity": "245955628515282863",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xe93237C50D904957Cf27E7B1133b510C669c2e74"
+    ]
+   }
+  },
+  {
+   "key": "pltr",
+   "sym": "PLTR",
+   "name": "Palantir Technologies",
+   "addr": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+   "usd": 160.3968,
+   "liquidity": "94653649509424486",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A"
+    ]
+   }
+  },
+  {
+   "key": "meta",
+   "sym": "META",
+   "name": "Meta Platforms",
+   "addr": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+   "usd": 617.8243,
+   "liquidity": "717544159027603314",
+   "info": {
+    "route": "v4",
+    "hops": [
+     {
+      "c": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "fee": 500,
+      "ts": 10,
+      "hooks": "0x0000000000000000000000000000000000000000"
+     },
+     {
+      "c": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+      "fee": 3000,
+      "ts": 60,
+      "hooks": "0x0000000000000000000000000000000000000000"
+     }
+    ]
+   }
+  },
+  {
+   "key": "mu",
+   "sym": "MU",
+   "name": "Micron Technology",
+   "addr": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD",
+   "usd": 683.6345,
+   "liquidity": "47146534876669299",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD"
+    ]
+   }
+  },
+  {
+   "key": "coin",
+   "sym": "COIN",
+   "name": "Coinbase",
+   "addr": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+   "usd": 133.2242,
+   "liquidity": "100743782023062978",
+   "info": {
+    "route": "v4",
+    "hops": [
+     {
+      "c": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "fee": 500,
+      "ts": 10,
+      "hooks": "0x0000000000000000000000000000000000000000"
+     },
+     {
+      "c": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+      "fee": 10000,
+      "ts": 200,
+      "hooks": "0x0000000000000000000000000000000000000000"
+     }
+    ]
+   }
+  },
+  {
+   "key": "intc",
+   "sym": "INTC",
+   "name": "Intel",
+   "addr": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+   "usd": 55.5724,
+   "liquidity": "66815104417856816",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681"
+    ]
+   }
+  },
+  {
+   "key": "spy",
+   "sym": "SPY",
+   "name": "SPDR S&P 500 ETF Trust",
+   "addr": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+   "usd": 739.0822,
+   "liquidity": "9501021547715311",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C"
+    ]
+   }
+  },
+  {
+   "key": "sndk",
+   "sym": "SNDK",
+   "name": "Sandisk Corporation",
+   "addr": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
+   "usd": 824.9705,
+   "liquidity": "1008964055161826",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xB90A19fF0Af67f7779afF50A882A9CfF42446400"
+    ]
+   }
+  },
+  {
+   "key": "usar",
+   "sym": "USAR",
+   "name": "USA Rare Earth",
+   "addr": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+   "usd": 7.9587,
+   "liquidity": "76493748527996080",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xd917B029C761D264c6A312BBbcDA868658eF86a6"
+    ]
+   }
+  },
+  {
+   "key": "gme",
+   "sym": "GME",
+   "name": "GameStop",
+   "addr": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+   "usd": 24.4036,
+   "liquidity": "1172504346336929940",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x1b0E319c6A659F002271B69dB8A7df2F911c153E"
+    ]
+   }
+  },
+  {
+   "key": "qqq",
+   "sym": "QQQ",
+   "name": "Invesco QQQ",
+   "addr": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+   "usd": 656.9321,
+   "liquidity": "11556475610767685",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68"
+    ]
+   }
+  },
+  {
+   "key": "cost",
+   "sym": "COST",
+   "name": "Costco",
+   "addr": "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2",
+   "usd": 1060.8552,
+   "liquidity": "175601027107005060",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2"
+    ]
+   }
+  },
+  {
+   "key": "slv",
+   "sym": "SLV",
+   "name": "iShares Silver Trust",
+   "addr": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+   "usd": 46.7291,
+   "liquidity": "30033742086122521",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f"
+    ]
+   }
+  },
+  {
+   "key": "nflx",
+   "sym": "NFLX",
+   "name": "Netflix",
+   "addr": "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8",
+   "usd": 64.2602,
+   "liquidity": "4726854321460750",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8"
+    ]
+   }
+  },
+  {
+   "key": "amat",
+   "sym": "AMAT",
+   "name": "Applied Materials",
+   "addr": "0x36046893810a7E7fCE501229d57dc3FC8c8716d0",
+   "usd": 393.3921,
+   "liquidity": "103661259578",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x36046893810a7E7fCE501229d57dc3FC8c8716d0"
+    ]
+   }
+  },
+  {
+   "key": "rddt",
+   "sym": "RDDT",
+   "name": "Reddit",
+   "addr": "0x05b37Fb53A299a1b874A619e1c4C404D52C36F4C",
+   "usd": 95.4723,
+   "liquidity": "204572868645782411",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x05b37Fb53A299a1b874A619e1c4C404D52C36F4C"
+    ]
+   }
+  },
+  {
+   "key": "uso",
+   "sym": "USO",
+   "name": "United States Oil Fund",
+   "addr": "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344",
+   "usd": 147.7467,
+   "liquidity": "144882321158148578",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344"
+    ]
+   }
+  },
+  {
+   "key": "lly",
+   "sym": "LLY",
+   "name": "Eli Lilly",
+   "addr": "0x8005d266423c7ea827372c9c864491e5786600ea",
+   "usd": 1362.4527,
+   "liquidity": "5879761445509563",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x8005d266423c7ea827372c9c864491e5786600ea"
+    ]
+   }
+  },
+  {
+   "key": "dell",
+   "sym": "DELL",
+   "name": "Dell",
+   "addr": "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd",
+   "usd": 329.0273,
+   "liquidity": "62953734947917262",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd"
+    ]
+   }
+  },
+  {
+   "key": "avgo",
+   "sym": "AVGO",
+   "name": "Broadcom",
+   "addr": "0x156E175DD063a8cE274C50654eF40e0032b3fbcF",
+   "usd": 291.7402,
+   "liquidity": "63996389010303519",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x156E175DD063a8cE274C50654eF40e0032b3fbcF"
+    ]
+   }
+  },
+  {
+   "key": "mrvl",
+   "sym": "MRVL",
+   "name": "Marvell Technology",
+   "addr": "0x62fd0668e10D8B72339BE2DCF7643001688ff13B",
+   "usd": 137.263,
+   "liquidity": "418670917045195",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x62fd0668e10D8B72339BE2DCF7643001688ff13B"
+    ]
+   }
+  },
+  {
+   "key": "tsm",
+   "sym": "TSM",
+   "name": "Taiwan Semiconductor Manufacturing",
+   "addr": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA",
+   "usd": 374.4075,
+   "liquidity": "6016858318488146",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA"
+    ]
+   }
+  },
+  {
+   "key": "mstr",
+   "sym": "MSTR",
+   "name": "Strategy Inc.",
+   "addr": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+   "usd": 127.166,
+   "liquidity": "136871039457299556",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xec262a75e413fAfD0dF80480274532C79D42da09"
+    ]
+   }
+  },
+  {
+   "key": "sgov",
+   "sym": "SGOV",
+   "name": "iShares 0-3 Month Treasury Bond ETF",
+   "addr": "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5",
+   "usd": 101.438,
+   "liquidity": "3076019700690010149",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5"
+    ]
+   }
+  },
+  {
+   "key": "rblx",
+   "sym": "RBLX",
+   "name": "Roblox",
+   "addr": "0xF0C4BF4C582cb3836e98394b1d4e7B7281101bE8",
+   "usd": 48.3318,
+   "liquidity": "80670550794019982",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xF0C4BF4C582cb3836e98394b1d4e7B7281101bE8"
+    ]
+   }
+  },
+  {
+   "key": "asml",
+   "sym": "ASML",
+   "name": "ASML Holding NV",
+   "addr": "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA",
+   "usd": 1417.1159,
+   "liquidity": "2189663073227611",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA"
+    ]
+   }
+  },
+  {
+   "key": "ttwo",
+   "sym": "TTWO",
+   "name": "Take-Two Interactive Software",
+   "addr": "0x5e81213613b6B86EaB4c6c50d718d34359459786",
+   "usd": 215.469,
+   "liquidity": "28350247084832669127",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     3000,
+     "0x5e81213613b6B86EaB4c6c50d718d34359459786"
+    ]
+   }
+  },
+  {
+   "key": "rklb",
+   "sym": "RKLB",
+   "name": "Rocket Lab Corporation",
+   "addr": "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2",
+   "usd": 49.0199,
+   "liquidity": "289890822195",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2"
+    ]
+   }
+  },
+  {
+   "key": "nu",
+   "sym": "NU",
+   "name": "Nu",
+   "addr": "0x408c14038a04f7bD235329E26d2bf569ee20e250",
+   "usd": 12.101,
+   "liquidity": "172411677850093970",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x408c14038a04f7bD235329E26d2bf569ee20e250"
+    ]
+   }
+  },
+  {
+   "key": "aaoi",
+   "sym": "AAOI",
+   "name": "Applied Optoelectronics",
+   "addr": "0x521Cf887E6531c6F667b5BC4D896E5d9bfE8EB2E",
+   "usd": 87.5771,
+   "liquidity": "217194980874",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x521Cf887E6531c6F667b5BC4D896E5d9bfE8EB2E"
+    ]
+   }
+  },
+  {
+   "key": "qubt",
+   "sym": "QUBT",
+   "name": "Quantum Computing",
+   "addr": "0x59818904ab4cE163b3cE4FfB64f2D6Ca02c434B4",
+   "usd": 6.1142,
+   "liquidity": "35136727448066912",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x59818904ab4cE163b3cE4FfB64f2D6Ca02c434B4"
+    ]
+   }
+  },
+  {
+   "key": "ionq",
+   "sym": "IONQ",
+   "name": "IonQ",
+   "addr": "0x558378E000D634A36593E338eBacdd6207640EfE",
+   "usd": 30.9657,
+   "liquidity": "369095908455",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x558378E000D634A36593E338eBacdd6207640EfE"
+    ]
+   }
+  },
+  {
+   "key": "sofi",
+   "sym": "SOFI",
+   "name": "SoFi Technologies",
+   "addr": "0x98E75885157C80992A8D41b696D8c9C6Fb30A926",
+   "usd": 15.1549,
+   "liquidity": "562198243509",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x98E75885157C80992A8D41b696D8c9C6Fb30A926"
+    ]
+   }
+  },
+  {
+   "key": "ups",
+   "sym": "UPS",
+   "name": "UPS",
+   "addr": "0xf23250dac154D05Bb671CB0d0eBEf3c635c79CE2",
+   "usd": 109.5544,
+   "liquidity": "40347918184056880",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xf23250dac154D05Bb671CB0d0eBEf3c635c79CE2"
+    ]
+   }
+  },
+  {
+   "key": "soxx",
+   "sym": "SOXX",
+   "name": "iShares Semiconductor ETF",
+   "addr": "0x75742c18BC1f1C5c5f448f4C9D9C6F66dafAAa38",
+   "usd": 384.5614,
+   "liquidity": "105739532041",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x75742c18BC1f1C5c5f448f4C9D9C6F66dafAAa38"
+    ]
+   }
+  },
+  {
+   "key": "xlk",
+   "sym": "XLK",
+   "name": "State Street Technology Select Sector SPDR ETF",
+   "addr": "0x15Cd20759CE7F3285c29A319dE2D1A2e098c6f43",
+   "usd": 180.8996,
+   "liquidity": "183566154110",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x15Cd20759CE7F3285c29A319dE2D1A2e098c6f43"
+    ]
+   }
+  },
+  {
+   "key": "ddog",
+   "sym": "DDOG",
+   "name": "Datadog",
+   "addr": "0x27c99fBde9D0d2AA4f4Bfb4943f237843DdF6958",
+   "usd": 184.2243,
+   "liquidity": "170904446196",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x27c99fBde9D0d2AA4f4Bfb4943f237843DdF6958"
+    ]
+   }
+  },
+  {
+   "key": "f",
+   "sym": "F",
+   "name": "Ford Motor",
+   "addr": "0x25C288E6D899b9BC30160965aD9644c67e73bE0C",
+   "usd": 12.5595,
+   "liquidity": "238058794187737518",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x25C288E6D899b9BC30160965aD9644c67e73bE0C"
+    ]
+   }
+  },
+  {
+   "key": "ccl",
+   "sym": "CCL",
+   "name": "Carnival Corporation",
+   "addr": "0x9651342CeA770aE9a2969Ba2A52611523146aef9",
+   "usd": 31.3014,
+   "liquidity": "72456472468348",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x9651342CeA770aE9a2969Ba2A52611523146aef9"
+    ]
+   }
+  },
+  {
+   "key": "poet",
+   "sym": "POET",
+   "name": "POET Technologies",
+   "addr": "0xcf6B2D875361be807EAfa57458c80f28521F9333",
+   "usd": 6.7687,
+   "liquidity": "4634263738867236",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xcf6B2D875361be807EAfa57458c80f28521F9333"
+    ]
+   }
+  },
+  {
+   "key": "ba",
+   "sym": "BA",
+   "name": "Boeing",
+   "addr": "0x4D21483a44Bf67a86b77E3dA301411880797D452",
+   "usd": 171.896,
+   "liquidity": "251215475264998",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x4D21483a44Bf67a86b77E3dA301411880797D452"
+    ]
+   }
+  },
+  {
+   "key": "rivn",
+   "sym": "RIVN",
+   "name": "Rivian Automotive",
+   "addr": "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B",
+   "usd": 13.4019,
+   "liquidity": "13642870088628138",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B"
+    ]
+   }
+  },
+  {
+   "key": "umc",
+   "sym": "UMC",
+   "name": "United Microelectronics",
+   "addr": "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79",
+   "usd": 15.7529,
+   "liquidity": "432620957989",
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79"
+    ]
+   }
+  }
+ ]
+}
