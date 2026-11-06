@@ -60,7 +60,7 @@ const NETS = {
     minSweep: '0.0005', // ETH: a sweep costs real gas on mainnet
     parent: null,
     // BuzzPad v2 (pairs ETH, AZTEC, WXMR; fees paid out in the pair): deployments/buzzpad-v2-ethereum.json
-    v2: E.ETH_V2_FACTORY === '' ? null : {
+    v2: !E.ETH_FACTORY || E.ETH_V2_FACTORY === '' ? null : {
       factory: E.ETH_V2_FACTORY || '0xE1fAd7b84dE65B5A0cfaae1B9EEC2569C97e88B0',
       hook: E.ETH_V2_HOOK || '0x17e71CE8fb92C94C768A4408ef9fC655d0e4a0CC',
       locker: E.ETH_V2_LOCKER || '0xFb02f7E461Cfb04E1614A0a1D86dF26E39cfE045',
@@ -72,8 +72,25 @@ const NETS = {
       '0x465e07d6028830124be2e4aa551fbe12805db0f5': { sym: 'XMR', route: 'v2', v2pair: '0x14C10b4BDcCD9d3F8940Fb79E0eE00121391D6dE', weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' },
     },
   },
+  // Base (the Zappy brand): v2 contracts only, ETH pair; on when BASE_V2 is set
+  base: {
+    key: 'base', name: 'Base',
+    rpc: E.BASE_RPC || 'https://base-rpc.publicnode.com', // mainnet.base.org rate-limits eth_getLogs
+    chainId: 8453,
+    factory: '', hook: '', locker: '', escrow: '', vault: '',
+    poolManager: '0x498581fF718922c3f8e6A244956aF099B2652b2b',
+    quoter: '0x0d5e0F971ED27FBfF6c2837bf31316121532048D',
+    multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
+    fromBlock: Number(E.BASE_FROM_BLOCK || 53717066),
+    logRpc: E.BASE_LOG_RPC || '', fallbackRange: 1000,
+    maxRange: 9000, maxChunks: 20,
+    minSweep: '0.0002',
+    parent: null,
+    v2: E.BASE_V2 ? { factory: E.BASE_V2_FACTORY || '0xAe6e1C7f5F34BaabCB7f545bc6ADcdA65418cB66', hook: E.BASE_V2_HOOK || '0x3fc4B416e02c2879FfBDa58b5D77095965B4A0CC', locker: E.BASE_V2_LOCKER || '0x1cdBd96F80F7e9ac45bBf4fDFaC7D4F5Fdf003CA', fromBlock: 0 } : null,
+    pairs: {},
+  },
 };
-for (const k of Object.keys(NETS)) if (!NETS[k].factory) delete NETS[k]; // not deployed (yet)
+for (const k of Object.keys(NETS)) if (!NETS[k].factory && !NETS[k].v2) delete NETS[k]; // not deployed (yet)
 if (E.LQF_ONLY) for (const k of Object.keys(NETS)) if (!E.LQF_ONLY.split(',').includes(k)) delete NETS[k]; // tests: one chain
 const netOf = (key) => NETS[key] || null;
 const defaultNet = () => Object.keys(NETS)[0] || 'elysium';

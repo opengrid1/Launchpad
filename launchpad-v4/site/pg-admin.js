@@ -54,6 +54,11 @@ window.PAGE = async () => {
     };
   }
   async function load() {
+    if (!live && V2) { // a chain with only the v2 contracts: ownership and the launch switch
+      const v = await readMany([...OWNED2.flatMap(([k]) => [[K[k], k, 'owner'], [K[k], k, 'pendingOwner']]), [K.factoryV2, 'factoryV2', 'launchEnabled']]);
+      let j = 0; S = demoState(); S.v2 = { owners: {} }; for (const [k] of OWNED2) S.v2.owners[k] = S.owners[k] = { owner: v[j++], pending: v[j++] }; S.v2.launchEnabled = v[j++]; // the v1 sections are built but not shown
+      return;
+    }
     if (!live) { S = demoState(); return; }
     const g = await readMany([
       ...OWNED.flatMap(([k]) => [[K[k], k, 'owner'], [K[k], k, 'pendingOwner']]),
@@ -104,7 +109,7 @@ window.PAGE = async () => {
     return APP.errMsg(e);
   }
   async function send(label, k, fn, args = [], opts = {}) {
-    if (!live) { APP.toast('Preview only. Contracts are not deployed yet, so nothing was sent.', 'info'); return false; }
+    if (!live && !(V2 && /V2$/.test(k))) { APP.toast('Preview only. Contracts are not deployed yet, so nothing was sent.', 'info'); return false; }
     if (busy) return false;
     try { await W.require(); } catch (e) { APP.toast(APP.errMsg(e), 'err'); return false; }
     if (!W.provider) { APP.toast('Connect a browser wallet to send transactions.', 'err'); return false; }
@@ -136,13 +141,14 @@ window.PAGE = async () => {
     return ts.slice(0, 50).map((t) => `<button class="tk${lc(T.addr) === t.addr ? ' on' : ''}" data-pick="${t.addr}"><img src="${esc(t.img)}" alt=""><span><b>${esc(t.name)}</b><i>${esc(t.symbol)} · ${APP.fmtNum(t.mcap, 1)} ${C.chain.quote}</i></span></button>`).join('');
   }
   const setRow = (title, now, desc, id, value, suf, act, owner = 'factory', extra = '') => `<div class="set"><div class="sl"><b>${title}</b><span><span class="now">Now ${now}.</span> ${desc}</span></div><div class="sr"><div class="ipw"><input class="inp" id="${id}" value="${esc(value)}" inputmode="decimal" autocomplete="off">${suf ? `<span class="suf">${suf}</span>` : ''}</div><button class="btn sm" data-act="${act}" ${ctl(owner)}>Save</button>${extra}</div></div>`;
-  const ctl = (k) => (!live || isOwner(k) ? '' : 'disabled title="Only the owner of this contract can do this"');
+  const ctl = (k) => ((!live && !(V2 && /V2$/.test(k))) || isOwner(k) ? '' : 'disabled title="Only the owner of this contract can do this"');
   function render() {
     const m = me();
     const pendingMine = live ? OWNED.filter(([k]) => lc(S.owners[k].pending) === m && m) : [];
     const anyOwner = live && [...OWNED, ...OWNED2].some(([k]) => S.owners[k] && lc(S.owners[k].owner) === m);
     const pendingV2 = V2 && S.v2 ? OWNED2.filter(([k]) => lc(S.v2.owners[k].pending) === m && m) : [];
-    const allowed = !live || (m && (anyOwner || pendingMine.length || pendingV2.length || m === lc(C.admin)));
+    const v2only = !live && !!V2;
+    const allowed = v2only ? !!(m && (anyOwner || pendingV2.length || m === lc(C.admin))) : !live || (m && (anyOwner || pendingMine.length || pendingV2.length || m === lc(C.admin)));
     const head = `<section class="ahd"><h1>Admin</h1><p>Owner controls for the ${esc(C.brand)} contracts on ${esc(C.chain.name)}. Every change is a transaction from the owner wallet, and the contracts check that.</p><div class="bdg"><span class="seg" id="a-net">${C.chains.map((c) => `<button type="button" data-anet="${c.key}" class="${c.key === C.chain.key ? 'on' : ''}">${esc(c.name)}</button>`).join('')}</span>${live ? `<span class="badge ok"><i></i>Live on ${esc(C.chain.name)}</span>` : '<span class="badge warn"><i></i>Preview. Contracts not deployed yet, nothing is sent.</span>'}${m ? `<span class="badge">${esc(shortAddr(m))}${anyOwner ? ' · owner' : pendingMine.length ? ' · ownership offered' : ''}</span>` : ''}</div></section>`;
     if (!allowed) {
       root.innerHTML = head + `<div class="acard gate">${!m ? `<p>Sign in with the owner wallet to manage the contracts.</p><button class="btn pri" id="g-in">${ic('wallet')}Sign in</button>` : `<p>${esc(shortAddr(m))} does not own these contracts. Sign in with the owner wallet, ${esc(shortAddr(C.admin))}.</p>`}</div>`;
@@ -196,7 +202,7 @@ window.PAGE = async () => {
     const v2card = V2 && S.v2 ? `<section class="acard"><div class="h"><div><h2>BuzzPad v2</h2><p>The v2 contracts: ETH, AZTEC and XMR pairs, fees paid out in the pair. Accept ownership of each, then the launch switch is yours.</p></div>${pendingV2.length > 1 ? '<button class="btn sm pri" id="acc-v2">Accept all</button>' : ''}</div>
       <div class="own"><div class="orow h"><span>Contract</span><span>Address</span><span class="c-own">Owner</span><span class="c-pen">Pending owner</span><span></span></div>${OWNED2.map(([k, n]) => { const o = S.v2.owners[k]; const mineO = lc(o.owner) === m && m, mineP = lc(o.pending) === m && m; return `<div class="orow"><b>${n}</b><span class="mono">${link(K[k])}</span><span class="c-own">${link(o.owner)}${mineO ? '<span class="me">you</span>' : ''}</span><span class="c-pen">${o.pending && o.pending !== ZERO ? link(o.pending) : '<span class="mono">none</span>'}</span><span class="act">${mineP ? `<button class="btn sm pri" data-accept="${k}">Accept</button>` : mineO ? '<span class="badge ok sm">Owner</span>' : ''}</span></div>`; }).join('')}</div>
       <div class="big"><div class="sl"><b><span class="dot ${S.v2.launchEnabled ? 'on' : ''}"></span>v2 launches are ${S.v2.launchEnabled ? 'on' : 'off'}</b><span>Anyone can launch on the v2 factory while this is on.</span></div><button class="btn sm${S.v2.launchEnabled ? ' warn' : ' pri'}" data-act="toggleV2" ${ctl('factoryV2')}>${S.v2.launchEnabled ? 'Turn v2 launches off' : 'Turn v2 launches on'}</button></div></section>` : '';
-    root.innerHTML = head + v2card + ownership + launches + fees + earnings + tokens + configs;
+    root.innerHTML = v2only ? head + v2card : head + v2card + ownership + launches + fees + earnings + tokens + configs;
     bind();
   }
 

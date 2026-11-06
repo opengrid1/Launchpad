@@ -16,6 +16,7 @@ const HOOK_I = new ethers.Interface(['function pendingFees(bytes32,address) view
 const MIN_HYPE = ethers.parseEther(process.env.SWEEP_MIN_HYPE || '0.002'); // skip pools whose fees are worth less
 
 async function sweepChain(NET, wallet) {
+  if (!NET.factory) return { skipped: 'no v1 contracts on this chain' };
   const [op] = await multicall(NET, [[NET.hook, HOOK_I, 'feeSweepOperator']]);
   if (!op || op.toLowerCase() !== wallet.address.toLowerCase()) return { skipped: 'this key is not the fee sweep operator', operator: op };
   const X = state.indexer(NET.key); await X.sync(); const S = X.build();

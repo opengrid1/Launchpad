@@ -1,0 +1,84 @@
+{
+  "name": "Zappy",
+  "theme": ":root{--acid:#ffd84d;--acid-hover:#f5c518;--acid-ink:#13307a;--acid-quiet:rgba(255,216,77,.22)}",
+  "themeColor": "#f5f5f7",
+  "replace": [
+    [
+      "['/trends', 'Trending', 'flame', 'trends'], ",
+      ""
+    ],
+    [
+      "20% of supply from 50 to 200 HYPE market cap, 30% from 200 to 1,000, 50% above",
+      "20% of supply from 1.75 to 7 ETH market cap, 30% from 7 to 35, 50% above"
+    ],
+    [
+      "LiquidFi runs on two chains: HyperEVM, and Elysium, the HYPE-gas chain that settles to HyperEVM. A token lives on the chain it launched on. Tokens launch directly into Uniswap v4 and are quoted against HYPE only.",
+      "Zappy runs on Base. Tokens launch directly into Uniswap v4 and are quoted against ETH only."
+    ],
+    [
+      "<dl class=\"defs\"><div><dt>Network</dt><dd>HyperEVM</dd></div><div><dt>Chain ID</dt><dd>999</dd></div><div><dt>Public RPC</dt><dd>https://rpc.hyperliquid.xyz/evm</dd></div><div><dt>Explorer</dt><dd>hyperevmscan.io</dd></div></dl>",
+      "<dl class=\"defs\"><div><dt>Network</dt><dd>Base</dd></div><div><dt>Chain ID</dt><dd>8453</dd></div><div><dt>Public RPC</dt><dd>https://mainnet.base.org</dd></div><div><dt>Explorer</dt><dd>basescan.org</dd></div></dl>"
+    ],
+    [
+      "<dl class=\"defs\"><div><dt>Network</dt><dd>Elysium</dd></div><div><dt>Chain ID</dt><dd>99901</dd></div><div><dt>Public RPC</dt><dd>https://rpc-live.elysp.com</dd></div><div><dt>Explorer</dt><dd>scan.elysp.com</dd></div></dl>",
+      ""
+    ],
+    [
+      "Two steps on HyperEVM or Elysium.",
+      "Two steps on Base."
+    ],
+    [
+      "on HyperEVM and Elysium",
+      "on Base"
+    ],
+    [
+      "on HyperEVM or Elysium",
+      "on Base"
+    ],
+    [
+      "<span class=\"dt\" id=\"pair-net\">Hyperliquid</span>",
+      "<span class=\"dt\" id=\"pair-net\">Base</span>"
+    ],
+    [
+      "/img/hyper.png",
+      "/img/eth.svg"
+    ],
+    [
+      "0.005 HYPE",
+      "0.0002 ETH"
+    ],
+    [
+      "50 HYPE",
+      "1.75 ETH"
+    ],
+    [
+      "HYPE",
+      "ETH"
+    ],
+    [
+      "LiquidFi Coin",
+      "Zappy Coin"
+    ],
+    [
+      "placeholder=\"LIQ\"",
+      "placeholder=\"ZAP\""
+    ],
+    [
+      "LiquidFi",
+      "Zappy"
+    ]
+  ],
+  "files": "html,js",
+  "skipFiles": [
+    "config.js",
+    "abi.js",
+    "glyphs.js"
+  ],
+  "drop": [
+    "trends.html",
+    "pg-trends.js",
+    "api/trends.js",
+    "api/idea.js",
+    "api/_trends.js"
+  ]
+}

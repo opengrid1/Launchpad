@@ -123,8 +123,8 @@ async function refreshV2() {
 }
 async function syncRange(from, head) {
   // one call for the protocol contracts (both generations), split by address
-  const core = await stamp(await logsRange({ address: [NET.factory, NET.hook, NET.escrow, NET.vault, ...(V2 ? [V2.factory, V2.hook] : [])] }, from, head));
-  const of = (a) => core.filter((l) => l.address.toLowerCase() === a.toLowerCase());
+  const core = await stamp(await logsRange({ address: [NET.factory, NET.hook, NET.escrow, NET.vault, ...(V2 ? [V2.factory, V2.hook] : [])].filter(Boolean) }, from, head));
+  const of = (a) => (a ? core.filter((l) => l.address.toLowerCase() === a.toLowerCase()) : []);
   const fac = [...of(NET.factory), ...(V2 ? of(V2.factory) : [])].sort(byOrder), hook = [...of(NET.hook), ...(V2 ? of(V2.hook) : [])], esc = of(NET.escrow), vault = of(NET.vault);
   for (const l of fac) {
     if (l.topics[0] === T.launched || l.topics[0] === T.launched2) {

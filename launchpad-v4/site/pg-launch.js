@@ -69,6 +69,8 @@ window.PAGE = async () => {
   // the pair picker replaces the fixed "Paired with" field when the chain has v2 pairs
   function pairPick() {
     const ps = PAIRS(); if (!ps.length) return; if (!F.pair) F.pair = ps[0].key;
+    const noBuyback = () => { const bb = $('#f-bb'); if (bb) { bb.classList.add('hidden'); F.buyback = false; } const adv = $('#st2 details.adv'); if (adv) adv.classList.add('hidden'); const fw = $('#f-fw small'); if (fw) fw.textContent = `Paid out in ${PR() ? PR().sym : 'the pair'} straight to your fee wallet, from your profile.`; };
+    if (ps.length < 2) { noBuyback(); return; } // one pair: the fixed "Paired with" field stays
     const sel = $('#st2 .sel'), host = sel ? sel.parentElement : $('#f-pair') && $('#f-pair').parentElement; if (!host) return;
     const html = `<div class="seg lg" id="f-pair" role="radiogroup" aria-label="Pair">${ps.map((p) => `<button type="button" role="radio" aria-checked="${p.key === F.pair}" class="${p.key === F.pair ? 'on' : ''}" data-pair="${p.key}" style="display:inline-flex;align-items:center;gap:6px"><img src="${esc(p.logo)}" alt="" style="width:18px;height:18px;border-radius:50%">${esc(p.sym)}</button>`).join('')}</div>`;
     if (sel) sel.outerHTML = html; else $('#f-pair').outerHTML = html;
