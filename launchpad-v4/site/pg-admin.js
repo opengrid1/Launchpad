@@ -11,8 +11,8 @@ window.PAGE = async () => {
   const I = { factory: new E.Interface(ABI.factory), hook: new E.Interface(ABI.hook), locker: new E.Interface(ABI.locker), vault: new E.Interface(ABI.vault), escrow: new E.Interface(ABI.escrow) };
   // a second generation of contracts on this chain (CFG chain.v2: factory, hook, locker): ownership and the launch switch
   const V2 = C.chain.v2 && C.chain.v2.factory ? C.chain.v2 : null;
-  const OWNED2 = V2 ? [['factoryV2', 'Factory v2'], ['hookV2', 'Hook v2'], ['lockerV2', 'Locker v2']] : [];
-  if (V2) { Object.assign(K, { factoryV2: V2.factory, hookV2: V2.hook, lockerV2: V2.locker }); Object.assign(I, { factoryV2: new E.Interface(ABI.factoryV2 || ABI.factory), hookV2: new E.Interface(ABI.hookV2 || ABI.hook), lockerV2: I.locker }); }
+  const OWNED2 = V2 ? [['factoryV2', 'Factory v2'], ['hookV2', 'Hook v2'], ['lockerV2', 'Locker v2'], ...(V2.margin ? [['marginV2', 'Margin (leverage)']] : [])] : [];
+  if (V2) { Object.assign(K, { factoryV2: V2.factory, hookV2: V2.hook, lockerV2: V2.locker, marginV2: V2.margin || '' }); Object.assign(I, { factoryV2: new E.Interface(ABI.factoryV2 || ABI.factory), hookV2: new E.Interface(ABI.hookV2 || ABI.hook), lockerV2: V2.margin && ABI.lockerZ ? new E.Interface(ABI.lockerZ) : I.locker, marginV2: new E.Interface(ABI.marginV2 || []) }); }
   const PAIRS = V2 ? V2.pairs || [] : [];
   const pairOf = (a) => PAIRS.find((p) => String(p.addr).toLowerCase() === String(a || E.ZeroAddress).toLowerCase()) || { sym: a && a !== E.ZeroAddress ? APP.shortAddr(a) : C.chain.quote };
   const inPair = (wei, a) => Number(E.formatUnits(wei || 0n, pairOf(a).dec || 18)).toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' ' + pairOf(a).sym;
@@ -92,6 +92,11 @@ window.PAGE = async () => {
       hookFeeBps: num(), protocolShareBps: num(), protocolFeeRecipient: nx(), vol: { threshold: num(), window: num(), extra: num(), decay: num() } });
     const ids = Array.from({ length: o.configCount }, (_, n) => n);
     const h = await readMany(ids.map((n) => [F2, 'factoryV2', 'getLaunchConfig', [n]]));
+    if (V2.margin) {
+      const Mg = K.marginV2, L = [['opensEnabled'], ['maxLeverageBps'], ['maintenanceBps'], ['initialBps'], ['liquidationDelay'], ['positionCapBps'], ['minPoolDepth'], ['minCoinAge'], ['minMargin'], ['keeperRewardBps'], ['liquidationFeeBps'], ['aprBps'], ['nextId']];
+      const lv = await readMany([...L.map(([f]) => [Mg, 'marginV2', f]), [K.lockerV2, 'lockerV2', 'lendCapBps']]);
+      o.lev = Object.fromEntries(L.map(([f], n) => [f, lv[n]])); o.lev.lendCapBps = lv[L.length];
+    }
     o.configs = ids.map((n) => { const r = h[n]; if (!r) return null; const c = r[0]; return { pairToken: c.pairToken, supply: c.supply, startMcap: c.startMcap, band1Mcap: c.band1Mcap, band2Mcap: c.band2Mcap, band0Bps: Number(c.band0Bps), band1Bps: Number(c.band1Bps), tickSpacing: Number(c.tickSpacing), enabled: c.enabled }; });
     return o;
   }
@@ -250,7 +255,18 @@ window.PAGE = async () => {
     const cfg2Rows = v ? v.configs.map((c, n) => !c ? '' : `<div class="cfg"><b>#${n}</b><span>${esc(pairOf(c.pairToken).sym)}</span><span>${inPair(c.startMcap, c.pairToken)}</span><span class="c-x">${inPair(c.band1Mcap, c.pairToken)} / ${inPair(c.band2Mcap, c.pairToken)}</span><span class="c-x">${pct(c.band0Bps)} / ${pct(c.band1Bps)} / ${pct(10000 - c.band0Bps - c.band1Bps)}</span><span>${c.tickSpacing}</span><span>${c.enabled ? 'On' : 'Off'}</span><span class="act"><button class="btn sm" data-cfg2="${n}" ${ctl('factoryV2')}>${c.enabled ? 'Turn off' : 'Turn on'}</button></span></div>`).join('') : '';
     const v2configs = v ? `<section class="acard"><div class="h"><div><h2>v2 launch configs</h2><p>One per pair: the pair, the opening market cap and the ranges a launch seeds its three positions with.</p></div></div>
       <div><div class="cfg h"><span>ID</span><span>Pair</span><span>Opens at</span><span class="c-x">Band edges</span><span class="c-x">Supply split</span><span>Spacing</span><span>Status</span><span></span></div>${cfg2Rows}</div></section>` : '';
-    const v2all = v2card + v2tokens + v2set + v2configs;
+    const lv = v && v.lev, n = (x) => Number(x || 0);
+    const levCard = lv ? `<section class="acard"><div class="h"><div><h2>Leverage</h2><p>Longs on ETH-pair coins, funded by each coin's own pool: the locker lends part of the ETH in the bands the price has passed. ${n(lv.nextId) - 1} positions opened so far.</p></div></div>
+      <div class="big"><div class="sl"><b><span class="dot ${lv.opensEnabled ? 'on' : ''}"></span>New positions are ${lv.opensEnabled ? 'on' : 'off'}</b><span>Closing, topping up and liquidations always work.</span></div><button class="btn sm${lv.opensEnabled ? ' warn' : ' pri'}" data-act="levToggle" ${ctl('marginV2')}>${lv.opensEnabled ? 'Turn off' : 'Turn on'}</button></div>
+      ${setRow('Lend cap', pct(n(lv.lendCapBps)), 'The share of a coin\'s passed-band ETH that can be out on loan at once. Up to 50%.', 'l-cap', n(lv.lendCapBps) / 100, '%', 'levCap', 'lockerV2')}
+      <div class="sub"><b>Risk</b><span class="hint">Max leverage ${n(lv.maxLeverageBps) / 1e4}x · liquidation below ${pct(n(lv.maintenanceBps))} equity · opens need ${pct(n(lv.initialBps))} · flag stands ${n(lv.liquidationDelay)} s · one position up to ${pct(n(lv.positionCapBps))} of the pool's ETH · pool at least ${hype(lv.minPoolDepth)} · coin at least ${Math.round(n(lv.minCoinAge) / 60)} min old · margin at least ${hype(lv.minMargin)}.</span>
+        <div class="grid4"><div class="fld"><label for="l-max">Max leverage</label><div class="ipw"><input class="inp" id="l-max" value="${n(lv.maxLeverageBps) / 1e4}"><span class="suf">x</span></div></div><div class="fld"><label for="l-mnt">Liquidation equity</label><div class="ipw"><input class="inp" id="l-mnt" value="${n(lv.maintenanceBps) / 100}"><span class="suf">%</span></div></div><div class="fld"><label for="l-ini">Opening equity</label><div class="ipw"><input class="inp" id="l-ini" value="${n(lv.initialBps) / 100}"><span class="suf">%</span></div></div><div class="fld"><label for="l-dly">Flag delay</label><div class="ipw"><input class="inp" id="l-dly" value="${n(lv.liquidationDelay)}"><span class="suf">s</span></div></div>
+          <div class="fld"><label for="l-pos">Position cap</label><div class="ipw"><input class="inp" id="l-pos" value="${n(lv.positionCapBps) / 100}"><span class="suf">%</span></div></div><div class="fld"><label for="l-dep">Min pool ETH</label><div class="ipw"><input class="inp" id="l-dep" value="${E.formatEther(lv.minPoolDepth || 0n)}"><span class="suf">${C.chain.quote}</span></div></div><div class="fld"><label for="l-age">Min coin age</label><div class="ipw"><input class="inp" id="l-age" value="${n(lv.minCoinAge)}"><span class="suf">s</span></div></div><div class="fld"><label for="l-mm">Min margin</label><div class="ipw"><input class="inp" id="l-mm" value="${E.formatEther(lv.minMargin || 0n)}"><span class="suf">${C.chain.quote}</span></div></div></div>
+        <div class="row-end"><button class="btn sm" data-act="levRisk" ${ctl('marginV2')}>Save risk</button></div></div>
+      <div class="sub"><b>Fees</b><span class="hint">Interest ${pct(n(lv.aprBps))} a year and a ${pct(n(lv.liquidationFeeBps))} liquidation penalty, both paid back into the coin's pool; the liquidator gets ${pct(n(lv.keeperRewardBps))} of the sale. New APRs apply to positions opened afterwards.</span>
+        <div class="grid4"><div class="fld"><label for="l-apr">Interest APR</label><div class="ipw"><input class="inp" id="l-apr" value="${n(lv.aprBps) / 100}"><span class="suf">%</span></div></div><div class="fld"><label for="l-lf">Liquidation penalty</label><div class="ipw"><input class="inp" id="l-lf" value="${n(lv.liquidationFeeBps) / 100}"><span class="suf">%</span></div></div><div class="fld"><label for="l-kr">Keeper reward</label><div class="ipw"><input class="inp" id="l-kr" value="${n(lv.keeperRewardBps) / 100}"><span class="suf">%</span></div></div></div>
+        <div class="row-end"><button class="btn sm" data-act="levFees" ${ctl('marginV2')}>Save fees</button></div></div></section>` : '';
+    const v2all = v2card + levCard + v2tokens + v2set + v2configs;
     root.innerHTML = v2only ? head + v2all : head + v2all + ownership + launches + fees + earnings + tokens + configs;
     bind();
   }
@@ -264,6 +280,10 @@ window.PAGE = async () => {
     const av2 = $('#acc-v2'); if (av2) av2.onclick = guard(async () => { for (const [k] of OWNED2) if (lc(S.v2.owners[k].pending) === me()) { if (!(await send('Accept ' + k, k, 'acceptOwnership'))) break; } await after(true); });
     const A = {
       toggleV2: () => send(S.v2.launchEnabled ? 'Turn v2 launches off' : 'Turn v2 launches on', 'factoryV2', 'setLaunchEnabled', [!S.v2.launchEnabled]),
+      levToggle: () => send(S.v2.lev.opensEnabled ? 'Turn leverage off' : 'Turn leverage on', 'marginV2', 'setOpensEnabled', [!S.v2.lev.opensEnabled]),
+      levCap: () => send('Lend cap', 'lockerV2', 'setLendCap', [toBps('l-cap', 5000)]),
+      levRisk: () => { const x = Number(val('l-max')); if (!(x > 1 && x <= 5)) throw new Error('Max leverage: above 1x, up to 5x'); return send('Leverage risk', 'marginV2', 'setRiskParams', [Math.round(x * 1e4), toBps('l-mnt', 5000), toBps('l-ini', 5000), toInt('l-dly', 1, 600), toBps('l-pos', 2000), E.parseEther(val('l-dep') || '0'), toInt('l-age', 0, 604800), E.parseEther(val('l-mm') || '0')]); },
+      levFees: () => send('Leverage fees', 'marginV2', 'setFees', [toBps('l-kr', 300), toBps('l-lf', 1000), toBps('l-apr', 20000)]),
       launchFee2: () => { const v = val('b-fee'); if (!v || !(Number(v) >= 0)) throw new Error('Enter a fee in ' + C.chain.quote); return send('v2 launch fee', 'factoryV2', 'setLaunchFee', [E.parseEther(v)]); },
       maxTax2: () => send('v2 max creator fee', 'factoryV2', 'setMaxCreatorTaxBps', [toBps('b-maxtax', 1000)]),
       snipeStart2: () => send('v2 snipe tax start', 'factoryV2', 'setSnipeTaxStartBps', [toBps('b-snipe', 9900)]),

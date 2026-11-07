@@ -110,7 +110,9 @@
 
   // ---- pool math over the locked bands (floats in wei units; quotes only, the chain enforces the minimum)
   const sqrtAt = (tick) => Math.pow(1.0001, tick / 2);
-  const poolOf = (t) => { const sq = t.sqrtP ? Number(t.sqrtP) / Q96 : null; return { sq, ranges: t.ranges.map((r) => ({ a: sqrtAt(r.lo), b: sqrtAt(r.hi), L: Number(r.liq) })) }; };
+  // the price snaps to a band edge it sits on within float error (a new pool opens exactly on its first band's edge;
+  // 1.0001^(tick/2) in floats can land a hair either side, and a swap simulated from the wrong side skips the band)
+  const poolOf = (t) => { let sq = t.sqrtP ? Number(t.sqrtP) / Q96 : null; const ranges = t.ranges.map((r) => ({ a: sqrtAt(r.lo), b: sqrtAt(r.hi), L: Number(r.liq) })); if (sq) for (const r of ranges) for (const e of [r.a, r.b]) if (Math.abs(sq / e - 1) < 1e-9) sq = e; return { sq, ranges }; };
   const pxOf = (sq) => (sq > 0 ? 1 / (sq * sq) : 0); // HYPE per token: currency0 is HYPE, sqrtP is sqrt(token/HYPE)
   function swapSim(t, buy, amountIn) { // amountIn in wei (float); returns gross out in wei and the end sqrt price
     const P = poolOf(t); let sq = P.sq, rem = amountIn, out = 0; if (!sq || !P.ranges.length) return { out: 0, sq };
