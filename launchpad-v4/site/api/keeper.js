@@ -8,7 +8,7 @@ const { ethers, NETS, rpc, multicall, sendTx, sleep } = require('./_lib');
 
 const MI = new ethers.Interface([
   'function nextId() view returns (uint256)', 'function liquidationDelay() view returns (uint256)',
-  'function positions(uint256) view returns (address owner, address token, uint256 tokens, uint256 principal, uint256 interest, uint256 margin, uint40 openedAt, uint40 accruedAt, uint40 flaggedAt, uint16 aprBps, uint32 leverageBps)',
+  'function positions(uint256) view returns (address owner, address token, uint256 tokens, uint256 principal, uint256 margin, uint40 openedAt, uint40 flaggedAt, uint32 leverageBps)',
   'function health(uint256 id) view returns (uint256 debt, uint256 value, bool liquidatable)',
   'function flag(uint256 id)', 'function liquidate(uint256 id)',
 ]);

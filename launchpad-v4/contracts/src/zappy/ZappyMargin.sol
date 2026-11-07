@@ -34,11 +34,11 @@ import {ZappyLocker} from "./ZappyLocker.sol";
  * No vault and no outside lender. A trader puts up ETH margin and picks a
  * leverage up to maxLeverageBps; the rest is borrowed from the coin's pool,
  * the whole amount buys the coin, and the coins stay here as collateral.
- * Closing sells them, repays the pool with interest and sends the rest to
- * the trader.
+ * Closing sells them, repays the pool and sends the rest to the trader.
  *
- * Interest is simple, at the APR set when the position opened. Interest and
- * liquidation penalties go back into the coin's pool with the principal.
+ * There is no running interest: a meme position lives minutes or hours. A
+ * one-time borrow fee (borrowFeeBps of the borrowed ETH) is taken from the
+ * margin at open; it and liquidation penalties go back into the coin's pool.
  *
  * Health compares the debt with what the coins are worth at the pool's spot
  * price, less the pool's base sell fee and creator tax (the temporary
@@ -58,23 +58,19 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         address owner;
         address token;
         uint256 tokens; // coins held as collateral
-        uint256 principal; // ETH owed to the pool, before interest
-        uint256 interest; // interest owed up to `accruedAt`
+        uint256 principal; // ETH owed to the pool
         uint256 margin; // ETH the trader put in, open plus top-ups
         uint40 openedAt;
-        uint40 accruedAt;
         uint40 flaggedAt;
-        uint16 aprBps;
         uint32 leverageBps;
     }
 
     uint256 private constant BPS = 10_000;
-    uint256 private constant YEAR = 365 days;
     uint256 private constant MAX_LEVERAGE_CEILING_BPS = 50_000; // 5x, the hard ceiling
     uint256 private constant MIN_MAINTENANCE_BPS = 500;
     uint256 private constant MAX_KEEPER_REWARD_BPS = 300;
     uint256 private constant MAX_LIQUIDATION_FEE_BPS = 1_000;
-    uint256 private constant MAX_APR_BPS = 20_000;
+    uint256 private constant MAX_BORROW_FEE_BPS = 300;
     address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     error NotPoolManager();
@@ -127,7 +123,7 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     uint256 public liquidationDelay = 15; // seconds a flag must stand
     uint256 public keeperRewardBps = 100; // of liquidation proceeds, to the caller
     uint256 public liquidationFeeBps = 300; // of liquidation proceeds, back to the coin's pool
-    uint256 public aprBps = 2_000; // 20% a year, paid to the coin's pool
+    uint256 public borrowFeeBps = 30; // one-time, 0.3% of the borrowed ETH at open, paid to the coin's pool; no running interest
     uint256 public minMargin = 0.001 ether;
     uint256 public minCoinAge = 10 minutes;
     uint256 public positionCapBps = 300; // one position's size <= 3% of the ETH in its pool
@@ -186,14 +182,14 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
 
     function debtOf(uint256 id) public view returns (uint256) {
         Position memory p = positions[id];
-        return p.principal + p.interest + _accrued(p);
+        return p.principal;
     }
 
     /// @return debt ETH owed now, value what the coins fetch at spot, liquidatable whether it is past maintenance
     function health(uint256 id) public view returns (uint256 debt, uint256 value, bool liquidatable) {
         Position memory p = positions[id];
         if (p.owner == address(0)) revert NoPosition();
-        debt = p.principal + p.interest + _accrued(p);
+        debt = p.principal;
         value = valueOf(p.token, p.tokens);
         liquidatable = debt * BPS > value * (BPS - maintenanceBps);
     }
@@ -242,7 +238,10 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         if (borrowed > room) revert NotEnoughToBorrow(room);
 
         locker.lend(token, borrowed);
-        uint256 tokens = _swap(factory.poolKeyOf(token), true, size);
+        // the one-time borrow fee comes out of the margin and goes straight back into the coin's pool
+        uint256 fee = (borrowed * borrowFeeBps) / BPS;
+        if (fee != 0) locker.repay{value: fee}(token, 0);
+        uint256 tokens = _swap(factory.poolKeyOf(token), true, size - fee);
         if (tokens < minTokens) revert Slippage(tokens, minTokens);
 
         id = nextId++;
@@ -251,12 +250,9 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
             token: token,
             tokens: tokens,
             principal: borrowed,
-            interest: 0,
             margin: msg.value,
             openedAt: uint40(block.timestamp),
-            accruedAt: uint40(block.timestamp),
             flaggedAt: 0,
-            aprBps: uint16(aprBps),
             leverageBps: uint32(leverageBps)
         });
         _ownerIds[msg.sender].push(id);
@@ -271,7 +267,7 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         if (p.owner == address(0)) revert NoPosition();
         if (p.owner != msg.sender) revert NotOwner();
         uint256 proceeds = _swap(factory.poolKeyOf(p.token), false, p.tokens);
-        uint256 debt = p.principal + p.interest + _accrued(p);
+        uint256 debt = p.principal;
         if (proceeds < debt) revert Underwater(proceeds, debt);
         delete positions[id];
         locker.repay{value: debt}(p.token, p.principal);
@@ -281,18 +277,13 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         emit PositionClosed(id, p.owner, proceeds, debt, toOwner);
     }
 
-    /// @notice Pays down the position's debt (interest first) with `msg.value`; ETH beyond the debt is returned.
+    /// @notice Pays down the position's debt with `msg.value`; ETH beyond the debt is returned.
     function addMargin(uint256 id) external payable nonReentrant {
         Position storage p = positions[id];
         if (p.owner == address(0)) revert NoPosition();
         if (msg.value == 0) revert InvalidParam();
-        p.interest += _accrued(p);
-        p.accruedAt = uint40(block.timestamp);
-        uint256 debt = p.principal + p.interest;
-        uint256 pay = Math.min(msg.value, debt);
-        uint256 toInterest = Math.min(pay, p.interest);
-        uint256 toPrincipal = pay - toInterest;
-        p.interest -= toInterest;
+        uint256 pay = Math.min(msg.value, p.principal);
+        uint256 toPrincipal = pay;
         p.principal -= toPrincipal;
         p.margin += pay;
         address token = p.token;
@@ -345,7 +336,7 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         uint256 proceeds = _swap(factory.poolKeyOf(p.token), false, p.tokens);
         // coins the pool could not take are burned rather than left here
         if (proceeds == 0) IERC20(p.token).safeTransfer(DEAD, p.tokens);
-        uint256 debt = p.principal + p.interest + _accrued(p);
+        uint256 debt = p.principal;
         uint256 reward = (proceeds * keeperRewardBps) / BPS;
         uint256 rest = proceeds - reward;
         uint256 penalty;
@@ -404,14 +395,14 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         emit ParamsUpdated();
     }
 
-    /// @notice Fees and the APR for positions opened from now on.
-    function setFees(uint256 keeperRewardBps_, uint256 liquidationFeeBps_, uint256 aprBps_) external onlyOwner {
-        if (keeperRewardBps_ > MAX_KEEPER_REWARD_BPS || liquidationFeeBps_ > MAX_LIQUIDATION_FEE_BPS || aprBps_ > MAX_APR_BPS) {
+    /// @notice The keeper reward, the liquidation penalty and the one-time borrow fee (for positions opened from now on).
+    function setFees(uint256 keeperRewardBps_, uint256 liquidationFeeBps_, uint256 borrowFeeBps_) external onlyOwner {
+        if (keeperRewardBps_ > MAX_KEEPER_REWARD_BPS || liquidationFeeBps_ > MAX_LIQUIDATION_FEE_BPS || borrowFeeBps_ > MAX_BORROW_FEE_BPS) {
             revert InvalidParam();
         }
         keeperRewardBps = keeperRewardBps_;
         liquidationFeeBps = liquidationFeeBps_;
-        aprBps = aprBps_;
+        borrowFeeBps = borrowFeeBps_;
         emit ParamsUpdated();
     }
 
@@ -420,10 +411,6 @@ contract ZappyMargin is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     }
 
     // --------------------------------------------------------------- internal
-
-    function _accrued(Position memory p) private view returns (uint256) {
-        return (p.principal * p.aprBps * (block.timestamp - p.accruedAt)) / (BPS * YEAR);
-    }
 
     /// @dev Exact-input swap on the coin's pool through PoolManager.unlock. Buy: ETH in, coins to here. Sell: coins in, ETH to here.
     function _swap(PoolKey memory key, bool buy, uint256 amountIn) private returns (uint256 out) {

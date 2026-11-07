@@ -4,7 +4,7 @@
 // Market trades go through Robinhood Chain's UniversalRouter with the calldata site/routes.js builds. Covers: no
 // lending before a band is passed or on a thin pool, caps, open and close in profit with the loan back in the band,
 // flag then liquidate after the delay, a pushed-and-restored price that cannot liquidate, a top-up clearing a flag,
-// interest paid to the pool, a crash whose shortfall the pool absorbs, the owner's collect.
+// a one-time borrow fee paid to the pool and no running interest, a crash whose shortfall the pool absorbs, the owner's collect.
 //   node test/zappy-leverage.fork.test.cjs
 const { ethers } = require('ethers');
 const ROUTES = require('../site/routes.js');
@@ -56,14 +56,17 @@ const later = async (s) => { await P.send('evm_increaseTime', [s]); await P.send
   ok(await reverts(Mt.open.staticCall(coin, 40000, 0, { value: E(0.01) }), 'InvalidLeverage'), 'no more than 3x');
   const m = (maxM * 9n) / 10n; // 90% of the largest position allowed
   const openPos = async (margin = m) => { const rc = await (await Mt.open(coin, 30000, 0, { value: margin, gasLimit: 2_000_000n })).wait(); return rc.logs.map((l) => { try { return M.interface.parseLog(l); } catch { return null; } }).find((x) => x && x.name === 'PositionOpened').args; };
-  const passed0 = await L.passedEth(coin);
+  const passed0 = await L.passedEth(coin), idle0 = await L.idle(coin);
   let p = await openPos();
+  const fee = (p.borrowed * 30n) / 10000n;
+  ok((await M.borrowFeeBps()) === 30n, 'borrow fee 0.3%, one time');
   let [debt, value, liq] = await M.health(p.id);
   ok(p.borrowed === m * 2n && !liq && (await L.lent(coin)) === p.borrowed, `3x long: margin ${f(m)}, borrowed ${f(p.borrowed)} from the coin's own pool, value ${f(value)}`);
-  ok(passed0 - (await L.passedEth(coin)) >= p.borrowed - 10n ** 12n, 'the loan left the passed band');
+  const passed1 = await L.passedEth(coin);
+  ok(passed0 - passed1 >= p.borrowed - fee - 10n ** 12n && passed0 - passed1 <= p.borrowed - fee + 10n ** 12n, `the loan left the passed band and the ${f(fee)} ETH borrow fee went back into it (idle before ${f(idle0)})`);
   console.log(`         liquidation price ${Number(ethers.formatEther(await M.liquidationPrice(p.id))).toPrecision(4)} ETH per coin`);
 
-  // price up, close in profit; the loan and its interest go back into the band
+  // price up, close in profit; the loan goes back into the band
   await buy(W.market, 2);
   let e0 = await P.getBalance(addr.trader);
   let rc = await (await Mt.close(p.id, 0, { gasLimit: 2_000_000n })).wait();
@@ -109,17 +112,15 @@ const later = async (s) => { await P.send('evm_increaseTime', [s]); await P.send
   await (await Mt.addMargin(p.id, { value: debt / 2n })).wait();
   ok(Number((await M.positions(p.id)).flaggedAt) === 0 && !(await M.health(p.id))[2], 'trader pays down half the debt: flag cleared, healthy');
 
-  // interest, paid to the pool
+  // no running interest: the debt is the same 30 days later
   [debt] = await M.health(p.id);
-  const pos = await M.positions(p.id);
   await later(30 * 86400);
   const [debt30] = await M.health(p.id);
-  const want = (pos.principal * 2000n * 30n) / (10000n * 365n);
-  ok(debt30 - debt >= (want * 99n) / 100n && debt30 - debt <= (want * 101n) / 100n, `30 days at 20% APR: debt ${f(debt)} -> ${f(debt30)}`);
+  ok(debt30 === debt, `30 days later the debt is unchanged: ${f(debt)} -> ${f(debt30)}`);
   await buy(W.market, 4);
   const pe0 = await M.poolDepth(coin);
   rc = await (await Mt.close(p.id, 0, { gasLimit: 2_000_000n })).wait();
-  ok(rc.status === 1 && (await L.lent(coin)) === 0n, 'closed with interest; nothing on loan');
+  ok(rc.status === 1 && (await L.lent(coin)) === 0n, 'closed; nothing on loan');
 
   // a crash below the debt: the coin's pool takes the shortfall
   p = await openPos();
@@ -134,9 +135,9 @@ const later = async (s) => { await P.send('evm_increaseTime', [s]); await P.send
   void pe0;
 
   // owner tools
-  const o0 = await P.getBalance(addr.keeper);
+  const o0 = await P.getBalance(addr.keeper), c0 = await T.balanceOf(addr.keeper);
   await (await L.collect(coin, 100, addr.keeper)).wait();
-  ok((await P.getBalance(addr.keeper)) > o0, 'owner can still collect 1% of the liquidity');
+  ok((await P.getBalance(addr.keeper)) > o0 || (await T.balanceOf(addr.keeper)) > c0, 'owner can still collect 1% of the liquidity');
   ok(await reverts(L.setLendCap.staticCall(6000), 'InvalidParams'), 'lend cap tops out at 50%');
   ok(await reverts(Mk.setOpensEnabled.staticCall(false), 'OwnableUnauthorizedAccount'), 'only the owner sets the switches');
   console.log(fails ? `FAILURES ${fails}` : 'ALL OK'); process.exit(fails ? 1 : 0);

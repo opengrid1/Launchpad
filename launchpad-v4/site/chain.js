@@ -26,8 +26,8 @@
     mc: new X.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])', 'function getEthBalance(address) view returns (uint256)']),
     // Zappy leverage: longs funded by each coin's own pool (ZappyMargin borrowing from the ZappyLocker)
     margin: new X.Interface(['function open(address token, uint256 leverageBps, uint256 minTokens) payable returns (uint256)', 'function close(uint256 id, uint256 minOut) returns (uint256)', 'function addMargin(uint256 id) payable', 'function flag(uint256 id)', 'function liquidate(uint256 id)', 'function claim()', 'function claimable(address) view returns (uint256)',
-      'function opensEnabled() view returns (bool)', 'function maxLeverageBps() view returns (uint256)', 'function aprBps() view returns (uint256)', 'function minMargin() view returns (uint256)', 'function minCoinAge() view returns (uint256)', 'function minPoolDepth() view returns (uint256)', 'function maintenanceBps() view returns (uint256)', 'function liquidationDelay() view returns (uint256)', 'function keeperRewardBps() view returns (uint256)',
-      'function maxMargin(address token, uint256 leverageBps) view returns (uint256)', 'function poolDepth(address token) view returns (uint256)', 'function positionsOf(address owner) view returns (uint256[])', 'function positions(uint256) view returns (address owner, address token, uint256 tokens, uint256 principal, uint256 interest, uint256 margin, uint40 openedAt, uint40 accruedAt, uint40 flaggedAt, uint16 aprBps, uint32 leverageBps)', 'function health(uint256 id) view returns (uint256 debt, uint256 value, bool liquidatable)', 'function liquidationPrice(uint256 id) view returns (uint256)',
+      'function opensEnabled() view returns (bool)', 'function maxLeverageBps() view returns (uint256)', 'function borrowFeeBps() view returns (uint256)', 'function minMargin() view returns (uint256)', 'function minCoinAge() view returns (uint256)', 'function minPoolDepth() view returns (uint256)', 'function maintenanceBps() view returns (uint256)', 'function liquidationDelay() view returns (uint256)', 'function keeperRewardBps() view returns (uint256)',
+      'function maxMargin(address token, uint256 leverageBps) view returns (uint256)', 'function poolDepth(address token) view returns (uint256)', 'function positionsOf(address owner) view returns (uint256[])', 'function positions(uint256) view returns (address owner, address token, uint256 tokens, uint256 principal, uint256 margin, uint40 openedAt, uint40 flaggedAt, uint32 leverageBps)', 'function health(uint256 id) view returns (uint256 debt, uint256 value, bool liquidatable)', 'function liquidationPrice(uint256 id) view returns (uint256)',
       'error OpensDisabled()', 'error CoinTooNew(uint256 opensAt)', 'error PoolTooThin(uint256 depth, uint256 minimum)', 'error InvalidLeverage()', 'error MarginTooSmall(uint256 minimum)', 'error NotEnoughToBorrow(uint256 available)', 'error PositionTooLarge(uint256 maximum)', 'error Slippage(uint256 got, uint256 minimum)', 'error OpensUnhealthy()', 'error NotOwner()', 'error NoPosition()', 'error Healthy()', 'error NotFlagged()', 'error DelayNotElapsed(uint256 at)', 'error Underwater(uint256 proceeds, uint256 debt)', 'error NotEthPair()', 'error UnknownCoin()']),
   };
   const AC = X.AbiCoder.defaultAbiCoder();
@@ -361,11 +361,11 @@
   const f18 = (v) => Number(X.formatEther(v || 0n));
   // preview: terms a coin of this size would get, and one example position on the first ETH-pair coin
   const DEMO_LEV = {
-    info(t) { return { at: Date.now(), ok: !isErc(t), why: isErc(t) ? 'Leverage is for ETH-pair coins.' : '', maxLev: 3, apr: 20, minMargin: 0.001, maint: 0.1, depth: 14.6, max: { 1.5: 0.29, 2: 0.22, 3: 0.146 } }; },
+    info(t) { return { at: Date.now(), ok: !isErc(t), why: isErc(t) ? 'Leverage is for ETH-pair coins.' : '', maxLev: 3, borrowFee: 0.3, minMargin: 0.001, maint: 0.1, depth: 14.6, max: { 1.5: 0.29, 2: 0.22, 3: 0.146 } }; },
     positions() {
       // one example 3x long per ETH-pair coin, opened 15% below today's price, so the card shows a gain
       return ALL.filter((x) => x.name && !isErc(x)).map((t, i) => {
-        const v = view(t), entry = v.px / 1.15, tokens = (0.393 / Math.max(entry, 1e-18)) * 0.98, value = tokens * v.px * 0.99, debt = 0.262 * (1 + 0.2 * 3 / 365);
+        const v = view(t), entry = v.px / 1.15, tokens = (0.393 / Math.max(entry, 1e-18)) * 0.98, value = tokens * v.px * 0.99, debt = 0.262;
         return { id: i + 1, token: t.addr, sym: t.symbol, tokens, debt, value, margin: 0.131, equity: value - debt, pnl: value - debt - 0.131, pnlPct: ((value - debt) / 0.131 - 1) * 100, lev: 3, liq: false, flagged: false, liqPx: debt / (tokens * 0.9 * 0.99), entryPx: entry, opened: v.createdAt, health: Math.max(0, 1 - debt / value), demo: true };
       });
     },
@@ -377,10 +377,10 @@
     async info(a) {
       const t = BY.get(low(a)); if (t && DEMO) return DEMO_LEV.info(t); if (!t || !Mof(t.net)) return null; const M = Mof(t.net);
       const c = LEV.info.get(t.addr); if (c && Date.now() - c.at < 8000) return c;
-      const r = await multicall([[M, I.margin, 'opensEnabled'], [M, I.margin, 'maxLeverageBps'], [M, I.margin, 'aprBps'], [M, I.margin, 'minMargin'], [M, I.margin, 'minCoinAge'], [M, I.margin, 'minPoolDepth'], [M, I.margin, 'maintenanceBps'], [M, I.margin, 'poolDepth', [t.addr]], [M, I.margin, 'maxMargin', [t.addr, 20000]], [M, I.margin, 'maxMargin', [t.addr, 30000]], [M, I.margin, 'maxMargin', [t.addr, 15000]]], t.net);
-      const [on, maxLev, apr, minM, age, minDepth, maint, depth, m2, m3, m15] = r;
+      const r = await multicall([[M, I.margin, 'opensEnabled'], [M, I.margin, 'maxLeverageBps'], [M, I.margin, 'borrowFeeBps'], [M, I.margin, 'minMargin'], [M, I.margin, 'minCoinAge'], [M, I.margin, 'minPoolDepth'], [M, I.margin, 'maintenanceBps'], [M, I.margin, 'poolDepth', [t.addr]], [M, I.margin, 'maxMargin', [t.addr, 20000]], [M, I.margin, 'maxMargin', [t.addr, 30000]], [M, I.margin, 'maxMargin', [t.addr, 15000]]], t.net);
+      const [on, maxLev, bfee, minM, age, minDepth, maint, depth, m2, m3, m15] = r;
       const why = isErc(t) ? 'Leverage is for ETH-pair coins.' : !on ? 'Leverage is paused right now.' : now(t.net) < t.createdAt + Number(age || 600) ? 'Leverage opens 10 minutes after launch.' : depth != null && minDepth != null && depth < minDepth ? `Leverage opens once the pool holds ${f18(minDepth)} ${C.chain.quote}.` : '';
-      const v = { at: Date.now(), ok: !why, why, maxLev: Number(maxLev || 30000) / 1e4, apr: Number(apr || 0) / 100, minMargin: f18(minM), maint: Number(maint || 1000) / 1e4, depth: f18(depth), max: { 1.5: f18(m15), 2: f18(m2), 3: f18(m3) } };
+      const v = { at: Date.now(), ok: !why, why, maxLev: Number(maxLev || 30000) / 1e4, borrowFee: Number(bfee || 0) / 100, minMargin: f18(minM), maint: Number(maint || 1000) / 1e4, depth: f18(depth), max: { 1.5: f18(m15), 2: f18(m2), 3: f18(m3) } };
       LEV.info.set(t.addr, v); return v;
     },
     // the wallet's open positions, with health and P&L at the spot price
