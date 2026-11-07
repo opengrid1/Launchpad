@@ -80,7 +80,8 @@
   "skipFiles": [
     "config.js",
     "abi.js",
-    "glyphs.js"
+    "glyphs.js",
+    "docs.html"
   ],
   "drop": [
     "trends.html",

@@ -1,0 +1,209 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><script>try{var t=localStorage.getItem("theme");document.documentElement.dataset.theme=t||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Docs | LeverHook</title><meta name="description" content="How LeverHook works: launching coins on Robinhood Chain paired with ETH or a stock, trading, fees, leverage up to 3x, liquidation, network and contracts.">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml"><meta name="theme-color" content="#070908">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* LeverHook docs: the app's dark trading terminal (lime on near-black, chart grid, Space Grotesk + JetBrains Mono) */
+:root{--acid:#b8ff3c;--acid-ink:#0b0f0d;--sans:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+[data-theme=dark]{--bg:#070908;--card:#0d1110;--card2:#121816;--ink:#e9eee8;--ink-2:rgba(233,238,232,.68);--ink-3:rgba(233,238,232,.45);--line:rgba(184,255,60,.13);--line-2:rgba(255,255,255,.08);--soft:rgba(184,255,60,.07);--acid-text:#b8ff3c;--grid:rgba(184,255,60,.03);--dn:#ff5d6c}
+[data-theme=light]{--bg:#f3f5f1;--card:#ffffff;--card2:#f7f9f5;--ink:#0b0f0d;--ink-2:rgba(11,15,13,.7);--ink-3:rgba(11,15,13,.5);--line:rgba(11,15,13,.1);--line-2:rgba(11,15,13,.08);--soft:rgba(120,170,20,.1);--acid-text:#4d7a00;--grid:rgba(11,15,13,.035);--dn:#d0293a}
+*{box-sizing:border-box}html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.55 var(--sans);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:44px 44px;background-attachment:fixed}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}h1,h2,h3,p,ul,ol,dl,dd{margin:0}
+.nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav-inner{max-width:1180px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-.02em}.brand img{width:32px;height:32px;border-radius:8px}
+.srch{margin-left:auto;display:flex;align-items:center;gap:10px;width:300px;height:40px;padding:0 12px;border-radius:6px;background:var(--card);border:1px solid var(--line);color:var(--ink-3);font-size:14px;text-align:left}.srch svg{width:16px;height:16px;flex:none}.srch span{flex:1}.srch kbd{font:500 11px var(--mono);color:var(--ink-3);border:1px solid var(--line-2);border-radius:4px;padding:1px 5px}
+.ib{width:40px;height:40px;border-radius:6px;border:1px solid var(--line);background:var(--card);display:inline-flex;align-items:center;justify-content:center}.ib svg{width:16px;height:16px}
+.open{display:flex;align-items:center;height:40px;padding:0 16px;border-radius:6px;background:var(--acid);color:var(--acid-ink);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+main{max-width:1180px;margin:0 auto;padding:0 24px}
+.hero{padding:56px 0 28px;border-bottom:1px solid var(--line)}.hero small{font:700 12px var(--mono);color:var(--acid-text);text-transform:uppercase;letter-spacing:.12em}
+.hero h1{font-size:56px;line-height:1.02;letter-spacing:-.04em;font-weight:700;margin-top:14px;max-width:760px}.hero h1 em{font-style:normal;color:var(--acid-text)}
+.hero p{margin-top:16px;font-size:17px;color:var(--ink-2);max-width:640px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:28px}.stats div{background:var(--card);padding:16px 18px}.stats span{display:block;font-size:12px;color:var(--ink-3)}.stats b{display:block;font:700 22px var(--mono);letter-spacing:-.02em;margin-top:4px}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;margin:28px 0 8px;align-items:start}
+.sidebar{position:sticky;top:84px;display:grid;gap:22px}
+.grp p{font:700 11px var(--mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.12em;margin:0 0 8px}.grp ul{list-style:none;padding:0;margin:0;display:grid;gap:1px}.grp a{display:block;padding:7px 10px;border-radius:6px;font-size:14px;color:var(--ink-2);border-left:2px solid transparent}.grp a:hover{color:var(--ink)}.grp a.on{background:var(--soft);color:var(--ink);border-left-color:var(--acid)}
+section{padding:36px 0;border-bottom:1px solid var(--line-2)}section h2{font-size:30px;line-height:1.15;letter-spacing:-.03em;font-weight:700}section h2 .k{font:700 13px var(--mono);color:var(--acid-text);margin-right:10px;vertical-align:4px}
+.body{display:grid;gap:16px;margin-top:18px}.body>p{font-size:15.5px;line-height:26px;color:var(--ink-2);max-width:700px}.body>p b{color:var(--ink)}
+.callout{background:var(--soft);border:1px solid var(--line);border-left:3px solid var(--acid);border-radius:8px;padding:16px 18px}.callout strong{font-size:14px;font-weight:700}.callout p{font-size:14px;line-height:22px;color:var(--ink-2);margin-top:6px}.callout ul{font-size:14px;line-height:22px;color:var(--ink-2);padding-left:18px;margin:8px 0 0;display:grid;gap:6px}
+.callout.warn{border-left-color:var(--dn)}
+.flow{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.flow li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}.flow .n{font:700 12px var(--mono);color:var(--acid-text)}.flow h3{font-size:16px;font-weight:700;margin-top:8px}.flow p{font-size:13.5px;line-height:21px;color:var(--ink-2);margin-top:6px}
+.flow.four{grid-template-columns:repeat(4,1fr)}
+.defs{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-2);border:1px solid var(--line);border-radius:10px;overflow:hidden}.defs>div{display:grid;gap:4px;background:var(--card);padding:14px 16px}.defs dt{font-size:13px;color:var(--ink-3)}.defs dd{font:600 14px var(--mono);letter-spacing:-.01em}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}.tbl th,.tbl td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line-2)}.tbl th{font:700 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);background:var(--card2)}.tbl td{background:var(--card);color:var(--ink-2)}.tbl td:last-child{font-family:var(--mono);font-weight:600;color:var(--ink)}.tbl tr:last-child td{border-bottom:0}.tbl.m td:not(:first-child){font-family:var(--mono);font-weight:600;color:var(--ink)}section,.ihero{scroll-margin-top:76px}
+.rows{display:grid;gap:6px}.row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:14px;align-items:center;padding:11px 14px;border-radius:8px;background:var(--card);border:1px solid var(--line)}.row .meta{display:grid;gap:2px}.row .role{font-size:14px;font-weight:600}.row .note{font-size:12px;color:var(--ink-3)}.row .copy{display:flex;align-items:center;gap:8px;font:500 12px var(--mono);color:var(--ink-2);text-align:left;min-width:0}.row .copy code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row .copy svg{width:14px;height:14px;flex:none}
+pre{margin:0;padding:16px;border-radius:8px;background:var(--card);border:1px solid var(--line);font:500 12.5px/20px var(--mono);overflow:auto;color:var(--ink-2)}code.i{font:500 13px var(--mono);color:var(--ink);background:var(--card2);border:1px solid var(--line-2);border-radius:4px;padding:1px 5px;word-break:break-word}
+.evs{list-style:none;padding:0;margin:0;display:grid;gap:8px}.evs li{font-size:13.5px;color:var(--ink-2)}.evs li b{display:block;font-size:12px;color:var(--ink-3);font-weight:600;margin-bottom:3px}
+.ihero{padding:44px 0 0}.ihero small{font:700 12px var(--mono);color:var(--acid-text);text-transform:uppercase;letter-spacing:.12em}.ihero h2{font-size:34px;line-height:1.1;letter-spacing:-.03em;font-weight:700;margin-top:10px}.ihero p{font-size:15.5px;line-height:26px;color:var(--ink-2);margin-top:10px;max-width:700px}
+footer{padding:56px 0 40px}.fgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.4fr;gap:32px;padding:28px;border:1px solid var(--line);border-radius:12px;background:var(--card)}.fgrid b{display:block;font-size:18px;margin-bottom:8px}.fgrid h4{font:700 11px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--ink-3);margin:0 0 10px}.fgrid a{display:block;font-size:14px;color:var(--ink-2);padding:3px 0}.fgrid p{font-size:13px;line-height:21px;color:var(--ink-2)}
+.fbot{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-3);padding:16px 4px 0}.fbot a{color:var(--acid-text)}
+.note{font-size:13px;color:var(--ink-3)}
+.spot-bg{position:fixed;inset:0;z-index:1200;background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:blur(4px)}
+.spot{position:fixed;left:50%;top:96px;width:640px;max-width:calc(100% - 32px);transform:translateX(-50%);border-radius:12px;background:var(--card);border:1px solid var(--line);overflow:hidden;box-shadow:0 24px 48px rgba(0,0,0,.45)}
+.spot-in{display:flex;align-items:center;gap:12px;padding:14px 16px;color:var(--ink-3);border-bottom:1px solid var(--line-2)}.spot-in>svg{width:16px;height:16px;flex:none}.spot-in input{flex:1;min-width:0;border:0;background:none;outline:0;font:500 17px var(--sans);color:var(--ink);padding:0;-webkit-appearance:none;appearance:none}.spot-in input::-webkit-search-cancel-button{display:none}.spot-x{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px}.spot-x svg{width:14px;height:14px}
+.spot-res{display:grid;gap:2px;padding:8px;max-height:calc(100vh - 220px);overflow:auto}.spot-r{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;text-align:left;color:var(--ink);width:100%}.spot-r.on,.spot-r:hover{background:var(--soft)}.spot-r .c{flex:1;min-width:0;display:grid;gap:2px}.spot-r .t{font-size:14px;font-weight:600}.spot-r .d{font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.spot-r>svg{width:14px;height:14px;color:var(--ink-3)}.spot-r mark{background:var(--soft);color:var(--acid-text);border-radius:2px}.spot-none{padding:20px;text-align:center;color:var(--ink-3);font-size:14px}
+@media(max-width:900px){.nav-inner{padding:0 16px;gap:8px}.srch{width:auto;flex:1;margin-left:8px}.srch kbd{display:none}.brand span{display:none}main{padding:0 16px}.hero{padding:36px 0 22px}.hero h1{font-size:36px}.stats{grid-template-columns:1fr 1fr}.layout{grid-template-columns:1fr;gap:8px}.sidebar{display:none}.flow,.flow.four{grid-template-columns:1fr}.defs{grid-template-columns:1fr}.row{grid-template-columns:1fr;gap:6px}.fgrid{grid-template-columns:1fr 1fr}.tbl{font-size:13px}.tbl th,.tbl td{padding:9px 10px}section h2{font-size:25px}}
+@media(max-width:520px){.open{padding:0 12px}.fgrid{grid-template-columns:1fr}}
+</style>
+</head><body>
+<header class="nav"><div class="nav-inner"><a class="brand" href="/"><img src="/img/mark.svg" alt=""><span>LeverHook</span></a><button class="srch" id="d-search" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Search docs</span><kbd>⌘K</kbd></button><button class="ib" id="d-theme" aria-label="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="8.75"/><path d="M12 3.25a8.75 8.75 0 0 1 0 17.5z" fill="currentColor"/></svg></button><a class="open" href="/">Open app</a></div></header>
+<main>
+  <section class="hero" style="padding-top:56px"><small>Docs</small><h1>Launch a coin. Pair it with ETH or a stock. <em>Long it up to 3x.</em></h1>
+    <p>LeverHook is a launchpad on Robinhood Chain. Every coin gets its own Uniswap v4 pool, and that pool also lends to traders who want leverage. Here is how all of it works.</p>
+    <div class="stats"><div><span>Max leverage</span><b>3x</b></div><div><span>Borrow fee</span><b>0.3% once</b></div><div><span>Interest</span><b>None</b></div><div><span>Pairs</span><b>ETH + 50 stocks</b></div></div></section>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="grp"><p>Protocol</p><ul><li><a href="#overview" class="on">Overview</a></li><li><a href="#launches">Launching a coin</a></li><li><a href="#pairs">ETH and stock pairs</a></li><li><a href="#trading">Trading and pricing</a></li><li><a href="#protection">Launch protection</a></li><li><a href="#fees">Fees</a></li></ul></div>
+      <div class="grp"><p>Leverage</p><ul><li><a href="#leverage">How leverage works</a></li><li><a href="#lev-open">Opening and closing</a></li><li><a href="#liquidation">Liquidation</a></li><li><a href="#lev-limits">Limits and fees</a></li><li><a href="#lev-pool">Where the loan comes from</a></li></ul></div>
+      <div class="grp"><p>Reference</p><ul><li><a href="#risks">Risk disclosures</a></li><li><a href="#network">Network</a></li><li><a href="#contracts">Contracts</a></li><li><a href="#events">Onchain events</a></li><li><a href="#support">Support</a></li><li><a href="#terms">Terms</a></li></ul></div></aside>
+    <div class="content">
+      <section id="overview"><h2><span class="k">01</span>Overview</h2><div class="body">
+        <p>LeverHook lets anyone launch a coin on Robinhood Chain in one transaction. Each coin trades in its own Uniswap v4 pool, paired with <b>ETH</b> or with one of <b>50 Robinhood stock tokens</b> such as NVDA, TSLA or AAPL.</p>
+        <p>Any coin can also be traded with <b>leverage</b>: open a 1.5x, 2x or 3x long with ETH as margin. The extra buying power is borrowed from the coin's own pool, so there is no vault to fill and no lender to wait for.</p>
+        <p>LeverHook never holds your keys. Every launch, trade and position is a transaction your wallet asks you to approve.</p>
+        <div class="callout"><strong>Before you trade</strong><ul><li>Names and symbols can be copied. Always check the coin address.</li><li>Prices come from each coin's live pool and move with every trade.</li><li>Leverage multiplies losses as well as gains. A 3x long is liquidated after a drop of about 25%.</li></ul></div></div></section>
+
+      <section id="launches"><h2><span class="k">02</span>Launching a coin</h2><div class="body">
+        <p>Creating a coin deploys the token and its pool in a single transaction and places all of the supply into three liquidity positions held by the locker contract. The creator sets the name, symbol, image, description, links, the pair, and the wallet that receives creator fees.</p>
+        <ol class="flow"><li><span class="n">01 / CREATE</span><h3>Pick a pair</h3><p>Choose ETH or a stock. The coin is minted with a fixed supply and its pool goes live in the same transaction.</p></li><li><span class="n">02 / TRADE</span><h3>Spot or leverage</h3><p>Buy and sell from the first block. Leverage opens once the coin is 10 minutes old and its pool is deep enough.</p></li><li><span class="n">03 / EARN</span><h3>Creator fees</h3><p>Every trade pays a 1% fee. 70% goes to the creator, paid out in the pair (ETH or the stock).</p></li></ol>
+        <table class="tbl"><tr><th>Launch term</th><th>Value</th></tr>
+          <tr><td>Supply</td><td>1,000,000,000</td></tr>
+          <tr><td>Opening market cap</td><td>1.75 ETH (or its value in the stock)</td></tr>
+          <tr><td>Liquidity positions</td><td>20% · 1.75–7 ETH, 30% · 7–35 ETH, 50% · above</td></tr>
+          <tr><td>Launch fee</td><td>0.0002 ETH</td></tr>
+          <tr><td>Opening buy</td><td>up to 5% of supply, in the launch transaction</td></tr></table>
+        <div class="callout"><strong>Opening buy</strong><p>The creator can buy up to 5% of supply inside the launch transaction itself, before anyone else can trade. That buy is exempt from launch protection.</p></div></div></section>
+
+      <section id="pairs"><h2><span class="k">03</span>ETH and stock pairs</h2><div class="body">
+        <p>An <b>ETH-paired</b> coin trades directly against ETH. A <b>stock-paired</b> coin trades against a Robinhood stock token, so its price follows both its own demand and the stock.</p>
+        <p>You never need to hold the stock. When you buy a stock-paired coin with ETH, the router turns your ETH into the stock (ETH → USDG → stock, through Uniswap pools on Robinhood Chain) and buys the coin in the same transaction. Selling goes the other way and pays you ETH.</p>
+        <p>A stock coin opens at the same value as an ETH coin, 1.75 ETH, counted in the stock at launch. Creator fees on a stock coin are paid in that stock.</p>
+        <div class="callout"><strong>Thin stock pools</strong><p>Some stock tokens have little liquidity on Robinhood Chain. The ETH to stock leg of a trade can cost a few percent on top of the coin's own pool. The quote on the trade panel includes it.</p></div></div></section>
+
+      <section id="trading"><h2><span class="k">04</span>Trading and pricing</h2><div class="body">
+        <p>The price you see is the live pool price and it moves with each trade. The amount you receive can differ slightly from the quote; slippage sets how much movement you accept.</p>
+        <dl class="defs"><div><dt>Price</dt><dd>Current pool price of one coin</dd></div><div><dt>Market cap</dt><dd>Price × circulating supply</dd></div><div><dt>Price impact</dt><dd>How much your trade moves the pool</dd></div><div><dt>Slippage</dt><dd>Maximum movement your trade accepts</dd></div><div><dt>Liquidity</dt><dd>Pair and coins in the pool near the price</dd></div><div><dt>Leverage badge</dt><dd>Shown on coins that can be longed now</dd></div></dl></div></section>
+
+      <section id="protection"><h2><span class="k">05</span>Launch protection</h2><div class="body">
+        <p><b>Snipe tax.</b> For the first 10 seconds after launch, buys pay an extra tax that starts at 99% and halves fourteen times, reaching zero when the window closes. The proceeds follow the normal fee split, so a sniper pays the creator.</p>
+        <p><b>Volatility fee.</b> When the price moves more than 10% within 60 seconds, the trading fee rises from 1% to 3% and decays back to 1% over 2 minutes.</p>
+        <p>Selling and wallet-to-wallet transfers are never restricted. Each coin keeps the terms it launched with; later setting changes apply only to new launches.</p></div></section>
+
+      <section id="fees"><h2><span class="k">06</span>Fees</h2><div class="body">
+        <p>Every buy and sell pays a 1% fee on the pair side of the trade, taken by the hook. The creator gets 70% and the protocol 30%. Fees are paid out directly in the pair currency, ETH for ETH coins and the stock for stock coins.</p>
+        <table class="tbl"><tr><th>Fee</th><th>Amount</th></tr>
+          <tr><td>Trading fee (every buy and sell)</td><td>1%</td></tr>
+          <tr><td>Creator share</td><td>70% of the trading fee</td></tr>
+          <tr><td>Protocol share</td><td>30% of the trading fee</td></tr>
+          <tr><td>Optional creator fee, set at launch</td><td>0–10% on top, all to the creator</td></tr>
+          <tr><td>Launch fee</td><td>0.0002 ETH</td></tr>
+          <tr><td>Leverage borrow fee</td><td>0.3% of the amount borrowed, once</td></tr></table>
+        <p>The creator fee wallet can be changed later with a 3-day delay, so holders can see a change coming.</p></div></section>
+
+      <section id="leverage"><h2><span class="k">07</span>How leverage works</h2><div class="body">
+        <p>A leveraged long lets you hold more of a coin than your margin alone would buy. With 1 ETH of margin at 3x, the pool lends you 2 ETH, and 3 ETH of the coin is bought and held for your position.</p>
+        <ol class="flow"><li><span class="n">01 / OPEN</span><h3>Pay margin in ETH</h3><p>Pick 1.5x, 2x or 3x. The pool lends the rest and the whole amount buys the coin.</p></li><li><span class="n">02 / HOLD</span><h3>Watch health</h3><p>The panel shows value, debt, P&amp;L and your liquidation price at the live pool price.</p></li><li><span class="n">03 / EXIT</span><h3>Close any time</h3><p>The coins are sold, the loan is repaid, and the rest comes back to you in ETH.</p></li></ol>
+        <table class="tbl m"><tr><th>Example: 1 ETH margin</th><th>1.5x</th><th>2x</th><th>3x</th></tr>
+          <tr><td>Position size</td><td>1.5 ETH</td><td>2 ETH</td><td>3 ETH</td></tr>
+          <tr><td>Borrowed from the pool</td><td>0.5 ETH</td><td>1 ETH</td><td>2 ETH</td></tr>
+          <tr><td>Coin price +20%</td><td>+30%</td><td>+40%</td><td>+60%</td></tr>
+          <tr><td>Roughly liquidated after a drop of</td><td>~63%</td><td>~44%</td><td>~26%</td></tr></table>
+        <p class="note">Before trading fees and price impact. Leverage is long only: you profit when the coin goes up.</p></div></section>
+
+      <section id="lev-open"><h2><span class="k">08</span>Opening and closing</h2><div class="body">
+        <p><b>Open.</b> On the coin page choose Leverage, pick 1.5x, 2x or 3x, enter your margin in ETH and confirm. For a stock coin your ETH margin is first swapped to the stock, and the pool lends the rest in the stock. The position records the coins bought and the amount borrowed.</p>
+        <p><b>Add margin.</b> Adding ETH to a position pays down its debt and moves the liquidation price lower. Use it to keep a position safe during a dip.</p>
+        <p><b>Close.</b> Closing sells the position's coins into the pool, repays the loan, and sends you the rest in ETH. If the coins are worth less than the debt, the position can't be closed by its owner; it is handled by liquidation.</p>
+        <p>All amounts on the page are shown in ETH, including for stock coins (converted at the live stock price).</p></div></section>
+
+      <section id="liquidation"><h2><span class="k">09</span>Liquidation</h2><div class="body">
+        <p>A position can be liquidated when its equity (value minus debt) falls below <b>10% of its value</b>. Liquidation happens in two steps so a single wick can't wipe you out:</p>
+        <ol class="flow"><li><span class="n">01 / FLAG</span><h3>Below the line</h3><p>Anyone can flag a position that is past the liquidation level.</p></li><li><span class="n">02 / WAIT</span><h3>15 seconds</h3><p>If the price recovers or you add margin, the flag is cleared and nothing happens.</p></li><li><span class="n">03 / LIQUIDATE</span><h3>Still below</h3><p>The coins are sold into the pool, the loan is repaid and the rest goes to you.</p></li></ol>
+        <table class="tbl"><tr><th>From the liquidation proceeds</th><th>Share</th></tr>
+          <tr><td>Repays the loan to the coin's pool</td><td>debt</td></tr>
+          <tr><td>Liquidation penalty, to the coin's pool</td><td>3%</td></tr>
+          <tr><td>Reward to whoever runs the liquidation</td><td>1%</td></tr>
+          <tr><td>Whatever is left, to the position owner</td><td>rest</td></tr></table>
+        <p>LeverHook runs a keeper that checks every open position each minute, so liquidations happen on time even if nobody else calls them. For a stock coin, the leftover and the keeper reward are paid in the stock.</p>
+        <div class="callout warn"><strong>Your margin is at risk</strong><p>At liquidation most or all of your margin is lost. Watch the health bar and the liquidation price on the coin page.</p></div></div></section>
+
+      <section id="lev-limits"><h2><span class="k">10</span>Limits and fees</h2><div class="body">
+        <table class="tbl"><tr><th>Rule</th><th>Value</th></tr>
+          <tr><td>Leverage choices</td><td>1.5x · 2x · 3x</td></tr>
+          <tr><td>Borrow fee (once, at open, paid to the pool)</td><td>0.3% of borrowed</td></tr>
+          <tr><td>Interest while open</td><td>none</td></tr>
+          <tr><td>Liquidation level</td><td>equity &lt; 10% of value</td></tr>
+          <tr><td>Flag must stand for</td><td>15 seconds</td></tr>
+          <tr><td>Coin age before leverage opens</td><td>10 minutes</td></tr>
+          <tr><td>Pool size before leverage opens</td><td>about 5 ETH of pair</td></tr>
+          <tr><td>Largest single position</td><td>3% of the pool's pair</td></tr>
+          <tr><td>Minimum margin</td><td>0.001 ETH</td></tr></table>
+        <p>The trade panel shows the largest margin you can use right now for each leverage choice. Normal 1% trading fees apply to the buy when you open and the sell when you close.</p></div></section>
+
+      <section id="lev-pool"><h2><span class="k">11</span>Where the loan comes from</h2><div class="body">
+        <p>A coin's liquidity sits in three price ranges. As the price rises past a range, that range is left holding only the pair (ETH or the stock). That pair is what leverage borrows: the locker lends up to <b>20%</b> of it to open longs.</p>
+        <p>Every close and liquidation pays the loan back into the pool, and the borrow fee and liquidation penalty are added to it. Because the money is lent out of liquidity above the current price, the pool keeps the liquidity traders sell into.</p>
+        <p>This is why leverage needs a coin with some history: a brand new coin has nothing to lend until its price has moved up.</p></div></section>
+
+      <section id="risks"><h2><span class="k">12</span>Risk disclosures</h2><div class="body">
+        <p>Coins launched on LeverHook are user-created and experimental. Check the coin address, creator, liquidity and holders before you sign anything.</p>
+        <div class="callout warn"><ul style="margin-top:0"><li>Prices can move fast and liquidity can be thin. Leverage makes losses bigger and faster.</li><li>A sudden drop can move the price past your liquidation level before you can react.</li><li>Stock-paired coins also move with the stock, and the ETH to stock conversion can be costly in thin pools.</li><li>Similar names and images can belong to unrelated coins.</li><li>Smart contracts, wallets, RPCs and indexers can fail.</li><li>Shown values are estimates, not execution guarantees.</li></ul></div>
+        <p>LeverHook is an interface, not investment advice or a statement about any coin's quality. Stock tokens are issued by third parties; LeverHook does not issue them.</p></div></section>
+
+      <div class="ihero"><small>Integration</small><h2>Everything reads off the contracts.</h2><p>Index the factory, hook and margin events for a complete onchain record of launches, trades and positions.</p></div>
+      <section id="network"><h2>Network</h2><div class="body">
+        <dl class="defs"><div><dt>Network</dt><dd>Robinhood Chain</dd></div><div><dt>Chain ID</dt><dd>4663</dd></div><div><dt>Public RPC</dt><dd>rpc.mainnet.chain.robinhood.com</dd></div><div><dt>Explorer</dt><dd>robinhoodchain.blockscout.com</dd></div><div><dt>Gas token</dt><dd>ETH</dd></div><div><dt>DEX</dt><dd>Uniswap v4 (pools), v3 (stock routes)</dd></div></dl></div></section>
+      <section id="contracts"><h2>Contracts</h2><div class="body">
+        <p>LeverHook contracts on Robinhood Chain, and the Uniswap contracts they use.</p>
+        <div class="rows" id="d-contracts"></div></div></section>
+      <section id="events"><h2>Onchain events</h2><div class="body">
+        <ul class="evs">
+          <li><b>Factory</b><code class="i">TokenLaunched(address indexed token, address indexed creator, bytes32 indexed poolId, uint256 launchConfigId, address pairToken, address creatorFeeRecipient, uint16 creatorTaxBps, uint256[3] positionIds)</code></li>
+          <li><b>Factory</b><code class="i">TokenMetadata(address indexed token, string name, string symbol, string logo, string description, (string,string,string,string,string) socials)</code></li>
+          <li><b>PoolManager</b><code class="i">Swap(bytes32 indexed id, address indexed sender, int128 amount0, int128 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick, uint24 fee)</code></li>
+          <li><b>Hook</b><code class="i">FeesPaid(bytes32 indexed poolId, address indexed creator, uint256 creatorAmount, address indexed protocol, uint256 protocolAmount)</code></li>
+          <li><b>Margin</b><code class="i">PositionOpened(uint256 indexed id, address indexed owner, address indexed token, uint256 margin, uint256 borrowed, uint256 tokens, uint256 leverageBps)</code></li>
+          <li><b>Margin</b><code class="i">PositionClosed(uint256 indexed id, address indexed owner, uint256 proceeds, uint256 debtPaid, uint256 toOwner)</code></li>
+          <li><b>Margin</b><code class="i">PositionFlagged(uint256 indexed id, address indexed by, uint256 debt, uint256 value)</code></li>
+          <li><b>Margin</b><code class="i">PositionLiquidated(uint256 indexed id, address indexed keeper, uint256 proceeds, uint256 debt, uint256 reward, uint256 penalty, uint256 shortfall, uint256 toOwner)</code></li>
+        </ul>
+        <p>Margin amounts are in the coin's pair: wei of ETH, or units of the stock. Read a position's health with <code class="i">health(id)</code> and its liquidation price with <code class="i">liquidationPrice(id)</code>.</p></div></section>
+      <section id="support"><h2>Support</h2><div class="body">
+        <p>Questions, listings and takedown requests go through the LeverHook X account. LeverHook will never ask for your private key or seed phrase, and never asks you to send funds to fix a problem.</p></div></section>
+      <section id="terms" style="border-bottom:0"><h2>Terms</h2><div class="body">
+        <p>LeverHook is a noncustodial software interface. It does not hold your assets or keys, cannot reverse transactions, and is not a bank, broker, exchange, custodian or investment adviser. Nothing here is financial, legal or tax advice. Leveraged trading can lose your whole margin.</p>
+        <p>Pools run on the official Uniswap v4 PoolManager on Robinhood Chain. Contracts build on the MIT-licensed Uniswap v4 periphery.</p>
+        <p class="note" id="d-note"></p></div></section>
+    </div>
+  </div>
+  <footer><div class="fgrid"><div><b>LeverHook</b><p>Launch coins on Robinhood Chain, paired with ETH or a stock, and long them up to 3x. Your wallet signs every transaction.</p></div><div><h4>Docs</h4><a href="#overview">Overview</a><a href="#leverage">Leverage</a><a href="#liquidation">Liquidation</a><a href="#contracts">Contracts</a></div><div><h4>Product</h4><a href="/">Explore</a><a href="/launch">Create</a><a href="/creator">Profile</a></div><div><h4>Risk notice</h4><p>Transactions can't be undone. Coins can lose all value, and leverage can lose your whole margin. LeverHook gives no custody, warranty or financial advice.</p></div></div><div class="fbot"><span>© 2026 LeverHook</span><span id="d-x"></span></div></footer>
+</main>
+<script src="/config.js?v=60"></script>
+<script>
+(function(){const C=window.CFG,ch=C.chains[0]||{},c=ch.contracts||{},v=ch.v2||{};
+const rows=[['Factory','Launches coins and pools',v.factory],['Hook','Fees and launch protection',v.hook],['Locker','Holds the liquidity, lends to longs',v.locker],['Margin','Leveraged positions',v.margin],['Swapper','ETH to stock for stock-coin margin',v.swapper],['PoolManager','Uniswap v4',c.poolManager],['PositionManager','Uniswap v4',c.positionManager],['Universal Router','Uniswap',c.router]];
+const ic='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+document.getElementById('d-contracts').innerHTML=rows.map(([r,n,a])=>'<div class="row"><div class="meta"><span class="role">'+r+'</span><span class="note">'+n+'</span></div><button class="copy" type="button" data-a="'+(a||'')+'"><code>'+(a||'Not deployed yet')+'</code>'+(a?ic:'')+'</button></div>').join('');
+document.querySelectorAll('.copy[data-a]').forEach(b=>b.onclick=()=>{if(b.dataset.a)navigator.clipboard.writeText(b.dataset.a).catch(()=>{});});
+if(C.demo)document.getElementById('d-note').textContent='The site shows preview data until the contracts are live on Robinhood Chain; numbers on the pages are not real trades.';
+if(C.x)document.getElementById('d-x').innerHTML='<a href="'+C.x+'" target="_blank" rel="noopener">Updates on X</a>';
+const links=[...document.querySelectorAll('.grp a')],secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const mark=()=>{let cur=secs[0];for(const s of secs){if(s.getBoundingClientRect().top<140)cur=s;}links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+cur.id));};addEventListener('scroll',mark,{passive:true});mark();
+const SI=links.map(a=>{const s=document.querySelector(a.getAttribute('href'));if(!s)return null;const grp=a.closest('.grp').querySelector('p').textContent;const h=s.querySelector('h2');const body=[...s.querySelectorAll('p,li,dt,dd,td,code,strong')].map(e=>e.textContent.trim()).filter(Boolean).join(' ').replace(/\s+/g,' ');return {id:s.id,title:a.textContent,grp,blurb:(s.querySelector('.body p')||{}).textContent||'',body:(h?h.textContent+' ':'')+body};}).filter(Boolean);
+const escH=(s)=>s.replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hl=(s,q)=>{if(!q)return escH(s);const i=s.toLowerCase().indexOf(q.toLowerCase());if(i<0)return escH(s);return escH(s.slice(0,i))+'<mark>'+escH(s.slice(i,i+q.length))+'</mark>'+hl(s.slice(i+q.length),q);};
+const snip=(s,q)=>{const i=s.toLowerCase().indexOf(q.toLowerCase());if(i<0)return s.slice(0,110);const a=Math.max(0,i-40);return (a?'… ':'')+s.slice(a,a+140)+(a+140<s.length?' …':'');};
+function spot(){if(document.querySelector('.spot-bg'))return;const bg=document.createElement('div');bg.className='spot-bg';bg.innerHTML='<div class="spot" role="dialog" aria-modal="true" aria-label="Search documentation"><div class="spot-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" placeholder="Search the docs" autocomplete="off" spellcheck="false" role="searchbox"><button type="button" class="spot-x" aria-label="Close search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="spot-res" role="listbox"></div></div>';document.body.appendChild(bg);
+const q=bg.querySelector('input'),res=bg.querySelector('.spot-res');let sel=0;const close=()=>bg.remove();
+const draw=()=>{const s=q.value.trim();const hits=s?SI.filter(x=>x.title.toLowerCase().includes(s.toLowerCase())||x.body.toLowerCase().includes(s.toLowerCase())):SI;sel=Math.min(sel,Math.max(0,hits.length-1));res.innerHTML=hits.length?hits.map((x,i)=>'<button type="button" role="option" class="spot-r'+(i===sel?' on':'')+'" data-id="'+x.id+'" aria-selected="'+(i===sel)+'"><span class="c"><span class="t">'+hl(x.title,s)+'</span><span class="d">'+escH(x.grp)+' · '+(s?hl(snip(x.body,s),s):escH(x.blurb))+'</span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>').join(''):'<div class="spot-none">Nothing matches “'+escH(s)+'”.</div>';res.querySelectorAll('.spot-r').forEach(b=>b.onclick=()=>go(b.dataset.id));};
+const go=(id)=>{close();const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});history.replaceState(null,'','#'+id);};
+q.oninput=()=>{sel=0;draw();};q.onkeydown=(e)=>{const n=res.querySelectorAll('.spot-r').length;if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(n-1,sel+1);draw();}else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(0,sel-1);draw();}else if(e.key==='Enter'){const b=res.querySelectorAll('.spot-r')[sel];if(b)go(b.dataset.id);}else if(e.key==='Escape'){close();}};
+bg.querySelector('.spot-x').onclick=()=>{if(q.value){q.value='';sel=0;draw();q.focus();}else close();};bg.onpointerdown=(e)=>{if(e.target===bg)close();};draw();setTimeout(()=>q.focus(),20);}
+document.getElementById('d-search').onclick=spot;
+addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();spot();}});
+document.getElementById('d-theme').onclick=()=>{const d=document.documentElement;d.dataset.theme=d.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('theme',d.dataset.theme)}catch{}};
+})();
+</script>
+</body></html>

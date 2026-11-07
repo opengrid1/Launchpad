@@ -14,7 +14,7 @@ const entry = `    // Robinhood Chain: Uniswap's v4 deployment (its UniversalRou
     // contracts with leverage funded by each coin's pool, and Robinhood stock pairs (${dep.stockPairs ? dep.stockPairs.length : 0}): ${path.basename(process.argv[2] || '')}
     { key: 'robinhood', evm: true, id: 4663, hex: '0x1237', name: 'Robinhood Chain', short: 'Robinhood', quote: 'ETH', quoteName: 'Ether', usd: ${Math.round(S.ethUsd)}, rpc: 'https://rpc.mainnet.chain.robinhood.com', explorer: 'https://robinhoodchain.blockscout.com', logo: '/img/eth.svg', color: '#13307a', blockSec: 1, main: true,
       contracts: { factory: '', hook: '', locker: '', escrow: '', vault: '', poolManager: '${dep.poolManager}', positionManager: '${dep.positionManager}', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11', router: '0x8876789976decbfcbbbe364623c63652db8c0904', quoter: '0x8dc178efb8111bb0973dd9d722ebeff267c98f94' },
-      v2: { factory: '${dep.factory}', hook: '${dep.hook}', locker: '${dep.locker}', margin: '${(dep.leverage || {}).margin || ''}', hopLayout: true,
+      v2: { factory: '${dep.factory}', hook: '${dep.hook}', locker: '${dep.locker}', margin: '${(dep.leverage || {}).margin || ''}', swapper: '${(dep.leverage || {}).swapper || ''}', hopLayout: true,
         pairs: ${JSON.stringify(pairs)} } },`;
 let s = fs.readFileSync(file, 'utf8');
 const a = s.indexOf('  chains: ['), b = s.indexOf('\n  ],', a);
