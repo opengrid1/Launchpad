@@ -9,7 +9,19 @@ window.PAGE = async () => {
   const row = (t) => `<a class="r" href="${tokenUrl(t)}"><span class="mk"><img src="${t.img}" alt="" data-sym="${esc(t.symbol)}" data-addr="${t.addr}" loading="lazy"></span><span class="id"><span class="nm"><b>${esc(t.name)}</b>${APP.ofc(t)}<em>${esc(t.symbol)}</em></span><span class="meta"><span class="cr">${APP.cmark(t.creator)}${shortAddr(t.creator)}</span><time>${t.age}</time></span></span><span class="pair hm"><img src="${C.chainOf(t.net).logo}" alt="">${esc(t.chainName || C.chain.name)}</span><span class="hm">${spark(t)}</span><span class="mc">${fmtUsd(t.mcapUsd)}</span></a>`;
   const card = (t) => `<a class="gc" href="${tokenUrl(t)}"><span class="art"><img src="${t.img}" alt="" data-sym="${esc(t.symbol)}" data-addr="${t.addr}" loading="lazy"></span><span class="nm">${esc(t.name)}${APP.ofc(t)}<em>${esc(t.symbol)}</em></span><span class="fig"><b>${fmtUsd(t.mcapUsd)}</b>${spark(t, 70, 24)}</span></a>`;
   const qq = (qs.get('q') || '').trim().toLowerCase();
-  const list = () => { let ts = DATA.tokens(); if (qq) ts = ts.filter((t) => t.name.toLowerCase().includes(qq) || t.symbol.toLowerCase().includes(qq) || t.addr.includes(qq)); if (sort === 'active') ts = ts.filter((t) => t.lastTs > Date.now() / 1000 - 3600); return ts.sort(KEY[sort] || KEY.mcap); };
+  // the pair filter: every coin, or only those paired with one pair (ETH or a stock); the menu lists the pairs coins use
+  let pairF = qs.get('pair') || '';
+  const pairOpts = () => { const n = new Map(); for (const t of DATA.tokens()) n.set(t.pairSym || CFG.chain.quote, (n.get(t.pairSym || CFG.chain.quote) || 0) + 1); return [...n.entries()].sort((a, b) => b[1] - a[1]); };
+  function pairMenu() {
+    const pf = $('#h-pair'); if (!pf) return; const old = $('.pfm'); if (old) { old.remove(); return; }
+    const m = document.createElement('div'); m.className = 'pfm'; m.setAttribute('role', 'listbox');
+    m.innerHTML = [['', DATA.tokens().length]].concat(pairOpts()).map(([k, n]) => `<button role="option" data-pf="${APP.esc(k)}" class="${k === pairF ? 'on' : ''}">${k ? APP.esc(k) : 'Any pair'}<span>${n}</span></button>`).join('');
+    pf.appendChild(m);
+    m.onclick = (e) => { const b = e.target.closest('[data-pf]'); if (!b) return; e.stopPropagation(); pairF = b.dataset.pf; m.remove(); shown = 30; const u = new URLSearchParams(location.search); if (pairF) u.set('pair', pairF); else u.delete('pair'); history.replaceState(null, '', '?' + u); render(); };
+    setTimeout(() => document.addEventListener('click', function off(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('click', off); } }), 0);
+  }
+  { const pf = $('#h-pair'); if (pf) { pf.onclick = pairMenu; pf.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pairMenu(); } }; } }
+  const list = () => { let ts = DATA.tokens(); if (pairF) ts = ts.filter((t) => (t.pairSym || CFG.chain.quote) === pairF); const pl = $('#h-pair-l'); if (pl) pl.textContent = pairF ? pairF + ' pair' : 'Any pair'; if (qq) ts = ts.filter((t) => t.name.toLowerCase().includes(qq) || t.symbol.toLowerCase().includes(qq) || t.addr.includes(qq)); if (sort === 'active') ts = ts.filter((t) => t.lastTs > Date.now() / 1000 - 3600); return ts.sort(KEY[sort] || KEY.mcap); };
   // marquee
   const mq = $('#h-mq'); let off = 0, lapW = 0, last = 0, paused = false, raf = 0; const SPEED = 40;
   function laps() { const top = DATA.tokens().slice().sort(KEY.trend).slice(0, 10); const one = top.map(trc).join(''); mq.innerHTML = `<ol class="lap">${one}</ol>`; const w1 = mq.firstElementChild.getBoundingClientRect().width; if (w1 <= mq.parentElement.getBoundingClientRect().width) { lapW = 0; off = 0; mq.style.transform = ''; return; } mq.insertAdjacentHTML('beforeend', `<ol class="lap" aria-hidden="true">${one}</ol>`); lapW = w1; } // a second lap only when the first overflows: few coins sit still

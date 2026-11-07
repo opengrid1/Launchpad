@@ -127,3 +127,8 @@ body.srch-open #top .brand,body.srch-open #top .sp{visibility:hidden}.msr{positi
 .levpos .l2{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .levpos .lw{font-size:12px;color:var(--dn);margin:0}
 .levpos .la{display:flex;gap:8px}.levpos .la .btn{flex:1}
+/* home: the pair filter menu */
+.pill.pf{position:relative;cursor:pointer;user-select:none}
+.pfm{position:absolute;top:calc(100% + 6px);right:0;z-index:30;min-width:180px;max-height:320px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-raised);padding:6px;display:flex;flex-direction:column}
+.pfm button{display:flex;justify-content:space-between;gap:16px;padding:9px 10px;border:0;background:none;color:var(--ink);font:inherit;text-align:left;border-radius:var(--r);cursor:pointer}
+.pfm button:hover,.pfm button.on{background:var(--inset)}.pfm button span{color:var(--ink-2);font-variant-numeric:tabular-nums}
