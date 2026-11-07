@@ -41,7 +41,7 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 .wall{position:relative;width:100%;margin-top:86px;padding-bottom:20px;display:grid;gap:22px;-webkit-mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent),linear-gradient(#000 60%,transparent);-webkit-mask-composite:source-in;mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent) intersect,linear-gradient(#000 60%,transparent)}
 .row{display:flex;gap:22px;width:max-content;animation:slide 70s linear infinite}.row.r2{animation-direction:reverse;animation-duration:85s}.row.r3{animation-duration:100s;opacity:.4;filter:blur(1px)}
 @keyframes slide{to{transform:translateX(-50%)}}
-.cn{width:84px;height:84px;flex:none;border-radius:50%;overflow:hidden;position:relative;transition:transform .3s}
+.cn{width:84px;height:84px;flex:none;border-radius:50%;position:relative;transition:transform .3s;filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
 .cn svg{width:100%;height:100%;display:block}
 .cn.lit{box-shadow:0 0 0 2px var(--c),0 0 34px -2px var(--c)}
 .row:hover{animation-play-state:paused}.cn:hover{transform:scale(1.12)}
@@ -86,7 +86,7 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 @keyframes bob{50%{transform:translateY(-14px)}}
 
 /* tax */
-.calc{padding:28px}
+.fee{padding:24px 26px 22px}.chips{display:flex;gap:6px;justify-content:center}.chips button{height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);font:500 13px var(--sans);color:var(--ink2);transition:all .2s}.chips button.on{background:#fff;color:#07080d;border-color:#fff}.ringwrap{position:relative;width:240px;max-width:100%;margin:18px auto 10px}.ring{width:100%;display:block}.ringwrap .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.ringwrap .mid span{font:500 12px var(--sans);color:var(--ink3)}.ringwrap .mid b{font:500 40px/1.1 var(--sans);letter-spacing:-.04em;color:var(--y);text-shadow:0 0 24px rgba(255,216,77,.4)}.ringwrap .mid em{font:400 12px var(--sans);font-style:normal;color:var(--ink3)}.ringwrap .mid em i{font-style:normal;color:var(--ink2)}.keys{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);margin-top:8px}.keys div{padding:14px 4px 2px;text-align:center}.keys i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}.keys span{font-size:12.5px;color:var(--ink3)}.keys b{display:block;font:500 18px var(--sans);letter-spacing:-.02em;margin-top:2px}
 .calc .amt{display:flex;align-items:baseline;justify-content:space-between}.calc .amt b{font:600 46px var(--mono);letter-spacing:-.04em}.calc .amt span{font:500 12px var(--mono);color:var(--ink3);text-transform:uppercase;letter-spacing:.1em}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:9px;background:linear-gradient(90deg,var(--y) var(--p,30%),rgba(255,255,255,.1) var(--p,30%));margin:20px 0 6px;outline:0}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(255,216,77,.25),0 4px 14px rgba(0,0,0,.5);cursor:grab}
@@ -106,7 +106,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .burn .glass{padding:28px 24px;text-align:left}.burn .n{font:600 12px var(--mono);color:var(--ink3);letter-spacing:.12em}.burn h3{font:700 24px var(--sans);letter-spacing:-.03em;margin-top:28px}.burn p{font-size:15px;color:var(--ink2);margin-top:8px}
 .burn .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(255,216,77,.08);border:1px solid rgba(255,216,77,.2);margin-top:14px}
 .burn .mid{border-color:rgba(255,216,77,.35);box-shadow:0 0 80px -30px rgba(255,216,77,.6),0 30px 80px -30px rgba(0,0,0,.8)}
-#embers{position:absolute;inset:-40px 0 -40px;width:100%;height:calc(100% + 80px);pointer-events:none}
+.flow{position:relative;display:grid;grid-template-columns:repeat(3,1fr);margin-top:70px;text-align:center}.flowline{position:absolute;left:0;right:0;top:0;width:100%;height:120px;pointer-events:none}.flowline .dash{animation:flowdash 1.4s linear infinite}@keyframes flowdash{to{stroke-dashoffset:-24}}.node{position:relative;padding-top:12px}.node .dot{width:96px;height:96px;margin:0 auto;border-radius:50%;display:grid;place-items:center;font-size:34px;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.12),rgba(255,255,255,.02) 60%),#0b0e11;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 50px -20px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.12)}.node.hot .dot{box-shadow:0 0 0 1px rgba(255,216,77,.45),0 0 60px -10px rgba(255,216,77,.6)}.node.fire .dot{box-shadow:0 0 0 1px rgba(255,122,61,.45),0 0 70px -6px rgba(255,122,61,.65);animation:flick 2.2s ease-in-out infinite}@keyframes flick{50%{box-shadow:0 0 0 1px rgba(255,122,61,.6),0 0 90px -4px rgba(255,160,61,.8)}}.node h3{font:600 20px var(--sans);letter-spacing:-.02em;margin-top:22px}.node p{font-size:14.5px;color:var(--ink2);margin-top:6px}
 
 /* creators */
 .cgrid{display:grid;grid-template-columns:1.3fr 1fr 1fr;grid-template-rows:auto auto;gap:16px;margin-top:56px}
@@ -115,6 +115,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .cgrid h3{font:700 19px var(--sans);letter-spacing:-.02em;margin-top:14px}.cgrid p{font-size:14.5px;color:var(--ink2);margin-top:6px}
 .claimrow{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--line);margin-top:22px;font-size:14px}.claimrow b{font:600 18px var(--mono);color:var(--g)}
 
+.cpanel{display:grid;grid-template-columns:1.25fr 1fr;margin-top:60px;padding:0;overflow:hidden}.earn{padding:34px;border-right:1px solid var(--line);background:radial-gradient(420px 260px at 0 0,rgba(255,216,77,.12),transparent)}.earn>span{font:500 13px var(--sans);color:var(--ink3)}.earn b{display:block;font:500 64px/1.05 var(--sans);letter-spacing:-.045em;margin-top:8px;font-variant-numeric:tabular-nums}#crspark{width:100%;height:90px;display:block;margin-top:18px}.claim{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:18px}.claim span{font-size:14px;color:var(--ink2)}.facts{list-style:none;margin:0;padding:10px 34px}.facts li{display:grid;grid-template-columns:72px 1fr;gap:16px;align-items:baseline;padding:24px 0;border-bottom:1px solid var(--line)}.facts li:last-child{border-bottom:0}.facts b{font:500 34px var(--sans);letter-spacing:-.04em;color:var(--y)}.facts span{font-size:15px;color:var(--ink2)}
 /* faq */
 .faq{max-width:640px;margin:52px auto 0;border-top:1px solid var(--line)}
 .q{border-bottom:1px solid var(--line)}.q button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px 2px;text-align:left;font:500 18px var(--sans);letter-spacing:-.01em}
@@ -134,8 +135,17 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 .fbot{display:flex;justify-content:space-between;margin-top:56px;font-size:13px;color:var(--ink3);gap:20px;flex-wrap:wrap}
 
 @media(max-width:1180px){.split{grid-template-columns:1fr 1fr}}@media(max-width:960px){.links,.navr .ghost{display:none}.split{grid-template-columns:1fr;gap:48px}.cgrid{grid-template-columns:1fr 1fr}.cgrid .big{grid-column:span 2;grid-row:auto;min-height:0}.burn{grid-template-columns:1fr}.stack{height:auto;display:grid;gap:16px;order:2}.stack .lq{position:relative!important;left:auto!important;right:auto!important;top:auto!important;width:100%!important}.stack .orb{display:none}.lq{width:min(360px,86vw)}}
-@media(max-width:600px){.floorhead.wrap{padding-top:92px}.floorhead .t2{font-size:38px}.floorhead .body{font-size:15.5px}#floorc{height:48vh}.wrap{padding:0 18px}.nav{top:10px;padding:0 10px}.nav .in{height:54px}.sec{padding-top:110px}.cn{width:64px;height:64px}.wall{margin-top:64px;gap:16px}.row{gap:16px}.lede{font-size:17px}.hero .ctas{flex-direction:column;width:100%;padding:0 18px}.hero .ctas .pill{width:100%}.cgrid{grid-template-columns:1fr}.cgrid .big{grid-column:auto}.fstats{width:calc(100% - 36px);bottom:4vh}.fstats div{min-width:0;flex:1;padding:9px 11px}.fstats b{font-size:17px}.fcols{gap:36px}.calc .amt b{font-size:36px}.snipe .ft b{font-size:34px}}
+@media(max-width:960px){.cpanel{grid-template-columns:1fr}.earn{border-right:0;border-bottom:1px solid var(--line)}}@media(max-width:700px){.flow{grid-template-columns:1fr;gap:36px}.flowline{display:none}}@media(max-width:600px){.earn{padding:24px}.earn b{font-size:46px}.facts{padding:4px 24px}.floorhead.wrap{padding-top:92px}.floorhead .t2{font-size:38px}.floorhead .body{font-size:15.5px}#floorc{height:48vh}.wrap{padding:0 18px}.nav{top:10px;padding:0 10px}.nav .in{height:54px}.sec{padding-top:110px}.cn{width:64px;height:64px}.wall{margin-top:64px;gap:16px}.row{gap:16px}.lede{font-size:17px}.hero .ctas{flex-direction:column;width:100%;padding:0 18px}.hero .ctas .pill{width:100%}.cgrid{grid-template-columns:1fr}.cgrid .big{grid-column:auto}.fstats{width:calc(100% - 36px);bottom:4vh}.fstats div{min-width:0;flex:1;padding:9px 11px}.fstats b{font-size:17px}.fcols{gap:36px}.calc .amt b{font-size:36px}.snipe .ft b{font-size:34px}}
 @media(prefers-reduced-motion:reduce){.row,.orb{animation:none}.rv{opacity:1;transform:none}.h1 .ln,.lede,.hero .ctas{animation:none;opacity:1}}
+
+/* polish: clean sans numbers in cards, roomier rows */
+.lq .k{font:500 13px var(--sans);letter-spacing:0;text-transform:none;color:var(--ink3)}.lq .v{font:500 48px/1.1 var(--sans);letter-spacing:-.035em}
+.lq dd{font:500 14px var(--sans)}.lq dl div{padding:13px 0}.tag{font:600 12px var(--sans);padding:6px 11px}
+.fstats span{font:500 11px var(--sans);letter-spacing:.06em}.fstats b{font:500 22px var(--sans);letter-spacing:-.02em}
+.rates{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.rates b{font:500 26px var(--sans);letter-spacing:-.03em}
+.snipe .ft span{font:500 13px var(--sans);letter-spacing:0;text-transform:none}.snipe .ft b{font:500 44px/1 var(--sans);letter-spacing:-.04em}
+.supc .marks{font-family:var(--sans)}
+@media(max-width:600px){.lede{padding:0 20px}.lq{padding:20px 22px}.lq .v{font-size:44px}.lq dd,.lq dt{font-size:16px}.lq dl div{padding:15px 0}.body{font-size:17px;line-height:27px}.rates b{font-size:22px}.rates div{padding:12px}.t2{font-size:44px}.keys b{font-size:17px}}
 </style></head><body>
 <canvas id="stars"></canvas>
 
@@ -209,17 +219,19 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
     <p class="body rv d2">One rate on every buy and every sell, taken on the ETH side. There is no separate LP fee. Over half of every trade's tax goes back under the coin.</p>
     <div class="rates rv d3"><div><b style="color:var(--y)">1.5%</b><span>to the floor</span></div><div><b>0.6%</b><span>to the creator</span></div><div><b style="color:var(--ink2)">0.4%</b><span>to the protocol</span></div></div>
   </div>
-  <div class="glass calc rv d2">
-    <div class="amt"><span>You trade</span><b id="c-amt">$1,000</b></div>
-    <input type="range" id="c-rng" min="0" max="100" value="38" aria-label="Trade size">
-    <div class="bar3"><i id="b1" style="background:linear-gradient(90deg,#2a3034,#59646a)"></i><i id="b2" style="background:var(--y);box-shadow:0 0 12px var(--y)"></i><i id="b3" style="background:#b8c2c7"></i><i id="b4" style="background:#6b767a"></i></div>
-    <div class="legs">
-      <div><i style="background:#59646a"></i>Buys the coin<b id="c1">$975.00</b></div>
-      <div><i style="background:var(--y)"></i>Into the floor<b id="c2" style="color:var(--y)">$15.00</b></div>
-      <div><i style="background:#b8c2c7"></i>To the creator<b id="c3">$6.00</b></div>
-      <div><i style="background:#6b767a"></i>To the protocol<b id="c4">$4.00</b></div>
+  <div class="glass fee rv d2">
+    <div class="chips" id="chips"><button data-a="100">$100</button><button data-a="1000" class="on">$1,000</button><button data-a="10000">$10,000</button></div>
+    <div class="ringwrap">
+      <svg viewBox="0 0 220 220" class="ring"><circle cx="110" cy="110" r="88" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="18"/>
+        <circle cx="110" cy="110" r="88" fill="none" stroke="#2c3337" stroke-width="18" pathLength="100" stroke-dasharray="86 100" transform="rotate(-90 110 110)"/>
+        <circle class="seg1" cx="110" cy="110" r="88" fill="none" stroke="#ffd84d" stroke-width="18" pathLength="100" stroke-dasharray="7.6 100" stroke-dashoffset="-86.6" transform="rotate(-90 110 110)" style="filter:drop-shadow(0 0 8px rgba(255,216,77,.8))"/>
+        <circle cx="110" cy="110" r="88" fill="none" stroke="#b8c2c7" stroke-width="18" pathLength="100" stroke-dasharray="3 100" stroke-dashoffset="-94.8" transform="rotate(-90 110 110)"/>
+        <circle cx="110" cy="110" r="88" fill="none" stroke="#6b767a" stroke-width="18" pathLength="100" stroke-dasharray="1.6 100" stroke-dashoffset="-98.4" transform="rotate(-90 110 110)"/></svg>
+      <div class="mid"><span>Into the floor</span><b id="f-floor">$15.00</b><em>of a <i id="f-amt">$1,000</i> trade</em></div>
     </div>
+    <div class="keys"><div><i style="background:var(--y)"></i><span>Floor</span><b id="f1">$15.00</b></div><div><i style="background:#b8c2c7"></i><span>Creator</span><b id="f2">$6.00</b></div><div><i style="background:#6b767a"></i><span>Protocol</span><b id="f3">$4.00</b></div></div>
   </div>
+</div>
 </div></section>
 
 <section class="sec" id="snipe"><div class="wrap split">
@@ -249,24 +261,25 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
     <h2 class="t2 rv d1">The whole pad<br><span class="ac">burns $ZAPPY.</span></h2>
     <p class="body rv d2">$ZAPPY is the first coin on Zappy, with a floor of its own. Activity on every other coin buys it and burns it.</p>
   </div>
-  <div class="burn">
-    <canvas id="embers"></canvas>
-    <div class="glass rv"><div class="n">01</div><div class="ico">🚀</div><h3>Every launch</h3><p>pays about $10 in ETH. All of it goes to the $ZAPPY buy-and-burn.</p></div>
-    <div class="glass mid rv d1"><div class="n">02</div><div class="ico">⚡</div><h3>Every snipe</h3><p>sends 40% of its first-minute tax to the same buy-and-burn.</p></div>
-    <div class="glass rv d2"><div class="n">03</div><div class="ico">🔥</div><h3>Bought and burned</h3><p>$ZAPPY is bought from its own pool and burned, out of the supply for good.</p></div>
+  <div class="flow rv d2">
+    <svg class="flowline" viewBox="0 0 1000 120" preserveAspectRatio="none"><defs><linearGradient id="fl" x1="0" x2="1"><stop offset="0" stop-color="#b8c2c7"/><stop offset=".5" stop-color="#ffd84d"/><stop offset="1" stop-color="#ff7a3d"/></linearGradient></defs>
+      <path d="M120 60 C 300 60, 320 60, 500 60 S 700 60, 880 60" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+      <path class="dash" d="M120 60 C 300 60, 320 60, 500 60 S 700 60, 880 60" fill="none" stroke="url(#fl)" stroke-width="3" stroke-dasharray="2 22" stroke-linecap="round"/></svg>
+    <div class="node"><div class="dot">🚀</div><h3>Every launch</h3><p>about $10 in ETH</p></div>
+    <div class="node hot"><div class="dot">⚡</div><h3>Buys $ZAPPY</h3><p>with 40% of every snipe tax too</p></div>
+    <div class="node fire"><div class="dot">🔥</div><h3>Burns it</h3><p>out of the supply for good</p></div>
   </div>
+</div>
 </div></section>
 
 <section class="sec" id="creators"><div class="wrap">
   <div class="eyebrow rv">Creators</div>
   <h2 class="t2 rv d1">Launch in one click.<br><span class="ac">Earn on every trade.</span></h2>
-  <div class="cgrid">
-    <div class="glass big rv"><div><b class="n">0.6%</b><h3>Of every trade, for as long as it trades</h3><p>Paid in the coin's pair, ETH or $ZAPPY. It builds up on the coin and you claim it whenever you like.</p></div><div class="claimrow"><span>Creator fees ready</span><b>+0.842 ETH</b></div></div>
-    <div class="glass rv d1"><b class="n">5%</b><h3>Creator buy</h3><p>Buy up to 5% of supply in the launch itself, at the normal rate, in public.</p></div>
-    <div class="glass rv d2"><b class="n" style="font-size:40px">ETH · $ZAPPY</b><h3>Pick the pair</h3><p>Pair with ETH or $ZAPPY. Every coin starts near a $10K market cap.</p></div>
-    <div class="glass rv d1"><b class="n">Lock</b><h3>Vest your buy</h3><p>Lock the creator buy and release it month by month, so holders can see it.</p></div>
-    <div class="glass rv d2"><b class="n">0</b><h3>Pre-sale</h3><p>Nothing is minted to anyone. The pool holds every token from the first block.</p></div>
+  <div class="glass cpanel rv d2">
+    <div class="earn"><span>Creator fees earned · sample coin</span><b id="cr-eth">0.000 ETH</b><canvas id="crspark"></canvas><div class="claim"><span>0.6% of every trade, paid in ETH or $ZAPPY</span><button class="pill y" type="button">Claim</button></div></div>
+    <ul class="facts"><li><b>5%</b><span>Buy up to 5% of supply inside your own launch, at the normal rate, in public.</span></li><li><b>Lock</b><span>Vest that buy month by month so holders can see it.</span></li><li><b>0</b><span>Pre-sale. The pool holds every token from the first block.</span></li></ul>
   </div>
+</div>
 </div></section>
 
 <section class="sec" id="faq"><div class="wrap">
@@ -308,17 +321,15 @@ let seed=11;const rnd=()=>((seed=seed*16807%2147483647)/2147483647);
 (function(){const c=$('#stars'),x=c.getContext('2d');let W,H,S=[];function rs(){W=c.width=innerWidth*DPR;H=c.height=innerHeight*DPR;c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';S=Array.from({length:Math.round(innerWidth*innerHeight/9000)},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.1*DPR+.2,a:Math.random()*.5+.1,t:Math.random()*6}));}
 rs();addEventListener('resize',rs);function f(t){x.clearRect(0,0,W,H);for(const s of S){x.globalAlpha=s.a*(.6+.4*Math.sin(t/1400+s.t));x.fillStyle='#fff';x.beginPath();x.arc(s.x,s.y,s.r,0,7);x.fill();}if(!RM)requestAnimationFrame(f);}requestAnimationFrame(f);})();
 
-/* mascot coins: our own little characters */
-const PAL=[["#ffd84d","#f2a900"],["#7c97ff","#3b5bff"],["#ff8fb1","#ff4d84"],["#6ff0b4","#1fbf78"],["#ffb070","#ff6f2a"],["#c3a3ff","#7d4dff"],["#7fe7ff","#18b3d4"],["#f5f5f5","#9aa3b8"]];
-function coin(i){const [a,b]=PAL[i%PAL.length],e=i%5,m=i%4,acc=i%6,id='g'+i;
- const eyes=[`<ellipse cx="38" cy="46" rx="7" ry="9" fill="#fff"/><ellipse cx="62" cy="46" rx="7" ry="9" fill="#fff"/><circle cx="40" cy="48" r="4" fill="#0b0d16"/><circle cx="64" cy="48" r="4" fill="#0b0d16"/>`,
-  `<path d="M30 46q8-8 16 0M54 46q8-8 16 0" stroke="#0b0d16" stroke-width="4" fill="none" stroke-linecap="round"/>`,
-  `<circle cx="38" cy="46" r="5" fill="#0b0d16"/><circle cx="62" cy="46" r="5" fill="#0b0d16"/><circle cx="36" cy="44" r="1.6" fill="#fff"/><circle cx="60" cy="44" r="1.6" fill="#fff"/>`,
-  `<rect x="27" y="40" width="46" height="12" rx="6" fill="#0b0d16"/><rect x="31" y="42" width="15" height="5" rx="2.5" fill="#5b7cff" opacity=".9"/><rect x="54" y="42" width="15" height="5" rx="2.5" fill="#5b7cff" opacity=".9"/>`,
-  `<path d="M31 42l13 6M69 42l-13 6" stroke="#0b0d16" stroke-width="4" stroke-linecap="round"/><circle cx="39" cy="51" r="4" fill="#0b0d16"/><circle cx="61" cy="51" r="4" fill="#0b0d16"/>`][e];
- const mouth=[`<path d="M40 64q10 10 20 0" stroke="#0b0d16" stroke-width="4" fill="none" stroke-linecap="round"/>`,`<ellipse cx="50" cy="66" rx="7" ry="5" fill="#0b0d16"/>`,`<path d="M40 66h20" stroke="#0b0d16" stroke-width="4" stroke-linecap="round"/>`,`<path d="M38 63q12 12 24 0z" fill="#0b0d16"/><path d="M44 66q6 4 12 0" fill="#ff5c8a"/>`][m];
- const top=[`<path d="M54 6l-12 22h10l-6 16 16-24H52z" fill="#fff" opacity=".9"/>`,``,`<path d="M26 22q24-22 48 0l-4 6q-20-14-40 0z" fill="#0b0d16" opacity=".85"/>`,``,`<circle cx="74" cy="22" r="6" fill="#ff5c8a"/>`,``][acc];
- return `<svg viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".25" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></radialGradient></defs><rect width="100" height="100" fill="url(#${id})"/>${top}${eyes}${mouth}<ellipse cx="50" cy="104" rx="60" ry="22" fill="#000" opacity=".12"/></svg>`;}
+/* coins: metallic discs with a ticker */
+const PAL=[["#ffe27a","#c98d00"],["#e9eef2","#7d8a92"],["#ffcf8a","#b35d12"],["#d6dde2","#5f6b72"],["#fff1b8","#d9a500"],["#c9d3d9","#4d5960"]];
+const TK=["ZAPPY","BOLT","FROG","MOON","VOLT","CHAD","WAGMI","DOGE","GIGA","LFG","APE","KEK","PUMP","FLOOR","NEKO","ZZZ","RICH","BASED"];
+const GL=['⚡','◆','✦','●','▲','★'];
+function coin(i){const [a,b]=PAL[i%PAL.length],id='m'+i,t=TK[i%TK.length],g=GL[i%GL.length],fs=t.length>4?13:16;
+ return `<svg viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx="34%" cy="26%" r="85%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".18" stop-color="${a}"/><stop offset=".75" stop-color="${b}"/><stop offset="1" stop-color="#1a1408"/></radialGradient><linearGradient id="${id}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset=".5" stop-color="${b}" stop-opacity=".2"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient></defs>
+ <circle cx="50" cy="50" r="49" fill="url(#${id})"/><circle cx="50" cy="50" r="43" fill="none" stroke="url(#${id}r)" stroke-width="2.5"/><circle cx="50" cy="50" r="38" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="1" stroke-dasharray="1.5 3"/>
+ <text x="50" y="44" text-anchor="middle" font-size="18" fill="rgba(0,0,0,.55)">${g}</text><text x="50" y="66" text-anchor="middle" font-family="Geist,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-.5" fill="rgba(0,0,0,.62)">${t}</text>
+ <ellipse cx="38" cy="22" rx="20" ry="8" fill="#fff" opacity=".22" transform="rotate(-20 38 22)"/></svg>`;}
 const wall=$('#wall');[['r1',0],['r2',7],['r3',13]].forEach(([cl,o])=>{const r=document.createElement('div');r.className='row '+cl;let h='';for(let i=0;i<18;i++){const k=i+o,lit=(k*7)%9===0;h+=`<div class="cn${lit?' lit':''}" style="--c:${PAL[k%PAL.length][1]}">${coin(k*3+o)}</div>`;}r.innerHTML=h+h;wall.appendChild(r);});
 const mas=$('#mascots');for(let i=0;i<9;i++){const d=document.createElement('div');d.className='orb';const L=[6,14,24,72,82,90,10,88,50][i],T=[18,62,82,12,58,80,40,36,90][i];d.style.cssText=`left:${L}%;top:${T}%;width:${46+i%3*16}px;height:${46+i%3*16}px;overflow:hidden;opacity:.85;animation-delay:-${i*.7}s`;d.innerHTML=coin(i*5+2);mas.appendChild(d);}
 
@@ -360,11 +371,10 @@ function drawFloor(){const W=fc.width,H=fc.height,wrap=$('.floorwrap'),r=wrap.ge
  $('#fs-p').textContent=fmt(price[n-1]);$('#fs-f').textContent=fmt(floor[n-1]);$('#fs-t').textContent=Math.round(n*137).toLocaleString('en-US');}
 addEventListener('scroll',()=>requestAnimationFrame(drawFloor),{passive:true});drawFloor();
 
-/* fee calculator */
-const rng=$('#c-rng'),usd=(n)=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-function calc(){const t=+rng.value/100,amt=Math.round(Math.pow(10,1+t*4.3)/10)*10||10;rng.style.setProperty('--p',rng.value+'%');$('#c-amt').textContent='$'+amt.toLocaleString('en-US');
- const a=[amt*.975,amt*.015,amt*.006,amt*.004];['#c1','#c2','#c3','#c4'].forEach((s,i)=>$(s).textContent=usd(a[i]));[86,8,3.6,2.4].forEach((w,i)=>$('#b'+(i+1)).style.width=w+'%');}
-rng.addEventListener('input',calc);calc();
+/* fee ring: pick a trade size */
+const usd=(n)=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function fee(a){$('#f-amt').textContent='$'+a.toLocaleString('en-US');$('#f-floor').textContent=usd(a*.015);$('#f1').textContent=usd(a*.015);$('#f2').textContent=usd(a*.006);$('#f3').textContent=usd(a*.004);}
+document.querySelectorAll('#chips button').forEach((b)=>b.addEventListener('click',()=>{document.querySelectorAll('#chips button').forEach((x)=>x.classList.toggle('on',x===b));fee(+b.dataset.a);}));fee(1000);
 
 /* snipe tax gauge: the needle falls from 90% to 2.5% over the first minute */
 const rate=(t)=>t>=60?2.5:90-87.5*t/60;let t0=performance.now();
@@ -375,10 +385,13 @@ function snipe(now){const s=((now-t0)/1000*5)%78,cur=Math.min(s,60),r=rate(cur),
  $('#sn-r').textContent=r.toFixed(1)+'%';$('#sn-r').style.color=s<60?'var(--r)':'var(--y)';$('#sn-s').textContent=Math.floor(cur)+'s';if(!RM)requestAnimationFrame(snipe);}
 requestAnimationFrame(snipe);
 
-/* embers rising behind the burn cards */
-const ec=$('#embers'),ex=ec.getContext('2d');let E=[];function esz(){const r=ec.getBoundingClientRect();ec.width=r.width*DPR;ec.height=r.height*DPR;E=Array.from({length:60},()=>({x:Math.random()*ec.width,y:Math.random()*ec.height,v:(.3+Math.random()*.8)*DPR,r:(Math.random()*1.8+.6)*DPR,a:Math.random()}));}esz();addEventListener('resize',esz);
-function emb(){ex.clearRect(0,0,ec.width,ec.height);for(const e of E){e.y-=e.v;e.a-=.003;if(e.y<0||e.a<=0){e.y=ec.height;e.a=1;e.x=Math.random()*ec.width;}ex.globalAlpha=Math.max(0,e.a)*.8;ex.fillStyle=e.r>1.6*DPR?'#ffd84d':'#ff8a4d';ex.shadowColor='#ffb04d';ex.shadowBlur=8*DPR;ex.beginPath();ex.arc(e.x,e.y,e.r,0,7);ex.fill();}if(!RM)requestAnimationFrame(emb);}requestAnimationFrame(emb);
-
+/* creator earnings ticking up */
+const cs=$('#crspark'),cx=cs.getContext('2d');const EP=[];let ev=0;for(let k=0;k<120;k++){ev+=Math.max(0,.004+(rnd()-.35)*.012);EP.push(ev);}
+function csz(){const r=cs.getBoundingClientRect();cs.width=r.width*DPR;cs.height=r.height*DPR;}csz();addEventListener('resize',csz);let cn=1,ct=0;
+function cr(now){if(now-ct>120){ct=now;cn=cn>=EP.length?1:cn+1;}const W=cs.width,H=cs.height,mx=EP[EP.length-1],X=(k)=>k/(EP.length-1)*W,Y=(v)=>H-4*DPR-v/mx*(H-10*DPR);cx.clearRect(0,0,W,H);
+ const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(255,216,77,.25)');g.addColorStop(1,'rgba(255,216,77,0)');cx.beginPath();cx.moveTo(0,H);for(let k=0;k<cn;k++)cx.lineTo(X(k),Y(EP[k]));cx.lineTo(X(cn-1),H);cx.closePath();cx.fillStyle=g;cx.fill();
+ cx.save();cx.shadowColor='#ffd84d';cx.shadowBlur=12*DPR;cx.strokeStyle='#ffd84d';cx.lineWidth=2*DPR;cx.beginPath();for(let k=0;k<cn;k++){k?cx.lineTo(X(k),Y(EP[k])):cx.moveTo(X(k),Y(EP[k]));}cx.stroke();cx.restore();
+ $('#cr-eth').textContent=EP[cn-1].toFixed(3)+' ETH';if(!RM)requestAnimationFrame(cr);}requestAnimationFrame(cr);
 /* pool cards tilt toward the pointer */
 const stk=$('#stack');if(stk&&!RM){const cards=[...stk.querySelectorAll('.lq')];const tilt=(x,y)=>cards.forEach((c,i)=>{const k=i?1.3:1;c.style.transform=`rotateY(${(x*10*k).toFixed(2)}deg) rotateX(${(-y*8*k).toFixed(2)}deg) translateZ(${i*30}px)`;c.style.setProperty('--ga',(135+x*60)+'deg');});
  stk.addEventListener('pointermove',(e)=>{const r=stk.getBoundingClientRect();tilt((e.clientX-r.left)/r.width-.5,(e.clientY-r.top)/r.height-.5);});stk.addEventListener('pointerleave',()=>tilt(0,0));tilt(-.25,.1);}
