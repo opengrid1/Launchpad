@@ -3,12 +3,12 @@
 // and then: liquidates flagged positions still past maintenance once the delay has run, flags positions newly past
 // it, and clears flags on positions that recovered. Positions it flags in this run are liquidated in the same run
 // after the delay if they are still past maintenance. The keeper earns the contract's keeper reward on each
-// liquidation. Transactions are signed with SWEEP_KEY, which needs a little ETH for gas.
+// liquidation, in the coin's pair (ETH or the stock). Transactions are signed with SWEEP_KEY, which needs a little ETH for gas.
 const { ethers, NETS, rpc, multicall, sendTx, sleep } = require('./_lib');
 
 const MI = new ethers.Interface([
   'function nextId() view returns (uint256)', 'function liquidationDelay() view returns (uint256)',
-  'function positions(uint256) view returns (address owner, address token, uint256 tokens, uint256 principal, uint256 margin, uint40 openedAt, uint40 flaggedAt, uint32 leverageBps)',
+  'function positions(uint256) view returns (address owner, address token, address pair, uint256 tokens, uint256 principal, uint256 margin, uint40 openedAt, uint40 flaggedAt, uint32 leverageBps)',
   'function health(uint256 id) view returns (uint256 debt, uint256 value, bool liquidatable)',
   'function flag(uint256 id)', 'function liquidate(uint256 id)',
 ]);

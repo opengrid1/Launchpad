@@ -9,7 +9,7 @@ window.PAGE = async () => {
   document.title = `${x.name} ($${x.symbol}) | ${C.brand}`;
   const chain = 'hyper'; let side = 'buy', tab = 'trades', amt = '', slip = 1, busy = false;
   // leverage (chains with a margin contract): mode 'lev' swaps the panel for a long at 1.5x to 3x funded by the coin's pool
-  const LEVON = DATA.lev && DATA.lev.on(x.net); let mode = DATA.demo && LEVON && (x.pairSym || C.chain.quote) === C.chain.quote ? 'lev' : 'market', lev = 2, levInfo = null, myPos = [], levBusy = false;
+  const LEVON = DATA.lev && DATA.lev.on(x.net); let mode = DATA.demo && LEVON ? 'lev' : 'market', lev = 2, levInfo = null, myPos = [], levBusy = false;
   async function loadLev(fresh) {
     if (!LEVON) return; try { levInfo = await DATA.lev.info(addr); const me = APP.W.connected ? APP.W.address : DATA.demo ? 'preview' : ''; myPos = me ? (await DATA.lev.positions(me, fresh)).filter((p) => p.token === x.addr) : []; } catch (e) { console.warn('leverage', e.message); }
     if (mode === 'lev' && !(document.activeElement && document.activeElement.id === 't-amt')) renderTrade();

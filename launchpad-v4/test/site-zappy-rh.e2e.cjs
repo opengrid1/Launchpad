@@ -126,6 +126,35 @@ srv.listen(8796, async () => {
     await pg.click('[data-s="sell"]'); await pg.waitForTimeout(300);
     await pg.fill('#t-amt', String(Math.floor(got / 2))); await pg.waitForTimeout(300); await pg.click('#t-go');
     ok(await waitFor(async () => /Sold/.test(await toasts()), 120000), 'sold half back to ETH from the page: ' + (await toasts()).slice(-80));
+    // leverage on the NVDA coin: a market buys it up with NVDA (taken from the PoolManager's balance on the fork), then a
+    // 2x long paid in ETH from the Leverage tab (the margin is swapped to NVDA) and closed back to ETH
+    const sp = dep.stockPairs.find((s) => s.sym === 'NVDA'), st = require('../brands/zappy/stocks.json'), perEth = st.ethUsd / st.stocks.find((s) => s.sym === 'NVDA').usd;
+    const PM = '0x8366a39CC670B4001A1121B8F6A443A643e40951', AC = ethers.AbiCoder.defaultAbiCoder(), URI = new ethers.Interface(['function execute(bytes,bytes[],uint256) payable']);
+    await P.send('hardhat_impersonateAccount', [PM]); await P.send('hardhat_setBalance', [PM, '0x' + (10n ** 18n).toString(16)]);
+    await P.send('eth_sendTransaction', [{ from: PM, to: sp.addr, data: new ethers.Interface(['function transfer(address,uint256)']).encodeFunctionData('transfer', [mkt, ethers.parseEther((perEth * 20).toFixed(6))]) }]);
+    await P.send('hardhat_stopImpersonatingAccount', [PM]);
+    await (await erc(sp.addr).approve('0x000000000022D473030F116dDEE9F6B43aC78BA3', ethers.MaxUint256)).wait();
+    await (await market.sendTransaction({ to: '0x000000000022D473030F116dDEE9F6B43aC78BA3', data: new ethers.Interface(['function approve(address,address,uint160,uint48)']).encodeFunctionData('approve', [sp.addr, UR, (1n << 160n) - 1n, Number(dl())]) })).wait();
+    const stockBuy = (amt) => URI.encodeFunctionData('execute', ['0x10', [AC.encode(['bytes', 'bytes[]'], ['0x060c0f', [AC.encode(['((address,address,uint24,int24,address),bool,uint128,uint128,uint256,bytes)'], [[[sp.addr, nv, 0, 200, dep.hook], true, amt, 1n, 0n, '0x']]), AC.encode(['address', 'uint256'], [sp.addr, amt]), AC.encode(['address', 'uint256'], [nv, 1n])]])], dl()]);
+    for (let i = 0; i < 15; i++) await (await market.sendTransaction({ to: UR, data: stockBuy(ethers.parseEther(perEth.toFixed(6))), gasLimit: 1_500_000n })).wait();
+    await later(700);
+    ok((await M.poolDepth(nv)) >= (await M.minDepthOf(sp.addr)), `NVDA coin pool depth ${ethers.formatEther(await M.poolDepth(nv))} NVDA (min ${ethers.formatEther(await M.minDepthOf(sp.addr))})`);
+    await pg.reload(); await pg.waitForTimeout(4000); await connect();
+    await pg.click('[data-m="lev"]'); ok(await waitFor(() => pg.isVisible('[data-lev="2"]'), 30000), 'NVDA coin: Leverage tab shows');
+    await pg.click('[data-lev="2"]'); await pg.waitForTimeout(300);
+    const nvInfo = await pg.evaluate((a) => DATA.lev.info(a), nv);
+    ok(nvInfo && nvInfo.ok && nvInfo.max[2] > 0, `NVDA coin terms in ETH: depth ${nvInfo && nvInfo.depth.toFixed(3)} ETH, largest 2x margin ${nvInfo && nvInfo.max[2].toFixed(4)} ETH ${nvInfo && nvInfo.why}`);
+    const nvM = Math.floor(nvInfo.max[2] * 0.5 * 1e6) / 1e6;
+    await pg.fill('#t-amt', String(nvM)); await pg.waitForTimeout(500); await pg.screenshot({ path: OUT + '/rh-lev-nvda.png', fullPage: true }); await pg.click('#t-go');
+    ok(await waitFor(async () => /Opened a 2x long on NZAP/.test(await toasts()), 120000), `opened a 2x long on the NVDA coin with ${nvM} ETH: ` + (await toasts()).slice(-80));
+    const nvId = (await M.positionsOf(USER)).slice(-1)[0], nvPos = await M.positions(nvId);
+    ok(nvPos.pair.toLowerCase() === sp.addr.toLowerCase() && nvPos.token.toLowerCase() === nv, `position ${nvId} is in NVDA: margin ${ethers.formatEther(nvPos.margin)} NVDA, borrowed ${ethers.formatEther(nvPos.principal)} NVDA`);
+    ok(await waitFor(async () => { const s = await pg.$eval('.levpos', (e) => e.textContent).catch(() => ''); return /2x long/.test(s); }, 30000), 'the NVDA position shows under the panel, in ETH');
+    const pv = await pg.evaluate(() => DATA.lev.positions(APP.W.address, true)), pn = pv.find((x) => x.id === Number(nvId));
+    ok(pn && Math.abs(pn.margin / nvM - 1) < 0.1, `page shows margin ${pn && pn.margin.toFixed(5)} ETH (paid ${nvM})`);
+    const e0 = await P.getBalance(USER); await pg.click('[data-close]');
+    ok(await waitFor(async () => /Closed the 2x position/.test(await toasts()), 120000), 'closed the NVDA position from the page');
+    ok((await M.positions(nvId)).owner === ethers.ZeroAddress && (await P.getBalance(USER)) > e0, `position gone, ${ethers.formatEther((await P.getBalance(USER)) - e0)} ETH back (after gas)`);
     // admin: the leverage card
     WALLET = OWNER; await pg.goto(B + '/admin'); await pg.waitForTimeout(1500); await connect(); await pg.waitForTimeout(3000);
     ok(await waitFor(() => pg.isVisible('text=New positions are on'), 30000), 'admin leverage card shows opens on');

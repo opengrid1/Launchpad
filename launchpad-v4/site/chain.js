@@ -25,10 +25,10 @@
     hook2: new X.Interface(['function payout(bytes32 poolId) returns (uint256 creatorPaid, uint256 protocolPaid)', 'function pendingCreator(bytes32) view returns (uint256)', 'error ExactOutputSellUnsupported()']),
     mc: new X.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])', 'function getEthBalance(address) view returns (uint256)']),
     // Zappy leverage: longs funded by each coin's own pool (ZappyMargin borrowing from the ZappyLocker)
-    margin: new X.Interface(['function open(address token, uint256 leverageBps, uint256 minTokens) payable returns (uint256)', 'function close(uint256 id, uint256 minOut) returns (uint256)', 'function addMargin(uint256 id) payable', 'function flag(uint256 id)', 'function liquidate(uint256 id)', 'function claim()', 'function claimable(address) view returns (uint256)',
+    margin: new X.Interface(['function open(address token, uint256 leverageBps, uint256 minTokens, uint256 minPairIn) payable returns (uint256)', 'function close(uint256 id, uint256 minOut) returns (uint256)', 'function addMargin(uint256 id, uint256 minPairIn) payable', 'function flag(uint256 id)', 'function liquidate(uint256 id)', 'function claim(address pair)', 'function claimable(address, address) view returns (uint256)', 'function minDepthOf(address pair) view returns (uint256)',
       'function opensEnabled() view returns (bool)', 'function maxLeverageBps() view returns (uint256)', 'function borrowFeeBps() view returns (uint256)', 'function minMargin() view returns (uint256)', 'function minCoinAge() view returns (uint256)', 'function minPoolDepth() view returns (uint256)', 'function maintenanceBps() view returns (uint256)', 'function liquidationDelay() view returns (uint256)', 'function keeperRewardBps() view returns (uint256)',
-      'function maxMargin(address token, uint256 leverageBps) view returns (uint256)', 'function poolDepth(address token) view returns (uint256)', 'function positionsOf(address owner) view returns (uint256[])', 'function positions(uint256) view returns (address owner, address token, uint256 tokens, uint256 principal, uint256 margin, uint40 openedAt, uint40 flaggedAt, uint32 leverageBps)', 'function health(uint256 id) view returns (uint256 debt, uint256 value, bool liquidatable)', 'function liquidationPrice(uint256 id) view returns (uint256)',
-      'error OpensDisabled()', 'error CoinTooNew(uint256 opensAt)', 'error PoolTooThin(uint256 depth, uint256 minimum)', 'error InvalidLeverage()', 'error MarginTooSmall(uint256 minimum)', 'error NotEnoughToBorrow(uint256 available)', 'error PositionTooLarge(uint256 maximum)', 'error Slippage(uint256 got, uint256 minimum)', 'error OpensUnhealthy()', 'error NotOwner()', 'error NoPosition()', 'error Healthy()', 'error NotFlagged()', 'error DelayNotElapsed(uint256 at)', 'error Underwater(uint256 proceeds, uint256 debt)', 'error NotEthPair()', 'error UnknownCoin()']),
+      'function maxMargin(address token, uint256 leverageBps) view returns (uint256)', 'function poolDepth(address token) view returns (uint256)', 'function positionsOf(address owner) view returns (uint256[])', 'function positions(uint256) view returns (address owner, address token, address pair, uint256 tokens, uint256 principal, uint256 margin, uint40 openedAt, uint40 flaggedAt, uint32 leverageBps)', 'function health(uint256 id) view returns (uint256 debt, uint256 value, bool liquidatable)', 'function liquidationPrice(uint256 id) view returns (uint256)',
+      'error OpensDisabled()', 'error CoinTooNew(uint256 opensAt)', 'error PoolTooThin(uint256 depth, uint256 minimum)', 'error InvalidLeverage()', 'error MarginTooSmall(uint256 minimum)', 'error NotEnoughToBorrow(uint256 available)', 'error PositionTooLarge(uint256 maximum)', 'error Slippage(uint256 got, uint256 minimum)', 'error OpensUnhealthy()', 'error NotOwner()', 'error NoPosition()', 'error Healthy()', 'error NotFlagged()', 'error DelayNotElapsed(uint256 at)', 'error Underwater(uint256 proceeds, uint256 debt)', 'error NoPairRoute()', 'error UnknownCoin()']),
   };
   const AC = X.AbiCoder.defaultAbiCoder();
 
@@ -199,7 +199,7 @@
   // the leverage a coin offers now, from the margin contract's default terms (CFG.leverage overrides): an ETH-pair coin
   // old enough with enough ETH in its pool; 0 where there is none (the token page reads the live terms)
   function levMaxOf(t, m) {
-    const L = C.leverage || {}, on = DEMO || !!(V2of(t.net) || {}).margin; if (!on || isErc(t)) return 0;
+    const L = C.leverage || {}, on = DEMO || !!(V2of(t.net) || {}).margin; if (!on) return 0;
     if (now(t.net) - t.createdAt < (L.minAgeSec ?? 600) || m.hypeInPool < (L.minPoolEth ?? 5)) return 0;
     return L.max ?? 3;
   }
@@ -358,13 +358,13 @@
   // Read straight from the margin contract; every number is in ETH.
   const LEV = { info: new Map(), mine: { w: '', at: 0, list: [] } };
   const Mof = (net) => (V2of(net) || {}).margin || '';
-  const f18 = (v) => Number(X.formatEther(v || 0n));
+  const f18 = (v) => Number(X.formatEther(v || 0n)), fmt2 = (x) => (Math.round(x * 100) / 100).toString();
   // preview: terms a coin of this size would get, and one example position on the first ETH-pair coin
   const DEMO_LEV = {
-    info(t) { return { at: Date.now(), ok: !isErc(t), why: isErc(t) ? 'Leverage is for ETH-pair coins.' : '', maxLev: 3, borrowFee: 0.3, minMargin: 0.001, maint: 0.1, depth: 14.6, max: { 1.5: 0.29, 2: 0.22, 3: 0.146 } }; },
+    info(t) { return { at: Date.now(), ok: true, why: '', maxLev: 3, borrowFee: 0.3, minMargin: 0.001, maint: 0.1, depth: 14.6, max: { 1.5: 0.29, 2: 0.22, 3: 0.146 } }; },
     positions() {
       // one example 3x long per ETH-pair coin, opened 15% below today's price, so the card shows a gain
-      return ALL.filter((x) => x.name && !isErc(x)).map((t, i) => {
+      return ALL.filter((x) => x.name).map((t, i) => {
         const v = view(t), entry = v.px / 1.15, tokens = (0.393 / Math.max(entry, 1e-18)) * 0.98, value = tokens * v.px * 0.99, debt = 0.262;
         return { id: i + 1, token: t.addr, sym: t.symbol, tokens, debt, value, margin: 0.131, equity: value - debt, pnl: value - debt - 0.131, pnlPct: ((value - debt) / 0.131 - 1) * 100, lev: 3, liq: false, flagged: false, liqPx: debt / (tokens * 0.9 * 0.99), entryPx: entry, opened: v.createdAt, health: Math.max(0, 1 - debt / value), demo: true };
       });
@@ -377,10 +377,12 @@
     async info(a) {
       const t = BY.get(low(a)); if (t && DEMO) return DEMO_LEV.info(t); if (!t || !Mof(t.net)) return null; const M = Mof(t.net);
       const c = LEV.info.get(t.addr); if (c && Date.now() - c.at < 8000) return c;
-      const r = await multicall([[M, I.margin, 'opensEnabled'], [M, I.margin, 'maxLeverageBps'], [M, I.margin, 'borrowFeeBps'], [M, I.margin, 'minMargin'], [M, I.margin, 'minCoinAge'], [M, I.margin, 'minPoolDepth'], [M, I.margin, 'maintenanceBps'], [M, I.margin, 'poolDepth', [t.addr]], [M, I.margin, 'maxMargin', [t.addr, 20000]], [M, I.margin, 'maxMargin', [t.addr, 30000]], [M, I.margin, 'maxMargin', [t.addr, 15000]]], t.net);
+      const r = await multicall([[M, I.margin, 'opensEnabled'], [M, I.margin, 'maxLeverageBps'], [M, I.margin, 'borrowFeeBps'], [M, I.margin, 'minMargin'], [M, I.margin, 'minCoinAge'], [M, I.margin, 'minDepthOf', [t.pair || ZERO]], [M, I.margin, 'maintenanceBps'], [M, I.margin, 'poolDepth', [t.addr]], [M, I.margin, 'maxMargin', [t.addr, 20000]], [M, I.margin, 'maxMargin', [t.addr, 30000]], [M, I.margin, 'maxMargin', [t.addr, 15000]]], t.net);
       const [on, maxLev, bfee, minM, age, minDepth, maint, depth, m2, m3, m15] = r;
-      const why = isErc(t) ? 'Leverage is for ETH-pair coins.' : !on ? 'Leverage is paused right now.' : now(t.net) < t.createdAt + Number(age || 600) ? 'Leverage opens 10 minutes after launch.' : depth != null && minDepth != null && depth < minDepth ? `Leverage opens once the pool holds ${f18(minDepth)} ${C.chain.quote}.` : '';
-      const v = { at: Date.now(), ok: !why, why, maxLev: Number(maxLev || 30000) / 1e4, borrowFee: Number(bfee || 0) / 100, minMargin: f18(minM), maint: Number(maint || 1000) / 1e4, depth: f18(depth), max: { 1.5: f18(m15), 2: f18(m2), 3: f18(m3) } };
+      // pool depth and the largest margins come in the coin's pair; shown in ETH (a stock's swap fees taken off)
+      const inEth = (x) => (isErc(t) ? pairToEth(t, f18(x)) : f18(x));
+      const why = isErc(t) && !pairInfo(t) ? 'The ' + pairMeta(t).sym + ' price is still loading.' : !on ? 'Leverage is paused right now.' : now(t.net) < t.createdAt + Number(age || 600) ? 'Leverage opens 10 minutes after launch.' : depth != null && minDepth != null && depth < minDepth ? `Leverage opens once the pool holds about ${fmt2(inEth(minDepth))} ${C.chain.quote}${isErc(t) ? ' of ' + pairMeta(t).sym : ''}.` : '';
+      const v = { at: Date.now(), ok: !why, why, maxLev: Number(maxLev || 30000) / 1e4, borrowFee: Number(bfee || 0) / 100, minMargin: f18(minM), maint: Number(maint || 1000) / 1e4, depth: inEth(depth), max: { 1.5: inEth(m15), 2: inEth(m2), 3: inEth(m3) } };
       LEV.info.set(t.addr, v); return v;
     },
     // the wallet's open positions, with health and P&L at the spot price
@@ -392,17 +394,20 @@
       const r = ids.length ? await multicall(ids.flatMap((id) => [[M, I.margin, 'positions', [id]], [M, I.margin, 'health', [id]], [M, I.margin, 'liquidationPrice', [id]]]), net) : [];
       const list = [];
       ids.forEach((id, i) => { const p = r[i * 3], h = r[i * 3 + 1], lp = r[i * 3 + 2]; if (!p || !h || low(p.owner) !== w) return;
-        const debt = f18(h[0]), value = f18(h[1]), margin = f18(p.margin), tok = f18(p.tokens), t = BY.get(low(p.token));
-        list.push({ id: Number(id), token: low(p.token), sym: t ? t.symbol : '', tokens: tok, debt, value, margin, equity: value - debt, pnl: value - debt - margin, pnlPct: margin ? ((value - debt) / margin - 1) * 100 : 0, lev: Number(p.leverageBps) / 1e4, liq: !!h[2], flagged: Number(p.flaggedAt) > 0, liqPx: f18(lp), entryPx: tok ? (margin + f18(p.principal)) / tok : 0, opened: Number(p.openedAt), health: value > 0 ? Math.max(0, Math.min(1, 1 - debt / value)) : 0 }); });
+        const t = BY.get(low(p.token)), k = t && isErc(t) ? ethPer(t) : 1; // the pair's ETH price: amounts shown in ETH
+        const debt = f18(h[0]) * k, value = f18(h[1]) * k, margin = f18(p.margin) * k, tok = f18(p.tokens);
+        list.push({ id: Number(id), token: low(p.token), sym: t ? t.symbol : '', tokens: tok, debt, value, margin, equity: value - debt, pnl: value - debt - margin, pnlPct: margin ? ((value - debt) / margin - 1) * 100 : 0, lev: Number(p.leverageBps) / 1e4, liq: !!h[2], flagged: Number(p.flaggedAt) > 0, liqPx: f18(lp) * k, entryPx: tok ? (margin + f18(p.principal) * k) / tok : 0, pair: low(p.pair), opened: Number(p.openedAt), health: value > 0 ? Math.max(0, Math.min(1, 1 - debt / value)) : 0 }); });
       LEV.mine = { w, at: Date.now(), list }; return list;
     },
     async open(a, lev, marginEth, minTokens) {
       const t = BY.get(low(a)); if (!t) throw new Error('Unknown token'); await onChainOf(t);
-      const r = await send({ to: Mof(t.net), data: I.margin.encodeFunctionData('open', [t.addr, BigInt(Math.round(lev * 1e4)), wei(Math.max(0, minTokens || 0))]), value: wei(marginEth), gasLimit: 2000000n }, 'open');
+      if (isErc(t) && !pairInfo(t)) throw new Error('The ' + pairMeta(t).sym + ' price is still loading, try again in a moment');
+      const minPair = isErc(t) ? wei(ethToPair(t, marginEth) * 0.95) : 0n; // a stock coin's margin is swapped to the stock first
+      const r = await send({ to: Mof(t.net), data: I.margin.encodeFunctionData('open', [t.addr, BigInt(Math.round(lev * 1e4)), wei(Math.max(0, minTokens || 0)), minPair]), value: wei(marginEth), gasLimit: 3000000n }, 'open');
       LEV.info.delete(t.addr); LEV.mine.at = 0; await afterTrade(a, parseInt(r.receipt.blockNumber, 16)); return r.hash;
     },
-    async close(id, minOut) { const r = await send({ to: Mof(C.chain.key), data: I.margin.encodeFunctionData('close', [BigInt(id), wei(Math.max(0, minOut || 0))]), gasLimit: 2000000n }, 'close'); LEV.mine.at = 0; LEV.info.clear(); await Promise.all([load(true), refreshMine()]); return r.hash; },
-    async addMargin(id, eth) { const r = await send({ to: Mof(C.chain.key), data: I.margin.encodeFunctionData('addMargin', [BigInt(id)]), value: wei(eth), gasLimit: 600000n }, 'add margin'); LEV.mine.at = 0; return r.hash; },
+    async close(id, minOut) { const r = await send({ to: Mof(C.chain.key), data: I.margin.encodeFunctionData('close', [BigInt(id), wei(Math.max(0, minOut || 0))]), gasLimit: 3000000n }, 'close'); LEV.mine.at = 0; LEV.info.clear(); await Promise.all([load(true), refreshMine()]); return r.hash; },
+    async addMargin(id, eth) { const p = LEV.mine.list.find((x) => x.id === id), t = p && BY.get(p.token); const minPair = t && isErc(t) && pairInfo(t) ? wei(ethToPair(t, eth) * 0.95) : 0n; const r = await send({ to: Mof(C.chain.key), data: I.margin.encodeFunctionData('addMargin', [BigInt(id), minPair]), value: wei(eth), gasLimit: 1500000n }, 'add margin'); LEV.mine.at = 0; return r.hash; },
   };
 
   // the logo: squared and scaled to 512 px (PNG), uploaded to the Blob store; the URL goes onchain
