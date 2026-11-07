@@ -31,8 +31,8 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 
 /* hero */
 .hero{overflow:hidden;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:130px 0 0;position:relative}
-.hero .glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(520px 340px at 50% 36%,rgba(91,124,255,.22),transparent 70%),radial-gradient(420px 260px at 60% 46%,rgba(255,216,77,.14),transparent 70%)}
-.h1{position:relative;font:500 clamp(50px,6.7vw,96px)/1.02 var(--sans);letter-spacing:-.035em;text-shadow:-2px 0 0 rgba(255,77,106,.45),2px 0 0 rgba(91,124,255,.5),0 0 60px rgba(255,255,255,.12)}
+.hero .glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(640px 380px at 50% 38%,rgba(255,216,77,.13),transparent 70%),radial-gradient(900px 500px at 50% 0,rgba(255,255,255,.04),transparent 70%)}
+.h1{position:relative;font:500 clamp(50px,6.7vw,96px)/1.02 var(--sans);letter-spacing:-.035em;text-shadow:-1px 0 0 rgba(255,77,106,.3),1px 0 0 rgba(91,124,255,.3),0 0 60px rgba(255,255,255,.1)}
 .h1 .ac{color:var(--y);text-shadow:-2px 0 0 rgba(255,77,106,.5),2px 0 0 rgba(91,124,255,.55),0 0 50px rgba(255,216,77,.45)}
 .h1 .ln{display:block;opacity:0;transform:translateY(30px);filter:blur(8px);animation:rise 1.1s cubic-bezier(.2,.7,.2,1) forwards}.h1 .ln+.ln{animation-delay:.15s}
 @keyframes rise{to{opacity:1;transform:none;filter:none}}
@@ -47,7 +47,7 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 .row:hover{animation-play-state:paused}.cn:hover{transform:scale(1.12)}
 
 /* section scaffolding */
-.sec{padding:200px 0 0;position:relative}
+.sec{padding:260px 0 0;position:relative}
 .eyebrow{font:600 13px/19.5px var(--sans);letter-spacing:2.08px;text-transform:uppercase;color:var(--ink3)}
 .t2{font:600 clamp(38px,4.3vw,62px)/1.02 var(--sans);letter-spacing:-.045em;margin-top:18px}
 .t2 .ac{color:var(--y);text-shadow:0 0 40px rgba(255,216,77,.35)}
@@ -55,9 +55,9 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 .body{font-size:18px;line-height:27.9px;color:var(--ink2);max-width:460px;margin-top:20px}
 .center{text-align:center}.center .body{margin-left:auto;margin-right:auto}
 .split{display:grid;grid-template-columns:542px 542px;justify-content:space-between;gap:56px;align-items:center}
-.rv{opacity:0;transform:translateY(34px);transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1)}.rv.in{opacity:1;transform:none}
+.rv{opacity:0;transform:translateY(40px);filter:blur(10px);transition:opacity 1.3s cubic-bezier(.16,.84,.24,1),transform 1.3s cubic-bezier(.16,.84,.24,1),filter 1.3s cubic-bezier(.16,.84,.24,1)}.rv.in{opacity:1;transform:none;filter:none}
 .rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}
-.glass{background:var(--glass);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 30px 80px -30px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05)}
+.glass{position:relative;background:linear-gradient(160deg,rgba(255,255,255,.075),rgba(255,255,255,.02) 50%,rgba(255,255,255,.01)),rgba(10,13,16,.78);border:1px solid rgba(255,255,255,.1);border-radius:20px;backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);box-shadow:0 40px 90px -40px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(0,0,0,.4)}.glass:after{content:"";position:absolute;left:12%;right:12%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,216,77,.55),transparent);pointer-events:none}
 
 /* floor: sticky scroll chart */
 .floorwrap{height:260vh;position:relative;margin-top:30px}
@@ -77,7 +77,7 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 
 /* liquidity card stack */
 .stack{position:relative;height:600px}
-.lq{position:absolute;width:415px;padding:22px 26px;border-radius:16px;transition:transform .25s ease-out;will-change:transform}.lq:before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(var(--ga,135deg),rgba(255,216,77,.55),rgba(255,255,255,.04) 40%,rgba(91,124,255,.45));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}.stack{perspective:1100px}
+.lq{position:absolute;width:415px;padding:22px 26px;border-radius:16px;transition:transform .25s ease-out;will-change:transform}.lq:before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(var(--ga,135deg),rgba(255,216,77,.6),rgba(255,255,255,.03) 45%,rgba(255,255,255,.18));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}.stack{perspective:1100px}
 .lq .h{display:flex;align-items:center;justify-content:space-between}.lq .pair{display:flex;align-items:center;gap:10px;font:600 15px var(--sans)}.lq .pair img{width:26px;height:26px;border-radius:50%}
 .tag{font:600 11px var(--mono);padding:5px 10px;border-radius:999px;background:rgba(62,224,143,.12);color:var(--g);border:1px solid rgba(62,224,143,.25)}
 .lq .k{margin-top:20px;font:500 12px var(--mono);color:var(--ink3);letter-spacing:.06em;text-transform:uppercase}.lq .v{font:600 40px var(--mono);letter-spacing:-.04em;margin-top:2px}
@@ -197,7 +197,7 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
   </div>
   <div>
     <div class="eyebrow rv">The pool</div>
-    <h2 class="t2 rv d1">One pool.<br><span class="ab">No LP to pull.</span></h2>
+    <h2 class="t2 rv d1">One pool.<br><span class="ac">No LP to pull.</span></h2>
     <p class="body rv d2">The hook places the whole supply at launch and holds every position itself. No LP token is minted, and nobody else can add liquidity or donate to a Zappy pool, so the floor is never diluted by outside positions.</p>
   </div>
 </div></section>
@@ -207,17 +207,17 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
     <div class="eyebrow rv">Fees</div>
     <h2 class="t2 rv d1">2.5% a trade.<br><span class="ac">Most of it stays.</span></h2>
     <p class="body rv d2">One rate on every buy and every sell, taken on the ETH side. There is no separate LP fee. Over half of every trade's tax goes back under the coin.</p>
-    <div class="rates rv d3"><div><b style="color:var(--y)">1.5%</b><span>to the floor</span></div><div><b style="color:var(--b)">0.6%</b><span>to the creator</span></div><div><b style="color:var(--p)">0.4%</b><span>to the protocol</span></div></div>
+    <div class="rates rv d3"><div><b style="color:var(--y)">1.5%</b><span>to the floor</span></div><div><b>0.6%</b><span>to the creator</span></div><div><b style="color:var(--ink2)">0.4%</b><span>to the protocol</span></div></div>
   </div>
   <div class="glass calc rv d2">
     <div class="amt"><span>You trade</span><b id="c-amt">$1,000</b></div>
     <input type="range" id="c-rng" min="0" max="100" value="38" aria-label="Trade size">
-    <div class="bar3"><i id="b1" style="background:linear-gradient(90deg,#2b3672,#5b7cff)"></i><i id="b2" style="background:var(--y)"></i><i id="b3" style="background:var(--v)"></i><i id="b4" style="background:var(--p)"></i></div>
+    <div class="bar3"><i id="b1" style="background:linear-gradient(90deg,#2a3034,#59646a)"></i><i id="b2" style="background:var(--y);box-shadow:0 0 12px var(--y)"></i><i id="b3" style="background:#b8c2c7"></i><i id="b4" style="background:#6b767a"></i></div>
     <div class="legs">
-      <div><i style="background:var(--b)"></i>Buys the coin<b id="c1">$975.00</b></div>
+      <div><i style="background:#59646a"></i>Buys the coin<b id="c1">$975.00</b></div>
       <div><i style="background:var(--y)"></i>Into the floor<b id="c2" style="color:var(--y)">$15.00</b></div>
-      <div><i style="background:var(--v)"></i>To the creator<b id="c3">$6.00</b></div>
-      <div><i style="background:var(--p)"></i>To the protocol<b id="c4">$4.00</b></div>
+      <div><i style="background:#b8c2c7"></i>To the creator<b id="c3">$6.00</b></div>
+      <div><i style="background:#6b767a"></i>To the protocol<b id="c4">$4.00</b></div>
     </div>
   </div>
 </div></section>
@@ -332,7 +332,7 @@ function psz(){const r=pc.getBoundingClientRect();pc.width=r.width*DPR;pc.height
 const L0=4,L1=10,mOf=(t)=>Math.pow(10,L0+t*(L1-L0)),fm=(m)=>m>=1e9?'$'+(m/1e9).toFixed(m<1e10?1:0)+'B':m>=1e6?'$'+(m/1e6).toFixed(m<1e7?1:0)+'M':'$'+Math.round(m/1e3)+'K';
 function drawSup(t){const W=pc.width,H=pc.height,X=(u)=>u*W,Y=(v)=>H-8*DPR-v/.4*(H-20*DPR);px.clearRect(0,0,W,H);
  px.strokeStyle='rgba(255,255,255,.05)';px.lineWidth=DPR;for(const v of [.1,.2,.3,.4]){px.beginPath();px.moveTo(0,Y(v));px.lineTo(W,Y(v));px.stroke();px.fillStyle='rgba(244,245,249,.3)';px.font=`500 ${10*DPR}px "Geist Mono",monospace`;px.fillText(v*100+'%',4*DPR,Y(v)-4*DPR);}
- const N=240,g=px.createLinearGradient(0,0,W,0);g.addColorStop(0,'#5b7cff');g.addColorStop(.62,'#ffd84d');g.addColorStop(1,'#ff5c8a');
+ const N=240,g=px.createLinearGradient(0,0,W,0);g.addColorStop(0,'#59646a');g.addColorStop(.45,'#ffd84d');g.addColorStop(1,'#fff3c4');
  const ag=px.createLinearGradient(0,0,0,H);ag.addColorStop(0,'rgba(255,216,77,.18)');ag.addColorStop(1,'rgba(255,216,77,0)');
  px.beginPath();px.moveTo(0,Y(0));for(let i=0;i<=N;i++){const u=i/N;px.lineTo(X(u),Y(Math.min(.4,outAt(mOf(u)))));}px.lineTo(W,Y(0));px.closePath();px.fillStyle=ag;px.fill();
  px.save();px.shadowColor='#ffd84d';px.shadowBlur=14*DPR;px.strokeStyle=g;px.lineWidth=2.4*DPR;px.beginPath();for(let i=0;i<=N;i++){const u=i/N,y=Y(Math.min(.4,outAt(mOf(u))));i?px.lineTo(X(u),y):px.moveTo(X(u),y);}px.stroke();px.restore();
