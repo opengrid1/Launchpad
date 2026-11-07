@@ -5,6 +5,8 @@
 const { ethers } = require('ethers');
 
 const E = process.env;
+// brand data: the ERC-20 pairs (Robinhood stocks for Zappy) and the pools that price them, written by build/rh-stocks.cjs
+let BRAND_PAIRS = {}; try { BRAND_PAIRS = require('./_pairs.json'); } catch {}
 const NETS = {
   elysium: {
     key: 'elysium', name: 'Elysium',
@@ -88,6 +90,25 @@ const NETS = {
     parent: null,
     v2: E.BASE_V2 ? { factory: E.BASE_V2_FACTORY || '0xAe6e1C7f5F34BaabCB7f545bc6ADcdA65418cB66', hook: E.BASE_V2_HOOK || '0x3fc4B416e02c2879FfBDa58b5D77095965B4A0CC', locker: E.BASE_V2_LOCKER || '0x1cdBd96F80F7e9ac45bBf4fDFaC7D4F5Fdf003CA', fromBlock: 0 } : null,
     pairs: {},
+  },
+  // Robinhood Chain (the Zappy brand): v2 contracts with leverage (ZappyLocker + ZappyMargin) and Robinhood stock pairs;
+  // on when ROBINHOOD_V2 is set
+  robinhood: {
+    key: 'robinhood', name: 'Robinhood Chain',
+    rpc: E.ROBINHOOD_RPC || 'https://rpc.mainnet.chain.robinhood.com',
+    chainId: 4663,
+    factory: '', hook: '', locker: '', escrow: '', vault: '',
+    poolManager: '0x8366a39CC670B4001A1121B8F6A443A643e40951',
+    quoter: '0x8dc178efb8111bb0973dd9d722ebeff267c98f94',
+    stateView: '0xf3334192d15450cdd385c8b70e03f9a6bd9e673b',
+    multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
+    fromBlock: Number(E.ROBINHOOD_FROM_BLOCK || 0),
+    logRpc: E.ROBINHOOD_LOG_RPC || '', fallbackRange: 100000,
+    maxRange: 500000, maxChunks: 20,
+    minSweep: '0.0002',
+    parent: null,
+    v2: E.ROBINHOOD_V2 ? { factory: E.ROBINHOOD_V2_FACTORY || '', hook: E.ROBINHOOD_V2_HOOK || '', locker: E.ROBINHOOD_V2_LOCKER || '', margin: E.ROBINHOOD_V2_MARGIN || '', fromBlock: 0 } : null,
+    pairs: BRAND_PAIRS.robinhood || {},
   },
 };
 for (const k of Object.keys(NETS)) if (!NETS[k].factory && !NETS[k].v2) delete NETS[k]; // not deployed (yet)

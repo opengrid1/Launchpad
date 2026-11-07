@@ -72,10 +72,14 @@ window.PAGE = async () => {
     const noBuyback = () => { const bb = $('#f-bb'); if (bb) { bb.classList.add('hidden'); F.buyback = false; } const adv = $('#st2 details.adv'); if (adv) adv.classList.add('hidden'); const fw = $('#f-fw small'); if (fw) fw.textContent = `Paid out in ${PR() ? PR().sym : 'the pair'} straight to your fee wallet, from your profile.`; };
     if (ps.length < 2) { noBuyback(); return; } // one pair: the fixed "Paired with" field stays
     const sel = $('#st2 .sel'), host = sel ? sel.parentElement : $('#f-pair') && $('#f-pair').parentElement; if (!host) return;
-    const html = `<div class="seg lg" id="f-pair" role="radiogroup" aria-label="Pair">${ps.map((p) => `<button type="button" role="radio" aria-checked="${p.key === F.pair}" class="${p.key === F.pair ? 'on' : ''}" data-pair="${p.key}" style="display:inline-flex;align-items:center;gap:6px"><img src="${esc(p.logo)}" alt="" style="width:18px;height:18px;border-radius:50%">${esc(p.sym)}</button>`).join('')}</div>`;
+    // a few pairs as buttons; many (Robinhood stocks) as a list
+    const html = ps.length > 6 ? `<div id="f-pair"><select class="inp" id="f-pairsel" aria-label="Pair">${ps.map((p) => `<option value="${esc(p.key)}" ${p.key === F.pair ? 'selected' : ''}>${esc(p.sym)}${p.name && p.name !== p.sym ? ' · ' + esc(p.name) : ''}</option>`).join('')}</select></div>`
+      : `<div class="seg lg" id="f-pair" role="radiogroup" aria-label="Pair">${ps.map((p) => `<button type="button" role="radio" aria-checked="${p.key === F.pair}" class="${p.key === F.pair ? 'on' : ''}" data-pair="${p.key}" style="display:inline-flex;align-items:center;gap:6px"><img src="${esc(p.logo)}" alt="" style="width:18px;height:18px;border-radius:50%">${esc(p.sym)}</button>`).join('')}</div>`;
     if (sel) sel.outerHTML = html; else $('#f-pair').outerHTML = html;
     const note = host.querySelector('.note'); if (note) note.textContent = ercPair() ? `The pool trades against ${PR().name}. Buyers still pay in ETH: the site swaps ETH to ${PR().sym} and into the coin in one transaction. Fees are paid out in ${PR().sym}. The pair cannot change later.` : 'Buyers pay in ETH in the pool from the moment it launches. The pair cannot change later.';
-    $$('[data-pair]', host).forEach((b) => b.onclick = () => { F.pair = b.dataset.pair; if (ercPair()) { F.devBuy = 0; $('#f-dev').value = ''; } $('#f-dev').disabled = ercPair(); pairPick(); cost(); preview(); });
+    const pickPair = (k) => { F.pair = k; if (ercPair()) { F.devBuy = 0; $('#f-dev').value = ''; } $('#f-dev').disabled = ercPair(); pairPick(); cost(); preview(); };
+    $$('[data-pair]', host).forEach((b) => b.onclick = () => pickPair(b.dataset.pair));
+    const ps2 = $('#f-pairsel', host); if (ps2) ps2.onchange = () => pickPair(ps2.value);
     $('#f-dev').disabled = ercPair();
     // v2 pays creator fees straight out in the pair; it has no buyback & vest
     const bb = $('#f-bb'); if (bb) { bb.classList.add('hidden'); F.buyback = false; } const adv = $('#st2 details.adv'); if (adv) adv.classList.add('hidden');

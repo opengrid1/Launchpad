@@ -8,6 +8,12 @@ window.PAGE = async () => {
   const root = $('#pg-token'); if (!x) { root.innerHTML = `<div class="empty">No coin at this address.<br><a class="ac" href="/">Back home</a></div>`; return; }
   document.title = `${x.name} ($${x.symbol}) | ${C.brand}`;
   const chain = 'hyper'; let side = 'buy', tab = 'trades', amt = '', slip = 1, busy = false;
+  // leverage (chains with a margin contract): mode 'lev' swaps the panel for a long at 1.5x to 3x funded by the coin's pool
+  const LEVON = DATA.lev && DATA.lev.on(x.net); let mode = 'market', lev = 2, levInfo = null, myPos = [], levBusy = false;
+  async function loadLev(fresh) {
+    if (!LEVON) return; try { levInfo = await DATA.lev.info(addr); const me = APP.W.connected ? APP.W.address : ''; myPos = me ? (await DATA.lev.positions(me, fresh)).filter((p) => p.token === x.addr) : []; } catch (e) { console.warn('leverage', e.message); }
+    if (mode === 'lev' && !(document.activeElement && document.activeElement.id === 't-amt')) renderTrade();
+  }
   const ex = (kind, v) => `${C.chain.explorer}/${kind}/${v}`;
   root.innerHTML = `
     <header class="thd"><a class="back" href="/">${ic('chevr').replace('<svg', '<svg style="transform:rotate(180deg)"')}Launches</a>
@@ -57,12 +63,14 @@ window.PAGE = async () => {
     const h2 = $('#sh-h2'); if (h2) h2.textContent = `${side === 'buy' ? 'Buy' : 'Sell'} ${x.symbol}`;
     const v = parseFloat(amt) || 0; const q = side === 'buy' ? DATA.quoteBuy(addr, chain, v) : DATA.quoteSell(addr, chain, v);
     const have = side === 'buy' ? hbal : bal; const quick = [['25%', have * 0.25], ['50%', have * 0.5], ['75%', have * 0.75], ['Max', have]];
-    el.innerHTML = `<div class="seg bs" style="margin-top:0"><button class="on" data-m="market">Market</button><button data-m="limit">Limit</button></div><div class="seg bs" style="margin-top:20px"><button class="${side === 'buy' ? 'on' : ''}" data-s="buy">Buy</button><button class="${side === 'sell' ? 'on' : ''}" data-s="sell">Sell</button></div>
+    if (mode === 'lev') return renderLev(el, me, hbal);
+    el.innerHTML = `<div class="seg bs" style="margin-top:0"><button class="on" data-m="market">Market</button>${LEVON ? '<button data-m="lev">Leverage</button>' : '<button data-m="limit">Limit</button>'}</div><div class="seg bs" style="margin-top:20px"><button class="${side === 'buy' ? 'on' : ''}" data-s="buy">Buy</button><button class="${side === 'sell' ? 'on' : ''}" data-s="sell">Sell</button></div>
       <div class="fld" style="margin-top:20px"><div class="fh"><label for="t-amt">${side === 'buy' ? 'Pay' : 'Sell'}</label><span>${me ? `${side === 'buy' ? fmtNum(hbal, 3) + ' ' + C.chain.quote : fmtNum(bal, 0) + ' ' + esc(x.symbol)}` : ''}</span></div><div class="fin"><input id="t-amt" inputmode="decimal" placeholder="0" value="${esc(amt)}" autocomplete="off"><b>${side === 'buy' ? C.chain.quote : esc(x.symbol)}</b></div><div class="frac">${quick.map(([l, v2]) => `<button data-q="${v2}" ${me ? '' : 'disabled'}>${l}</button>`).join('')}</div></div>
       <div class="out" style="margin-top:20px"><span>You receive</span><b>${v > 0 ? (side === 'buy' ? `${fmtNum(q.tokens * (1 - slip / 100), 0)}<small>${esc(x.symbol)}</small>` : `${fmtNum(q.hype * (1 - slip / 100), 4)}<small>${C.chain.quote}</small>`) : `0<small>${side === 'buy' ? esc(x.symbol) : C.chain.quote}</small>`}</b></div>
       <details style="margin-top:20px"><summary><span>Slippage ${slip.toFixed(1)} %</span>${ic('chevr').replace('<svg', '<svg style="transform:rotate(90deg)"')}</summary><div class="slp">${[0.5, 1, 3].map((s) => `<button class="${slip === s ? 'on' : ''}" data-sl="${s}">${s.toFixed(1)} %</button>`).join('')}</div>${v > 0 ? `<div class="q"><div class="kvl"><span>Fee ${(q.feeBps / 100).toFixed(2)}%${q.snipe ? ' incl. snipe tax' : ''}</span><b>${fmtHype(q.fee + (q.snipe || 0), 4)}</b></div><div class="kvl"><span>Price impact</span><b class="${Math.abs(q.impact) > 5 ? 'dn' : ''}">${q.impact > 0 ? '+' : ''}${q.impact.toFixed(2)}%</b></div></div>` : ''}</details>
       <button class="btn w pri go" id="t-go" style="margin-top:0"></button>`;
     $$('[data-s]', el).forEach((b) => b.onclick = () => { side = b.dataset.s; amt = ''; renderTrade(); }); $$('[data-m="limit"]', el).forEach((b) => b.onclick = () => toast('Limit orders are not available yet', 'info'));
+    $$('[data-m="lev"]', el).forEach((b) => b.onclick = () => { mode = 'lev'; amt = ''; renderTrade(); loadLev(true); });
     $$('[data-q]', el).forEach((b) => b.onclick = () => { const k = +b.dataset.q; amt = k > 0 ? String(+k.toFixed(6)) : ''; renderTrade(); });
     $$('[data-sl]', el).forEach((b) => b.onclick = (e) => { e.preventDefault(); slip = +b.dataset.sl; const open = $('details', el).open; renderTrade(); $('details', host || $('#t-trade')).open = open; });
     const inp = $('#t-amt', el); inp.oninput = () => { amt = inp.value; const pos = inp.selectionStart; const d = $('details', el).open; renderTrade(); const h = host || $('#t-trade'); const n = $('#t-amt', h); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} $('details', h).open = d; };
@@ -73,6 +81,40 @@ window.PAGE = async () => {
     go.textContent = side === 'buy' ? 'Buy' : 'Sell'; go.disabled = !(v > 0);
     go.onclick = async () => { busy = true; renderTrade(); try { const r = side === 'buy' ? await DATA.buy(addr, chain, v, q.tokens * (1 - slip / 100)) : await DATA.sell(addr, chain, v, q.hype * (1 - slip / 100)); toast(`${side === 'buy' ? 'Bought' : 'Sold'} ${fmtNum(r.tokens, 0)} ${x.symbol} for ${fmtNum(r.hype, 4)} ${C.chain.quote}`, 'ok'); amt = ''; if (host) closeSheet(); } catch (e) { toast(errMsg(e), 'err'); } busy = false; renderAll(); };
   }
+  // the leverage panel: pick 1.5x to 3x, put up ETH margin; the coin's pool lends the rest; below it, this coin's positions
+  function renderLev(el, me, hbal) {
+    const I = levInfo, levs = [1.5, 2, 3].filter((l) => !I || l <= I.maxLev), v = parseFloat(amt) || 0, size = v * lev, q = DATA.quoteBuy(addr, chain, size);
+    const maxM = I ? Math.max(0, Math.min(I.max[lev] || 0, hbal || Infinity)) : 0, px = x.byChain[chain].px, fee = (x.feeBps + x.creatorTaxBps) / 1e4;
+    const debt = v * (lev - 1), liqPx = q.tokens > 0 && I ? debt / (q.tokens * (1 - I.maint) * (1 - fee)) : 0, drop = px > 0 && liqPx > 0 ? (1 - liqPx / px) * 100 : 0;
+    const posHtml = myPos.length ? `<div class="levpos"><div class="lh"><b>Your positions</b><span>${myPos.length}</span></div>${myPos.map((p) => `<div class="lp${p.liq ? ' warn' : ''}"><div class="l1"><b>${p.lev}x long</b><span class="${p.pnl >= 0 ? 'up' : 'dn'}">${p.pnl >= 0 ? '+' : ''}${fmtNum(p.pnl, 4)} ${C.chain.quote} (${p.pnlPct >= 0 ? '+' : ''}${p.pnlPct.toFixed(1)}%)</span></div>
+        <div class="l2"><span>Value ${fmtNum(p.value, 4)}</span><span>Debt ${fmtNum(p.debt, 4)}</span><span>Liq. ${fmtUsd(p.liqPx * APP.hypeUsd)}</span></div>
+        <div class="bar ${p.health < 0.15 ? 'dn' : p.health < 0.3 ? 'warn' : ''}"><i style="width:${(p.health * 100).toFixed(0)}%"></i></div>${p.liq ? `<p class="lw">${p.flagged ? 'Flagged for liquidation. Add margin now to keep it.' : 'Past the liquidation level. Add margin or close.'}</p>` : ''}
+        <div class="la"><button class="btn sm" data-add="${p.id}" ${levBusy ? 'disabled' : ''}>Add margin</button><button class="btn sm" data-close="${p.id}" ${levBusy ? 'disabled' : ''}>Close</button></div></div>`).join('')}</div>` : '';
+    el.innerHTML = `<div class="seg bs" style="margin-top:0"><button data-m="market">Market</button><button class="on" data-m="lev">Leverage</button></div>
+      ${!I ? '<p class="hint" style="margin-top:20px">Loading leverage terms…</p>' : !I.ok ? `<p class="hint" style="margin-top:20px">${esc(I.why)}</p>` : `
+      <div class="seg bs" style="margin-top:20px">${levs.map((l) => `<button class="${lev === l ? 'on' : ''}" data-lev="${l}">${l}x</button>`).join('')}</div>
+      <div class="fld" style="margin-top:20px"><div class="fh"><label for="t-amt">Margin</label><span>${me ? fmtNum(hbal, 3) + ' ' + C.chain.quote : ''}</span></div><div class="fin"><input id="t-amt" inputmode="decimal" placeholder="0" value="${esc(amt)}" autocomplete="off"><b>${C.chain.quote}</b></div><div class="frac">${[['25%', maxM * 0.25], ['50%', maxM * 0.5], ['Max', maxM]].map(([l, k]) => `<button data-q="${k}" ${me && maxM > 0 ? '' : 'disabled'}>${l}</button>`).join('')}</div></div>
+      <div class="q" style="margin-top:16px"><div class="kvl"><span>Position size</span><b>${fmtNum(size, 4)} ${C.chain.quote}</b></div><div class="kvl"><span>Borrowed from the pool</span><b>${fmtNum(debt, 4)} ${C.chain.quote}</b></div><div class="kvl"><span>You hold</span><b>${fmtNum(q.tokens, 0)} ${esc(x.symbol)}</b></div>
+        <div class="kvl"><span>Liquidation price</span><b class="${v > 0 && drop < 20 ? 'dn' : ''}">${v > 0 ? `${fmtUsd(liqPx * APP.hypeUsd)} (−${drop.toFixed(1)}%)` : '–'}</b></div><div class="kvl"><span>Interest</span><b>${I.apr}% a year</b></div><div class="kvl"><span>Largest margin now</span><b>${fmtNum(I.max[lev] || 0, 4)} ${C.chain.quote}</b></div></div>
+      <p class="hint" style="margin-top:12px">Liquidation sells the coins back into the pool if the price stays below that level for 15 seconds; the margin is lost.</p>
+      <button class="btn w pri go" id="t-go" style="margin-top:16px"></button>`}${posHtml}`;
+    $$('[data-m="market"]', el).forEach((b) => b.onclick = () => { mode = 'market'; amt = ''; renderTrade(); });
+    $$('[data-lev]', el).forEach((b) => b.onclick = () => { lev = +b.dataset.lev; renderTrade(); });
+    $$('[data-q]', el).forEach((b) => b.onclick = () => { const k = +b.dataset.q; amt = k > 0 ? String(Math.floor(k * 1e6) / 1e6) : ''; renderTrade(); });
+    const inp = $('#t-amt', el); if (inp) inp.oninput = () => { amt = inp.value; const pos = inp.selectionStart; renderTrade(); const n = $('#t-amt', host || $('#t-trade')); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } };
+    $$('[data-close]', el).forEach((b) => b.onclick = async () => { const p = myPos.find((y) => y.id === +b.dataset.close); if (!p) return; levBusy = true; renderTrade(); try { await DATA.lev.close(p.id, Math.max(0, p.equity * 0.9)); toast(`Closed the ${p.lev}x position`, 'ok'); } catch (e) { toast(errMsg(e), 'err'); } levBusy = false; await loadLev(true); renderAll(); });
+    $$('[data-add]', el).forEach((b) => b.onclick = () => { const p = myPos.find((y) => y.id === +b.dataset.add); if (!p) return;
+      const ov = APP.dialog('Add margin', `<div style="display:flex;flex-direction:column;gap:16px"><p style="font-size:15px;line-height:20px;color:var(--ink-80)">Pays down the position's ${fmtNum(p.debt, 4)} ${C.chain.quote} debt, which moves its liquidation price down.</p><div class="fin"><input id="am-v" inputmode="decimal" placeholder="0" autocomplete="off"><b>${C.chain.quote}</b></div><div class="row-end"><button class="btn sm" data-x>Cancel</button><button class="btn sm pri" id="am-go">Add</button></div></div>`);
+      ov.addEventListener('click', (e) => { if (e.target === ov || e.target.closest('[data-x]')) ov.remove(); });
+      $('#am-go', ov).onclick = async () => { const a = parseFloat($('#am-v', ov).value) || 0; if (!(a > 0)) return; ov.remove(); levBusy = true; renderTrade(); try { await DATA.lev.addMargin(p.id, a); toast('Margin added', 'ok'); } catch (e) { toast(errMsg(e), 'err'); } levBusy = false; loadLev(true); }; });
+    const go = $('#t-go', el); if (!go) return;
+    if (levBusy || busy) { go.disabled = true; go.textContent = 'Confirm in your wallet…'; return; }
+    if (!me) { go.textContent = 'Sign in'; go.onclick = () => APP.W.connect(); return; }
+    if (!APP.W.chainOk) { go.textContent = 'Switch to ' + C.chain.name; go.onclick = () => APP.W.switchChain().catch((e) => toast(errMsg(e), 'err')); return; }
+    const tooBig = v > (I.max[lev] || 0) * 1.0001, tooSmall = v > 0 && v < I.minMargin;
+    go.textContent = tooBig ? 'Above the largest margin now' : tooSmall ? `Minimum margin ${I.minMargin} ${C.chain.quote}` : `Open ${lev}x long`; go.disabled = !(v > 0) || tooBig || tooSmall;
+    go.onclick = async () => { levBusy = true; renderTrade(); try { await DATA.lev.open(addr, lev, v, q.tokens * (1 - Math.max(slip, 3) / 100)); toast(`Opened a ${lev}x long on ${x.symbol}`, 'ok'); amt = ''; } catch (e) { toast(errMsg(e), 'err'); } levBusy = false; await loadLev(true); renderAll(); };
+  }
   const arrow = (up) => `<svg viewBox="0 0 24 24" fill="none" stroke="${up ? '#16b364' : '#ef4444'}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${up ? '<path d="M7 17L17 7M9 7h8v8"/>' : '<path d="M7 7l10 10M17 9v8H9"/>'}</svg>`;
   function renderTab() {
     const el = $('#t-tabp'); $$('#t-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === tab));
@@ -81,6 +123,7 @@ window.PAGE = async () => {
   }
   $$('#t-tabs button').forEach((b) => b.onclick = () => { tab = b.dataset.t; renderTab(); });
   function renderAll() { x = DATA.token(addr) || x; renderHead(); renderFee(); renderTrade(); renderTab(); CHART.update(); }
-  renderAll(); APP.onUpdate(() => { x = DATA.token(addr) || x; renderHead(); renderFee(); if (!busy && !(document.activeElement && document.activeElement.id === 't-amt')) renderTrade(); renderTab(); CHART.update(); }); APP.onWallet(renderTrade);
+  renderAll(); if (LEVON) { loadLev(); setInterval(() => { if (!document.hidden && mode === 'lev') loadLev(); }, 8000); APP.onWallet(() => loadLev(true)); }
+  APP.onUpdate(() => { x = DATA.token(addr) || x; renderHead(); renderFee(); if (!busy && !(document.activeElement && document.activeElement.id === 't-amt')) renderTrade(); renderTab(); CHART.update(); }); APP.onWallet(renderTrade);
   setInterval(renderFee, 1000);
 };

@@ -117,3 +117,13 @@ body.srch-open #top .brand,body.srch-open #top .sp{visibility:hidden}.msr{positi
 @media(max-width:999px){.rows .rh{display:none}.rows .rh,.rows .r{grid-template-columns:40px minmax(0,1fr) auto}.rows .hm{display:none}.rows .nm em{display:none}}
 
 .ofc{display:inline-flex;align-items:center;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--acid);color:var(--acid-ink);font-size:11px;line-height:16px;font-weight:800;letter-spacing:0;vertical-align:middle;white-space:nowrap;flex:none}
+/* leverage panel: open positions under the trade form */
+.tp .hint{font-size:13px;line-height:18px;color:var(--ink-2)}
+.levpos{margin-top:20px;border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:12px}
+.levpos .lh{display:flex;justify-content:space-between;font-size:13px}.levpos .lh span{color:var(--ink-2)}
+.levpos .lp{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.levpos .lp.warn{border-color:var(--dn)}
+.levpos .l1{display:flex;justify-content:space-between;font-size:14px}.levpos .l1 .up{color:var(--up-text)}.levpos .l1 .dn{color:var(--dn)}
+.levpos .l2{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.levpos .lw{font-size:12px;color:var(--dn);margin:0}
+.levpos .la{display:flex;gap:8px}.levpos .la .btn{flex:1}

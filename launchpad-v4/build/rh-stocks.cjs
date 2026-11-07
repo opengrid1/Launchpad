@@ -1,6 +1,8 @@
 // Checks the Robinhood stock tokens on Robinhood Chain against their USDG pools and writes brands/zappy/stocks.json:
 // per stock its ETH route (v3: WETH -> USDG -> stock as a packed path; v4: ETH -> USDG -> stock as v4 hops), its USD
-// price and its USDG pool's liquidity. Source list: ../contracts/config/rh-stock-routes.json (77 stocks).
+// price and its USDG pool's liquidity; and brands/zappy/api/_pairs.json, what the indexer reads to price each stock
+// in ETH (the pools along its route, as v3 pool addresses or v4 pool ids) and the share its pools' fees take.
+// Source list: ../contracts/config/rh-stock-routes.json (77 stocks).
 //   node build/rh-stocks.cjs
 const fs = require('fs'), path = require('path');
 const { ethers } = require('ethers');
@@ -50,6 +52,20 @@ const priceOf = (sqrt, c0, d0, d1, a) => { const p1per0 = (Number(sqrt) / 2 ** 9
     out.push({ key: s.symbol.toLowerCase(), sym: s.symbol, name: s.name, addr: s.address, usd: +usd.toFixed(4), liquidity: liq.toString(), info: route });
   }
   out.sort((a, b) => list.findIndex((x) => x.symbol === a.sym) - list.findIndex((x) => x.symbol === b.sym));
+  // pricing legs from ETH outward: each gives (out per in) from one pool's sqrt price
+  const v3pool = async (a, b, fee) => (await mc([[V3F, fI, 'getPool', [a, b, fee]]]))[0];
+  const dec = (a) => (a === USDG ? 6 : 18);
+  const leg3 = async (a, b, fee) => ({ kind: 'v3', pool: (await v3pool(a, b, fee)).toLowerCase(), a: a.toLowerCase(), b: b.toLowerCase(), da: dec(a), db: dec(b) });
+  const leg4 = (a, b, fee, ts, hooks) => ({ kind: 'v4', id: id(a, b, fee, ts, hooks), a: a.toLowerCase(), b: b.toLowerCase(), da: dec(a), db: dec(b) });
+  const pairs = {};
+  for (const st of out) {
+    const legs = [], I = st.info; let fees = 0;
+    if (I.route === 'v3') for (let i = 0; i + 2 < I.path.length; i += 2) { legs.push(await leg3(I.path[i], I.path[i + 2], I.path[i + 1])); fees += I.path[i + 1]; }
+    else { let from = Z; for (const h of I.hops) { legs.push(leg4(from, h.c, h.fee, h.ts, h.hooks)); fees += h.fee; from = h.c; } }
+    pairs[st.addr.toLowerCase()] = { sym: st.sym, ...I, legs, feeCut: fees / 1e6 };
+  }
+  const apiDir = path.join(__dirname, '../brands/zappy/api'); fs.mkdirSync(apiDir, { recursive: true });
+  fs.writeFileSync(path.join(apiDir, '_pairs.json'), JSON.stringify({ robinhood: pairs }));
   const file = path.join(__dirname, '../brands/zappy/stocks.json');
   fs.writeFileSync(file, JSON.stringify({ updated: new Date().toISOString(), ethUsd: +ethUsd.toFixed(2), weth: WETH, usdg: USDG, stocks: out }, null, 1));
   console.log(`${out.length} stocks ok, ${bad.length} left out${bad.length ? ': ' + bad.join(', ') : ''}`);

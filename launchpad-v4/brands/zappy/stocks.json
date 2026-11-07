@@ -1,6 +1,6 @@
 {
- "updated": "2026-11-06T17:57:27.042Z",
- "ethUsd": 2222.37,
+ "updated": "2026-11-06T18:13:45.186Z",
+ "ethUsd": 2224.37,
  "weth": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
  "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
  "stocks": [
@@ -9,7 +9,7 @@
    "sym": "NVDA",
    "name": "NVIDIA",
    "addr": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
-   "usd": 185.9429,
+   "usd": 186.2382,
    "liquidity": "21021439934983793",
    "info": {
     "route": "v3",
@@ -27,8 +27,8 @@
    "sym": "AAPL",
    "name": "Apple",
    "addr": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
-   "usd": 344.1178,
-   "liquidity": "40377800664057096",
+   "usd": 344.1173,
+   "liquidity": "40370476174795139",
    "info": {
     "route": "v3",
     "path": [
@@ -45,8 +45,8 @@
    "sym": "SPCX",
    "name": "Space Exploration Technologies Corp",
    "addr": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
-   "usd": 131.2201,
-   "liquidity": "814265198888703003",
+   "usd": 131.6992,
+   "liquidity": "787258909272142212",
    "info": {
     "route": "v3",
     "path": [
@@ -81,7 +81,7 @@
    "sym": "TSLA",
    "name": "Tesla",
    "addr": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
-   "usd": 357.3564,
+   "usd": 358.0451,
    "liquidity": "265093914841695143",
    "info": {
     "route": "v3",
@@ -117,7 +117,7 @@
    "sym": "AMZN",
    "name": "Amazon",
    "addr": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
-   "usd": 261.3973,
+   "usd": 261.3604,
    "liquidity": "944441873197545070",
    "info": {
     "route": "v3",
@@ -153,7 +153,7 @@
    "sym": "PLTR",
    "name": "Palantir Technologies",
    "addr": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
-   "usd": 160.3968,
+   "usd": 160.5623,
    "liquidity": "94653649509424486",
    "info": {
     "route": "v3",
@@ -171,8 +171,8 @@
    "sym": "META",
    "name": "Meta Platforms",
    "addr": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
-   "usd": 617.8243,
-   "liquidity": "717544159027603314",
+   "usd": 617.825,
+   "liquidity": "717577453250314705",
    "info": {
     "route": "v4",
     "hops": [
@@ -196,8 +196,8 @@
    "sym": "MU",
    "name": "Micron Technology",
    "addr": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD",
-   "usd": 683.6345,
-   "liquidity": "47146534876669299",
+   "usd": 683.5107,
+   "liquidity": "47200721374593236",
    "info": {
     "route": "v3",
     "path": [
@@ -239,7 +239,7 @@
    "sym": "INTC",
    "name": "Intel",
    "addr": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
-   "usd": 55.5724,
+   "usd": 55.6152,
    "liquidity": "66815104417856816",
    "info": {
     "route": "v3",
@@ -293,8 +293,8 @@
    "sym": "USAR",
    "name": "USA Rare Earth",
    "addr": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
-   "usd": 7.9587,
-   "liquidity": "76493748527996080",
+   "usd": 8.0479,
+   "liquidity": "64477073859780559",
    "info": {
     "route": "v3",
     "path": [
@@ -311,7 +311,7 @@
    "sym": "GME",
    "name": "GameStop",
    "addr": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
-   "usd": 24.4036,
+   "usd": 24.4032,
    "liquidity": "1172504346336929940",
    "info": {
     "route": "v3",
@@ -491,7 +491,7 @@
    "sym": "AVGO",
    "name": "Broadcom",
    "addr": "0x156E175DD063a8cE274C50654eF40e0032b3fbcF",
-   "usd": 291.7402,
+   "usd": 292.3367,
    "liquidity": "63996389010303519",
    "info": {
     "route": "v3",
@@ -545,7 +545,7 @@
    "sym": "MSTR",
    "name": "Strategy Inc.",
    "addr": "0xec262a75e413fAfD0dF80480274532C79D42da09",
-   "usd": 127.166,
+   "usd": 127.1664,
    "liquidity": "136871039457299556",
    "info": {
     "route": "v3",
@@ -617,7 +617,7 @@
    "sym": "TTWO",
    "name": "Take-Two Interactive Software",
    "addr": "0x5e81213613b6B86EaB4c6c50d718d34359459786",
-   "usd": 215.469,
+   "usd": 215.6428,
    "liquidity": "28350247084832669127",
    "info": {
     "route": "v3",

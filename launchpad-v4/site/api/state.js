@@ -34,6 +34,8 @@ const HOOK_I = new ethers.Interface(['function poolTerms(bytes32) view returns (
 const HOOK2_I = new ethers.Interface(['function poolTerms(bytes32) view returns (uint40 launchedAt, uint16 snipeStartBps, uint32 snipeSeconds, uint16 volThresholdBps, uint32 volWindow, uint16 volExtraBps, uint32 volDecay)', 'function launches(bytes32) view returns (bool registered, address coin, address pair, address creator, uint16 creatorTaxBps, uint16 protocolFeeShareBps, uint16 hookFeeBps)', 'function pendingCreator(bytes32) view returns (uint256)', 'function pendingProtocol(bytes32) view returns (uint256)']);
 const QUOTER_I = new ethers.Interface(['function quoteExactInputSingle(((address,address,uint24,int24,address) poolKey, bool zeroForOne, uint128 exactAmount, bytes hookData)) returns (uint256 amountOut, uint256 gasEstimate)']);
 const V2PAIR_I = new ethers.Interface(['function getReserves() view returns (uint112, uint112, uint32)', 'function token0() view returns (address)']);
+const V3POOL_I = new ethers.Interface(['function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool)']);
+const SV_I = new ethers.Interface(['function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24, uint24)']);
 const Q96 = 2 ** 96, f18 = (v) => Number(ethers.formatEther(v));
 
 function makeIndexer(NET) {
@@ -113,11 +115,19 @@ async function refreshV2() {
   const v2pools = [...S.tokens.values()].filter((t) => t.v === 2).map((t) => t.poolId);
   const calls = v2pools.flatMap((p) => [[V2.hook, HOOK2_I, 'pendingCreator', [p]], [V2.hook, HOOK2_I, 'pendingProtocol', [p]]]);
   const pairs = Object.entries(NET.pairs || {});
-  for (const [, P] of pairs) if (P.route === 'v4') calls.push([NET.quoter, QUOTER_I, 'quoteExactInputSingle', [[P.key, true, 10n ** 17n, '0x']]]); else calls.push([P.v2pair, V2PAIR_I, 'getReserves'], [P.v2pair, V2PAIR_I, 'token0']);
+  // a pair priced along `legs` (Robinhood stocks): one sqrt price read per pool on its route out of ETH
+  for (const [, P] of pairs) {
+    if (P.legs) for (const L of P.legs) calls.push(L.kind === 'v3' ? [L.pool, V3POOL_I, 'slot0'] : [NET.stateView, SV_I, 'getSlot0', [L.id]]);
+    else if (P.route === 'v4') calls.push([NET.quoter, QUOTER_I, 'quoteExactInputSingle', [[P.key, true, 10n ** 17n, '0x']]]); else calls.push([P.v2pair, V2PAIR_I, 'getReserves'], [P.v2pair, V2PAIR_I, 'token0']);
+  }
   const r = await multicall(calls); let i = 0;
   for (const p of v2pools) S.pend2[p] = { creator: f18(r[i++] || 0n), protocol: f18(r[i++] || 0n) };
   for (const [addr, P] of pairs) {
-    if (P.route === 'v4') { const q = r[i++]; if (q) S.pairs[addr] = { sym: P.sym, route: 'v4', perEth: f18(q[0]) * 10, key: P.key }; }
+    if (P.legs) {
+      let per = 1;
+      for (const L of P.legs) { const s0 = r[i++], sq = s0 ? Number(s0[0]) : 0; if (!sq) { per = 0; continue; } const aIs0 = BigInt(L.a) < BigInt(L.b), d0 = aIs0 ? L.da : L.db, d1 = aIs0 ? L.db : L.da; const p1per0 = (sq / 2 ** 96) ** 2 * 10 ** (d0 - d1); per *= aIs0 ? p1per0 : 1 / p1per0; }
+      if (per > 0) S.pairs[addr] = { sym: P.sym, route: P.route, perEth: per, feeCut: P.feeCut, ...(P.path ? { path: P.path } : { hops: P.hops }) };
+    } else if (P.route === 'v4') { const q = r[i++]; if (q) S.pairs[addr] = { sym: P.sym, route: 'v4', perEth: f18(q[0]) * 10, key: P.key }; }
     else { const rs = r[i++], t0 = r[i++]; if (rs && t0) { const pIs0 = t0.toLowerCase() === addr; const rp = f18(pIs0 ? rs[0] : rs[1]), re = f18(pIs0 ? rs[1] : rs[0]); S.pairs[addr] = { sym: P.sym, route: 'v2', perEth: rp / re, reservePair: rp, reserveEth: re, v2pair: P.v2pair, weth: P.weth }; } }
   }
 }

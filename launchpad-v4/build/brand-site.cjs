@@ -26,6 +26,8 @@ for (const f of [".vercelignore"]) if (fs.existsSync(path.join(SITE, f))) fs.cop
 if (keep) fs.cpSync(keep, LINK, { recursive: true });
 fs.copyFileSync(path.join(B, "config.js"), path.join(OUT, "config.js"));
 const IMG = path.join(B, "img"); if (fs.existsSync(IMG)) for (const f of fs.readdirSync(IMG)) fs.copyFileSync(path.join(IMG, f), path.join(OUT, "img", f));
+const BAPI = path.join(B, "api"); if (fs.existsSync(BAPI)) for (const f of fs.readdirSync(BAPI)) fs.copyFileSync(path.join(BAPI, f), path.join(OUT, "api", f)); // brand data the API reads (e.g. _pairs.json)
+if (spec.crons) { const vj = JSON.parse(fs.readFileSync(path.join(OUT, "vercel.json"), "utf8")); vj.crons = [...(vj.crons || []), ...spec.crons]; fs.writeFileSync(path.join(OUT, "vercel.json"), JSON.stringify(vj, null, 2) + "\n"); } // brand-only jobs
 for (const f of spec.drop || []) fs.rmSync(path.join(OUT, f), { force: true }); // features this brand leaves out
 if (spec.theme) fs.appendFileSync(path.join(OUT, "ui.css"), "\n/* brand: " + spec.name + " */\n" + spec.theme + "\n");
 

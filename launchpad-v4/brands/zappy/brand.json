@@ -80,5 +80,11 @@
     "api/trends.js",
     "api/idea.js",
     "api/_trends.js"
+  ],
+  "crons": [
+    {
+      "path": "/api/keeper",
+      "schedule": "* * * * *"
+    }
   ]
 }

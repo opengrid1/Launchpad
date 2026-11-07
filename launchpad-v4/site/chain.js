@@ -22,6 +22,11 @@
     factory2: new X.Interface(['function launch((string name,string symbol,string logo,string description,(string twitter,string telegram,string discord,string website,string farcaster) socials,address creatorFeeRecipient,uint16 creatorTaxBps,bytes32 expectedEconomics,bytes32 salt,uint256 openingBuy,uint256 minTokensOut) params, uint256 launchConfigId) payable returns (address)', 'function previewLaunchEconomics(uint256) view returns (bytes32)', 'function launchFee() view returns (uint256)', 'function launchEnabled() view returns (bool)', 'function canLaunch(address) view returns (bool)', 'event TokenLaunched(address indexed token, address indexed creator, bytes32 indexed poolId, uint256 launchConfigId, address pairToken, address creatorFeeRecipient, uint16 creatorTaxBps, uint256[3] positionIds)', 'error NotWhitelisted()', 'error LaunchFeeNotPaid()', 'error LogoRequired()', 'error InvalidTokenParams()', 'error LinkInDescription()', 'error CreatorTaxTooHigh()', 'error OpeningBuyTooLarge(uint256,uint256)', 'error LaunchEconomicsMismatch(bytes32,bytes32)', 'error LaunchConfigDisabled()', 'error PairTokenValidationFailed()']),
     hook2: new X.Interface(['function payout(bytes32 poolId) returns (uint256 creatorPaid, uint256 protocolPaid)', 'function pendingCreator(bytes32) view returns (uint256)', 'error ExactOutputSellUnsupported()']),
     mc: new X.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])', 'function getEthBalance(address) view returns (uint256)']),
+    // Zappy leverage: longs funded by each coin's own pool (ZappyMargin borrowing from the ZappyLocker)
+    margin: new X.Interface(['function open(address token, uint256 leverageBps, uint256 minTokens) payable returns (uint256)', 'function close(uint256 id, uint256 minOut) returns (uint256)', 'function addMargin(uint256 id) payable', 'function flag(uint256 id)', 'function liquidate(uint256 id)', 'function claim()', 'function claimable(address) view returns (uint256)',
+      'function opensEnabled() view returns (bool)', 'function maxLeverageBps() view returns (uint256)', 'function aprBps() view returns (uint256)', 'function minMargin() view returns (uint256)', 'function minCoinAge() view returns (uint256)', 'function minPoolDepth() view returns (uint256)', 'function maintenanceBps() view returns (uint256)', 'function liquidationDelay() view returns (uint256)', 'function keeperRewardBps() view returns (uint256)',
+      'function maxMargin(address token, uint256 leverageBps) view returns (uint256)', 'function poolDepth(address token) view returns (uint256)', 'function positionsOf(address owner) view returns (uint256[])', 'function positions(uint256) view returns (address owner, address token, uint256 tokens, uint256 principal, uint256 interest, uint256 margin, uint40 openedAt, uint40 accruedAt, uint40 flaggedAt, uint16 aprBps, uint32 leverageBps)', 'function health(uint256 id) view returns (uint256 debt, uint256 value, bool liquidatable)', 'function liquidationPrice(uint256 id) view returns (uint256)',
+      'error OpensDisabled()', 'error CoinTooNew(uint256 opensAt)', 'error PoolTooThin(uint256 depth, uint256 minimum)', 'error InvalidLeverage()', 'error MarginTooSmall(uint256 minimum)', 'error NotEnoughToBorrow(uint256 available)', 'error PositionTooLarge(uint256 maximum)', 'error Slippage(uint256 got, uint256 minimum)', 'error OpensUnhealthy()', 'error NotOwner()', 'error NoPosition()', 'error Healthy()', 'error NotFlagged()', 'error DelayNotElapsed(uint256 at)', 'error Underwater(uint256 proceeds, uint256 debt)', 'error NotEthPair()', 'error UnknownCoin()']),
   };
   const AC = X.AbiCoder.defaultAbiCoder();
 
@@ -47,7 +52,8 @@
     while (Date.now() - t0 < ms) { const r = await rpc('eth_getTransactionReceipt', [hash], 3, C.chain.key).catch(() => null); if (r) { if (parseInt(r.status, 16) !== 1) throw new Error('Transaction reverted on ' + C.chain.name); return r; } await new Promise((s) => setTimeout(s, 1500)); }
     throw new Error('Still waiting for the transaction after 4 minutes; check it on the explorer');
   }
-  const ERR = { V4TooLittleReceived: 'The price moved past your slippage. Raise the slippage or trade a smaller amount.', DeadlinePassed: 'The transaction waited too long. Try again.', OpeningBuyTooLarge: 'The opening buy is over 5% of the supply.', LogoRequired: 'Add an image for the token.', LinkInDescription: 'Remove the link from the description.', NotWhitelisted: 'Launches are paused right now.' };
+  const ERR = { OpensDisabled: 'Leverage is paused right now.', CoinTooNew: 'Leverage opens 10 minutes after a coin launches.', PoolTooThin: 'This coin\'s pool is too thin for leverage yet.', NotEnoughToBorrow: 'The pool cannot lend that much right now. Try a smaller size.', PositionTooLarge: 'That position is too large for this pool. Try a smaller size.', MarginTooSmall: 'The margin is below the minimum.', OpensUnhealthy: 'The price impact is too high for that size. Try a smaller size.', Underwater: 'The position is worth less than its debt; it can only be liquidated.', Slippage: 'The price moved past your slippage. Try again.', Healthy: 'The position is healthy again.', DelayNotElapsed: 'Wait a few more seconds before liquidating.',
+    V4TooLittleReceived: 'The price moved past your slippage. Raise the slippage or trade a smaller amount.', DeadlinePassed: 'The transaction waited too long. Try again.', OpeningBuyTooLarge: 'The opening buy is over 5% of the supply.', LogoRequired: 'Add an image for the token.', LinkInDescription: 'Remove the link from the description.', NotWhitelisted: 'Launches are paused right now.' };
   function revertText(e) {
     const d = e && (e.data || (e.info && e.info.error && e.info.error.data) || (e.error && e.error.data));
     if (typeof d === 'string' && d.length >= 10) for (const f of Object.values(I)) { try { const p = f.parseError(d); if (p) return ERR[p.name] || p.name; } catch {} }
@@ -77,8 +83,9 @@
   const pairInfo = (t) => (isErc(t) ? (stOf(t.net).pairs || {})[t.pair] || null : null);
   const pairMeta = (t) => { const v2 = V2of(t.net); return ((v2 && v2.pairs) || []).find((p) => low(p.addr) === low(t.pair || ZERO)) || { sym: C.chainOf(t.net).quote, logo: C.chainOf(t.net).logo, addr: ZERO }; };
   const ethPer = (t) => { if (!isErc(t)) return 1; const p = pairInfo(t); return p && p.perEth > 0 ? 1 / p.perEth : 0; };
-  function ethToPair(t, eth) { if (!isErc(t)) return eth; const p = pairInfo(t); if (!p) return 0; if (p.route === 'v2') { const a = eth * 0.997; return (a * p.reservePair) / (p.reserveEth + a); } return eth * p.perEth; }
-  function pairToEth(t, x) { if (!isErc(t)) return x; const p = pairInfo(t); if (!p) return 0; if (p.route === 'v2') { const a = x * 0.997; return (a * p.reserveEth) / (p.reservePair + a); } return (x / p.perEth) * 0.999; }
+  const hopKeep = (p) => 1 - (p.feeCut || 0); // a stock route keeps this share after its pools' fees
+  function ethToPair(t, eth) { if (!isErc(t)) return eth; const p = pairInfo(t); if (!p) return 0; if (p.route === 'v2') { const a = eth * 0.997; return (a * p.reservePair) / (p.reserveEth + a); } return eth * p.perEth * (p.feeCut ? hopKeep(p) : 1); }
+  function pairToEth(t, x) { if (!isErc(t)) return x; const p = pairInfo(t); if (!p) return 0; if (p.route === 'v2') { const a = x * 0.997; return (a * p.reserveEth) / (p.reservePair + a); } return (x / p.perEth) * (p.feeCut ? hopKeep(p) : 0.999); }
   function index() {
     ALL = []; BY.clear(); TR.clear(); VIEW = new Map();
     for (const net of Object.keys(SS)) {
@@ -183,7 +190,7 @@
     let vol24 = 0, volAll = 0, feesAll = 0, buys24 = 0, sells24 = 0; for (const tr of trs) { volAll += tr.h; feesAll += tr.f; if (tr.ts > n - 86400) { vol24 += tr.h; tr.b ? buys24++ : sells24++; } }
     return { chain: 'hyper', px, pxUsd: px * APP.hypeUsd, mcap: px * SUPPLY, liqHype: held.hype + held.tokens * px, hypeInPool: held.hype, vol24, volAll, feesAll, trades: trs.length, buys24, sells24, c5: (px / pxAgo(300) - 1) * 100, c1: (px / pxAgo(3600) - 1) * 100, c24: (px / pxAgo(86400) - 1) * 100, inPool: held.tokens, poolId: t.poolId, lockedIds: t.posIds, fee: feeState(t.addr), lastTs: trs.length ? trs[trs.length - 1].ts : t.createdAt };
   }
-  const isPool = (t, w) => { const k = KK(t.net), v2 = V2of(t.net) || {}; return w === low(k.poolManager) || w === low(k.locker) || w === low(k.factory) || w === low(k.hook) || w === low(v2.locker) || w === low(v2.factory) || w === low(v2.hook); };
+  const isPool = (t, w) => { const k = KK(t.net), v2 = V2of(t.net) || {}; return w === low(k.poolManager) || w === low(k.locker) || w === low(k.factory) || w === low(k.hook) || w === low(v2.locker) || w === low(v2.factory) || w === low(v2.hook) || (v2.margin && w === low(v2.margin)); };
   function view(t) {
     const cached = VIEW.get(t.addr); if (cached && cached._usd === APP.hypeUsd) return cached; // rebuilt when the USD price arrives or moves
     const m = poolView(t), T = t.terms || {};
@@ -195,7 +202,7 @@
   }
   function holders(a) {
     const t = BY.get(low(a)); if (!t) return [];
-    return t.holders.map(([w, bal]) => ({ wallet: w === low(KK(t.net).poolManager) ? 'Pool (Uniswap v4)' : w, chain: 'hyper', bal, share: (bal / SUPPLY) * 100, creator: w === t.creator, pool: isPool(t, w) })).sort((x, y) => y.bal - x.bal);
+    return t.holders.map(([w, bal]) => ({ wallet: w === low(KK(t.net).poolManager) ? 'Pool (Uniswap v4)' : (V2of(t.net) || {}).margin && w === low(V2of(t.net).margin) ? 'Leverage positions' : w, chain: 'hyper', bal, share: (bal / SUPPLY) * 100, creator: w === t.creator, pool: isPool(t, w) })).sort((x, y) => y.bal - x.bal);
   }
   function candles(a, step) {
     const t = BY.get(low(a)); if (!t) return []; const trs = TR.get(t.addr) || []; const out = []; let cur = null; let last = startPx(t);
@@ -217,7 +224,7 @@
   // ---- writes
   const deadline = () => BigInt(now() + 900);
   const keyOf = (t) => [X.ZeroAddress, X.getAddress(t.addr), 0, 200, X.getAddress(KK(t.net).hook)];
-  const routeTx = (t, buy, amountIn, minOut) => window.ROUTES.encode({ coin: t.addr, pair: t.pair, hook: V2of(t.net).hook, pairInfo: pairInfo(t), buy, amountIn, minOut, deadline: deadline() });
+  const routeTx = (t, buy, amountIn, minOut) => window.ROUTES.encode({ coin: t.addr, pair: t.pair, hook: V2of(t.net).hook, pairInfo: pairInfo(t), buy, amountIn, minOut, deadline: deadline(), hopLayout: !!V2of(t.net).hopLayout });
   const onChainOf = async (t) => { if (C.chain.key !== t.net) await APP.setChain(t.net, false); }; // trade on the token's chain
   function v4Swap(t, buy, amountIn, minOut) {
     const key = keyOf(t), cur0 = X.ZeroAddress, cur1 = X.getAddress(t.addr);
@@ -333,6 +340,44 @@
     refreshMine(); return { addr, tx: r.hash };
   }
   DATA.pairs = () => (V2of(C.chain.key) || {}).pairs || [];
+
+  // ---- leverage (chains whose v2 block names a margin contract): longs on ETH-pair coins, funded by the coin's pool.
+  // Read straight from the margin contract; every number is in ETH.
+  const LEV = { info: new Map(), mine: { w: '', at: 0, list: [] } };
+  const Mof = (net) => (V2of(net) || {}).margin || '';
+  const f18 = (v) => Number(X.formatEther(v || 0n));
+  DATA.lev = {
+    on: (net) => !!Mof(net || C.chain.key),
+    // the coin's terms now: whether it can be levered, the largest margin at 2x and 3x, the APR
+    async info(a) {
+      const t = BY.get(low(a)); if (!t || !Mof(t.net)) return null; const M = Mof(t.net);
+      const c = LEV.info.get(t.addr); if (c && Date.now() - c.at < 8000) return c;
+      const r = await multicall([[M, I.margin, 'opensEnabled'], [M, I.margin, 'maxLeverageBps'], [M, I.margin, 'aprBps'], [M, I.margin, 'minMargin'], [M, I.margin, 'minCoinAge'], [M, I.margin, 'minPoolDepth'], [M, I.margin, 'maintenanceBps'], [M, I.margin, 'poolDepth', [t.addr]], [M, I.margin, 'maxMargin', [t.addr, 20000]], [M, I.margin, 'maxMargin', [t.addr, 30000]], [M, I.margin, 'maxMargin', [t.addr, 15000]]], t.net);
+      const [on, maxLev, apr, minM, age, minDepth, maint, depth, m2, m3, m15] = r;
+      const why = isErc(t) ? 'Leverage is for ETH-pair coins.' : !on ? 'Leverage is paused right now.' : now(t.net) < t.createdAt + Number(age || 600) ? 'Leverage opens 10 minutes after launch.' : depth != null && minDepth != null && depth < minDepth ? `Leverage opens once the pool holds ${f18(minDepth)} ${C.chain.quote}.` : '';
+      const v = { at: Date.now(), ok: !why, why, maxLev: Number(maxLev || 30000) / 1e4, apr: Number(apr || 0) / 100, minMargin: f18(minM), maint: Number(maint || 1000) / 1e4, depth: f18(depth), max: { 1.5: f18(m15), 2: f18(m2), 3: f18(m3) } };
+      LEV.info.set(t.addr, v); return v;
+    },
+    // the wallet's open positions, with health and P&L at the spot price
+    async positions(w, fresh) {
+      const net = C.chain.key, M = Mof(net); w = low(w); if (!M || !w) return [];
+      if (!fresh && LEV.mine.w === w && Date.now() - LEV.mine.at < 6000) return LEV.mine.list;
+      const [ids] = [await multicall([[M, I.margin, 'positionsOf', [w]]], net)].map((x) => x[0] || []);
+      const r = ids.length ? await multicall(ids.flatMap((id) => [[M, I.margin, 'positions', [id]], [M, I.margin, 'health', [id]], [M, I.margin, 'liquidationPrice', [id]]]), net) : [];
+      const list = [];
+      ids.forEach((id, i) => { const p = r[i * 3], h = r[i * 3 + 1], lp = r[i * 3 + 2]; if (!p || !h || low(p.owner) !== w) return;
+        const debt = f18(h[0]), value = f18(h[1]), margin = f18(p.margin), tok = f18(p.tokens), t = BY.get(low(p.token));
+        list.push({ id: Number(id), token: low(p.token), sym: t ? t.symbol : '', tokens: tok, debt, value, margin, equity: value - debt, pnl: value - debt - margin, pnlPct: margin ? ((value - debt) / margin - 1) * 100 : 0, lev: Number(p.leverageBps) / 1e4, liq: !!h[2], flagged: Number(p.flaggedAt) > 0, liqPx: f18(lp), entryPx: tok ? (margin + f18(p.principal)) / tok : 0, opened: Number(p.openedAt), health: value > 0 ? Math.max(0, Math.min(1, 1 - debt / value)) : 0 }); });
+      LEV.mine = { w, at: Date.now(), list }; return list;
+    },
+    async open(a, lev, marginEth, minTokens) {
+      const t = BY.get(low(a)); if (!t) throw new Error('Unknown token'); await onChainOf(t);
+      const r = await send({ to: Mof(t.net), data: I.margin.encodeFunctionData('open', [t.addr, BigInt(Math.round(lev * 1e4)), wei(Math.max(0, minTokens || 0))]), value: wei(marginEth), gasLimit: 2000000n }, 'open');
+      LEV.info.delete(t.addr); LEV.mine.at = 0; await afterTrade(a, parseInt(r.receipt.blockNumber, 16)); return r.hash;
+    },
+    async close(id, minOut) { const r = await send({ to: Mof(C.chain.key), data: I.margin.encodeFunctionData('close', [BigInt(id), wei(Math.max(0, minOut || 0))]), gasLimit: 2000000n }, 'close'); LEV.mine.at = 0; LEV.info.clear(); await Promise.all([load(true), refreshMine()]); return r.hash; },
+    async addMargin(id, eth) { const r = await send({ to: Mof(C.chain.key), data: I.margin.encodeFunctionData('addMargin', [BigInt(id)]), value: wei(eth), gasLimit: 600000n }, 'add margin'); LEV.mine.at = 0; return r.hash; },
+  };
 
   // the logo: squared and scaled to 512 px (PNG), uploaded to the Blob store; the URL goes onchain
   async function uploadLogo(dataUrl) {
