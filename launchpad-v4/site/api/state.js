@@ -57,9 +57,10 @@ async function logsRange(filter, from, to) {
   try { return await getLogs({ ...filter, fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) }); }
   catch (e) { if (to - from < 50 || !/range|limit|too many|exceed|large/i.test(e.message)) throw e; const mid = Math.floor((from + to) / 2); return [...(await logsRange(filter, from, mid)), ...(await logsRange(filter, mid + 1, to))]; }
 }
-// Elysium's logs carry blockTimestamp; for RPCs without it, read each block's header once
+// Elysium's logs carry blockTimestamp; for RPCs without it (or with a zero one), read each block's header once
 const blockTs = new Map();
 async function stamp(logs) {
+  for (const l of logs) if (l.blockTimestamp && !parseInt(l.blockTimestamp, 16)) delete l.blockTimestamp; // Robinhood Chain's RPC sends 0x0
   const need = [...new Set(logs.filter((l) => !l.blockTimestamp).map((l) => l.blockNumber))].filter((n) => !blockTs.has(n));
   for (const n of need) { const b = await rpc('eth_getBlockByNumber', [n, false]); blockTs.set(n, b.timestamp); }
   for (const l of logs) if (!l.blockTimestamp) l.blockTimestamp = blockTs.get(l.blockNumber);
@@ -77,6 +78,7 @@ async function loadSnapshot() {
     if (!best || best.n <= S.last) return;
     const j = await (await fetch(best.b.url, { cache: 'no-store' })).json();
     if (j.v !== 2 || j.factory !== NET.factory) return;
+    if ((j.s.tokens || []).some((t) => !t.createdAt)) return; // written while the RPC's zero log timestamps went unread: index again
     for (const k of SNAP_KEYS) S[k] = j.s[k];
     S.tokens = new Map(j.s.tokens.map((t) => [t.addr.toLowerCase(), t])); S.byPool = new Map([...S.tokens.values()].map((t) => [t.poolId, t])); S.terms = new Map(j.s.terms);
     S.savedLast = S.last;

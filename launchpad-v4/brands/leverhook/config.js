@@ -4,6 +4,7 @@
 window.CFG = {
   brand: 'LeverHook', tagline: 'Launch a coin on Robinhood Chain, paired with ETH or a stock. Long it up to 3x.',
   x: 'https://x.com/leverhook_fun', site: 'https://leverhook.fun',
+  official: ['0x3bd19a906e074e61a9b845c85f4f2c8a5704e6cd'], // LEVERHOOK: shown with an Official tag
   mode: 'live',
   demo: false, // true shows sample coins from /demo-state.json (brands/leverhook/public) while no contracts are set
   chains: [
