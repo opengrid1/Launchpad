@@ -3,7 +3,7 @@
    The chain entry is written by build/zappy-rh-config.cjs <deployment> leverhook. Built by build/brand-site.cjs leverhook. */
 window.CFG = {
   brand: 'LeverHook', tagline: 'Launch a coin on Robinhood Chain, paired with ETH or a stock. Long it up to 3x.',
-  x: '', site: 'https://leverhook.fun',
+  x: 'https://x.com/leverhook_fun', site: 'https://leverhook.fun',
   mode: 'live',
   demo: false, // true shows sample coins from /demo-state.json (brands/leverhook/public) while no contracts are set
   chains: [
