@@ -146,6 +146,16 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 .snipe .ft span{font:500 13px var(--sans);letter-spacing:0;text-transform:none}.snipe .ft b{font:500 44px/1 var(--sans);letter-spacing:-.04em}
 .supc .marks{font-family:var(--sans)}
 @media(max-width:600px){.lede{padding:0 20px}.lq{padding:20px 22px}.lq .v{font-size:44px}.lq dd,.lq dt{font-size:16px}.lq dl div{padding:15px 0}.body{font-size:17px;line-height:27px}.rates b{font-size:22px}.rates div{padding:12px}.t2{font-size:44px}.keys b{font-size:17px}}
+
+/* 3D glass direction: tilted cards that turn as you scroll, reflections, floating coins with depth */
+.t3d{transform-style:preserve-3d;will-change:transform;transition:transform .12s linear}
+.glass.t3d{box-shadow:0 60px 120px -50px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.06),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.5),inset 1px 0 0 rgba(255,216,77,.12),inset -1px 0 0 rgba(184,194,199,.12)}
+.glass.t3d:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,0) 28%,rgba(255,255,255,0) 62%,rgba(255,216,77,.06) 100%);mix-blend-mode:screen}
+@media(min-width:961px){.glass.t3d{-webkit-box-reflect:below 14px linear-gradient(transparent 72%,rgba(255,255,255,.07))}}
+.fc{position:absolute;pointer-events:none;z-index:0;will-change:transform}.fc svg{width:100%;height:100%;display:block;filter:drop-shadow(0 22px 30px rgba(0,0,0,.7))}
+.fc.far{filter:blur(3px);opacity:.55}.fc.near{filter:blur(1.2px)}
+.sec>.wrap{position:relative;z-index:1}
+@media(max-width:600px){.fc{transform-origin:center}.fc.hide-sm{display:none}}
 </style></head><body>
 <canvas id="stars"></canvas>
 
@@ -176,13 +186,13 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
   </div></div>
 </section>
 
-<section class="sec" id="supply"><div class="wrap split">
+<section class="sec" id="supply"><div class="fc far" data-sp="0.25" data-k="0" style="left:4%;top:40px;width:78px;height:78px"></div><div class="fc " data-sp="-0.35" data-k="1" style="left:92%;top:380px;width:110px;height:110px"></div><div class="fc far hide-sm" data-sp="0.5" data-k="2" style="left:48%;top:520px;width:54px;height:54px"></div><div class="wrap split">
   <div>
     <div class="eyebrow rv">Supply</div>
     <h2 class="t2 rv d1">Slow supply.<br><span class="ac">Fewer dumps.</span></h2>
     <p class="body rv d2">All 1B tokens start in the pool. Nothing is pre-sold or held back. They come out along the price curve, so most of the supply only exists at prices far above where a coin starts.</p>
   </div>
-  <div class="glass supc rv d2" id="segs">
+  <div class="glass supc rv d2 t3d" id="segs" data-side="r">
     <div class="sh"><div><span>Market cap</span><b id="sp-m">$1.0M</b></div><div style="text-align:right"><span>Supply out</span><b id="sp-v" style="color:var(--y)">32%</b></div></div>
     <canvas id="supc"></canvas>
     <div class="marks"><span>$10K</span><span>$100K</span><span>$1M</span><span>$10M</span><span>$100M</span><span>$1B</span><span>$10B</span></div>
@@ -190,19 +200,19 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 </div>
 </div></section>
 
-<section class="sec" id="pool"><div class="wrap split">
+<section class="sec" id="pool"><div class="fc " data-sp="-0.3" data-k="3" style="left:90%;top:-40px;width:96px;height:96px"></div><div class="fc far" data-sp="0.4" data-k="4" style="left:6%;top:560px;width:64px;height:64px"></div><div class="wrap split">
   <div class="stack rv" id="stack">
-    <div class="lq glass" style="left:0;top:0;z-index:2">
+    <div class="lq glass t3d" style="left:0;top:0;z-index:2">
       <div class="h"><span class="pair"><img src="/logo.png" alt="">$ZAPPY / ETH</span><span class="tag">● Hook-owned</span></div>
       <div class="k">LP tokens minted</div><div class="v">0</div>
       <dl><div><dt>Liquidity owner</dt><dd><span class="ok">✓</span>ZappyHook</dd></div><div><dt>Outside LPs</dt><dd><span class="ok">✓</span>Refused</dd></div><div><dt>Donations</dt><dd><span class="ok">✓</span>Refused</dd></div><div><dt>Pool</dt><dd>Uniswap v4</dd></div></dl>
     </div>
-    <div class="lq glass" style="right:0;top:330px;z-index:3;width:300px">
+    <div class="lq glass t3d" style="right:0;top:372px;z-index:3;width:300px">
       <div class="h"><span class="pair" style="font-size:14px">Floor band</span><span class="tag" style="background:rgba(255,216,77,.12);color:var(--y);border-color:rgba(255,216,77,.3)">● Raised this block</span></div>
       <div class="k">ETH under the price</div><div class="v" style="color:var(--y)">4.82 ETH</div>
       <dl><div><dt>Covers</dt><dd>every holder</dd></div><div><dt>Width</dt><dd>1 tick</dd></div></dl>
     </div>
-    <div class="orb" style="width:58px;height:58px;right:40px;top:0;background:radial-gradient(circle at 30% 30%,#fff3,#627eea 60%);box-shadow:0 0 40px -6px #627eea"></div>
+    <div class="orb" style="width:58px;height:58px;right:40px;top:0;background:radial-gradient(circle at 30% 30%,#fff8,#b8c2c7 55%,#3a4247);box-shadow:0 0 40px -10px #b8c2c7"></div>
     <div class="orb" style="width:34px;height:34px;right:120px;bottom:30px;animation-delay:-2s;background:radial-gradient(circle at 30% 30%,#fff6,var(--y) 60%);box-shadow:0 0 30px -4px var(--y)"></div>
   </div>
   <div>
@@ -212,14 +222,14 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
   </div>
 </div></section>
 
-<section class="sec" id="tax"><div class="wrap split">
+<section class="sec" id="tax"><div class="fc near hide-sm" data-sp="0.45" data-k="5" style="left:2%;top:120px;width:70px;height:70px"></div><div class="fc " data-sp="-0.25" data-k="6" style="left:94%;top:520px;width:120px;height:120px"></div><div class="wrap split">
   <div>
     <div class="eyebrow rv">Fees</div>
     <h2 class="t2 rv d1">2.5% a trade.<br><span class="ac">Most of it stays.</span></h2>
     <p class="body rv d2">One rate on every buy and every sell, taken on the ETH side. There is no separate LP fee. Over half of every trade's tax goes back under the coin.</p>
     <div class="rates rv d3"><div><b style="color:var(--y)">1.5%</b><span>to the floor</span></div><div><b>0.6%</b><span>to the creator</span></div><div><b style="color:var(--ink2)">0.4%</b><span>to the protocol</span></div></div>
   </div>
-  <div class="glass fee rv d2">
+  <div class="glass fee rv d2 t3d" data-side="r">
     <div class="chips" id="chips"><button data-a="100">$100</button><button data-a="1000" class="on">$1,000</button><button data-a="10000">$10,000</button></div>
     <div class="ringwrap">
       <svg viewBox="0 0 220 220" class="ring"><circle cx="110" cy="110" r="88" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="18"/>
@@ -234,13 +244,13 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 </div>
 </div></section>
 
-<section class="sec" id="snipe"><div class="wrap split">
+<section class="sec" id="snipe"><div class="fc far" data-sp="0.35" data-k="7" style="left:88%;top:30px;width:64px;height:64px"></div><div class="fc hide-sm" data-sp="-0.3" data-k="8" style="left:46%;top:470px;width:90px;height:90px"></div><div class="wrap split">
   <div>
     <div class="eyebrow rv">Anti-snipe</div>
     <h2 class="t2 rv d1">Bots buy first.<br><span class="ac">Bots pay most.</span></h2>
     <p class="body rv d2">A new coin's tax starts at 90% and falls in a straight line to 2.5% over its first minute. 60% of that tax builds the floor, released over ten minutes, and 40% buys $ZAPPY and burns it. None of it goes to the creator.</p>
   </div>
-  <div class="glass snipe rv d2">
+  <div class="glass snipe rv d2 t3d" data-side="r">
     <svg id="gauge" viewBox="0 0 300 180" aria-label="Snipe tax gauge">
       <defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#ffd84d"/><stop offset=".5" stop-color="#ff8a4d"/><stop offset="1" stop-color="#ff4d6a"/></linearGradient><filter id="gw2"><feGaussianBlur stdDeviation="4"/></filter></defs>
       <path d="M30 160 A120 120 0 0 1 270 160" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="16" stroke-linecap="round"/>
@@ -272,10 +282,10 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 </div>
 </div></section>
 
-<section class="sec" id="creators"><div class="wrap">
+<section class="sec" id="creators"><div class="fc " data-sp="-0.35" data-k="9" style="left:95%;top:60px;width:100px;height:100px"></div><div class="fc far" data-sp="0.3" data-k="10" style="left:3%;top:520px;width:72px;height:72px"></div><div class="wrap">
   <div class="eyebrow rv">Creators</div>
   <h2 class="t2 rv d1">Launch in one click.<br><span class="ac">Earn on every trade.</span></h2>
-  <div class="glass cpanel rv d2">
+  <div class="glass cpanel rv d2 t3d" data-side="c">
     <div class="earn"><span>Creator fees earned · sample coin</span><b id="cr-eth">0.000 ETH</b><canvas id="crspark"></canvas><div class="claim"><span>0.6% of every trade, paid in ETH or $ZAPPY</span><button class="pill y" type="button">Claim</button></div></div>
     <ul class="facts"><li><b>5%</b><span>Buy up to 5% of supply inside your own launch, at the normal rate, in public.</span></li><li><b>Lock</b><span>Vest that buy month by month so holders can see it.</span></li><li><b>0</b><span>Pre-sale. The pool holds every token from the first block.</span></li></ul>
   </div>
@@ -393,8 +403,17 @@ function cr(now){if(now-ct>120){ct=now;cn=cn>=EP.length?1:cn+1;}const W=cs.width
  cx.save();cx.shadowColor='#ffd84d';cx.shadowBlur=12*DPR;cx.strokeStyle='#ffd84d';cx.lineWidth=2*DPR;cx.beginPath();for(let k=0;k<cn;k++){k?cx.lineTo(X(k),Y(EP[k])):cx.moveTo(X(k),Y(EP[k]));}cx.stroke();cx.restore();
  $('#cr-eth').textContent=EP[cn-1].toFixed(3)+' ETH';if(!RM)requestAnimationFrame(cr);}requestAnimationFrame(cr);
 /* pool cards tilt toward the pointer */
-const stk=$('#stack');if(stk&&!RM){const cards=[...stk.querySelectorAll('.lq')];const tilt=(x,y)=>cards.forEach((c,i)=>{const k=i?1.3:1;c.style.transform=`rotateY(${(x*10*k).toFixed(2)}deg) rotateX(${(-y*8*k).toFixed(2)}deg) translateZ(${i*30}px)`;c.style.setProperty('--ga',(135+x*60)+'deg');});
+const stk=$('#stack');if(stk&&!RM){const cards=[...stk.querySelectorAll('.lq')];const tilt=(x,y)=>cards.forEach((c,i)=>{const k=i?1.3:1;c.style.transform=`rotateY(${(12+x*14*k).toFixed(2)}deg) rotateX(${(4-y*10*k).toFixed(2)}deg) translateZ(${i*60}px)`;c.style.setProperty('--ga',(135+x*60)+'deg');});
  stk.addEventListener('pointermove',(e)=>{const r=stk.getBoundingClientRect();tilt((e.clientX-r.left)/r.width-.5,(e.clientY-r.top)/r.height-.5);});stk.addEventListener('pointerleave',()=>tilt(0,0));tilt(-.25,.1);}
+
+/* 3D: cards turn as they pass the middle of the screen; floating coins drift at their own depth */
+document.querySelectorAll('.fc').forEach((f)=>{f.innerHTML=coin(+f.dataset.k*5+1);});
+const T3=[...document.querySelectorAll('.t3d')],FC=[...document.querySelectorAll('.fc')];
+function depth(){const vh=innerHeight,sm=innerWidth<961;
+ for(const c of T3){if(c.closest('#stack'))continue;const r=c.getBoundingClientRect(),o=((r.top+r.height/2)-vh/2)/vh,side=c.dataset.side==='r'?-1:c.dataset.side==='l'?1:0;
+  const ry=sm?side*4:side*14+o*6,rx=(sm?4:8)*o;c.style.transform=`perspective(1400px) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg)`;}
+ for(const f of FC){const r=f.parentElement.getBoundingClientRect(),y=(r.top-vh*.3)*(+f.dataset.sp);f.style.transform=`translate3d(0,${y.toFixed(1)}px,0) rotate(${(y*.08).toFixed(1)}deg)`;}}
+if(!RM){addEventListener('scroll',()=>requestAnimationFrame(depth),{passive:true});addEventListener('resize',depth);}depth();
 /* faq accordion */
 document.querySelectorAll('.q button').forEach((b)=>b.addEventListener('click',()=>b.parentElement.classList.toggle('open')));
 /* active nav link */
