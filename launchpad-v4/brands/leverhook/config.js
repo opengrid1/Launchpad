@@ -5,6 +5,7 @@ window.CFG = {
   brand: 'LeverHook', tagline: 'Launch a coin on Robinhood Chain, paired with ETH or a stock. Long it up to 3x.',
   x: '', site: 'https://leverhook.fun',
   mode: 'live',
+  demo: true, // until the contracts are live: sample coins from /demo-state.json (brands/leverhook/public)
   chains: [
     // Robinhood Chain: Uniswap's v4 deployment (its UniversalRouter takes the newer swap params: hopLayout), the v2
     // contracts with leverage funded by each coin's pool, and Robinhood stock pairs (50): none

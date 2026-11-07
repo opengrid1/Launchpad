@@ -9,7 +9,9 @@
    creator(w), stats(), buy(), sell(), launch(params), claim(). */
 (function () {
   const C = window.CFG, E = C.econ, SUPPLY = E.supply, X = window.ethers;
-  const KK = (net) => C.chainOf(net || C.chain.key).contracts, NETS = () => C.liveChains().map((c) => c.key);
+  // preview (CFG.demo, no contracts live yet): sample coins from /demo-state.json, sample leverage, no transactions
+  const DEMO = !!C.demo && !C.liveChains().length;
+  const KK = (net) => C.chainOf(net || C.chain.key).contracts, NETS = () => (DEMO ? [C.chains[0].key] : C.liveChains().map((c) => c.key));
   const PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
   const Q96 = 2 ** 96, low = (a) => String(a || '').toLowerCase();
   const I = {
@@ -61,6 +63,7 @@
     return m;
   }
   async function send(tx, label) {
+    if (DEMO) throw new Error('Preview: the contracts go live soon. Nothing was sent.');
     await APP.W.require(); if (!APP.W.provider) throw new Error('Connect a wallet to ' + label);
     const signer = await new X.BrowserProvider(APP.W.provider).getSigner();
     try { await rpc('eth_call', [{ from: APP.W.address, to: tx.to, data: tx.data, value: tx.value ? '0x' + BigInt(tx.value).toString(16) : '0x0' }, 'latest'], 4); }
@@ -99,7 +102,7 @@
   }
   async function load1(net, fresh) {
     if (loading[net]) return loading[net];
-    loading[net] = (async () => { const r = await fetch('/api/state?chain=' + net + (fresh ? '&t=' + Date.now() : ''), { cache: fresh ? 'no-store' : 'default' }); if (!r.ok) throw new Error('state ' + r.status); const j = await r.json(); if (j.error) throw new Error(j.error); if (!SS[net] || j.block >= SS[net].block || fresh) { SS[net] = j; index(); APP.emit(); } })().finally(() => { loading[net] = null; });
+    loading[net] = (async () => { const r = await fetch(DEMO ? '/demo-state.json' : '/api/state?chain=' + net + (fresh ? '&t=' + Date.now() : ''), { cache: fresh ? 'no-store' : 'default' }); if (!r.ok) throw new Error('state ' + r.status); const j = await r.json(); if (j.error) throw new Error(j.error); if (!SS[net] || j.block >= SS[net].block || fresh) { SS[net] = j; index(); APP.emit(); } })().finally(() => { loading[net] = null; });
     return loading[net];
   }
   const load = (fresh, net) => Promise.all((net ? [net] : NETS()).map((n) => load1(n, fresh).catch((e) => console.warn('state ' + n, e.message))));
@@ -249,6 +252,7 @@
   const DATA = window.DATA = {
     mode: 'live',
     async ready() {
+      if (DEMO && !document.getElementById('demo-bar')) { const b = document.createElement('div'); b.id = 'demo-bar'; b.textContent = 'Preview with sample coins. The contracts go live on Robinhood Chain soon.'; document.body.prepend(b); }
       await load(); if (!ALL.length && !Object.keys(SS).length) setTimeout(() => load(), 3000);
       if (!listeners++) { setInterval(() => { if (!document.hidden) load(); }, 6000); setInterval(() => { if (!document.hidden) refreshMine(); }, 20000); APP.onWallet(() => { myBal.clear(); refreshMine(); }); refreshMine(); }
       return true;
@@ -348,11 +352,23 @@
   const LEV = { info: new Map(), mine: { w: '', at: 0, list: [] } };
   const Mof = (net) => (V2of(net) || {}).margin || '';
   const f18 = (v) => Number(X.formatEther(v || 0n));
+  // preview: terms a coin of this size would get, and one example position on the first ETH-pair coin
+  const DEMO_LEV = {
+    info(t) { return { at: Date.now(), ok: !isErc(t), why: isErc(t) ? 'Leverage is for ETH-pair coins.' : '', maxLev: 3, apr: 20, minMargin: 0.001, maint: 0.1, depth: 14.6, max: { 1.5: 0.29, 2: 0.22, 3: 0.146 } }; },
+    positions() {
+      // one example 3x long per ETH-pair coin, opened 15% below today's price, so the card shows a gain
+      return ALL.filter((x) => x.name && !isErc(x)).map((t, i) => {
+        const v = view(t), entry = v.px / 1.15, tokens = (0.393 / Math.max(entry, 1e-18)) * 0.98, value = tokens * v.px * 0.99, debt = 0.262 * (1 + 0.2 * 3 / 365);
+        return { id: i + 1, token: t.addr, sym: t.symbol, tokens, debt, value, margin: 0.131, equity: value - debt, pnl: value - debt - 0.131, pnlPct: ((value - debt) / 0.131 - 1) * 100, lev: 3, liq: false, flagged: false, liqPx: debt / (tokens * 0.9 * 0.99), entryPx: entry, opened: v.createdAt, health: Math.max(0, 1 - debt / value), demo: true };
+      });
+    },
+  };
+  DATA.demo = DEMO;
   DATA.lev = {
-    on: (net) => !!Mof(net || C.chain.key),
+    on: (net) => DEMO || !!Mof(net || C.chain.key),
     // the coin's terms now: whether it can be levered, the largest margin at 2x and 3x, the APR
     async info(a) {
-      const t = BY.get(low(a)); if (!t || !Mof(t.net)) return null; const M = Mof(t.net);
+      const t = BY.get(low(a)); if (t && DEMO) return DEMO_LEV.info(t); if (!t || !Mof(t.net)) return null; const M = Mof(t.net);
       const c = LEV.info.get(t.addr); if (c && Date.now() - c.at < 8000) return c;
       const r = await multicall([[M, I.margin, 'opensEnabled'], [M, I.margin, 'maxLeverageBps'], [M, I.margin, 'aprBps'], [M, I.margin, 'minMargin'], [M, I.margin, 'minCoinAge'], [M, I.margin, 'minPoolDepth'], [M, I.margin, 'maintenanceBps'], [M, I.margin, 'poolDepth', [t.addr]], [M, I.margin, 'maxMargin', [t.addr, 20000]], [M, I.margin, 'maxMargin', [t.addr, 30000]], [M, I.margin, 'maxMargin', [t.addr, 15000]]], t.net);
       const [on, maxLev, apr, minM, age, minDepth, maint, depth, m2, m3, m15] = r;
@@ -362,6 +378,7 @@
     },
     // the wallet's open positions, with health and P&L at the spot price
     async positions(w, fresh) {
+      if (DEMO) return DEMO_LEV.positions();
       const net = C.chain.key, M = Mof(net); w = low(w); if (!M || !w) return [];
       if (!fresh && LEV.mine.w === w && Date.now() - LEV.mine.at < 6000) return LEV.mine.list;
       const [ids] = [await multicall([[M, I.margin, 'positionsOf', [w]]], net)].map((x) => x[0] || []);

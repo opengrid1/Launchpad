@@ -73,13 +73,22 @@ window.PAGE = async () => {
     if (ps.length < 2) { noBuyback(); return; } // one pair: the fixed "Paired with" field stays
     const sel = $('#st2 .sel'), host = sel ? sel.parentElement : $('#f-pair') && $('#f-pair').parentElement; if (!host) return;
     // a few pairs as buttons; many (Robinhood stocks) as a list
-    const html = ps.length > 6 ? `<div id="f-pair"><select class="inp" id="f-pairsel" aria-label="Pair">${ps.map((p) => `<option value="${esc(p.key)}" ${p.key === F.pair ? 'selected' : ''}>${esc(p.sym)}${p.name && p.name !== p.sym ? ' · ' + esc(p.name) : ''}</option>`).join('')}</select></div>`
+    // a few pairs as buttons; many (Robinhood stocks) as one button that opens a searchable list
+    const cur = PR() || ps[0];
+    const html = ps.length > 6 ? `<div id="f-pair"><button type="button" class="ppb" id="f-pairbtn" aria-haspopup="dialog"><img src="${esc(cur.logo)}" alt=""><b>${esc(cur.sym)}</b><span>${esc(cur.name || '')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div>`
       : `<div class="seg lg" id="f-pair" role="radiogroup" aria-label="Pair">${ps.map((p) => `<button type="button" role="radio" aria-checked="${p.key === F.pair}" class="${p.key === F.pair ? 'on' : ''}" data-pair="${p.key}" style="display:inline-flex;align-items:center;gap:6px"><img src="${esc(p.logo)}" alt="" style="width:18px;height:18px;border-radius:50%">${esc(p.sym)}</button>`).join('')}</div>`;
     if (sel) sel.outerHTML = html; else $('#f-pair').outerHTML = html;
     const note = host.querySelector('.note'); if (note) note.textContent = ercPair() ? `The pool trades against ${PR().name}. Buyers still pay in ETH: the site swaps ETH to ${PR().sym} and into the coin in one transaction. Fees are paid out in ${PR().sym}. The pair cannot change later.` : 'Buyers pay in ETH in the pool from the moment it launches. The pair cannot change later.';
     const pickPair = (k) => { F.pair = k; if (ercPair()) { F.devBuy = 0; $('#f-dev').value = ''; } $('#f-dev').disabled = ercPair(); pairPick(); cost(); preview(); };
     $$('[data-pair]', host).forEach((b) => b.onclick = () => pickPair(b.dataset.pair));
-    const ps2 = $('#f-pairsel', host); if (ps2) ps2.onchange = () => pickPair(ps2.value);
+    const pb = $('#f-pairbtn', host); if (pb) pb.onclick = () => {
+      const row = (p) => `<button type="button" class="ppo${p.key === F.pair ? ' on' : ''}" data-pk="${esc(p.key)}" data-q="${esc((p.sym + ' ' + (p.name || '')).toLowerCase())}"><img src="${esc(p.logo)}" alt=""><b>${esc(p.sym)}</b><span>${esc(p.name || '')}</span></button>`;
+      const ov = APP.dialog('Pair', `<div class="ppd"><label class="srch"><input id="pp-q" type="search" placeholder="Search ETH or a stock" autocomplete="off" spellcheck="false"></label><div class="ppl">${ps.map(row).join('')}</div></div>`);
+      ov.classList.add('ppov');
+      const q = $('#pp-q', ov); setTimeout(() => q.focus(), 50);
+      q.oninput = () => { const v = q.value.trim().toLowerCase(); $$('.ppo', ov).forEach((b) => b.classList.toggle('hidden', !!v && !b.dataset.q.includes(v))); };
+      $$('.ppo', ov).forEach((b) => b.onclick = () => { ov.remove(); pickPair(b.dataset.pk); });
+    };
     $('#f-dev').disabled = ercPair();
     // v2 pays creator fees straight out in the pair; it has no buyback & vest
     const bb = $('#f-bb'); if (bb) { bb.classList.add('hidden'); F.buyback = false; } const adv = $('#st2 details.adv'); if (adv) adv.classList.add('hidden');

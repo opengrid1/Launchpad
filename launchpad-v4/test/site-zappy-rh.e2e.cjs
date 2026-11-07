@@ -70,7 +70,7 @@ srv.listen(8796, async () => {
     await pg.click('#acc-desc .ah').catch(() => {}); await pg.setInputFiles('#f-img', SP + '/test-token.png'); await pg.waitForTimeout(300);
     await pg.fill('#f-name', name); await pg.fill('#f-sym', sym); await pg.fill('#f-desc', 'A Zappy test coin on Robinhood Chain.');
     await pg.click('#next', { timeout: 1500 }).catch(() => {}); await pg.waitForTimeout(400);
-    if (pairKey) await pg.selectOption('#f-pairsel', pairKey);
+    if (pairKey) { await pg.click('#f-pairbtn'); await pg.waitForTimeout(300); await pg.click('.ppo[data-pk="' + pairKey + '"]'); }
     await pg.waitForTimeout(300); await pg.click('#go');
     ok(await waitFor(async () => /\/token\/0x/.test(pg.url()), 120000), `launched ${sym} (${pairKey || 'eth'} pair): ${pg.url()}`);
     const coin = (pg.url().match(/0x[0-9a-f]{40}/i) || [''])[0].toLowerCase();

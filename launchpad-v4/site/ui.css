@@ -132,3 +132,11 @@ body.srch-open #top .brand,body.srch-open #top .sp{visibility:hidden}.msr{positi
 .pfm{position:absolute;top:calc(100% + 6px);right:0;z-index:30;min-width:180px;max-height:320px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-raised);padding:6px;display:flex;flex-direction:column}
 .pfm button{display:flex;justify-content:space-between;gap:16px;padding:9px 10px;border:0;background:none;color:var(--ink);font:inherit;text-align:left;border-radius:var(--r);cursor:pointer}
 .pfm button:hover,.pfm button.on{background:var(--inset)}.pfm button span{color:var(--ink-2);font-variant-numeric:tabular-nums}
+/* launch: the pair button and its searchable list (many pairs) */
+.ppb{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--inset);color:var(--ink);font:inherit;cursor:pointer;text-align:left}
+.ppb img{width:24px;height:24px;border-radius:50%}.ppb b{font-size:15px}.ppb span{flex:1;min-width:0;color:var(--ink-2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ppb svg{width:18px;height:18px;color:var(--ink-2)}
+.ppd{display:flex;flex-direction:column;gap:12px}.ppd .srch{display:flex;width:100%}.ppd input{width:100%;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--inset);color:var(--ink);font:inherit;outline:none}
+.ppl{display:flex;flex-direction:column;max-height:min(56vh,440px);overflow:auto;margin:0 -6px}
+.ppo{display:flex;align-items:center;gap:12px;padding:10px;border:0;border-radius:var(--r);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}.ppo:hover,.ppo.on{background:var(--inset)}
+.ppo img{width:28px;height:28px;border-radius:50%;flex:none}.ppo b{min-width:56px;font-size:14px}.ppo span{color:var(--ink-2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#demo-bar{position:sticky;top:0;z-index:60;padding:8px 16px;text-align:center;font-size:13px;font-weight:600;background:var(--acid);color:var(--acid-ink)}
