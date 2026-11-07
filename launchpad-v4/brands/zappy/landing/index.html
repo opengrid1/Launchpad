@@ -106,7 +106,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .burn .glass{padding:28px 24px;text-align:left}.burn .n{font:600 12px var(--mono);color:var(--ink3);letter-spacing:.12em}.burn h3{font:700 24px var(--sans);letter-spacing:-.03em;margin-top:28px}.burn p{font-size:15px;color:var(--ink2);margin-top:8px}
 .burn .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(255,216,77,.08);border:1px solid rgba(255,216,77,.2);margin-top:14px}
 .burn .mid{border-color:rgba(255,216,77,.35);box-shadow:0 0 80px -30px rgba(255,216,77,.6),0 30px 80px -30px rgba(0,0,0,.8)}
-.flow{position:relative;display:grid;grid-template-columns:repeat(3,1fr);margin-top:70px;text-align:center}.flowline{position:absolute;left:0;right:0;top:0;width:100%;height:120px;pointer-events:none}.flowline .dash{animation:flowdash 1.4s linear infinite}@keyframes flowdash{to{stroke-dashoffset:-24}}.node{position:relative;padding-top:12px}.node .dot{width:96px;height:96px;margin:0 auto;border-radius:50%;display:grid;place-items:center;font-size:34px;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.12),rgba(255,255,255,.02) 60%),#0b0e11;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 50px -20px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.12)}.node.hot .dot{box-shadow:0 0 0 1px rgba(255,216,77,.45),0 0 60px -10px rgba(255,216,77,.6)}.node.fire .dot{box-shadow:0 0 0 1px rgba(255,122,61,.45),0 0 70px -6px rgba(255,122,61,.65);animation:flick 2.2s ease-in-out infinite}@keyframes flick{50%{box-shadow:0 0 0 1px rgba(255,122,61,.6),0 0 90px -4px rgba(255,160,61,.8)}}.node h3{font:600 20px var(--sans);letter-spacing:-.02em;margin-top:22px}.node p{font-size:14.5px;color:var(--ink2);margin-top:6px}
+.flow{position:relative;display:grid;grid-template-columns:repeat(3,1fr);margin-top:70px;text-align:center}.flowline{position:absolute;left:0;right:0;top:0;width:100%;height:120px;pointer-events:none}.flowline .dash{animation:flowdash 1.4s linear infinite}@keyframes flowdash{to{stroke-dashoffset:-24}}.node{position:relative;padding-top:12px}.node .dot{width:96px;height:96px;margin:0 auto;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.12),rgba(255,255,255,.02) 60%),#0b0e11;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 50px -20px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.12)}.node.hot .dot{box-shadow:0 0 0 1px rgba(255,216,77,.45),0 0 60px -10px rgba(255,216,77,.6)}.node.fire .dot{box-shadow:0 0 0 1px rgba(255,122,61,.45),0 0 70px -6px rgba(255,122,61,.65);animation:flick 2.2s ease-in-out infinite}@keyframes flick{50%{box-shadow:0 0 0 1px rgba(255,122,61,.6),0 0 90px -4px rgba(255,160,61,.8)}}.node h3{font:600 20px var(--sans);letter-spacing:-.02em;margin-top:22px}.node p{font-size:14.5px;color:var(--ink2);margin-top:6px}
 
 /* creators */
 .cgrid{display:grid;grid-template-columns:1.3fr 1fr 1fr;grid-template-rows:auto auto;gap:16px;margin-top:56px}
@@ -156,13 +156,22 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 .fc.far{filter:blur(3px);opacity:.55}.fc.near{filter:blur(1.2px)}
 .sec>.wrap{position:relative;z-index:1}
 @media(max-width:600px){.fc{transform-origin:center}.fc.hide-sm{display:none}}
+
+.ix{width:15px;height:15px;display:block}.pill .ix{width:14px;height:14px;display:inline-block}.ck{width:14px;height:14px;display:inline-block;vertical-align:-2px}
+.node .dot svg{width:44px;height:44px}.node.hot .dot{color:var(--y)}.node.fire .dot{color:#ff9a5c}
+.status{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:44px auto 0;max-width:640px;padding:0;border-radius:18px;opacity:0;animation:rise 1s .65s forwards}
+.status div{padding:16px 20px;text-align:left;border-left:1px solid var(--line)}.status div:first-child{border-left:0}
+.status span{display:block;font:500 12px var(--sans);color:var(--ink3)}.status b{display:block;font:500 26px/1.2 var(--sans);letter-spacing:-.03em;margin-top:2px;font-variant-numeric:tabular-nums}
+.status div:nth-child(2) b{color:var(--y);text-shadow:0 0 20px rgba(255,216,77,.35)}
+.status em{position:absolute;right:14px;bottom:-22px;font:400 11px var(--sans);font-style:normal;color:var(--ink3)}
+@media(max-width:600px){.status{grid-template-columns:1fr 1fr 1fr;margin:34px 16px 0}.status div{padding:12px 10px}.status b{font-size:18px}.status span{font-size:10.5px}}
 </style></head><body>
 <canvas id="stars"></canvas>
 
 <header class="nav"><div class="in">
   <a class="brand" href="#top"><img src="/logo.png" alt="">zappy.fun</a>
   <nav class="links"><a href="#floor">The floor</a><a href="#supply">Supply</a><a href="#tax">Fees</a><a href="#snipe">Anti-snipe</a><a href="#faq">FAQ</a></nav>
-  <div class="navr"><a class="ghost" href="https://x.com/zappy_fun" target="_blank" rel="noopener">𝕏</a><a class="pill w" href="#soon">Open app</a></div>
+  <div class="navr"><a class="ghost" href="https://x.com/zappy_fun" target="_blank" rel="noopener" aria-label="X"><svg class="ix" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></a><a class="pill w" href="#soon">Open app</a></div>
 </div></header>
 
 <main id="top">
@@ -171,6 +180,9 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
   <h1 class="h1"><span class="ln">Every pump</span><span class="ln">builds a <span class="ac">floor.</span></span></h1>
   <p class="lede">Every Zappy coin keeps ETH under its price, sized to buy back every token in circulation. Each trade raises it.</p>
   <div class="ctas"><a class="pill w big" href="#soon">Start trading</a><a class="pill o big" href="#floor">How it works</a></div>
+  <div class="status glass" aria-label="Sample floor activity">
+    <div><span>Floors raised today</span><b id="st-r">1,284</b></div><div><span>ETH under prices</span><b id="st-e">412.6</b></div><div><span>$ZAPPY burned</span><b id="st-b">3.18M</b></div><em>sample data · live at launch</em>
+  </div>
   <div class="wall" id="wall"></div>
 </section>
 
@@ -205,7 +217,7 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
     <div class="lq glass t3d" style="left:0;top:0;z-index:2">
       <div class="h"><span class="pair"><img src="/logo.png" alt="">$ZAPPY / ETH</span><span class="tag">● Hook-owned</span></div>
       <div class="k">LP tokens minted</div><div class="v">0</div>
-      <dl><div><dt>Liquidity owner</dt><dd><span class="ok">✓</span>ZappyHook</dd></div><div><dt>Outside LPs</dt><dd><span class="ok">✓</span>Refused</dd></div><div><dt>Donations</dt><dd><span class="ok">✓</span>Refused</dd></div><div><dt>Pool</dt><dd>Uniswap v4</dd></div></dl>
+      <dl><div><dt>Liquidity owner</dt><dd><span class="ok"><svg class="ck" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>ZappyHook</dd></div><div><dt>Outside LPs</dt><dd><span class="ok"><svg class="ck" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Refused</dd></div><div><dt>Donations</dt><dd><span class="ok"><svg class="ck" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Refused</dd></div><div><dt>Pool</dt><dd>Uniswap v4</dd></div></dl>
     </div>
     <div class="lq glass t3d" style="right:0;top:372px;z-index:3;width:300px">
       <div class="h"><span class="pair" style="font-size:14px">Floor band</span><span class="tag" style="background:rgba(255,216,77,.12);color:var(--y);border-color:rgba(255,216,77,.3)">● Raised this block</span></div>
@@ -275,9 +287,9 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
     <svg class="flowline" viewBox="0 0 1000 120" preserveAspectRatio="none"><defs><linearGradient id="fl" x1="0" x2="1"><stop offset="0" stop-color="#b8c2c7"/><stop offset=".5" stop-color="#ffd84d"/><stop offset="1" stop-color="#ff7a3d"/></linearGradient></defs>
       <path d="M120 60 C 300 60, 320 60, 500 60 S 700 60, 880 60" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
       <path class="dash" d="M120 60 C 300 60, 320 60, 500 60 S 700 60, 880 60" fill="none" stroke="url(#fl)" stroke-width="3" stroke-dasharray="2 22" stroke-linecap="round"/></svg>
-    <div class="node"><div class="dot">🚀</div><h3>Every launch</h3><p>about $10 in ETH</p></div>
-    <div class="node hot"><div class="dot">⚡</div><h3>Buys $ZAPPY</h3><p>with 40% of every snipe tax too</p></div>
-    <div class="node fire"><div class="dot">🔥</div><h3>Burns it</h3><p>out of the supply for good</p></div>
+    <div class="node"><div class="dot"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 8c6 4 9 11 9 18l-4 6H19l-4-6c0-7 3-14 9-18z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="24" cy="21" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 32l-3 7 5-2M29 32l3 7-5-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg></div><h3>Every launch</h3><p>about $10 in ETH</p></div>
+    <div class="node hot"><div class="dot"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 18h22l-6-6M36 30H14l6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Buys $ZAPPY</h3><p>with 40% of every snipe tax too</p></div>
+    <div class="node fire"><div class="dot"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 40c-7 0-12-5-12-11 0-6 5-9 6-15 3 2 5 5 5 9 2-1 3-4 3-7 6 4 10 9 10 14 0 6-5 10-12 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M24 40c-3 0-5-2-5-5 0-3 3-5 4-8 3 2 6 5 6 8 0 3-2 5-5 5z" fill="currentColor" opacity=".35"/></svg></div><h3>Burns it</h3><p>out of the supply for good</p></div>
   </div>
 </div>
 </div></section>
@@ -310,14 +322,14 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
   <div class="eyebrow rv">Coming to Ethereum</div>
   <h2 class="t2 rv d1">Your coin.<br><span class="ac">A floor under it.</span></h2>
   <p class="body rv d2" style="margin:22px auto 0">Zappy opens soon, starting with $ZAPPY. Follow along so you're there for the first block.</p>
-  <div class="rv d3" style="display:flex;gap:12px;justify-content:center;margin-top:34px;flex-wrap:wrap"><a class="pill w big" href="https://x.com/zappy_fun" target="_blank" rel="noopener">Follow on 𝕏</a><a class="pill o big" href="#floor">How it works</a></div>
+  <div class="rv d3" style="display:flex;gap:12px;justify-content:center;margin-top:34px;flex-wrap:wrap"><a class="pill w big" href="https://x.com/zappy_fun" target="_blank" rel="noopener">Follow on <svg class="ix" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></a><a class="pill o big" href="#floor">How it works</a></div>
 </section>
 </main>
 
 <footer><div class="wrap">
   <div class="fgrid">
     <div><a class="brand" href="#top"><img src="/logo.png" alt="">zappy.fun</a><p class="tag2">Every pump builds a floor.<br><span>Launch on Ethereum.</span></p></div>
-    <div class="fcols"><div><h4>Product</h4><a href="#soon">Open app</a><a href="#floor">The floor</a><a href="#tax">Fees</a><a href="#faq">FAQ</a></div><div><h4>Community</h4><a href="https://x.com/zappy_fun" target="_blank" rel="noopener">𝕏</a></div><div><h4>Legal</h4><a href="#">Terms</a><a href="#">Privacy</a></div></div>
+    <div class="fcols"><div><h4>Product</h4><a href="#soon">Open app</a><a href="#floor">The floor</a><a href="#tax">Fees</a><a href="#faq">FAQ</a></div><div><h4>Community</h4><a href="https://x.com/zappy_fun" target="_blank" rel="noopener">X / Twitter</a></div><div><h4>Legal</h4><a href="#">Terms</a><a href="#">Privacy</a></div></div>
   </div>
   <div class="fbot"><span>© 2026 Zappy</span><span>Coins are risky and can lose all value.</span></div>
 </div></footer>
@@ -334,11 +346,11 @@ rs();addEventListener('resize',rs);function f(t){x.clearRect(0,0,W,H);for(const 
 /* coins: metallic discs with a ticker */
 const PAL=[["#ffe27a","#c98d00"],["#e9eef2","#7d8a92"],["#ffcf8a","#b35d12"],["#d6dde2","#5f6b72"],["#fff1b8","#d9a500"],["#c9d3d9","#4d5960"]];
 const TK=["ZAPPY","BOLT","FROG","MOON","VOLT","CHAD","WAGMI","DOGE","GIGA","LFG","APE","KEK","PUMP","FLOOR","NEKO","ZZZ","RICH","BASED"];
-const GL=['⚡','◆','✦','●','▲','★'];
-function coin(i){const [a,b]=PAL[i%PAL.length],id='m'+i,t=TK[i%TK.length],g=GL[i%GL.length],fs=t.length>4?13:16;
+const BOLT='M54 22L36 52h12l-4 26 20-34H52z';
+function coin(i){const [a,b]=PAL[i%PAL.length],id='m'+i,t=TK[i%TK.length],fs=t.length>4?12:14;
  return `<svg viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx="34%" cy="26%" r="85%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".18" stop-color="${a}"/><stop offset=".75" stop-color="${b}"/><stop offset="1" stop-color="#1a1408"/></radialGradient><linearGradient id="${id}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset=".5" stop-color="${b}" stop-opacity=".2"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient></defs>
  <circle cx="50" cy="50" r="49" fill="url(#${id})"/><circle cx="50" cy="50" r="43" fill="none" stroke="url(#${id}r)" stroke-width="2.5"/><circle cx="50" cy="50" r="38" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="1" stroke-dasharray="1.5 3"/>
- <text x="50" y="44" text-anchor="middle" font-size="18" fill="rgba(0,0,0,.55)">${g}</text><text x="50" y="66" text-anchor="middle" font-family="Geist,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-.5" fill="rgba(0,0,0,.62)">${t}</text>
+ <g transform="translate(50 37) scale(.42) translate(-50 -50)"><path d="${BOLT}" fill="rgba(0,0,0,.42)"/><path d="${BOLT}" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" transform="translate(-1.2 -1.4)"/></g><text x="50" y="70" text-anchor="middle" font-family="Geist,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-.5" fill="rgba(0,0,0,.62)">${t}</text>
  <ellipse cx="38" cy="22" rx="20" ry="8" fill="#fff" opacity=".22" transform="rotate(-20 38 22)"/></svg>`;}
 const wall=$('#wall');[['r1',0],['r2',7],['r3',13]].forEach(([cl,o])=>{const r=document.createElement('div');r.className='row '+cl;let h='';for(let i=0;i<18;i++){const k=i+o,lit=(k*7)%9===0;h+=`<div class="cn${lit?' lit':''}" style="--c:${PAL[k%PAL.length][1]}">${coin(k*3+o)}</div>`;}r.innerHTML=h+h;wall.appendChild(r);});
 const mas=$('#mascots');for(let i=0;i<9;i++){const d=document.createElement('div');d.className='orb';const L=[6,14,24,72,82,90,10,88,50][i],T=[18,62,82,12,58,80,40,36,90][i];d.style.cssText=`left:${L}%;top:${T}%;width:${46+i%3*16}px;height:${46+i%3*16}px;overflow:hidden;opacity:.85;animation-delay:-${i*.7}s`;d.innerHTML=coin(i*5+2);mas.appendChild(d);}
@@ -414,6 +426,8 @@ function depth(){const vh=innerHeight,sm=innerWidth<961;
   const ry=sm?side*4:side*14+o*6,rx=(sm?4:8)*o;c.style.transform=`perspective(1400px) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg)`;}
  for(const f of FC){const r=f.parentElement.getBoundingClientRect(),y=(r.top-vh*.3)*(+f.dataset.sp);f.style.transform=`translate3d(0,${y.toFixed(1)}px,0) rotate(${(y*.08).toFixed(1)}deg)`;}}
 if(!RM){addEventListener('scroll',()=>requestAnimationFrame(depth),{passive:true});addEventListener('resize',depth);}depth();
+/* hero status: sample numbers ticking up */
+(function(){let r=1284,e=412.6,b=3.18;setInterval(()=>{r+=1+Math.floor(Math.random()*3);e+=Math.random()*.08;b+=Math.random()*.002;$('#st-r').textContent=r.toLocaleString('en-US');$('#st-e').textContent=e.toFixed(1);$('#st-b').textContent=b.toFixed(2)+'M';},1400);})();
 /* faq accordion */
 document.querySelectorAll('.q button').forEach((b)=>b.addEventListener('click',()=>b.parentElement.classList.toggle('open')));
 /* active nav link */
