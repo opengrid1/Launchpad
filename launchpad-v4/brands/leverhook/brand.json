@@ -1,0 +1,98 @@
+{
+  "name": "LeverHook",
+  "theme": "/* LeverHook: a dark trading terminal. Space Grotesk text, JetBrains Mono numbers, square-ish corners, lime on near-black, a chart grid behind */:root{--acid:#b8ff3c;--acid-hover:#a6f01f;--acid-quiet:rgba(184,255,60,.16);--acid-ink:#0b0f0d;--sans:\"Space Grotesk\",system-ui,-apple-system,\"Segoe UI\",sans-serif;--mono:\"JetBrains Mono\",ui-monospace,SFMono-Regular,Menlo,monospace;--r:6px;--r2:6px;--r-lg:10px;--r-card:12px}[data-theme=dark]{--bg:#070908;--surface:#0d1110;--inset:rgba(184,255,60,.05);--inset-2:rgba(255,255,255,.03);--ink:#e9eee8;--ink-80:rgba(233,238,232,.82);--ink-2:rgba(233,238,232,.6);--ink-3:rgba(233,238,232,.6);--ink-4:rgba(233,238,232,.38);--line:rgba(184,255,60,.13);--line-2:rgba(255,255,255,.08);--line-3:rgba(184,255,60,.28);--up:#3dff8a;--up-text:#3dff8a;--dn:#ff4d5e;--dn-text:#ff5d6c;--card3:rgba(255,255,255,.1);--shadow:0 0 0 1px rgba(184,255,60,.1);--shadow-raised:0 0 0 1px rgba(184,255,60,.16),0 24px 48px rgba(0,0,0,.55);--shadow-sm:0 0 0 1px rgba(184,255,60,.1)}[data-theme=dark] body{background-image:linear-gradient(rgba(184,255,60,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(184,255,60,.03) 1px,transparent 1px);background-size:44px 44px;background-attachment:fixed}body{font-weight:500;letter-spacing:-.01em}h1,h2,h3,b,strong{letter-spacing:-.02em}b,td,th,input,.kvl b,.fig b,.figs b,.big,.chf b,.out b,.tbl td,kbd,.badge,.mono{font-variant-numeric:tabular-nums}.tbl td,.kvl b,.fig b,.figs b,.chf b,.chf span,.out b,.big,#t-mcb,#t-pxb,.l2,.l1 span,.kvs b{font-family:var(--mono);font-weight:600;letter-spacing:-.02em}.btn.pri,.go{text-transform:uppercase;letter-spacing:.04em;font-weight:700}",
+  "themeColor": "#070908",
+  "replace": [
+    [
+      "<script data-theme-boot>try{var t=localStorage.getItem(\"theme\");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>",
+      "<script data-theme-boot>try{var t=localStorage.getItem(\"theme\");document.documentElement.dataset.theme=t||\"dark\"}catch(e){document.documentElement.dataset.theme=\"dark\"}</script>"
+    ],
+    [
+      "family=Nunito:wght@600;700;800;900",
+      "family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700"
+    ],
+    [
+      "['/trends', 'Trending', 'flame', 'trends'], ",
+      ""
+    ],
+    [
+      "20% of supply from 50 to 200 HYPE market cap, 30% from 200 to 1,000, 50% above",
+      "20% of supply from 1.75 to 7 ETH market cap, 30% from 7 to 35, 50% above"
+    ],
+    [
+      "LiquidFi runs on two chains: HyperEVM, and Elysium, the HYPE-gas chain that settles to HyperEVM. A token lives on the chain it launched on. Tokens launch directly into Uniswap v4 and are quoted against HYPE only.",
+      "LeverHook runs on Robinhood Chain. Tokens launch directly into Uniswap v4 and are quoted against ETH only."
+    ],
+    [
+      "<dl class=\"defs\"><div><dt>Network</dt><dd>HyperEVM</dd></div><div><dt>Chain ID</dt><dd>999</dd></div><div><dt>Public RPC</dt><dd>https://rpc.hyperliquid.xyz/evm</dd></div><div><dt>Explorer</dt><dd>hyperevmscan.io</dd></div></dl>",
+      "<dl class=\"defs\"><div><dt>Network</dt><dd>Robinhood Chain</dd></div><div><dt>Chain ID</dt><dd>8453</dd></div><div><dt>Public RPC</dt><dd>https://mainnet.base.org</dd></div><div><dt>Explorer</dt><dd>basescan.org</dd></div></dl>"
+    ],
+    [
+      "<dl class=\"defs\"><div><dt>Network</dt><dd>Elysium</dd></div><div><dt>Chain ID</dt><dd>99901</dd></div><div><dt>Public RPC</dt><dd>https://rpc-live.elysp.com</dd></div><div><dt>Explorer</dt><dd>scan.elysp.com</dd></div></dl>",
+      ""
+    ],
+    [
+      "Two steps on HyperEVM or Elysium.",
+      "Two steps on Robinhood Chain."
+    ],
+    [
+      "on HyperEVM and Elysium",
+      "on Robinhood Chain"
+    ],
+    [
+      "on HyperEVM or Elysium",
+      "on Robinhood Chain"
+    ],
+    [
+      "<span class=\"dt\" id=\"pair-net\">Hyperliquid</span>",
+      "<span class=\"dt\" id=\"pair-net\">Robinhood Chain</span>"
+    ],
+    [
+      "/img/hyper.png",
+      "/img/eth.svg"
+    ],
+    [
+      "0.005 HYPE",
+      "0.0002 ETH"
+    ],
+    [
+      "50 HYPE",
+      "1.75 ETH"
+    ],
+    [
+      "HYPE",
+      "ETH"
+    ],
+    [
+      "LiquidFi Coin",
+      "LeverHook Coin"
+    ],
+    [
+      "placeholder=\"LIQ\"",
+      "placeholder=\"LEV\""
+    ],
+    [
+      "LiquidFi",
+      "LeverHook"
+    ]
+  ],
+  "files": "html,js",
+  "skipFiles": [
+    "config.js",
+    "abi.js",
+    "glyphs.js"
+  ],
+  "drop": [
+    "trends.html",
+    "pg-trends.js",
+    "api/trends.js",
+    "api/idea.js",
+    "api/_trends.js"
+  ],
+  "crons": [
+    {
+      "path": "/api/keeper",
+      "schedule": "* * * * *"
+    }
+  ]
+}
