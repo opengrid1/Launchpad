@@ -33,7 +33,7 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 .hero{overflow:hidden;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:130px 0 0;position:relative}
 .hero .glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(640px 380px at 50% 38%,rgba(255,216,77,.13),transparent 70%),radial-gradient(900px 500px at 50% 0,rgba(255,255,255,.04),transparent 70%)}
 .h1{position:relative;font:500 clamp(50px,6.7vw,96px)/1.02 var(--sans);letter-spacing:-.035em;text-shadow:-1px 0 0 rgba(255,77,106,.3),1px 0 0 rgba(91,124,255,.3),0 0 60px rgba(255,255,255,.1)}
-.h1 .ac{color:var(--y);text-shadow:-2px 0 0 rgba(255,77,106,.5),2px 0 0 rgba(91,124,255,.55),0 0 50px rgba(255,216,77,.45)}
+.h1 .ac{color:var(--y);text-shadow:0 0 40px rgba(255,216,77,.3)}
 .h1 .ln{display:block;opacity:0;transform:translateY(30px);filter:blur(8px);animation:rise 1.1s cubic-bezier(.2,.7,.2,1) forwards}.h1 .ln+.ln{animation-delay:.15s}
 @keyframes rise{to{opacity:1;transform:none;filter:none}}
 .lede{position:relative;max-width:560px;margin:24px auto 0;font-size:19px;line-height:28.5px;color:var(--ink2);opacity:0;animation:rise 1s .35s forwards}
@@ -47,10 +47,10 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 .row:hover{animation-play-state:paused}.cn:hover{transform:scale(1.12)}
 
 /* section scaffolding */
-.sec{padding:260px 0 0;position:relative}
+.sec{padding:220px 0 0;position:relative}
 .eyebrow{font:600 13px/19.5px var(--sans);letter-spacing:2.08px;text-transform:uppercase;color:var(--ink3)}
 .t2{font:600 clamp(38px,4.3vw,62px)/1.02 var(--sans);letter-spacing:-.045em;margin-top:18px}
-.t2 .ac{color:var(--y);text-shadow:0 0 40px rgba(255,216,77,.35)}
+.t2 .ac{color:var(--y)}
 .t2 .ab{color:var(--b);text-shadow:0 0 40px rgba(91,124,255,.4)}
 .body{font-size:18px;line-height:27.9px;color:var(--ink2);max-width:460px;margin-top:20px}
 .center{text-align:center}.center .body{margin-left:auto;margin-right:auto}
@@ -76,7 +76,7 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 .seg.on i.f{background:var(--c);box-shadow:0 0 10px -2px var(--c)}
 
 /* liquidity card stack */
-.stack{position:relative;height:600px}
+.stack{position:relative;height:420px}
 .lq{position:absolute;width:415px;padding:22px 26px;border-radius:16px;transition:transform .25s ease-out;will-change:transform}.lq:before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(var(--ga,135deg),rgba(255,216,77,.6),rgba(255,255,255,.03) 45%,rgba(255,255,255,.18));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}.stack{perspective:1100px}
 .lq .h{display:flex;align-items:center;justify-content:space-between}.lq .pair{display:flex;align-items:center;gap:10px;font:600 15px var(--sans)}.lq .pair img{width:26px;height:26px;border-radius:50%}
 .tag{font:600 11px var(--mono);padding:5px 10px;border-radius:999px;background:rgba(62,224,143,.12);color:var(--g);border:1px solid rgba(62,224,143,.25)}
@@ -150,8 +150,8 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 /* 3D glass direction: tilted cards that turn as you scroll, reflections, floating coins with depth */
 .t3d{transform-style:preserve-3d;will-change:transform;transition:transform .12s linear}
 .glass.t3d{box-shadow:0 60px 120px -50px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.06),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.5),inset 1px 0 0 rgba(255,216,77,.12),inset -1px 0 0 rgba(184,194,199,.12)}
-.glass.t3d:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,0) 28%,rgba(255,255,255,0) 62%,rgba(255,216,77,.06) 100%);mix-blend-mode:screen}
-@media(min-width:961px){.glass.t3d{-webkit-box-reflect:below 14px linear-gradient(transparent 72%,rgba(255,255,255,.07))}}
+.glass.t3d:before{display:none;content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,0) 28%,rgba(255,255,255,0) 62%,rgba(255,216,77,.06) 100%);mix-blend-mode:screen}
+
 .fc{position:absolute;pointer-events:none;z-index:0;will-change:transform}.fc svg{width:100%;height:100%;display:block;filter:drop-shadow(0 22px 30px rgba(0,0,0,.7))}
 .fc.far{filter:blur(3px);opacity:.55}.fc.near{filter:blur(1.2px)}
 .sec>.wrap{position:relative;z-index:1}
@@ -180,9 +180,6 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
   <h1 class="h1"><span class="ln">Every pump</span><span class="ln">builds a <span class="ac">floor.</span></span></h1>
   <p class="lede">Every Zappy coin keeps ETH under its price, sized to buy back every token in circulation. Each trade raises it.</p>
   <div class="ctas"><a class="pill w big" href="#soon">Start trading</a><a class="pill o big" href="#floor">How it works</a></div>
-  <div class="status glass" aria-label="Sample floor activity">
-    <div><span>Floors raised today</span><b id="st-r">1,284</b></div><div><span>ETH under prices</span><b id="st-e">412.6</b></div><div><span>$ZAPPY burned</span><b id="st-b">3.18M</b></div><em>sample data · live at launch</em>
-  </div>
   <div class="wall" id="wall"></div>
 </section>
 
@@ -194,11 +191,10 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
       <p class="body rv d2" style="margin-left:auto;margin-right:auto;max-width:560px">1.5% of every buy and every sell goes into ETH sitting just under the price. Once a block the pool moves that wall as high as its ETH can carry every holder.</p>
     </div>
     <canvas id="floorc"></canvas>
-    <div class="fstats"><div class="glass fy"><span>Price</span><b id="fs-p">$10.0K</b></div><div class="glass fb"><span>Floor</span><b id="fs-f">$10.0K</b></div><div class="glass"><span>Trades</span><b id="fs-t">0</b></div></div>
   </div></div>
 </section>
 
-<section class="sec" id="supply"><div class="fc far" data-sp="0.25" data-k="0" style="left:4%;top:40px;width:78px;height:78px"></div><div class="fc " data-sp="-0.35" data-k="1" style="left:92%;top:380px;width:110px;height:110px"></div><div class="fc far hide-sm" data-sp="0.5" data-k="2" style="left:48%;top:520px;width:54px;height:54px"></div><div class="wrap split">
+<section class="sec" id="supply"><div class="wrap split">
   <div>
     <div class="eyebrow rv">Supply</div>
     <h2 class="t2 rv d1">Slow supply.<br><span class="ac">Fewer dumps.</span></h2>
@@ -212,20 +208,14 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 </div>
 </div></section>
 
-<section class="sec" id="pool"><div class="fc " data-sp="-0.3" data-k="3" style="left:90%;top:-40px;width:96px;height:96px"></div><div class="fc far" data-sp="0.4" data-k="4" style="left:6%;top:560px;width:64px;height:64px"></div><div class="wrap split">
+<section class="sec" id="pool"><div class="wrap split">
   <div class="stack rv" id="stack">
     <div class="lq glass t3d" style="left:0;top:0;z-index:2">
       <div class="h"><span class="pair"><img src="/logo.png" alt="">$ZAPPY / ETH</span><span class="tag">● Hook-owned</span></div>
       <div class="k">LP tokens minted</div><div class="v">0</div>
       <dl><div><dt>Liquidity owner</dt><dd><span class="ok"><svg class="ck" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>ZappyHook</dd></div><div><dt>Outside LPs</dt><dd><span class="ok"><svg class="ck" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Refused</dd></div><div><dt>Donations</dt><dd><span class="ok"><svg class="ck" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Refused</dd></div><div><dt>Pool</dt><dd>Uniswap v4</dd></div></dl>
     </div>
-    <div class="lq glass t3d" style="right:0;top:372px;z-index:3;width:300px">
-      <div class="h"><span class="pair" style="font-size:14px">Floor band</span><span class="tag" style="background:rgba(255,216,77,.12);color:var(--y);border-color:rgba(255,216,77,.3)">● Raised this block</span></div>
-      <div class="k">ETH under the price</div><div class="v" style="color:var(--y)">4.82 ETH</div>
-      <dl><div><dt>Covers</dt><dd>every holder</dd></div><div><dt>Width</dt><dd>1 tick</dd></div></dl>
-    </div>
     <div class="orb" style="width:58px;height:58px;right:40px;top:0;background:radial-gradient(circle at 30% 30%,#fff8,#b8c2c7 55%,#3a4247);box-shadow:0 0 40px -10px #b8c2c7"></div>
-    <div class="orb" style="width:34px;height:34px;right:120px;bottom:30px;animation-delay:-2s;background:radial-gradient(circle at 30% 30%,#fff6,var(--y) 60%);box-shadow:0 0 30px -4px var(--y)"></div>
   </div>
   <div>
     <div class="eyebrow rv">The pool</div>
@@ -234,12 +224,11 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
   </div>
 </div></section>
 
-<section class="sec" id="tax"><div class="fc near hide-sm" data-sp="0.45" data-k="5" style="left:2%;top:120px;width:70px;height:70px"></div><div class="fc " data-sp="-0.25" data-k="6" style="left:94%;top:520px;width:120px;height:120px"></div><div class="wrap split">
+<section class="sec" id="tax"><div class="wrap split">
   <div>
     <div class="eyebrow rv">Fees</div>
     <h2 class="t2 rv d1">2.5% a trade.<br><span class="ac">Most of it stays.</span></h2>
     <p class="body rv d2">One rate on every buy and every sell, taken on the ETH side. There is no separate LP fee. Over half of every trade's tax goes back under the coin.</p>
-    <div class="rates rv d3"><div><b style="color:var(--y)">1.5%</b><span>to the floor</span></div><div><b>0.6%</b><span>to the creator</span></div><div><b style="color:var(--ink2)">0.4%</b><span>to the protocol</span></div></div>
   </div>
   <div class="glass fee rv d2 t3d" data-side="r">
     <div class="chips" id="chips"><button data-a="100">$100</button><button data-a="1000" class="on">$1,000</button><button data-a="10000">$10,000</button></div>
@@ -256,7 +245,7 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 </div>
 </div></section>
 
-<section class="sec" id="snipe"><div class="fc far" data-sp="0.35" data-k="7" style="left:88%;top:30px;width:64px;height:64px"></div><div class="fc hide-sm" data-sp="-0.3" data-k="8" style="left:46%;top:470px;width:90px;height:90px"></div><div class="wrap split">
+<section class="sec" id="snipe"><div class="wrap split">
   <div>
     <div class="eyebrow rv">Anti-snipe</div>
     <h2 class="t2 rv d1">Bots buy first.<br><span class="ac">Bots pay most.</span></h2>
@@ -294,12 +283,12 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 </div>
 </div></section>
 
-<section class="sec" id="creators"><div class="fc " data-sp="-0.35" data-k="9" style="left:95%;top:60px;width:100px;height:100px"></div><div class="fc far" data-sp="0.3" data-k="10" style="left:3%;top:520px;width:72px;height:72px"></div><div class="wrap">
+<section class="sec" id="creators"><div class="wrap">
   <div class="eyebrow rv">Creators</div>
   <h2 class="t2 rv d1">Launch in one click.<br><span class="ac">Earn on every trade.</span></h2>
   <div class="glass cpanel rv d2 t3d" data-side="c">
     <div class="earn"><span>Creator fees earned · sample coin</span><b id="cr-eth">0.000 ETH</b><canvas id="crspark"></canvas><div class="claim"><span>0.6% of every trade, paid in ETH or $ZAPPY</span><button class="pill y" type="button">Claim</button></div></div>
-    <ul class="facts"><li><b>5%</b><span>Buy up to 5% of supply inside your own launch, at the normal rate, in public.</span></li><li><b>Lock</b><span>Vest that buy month by month so holders can see it.</span></li><li><b>0</b><span>Pre-sale. The pool holds every token from the first block.</span></li></ul>
+    <ul class="facts"><li><b>5%</b><span>Buy up to 5% of supply inside your own launch, at the normal rate, in public.</span></li><li><b>Lock</b><span>Vest that buy month by month so holders can see it.</span></li></ul>
   </div>
 </div>
 </div></section>
@@ -318,7 +307,7 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
 </div></section>
 
 <section class="cta wrap" id="soon">
-  <div class="mascots" id="mascots"></div>
+  
   <div class="eyebrow rv">Coming to Ethereum</div>
   <h2 class="t2 rv d1">Your coin.<br><span class="ac">A floor under it.</span></h2>
   <p class="body rv d2" style="margin:22px auto 0">Zappy opens soon, starting with $ZAPPY. Follow along so you're there for the first block.</p>
@@ -340,7 +329,7 @@ const $=(s)=>document.querySelector(s),RM=matchMedia('(prefers-reduced-motion: r
 let seed=11;const rnd=()=>((seed=seed*16807%2147483647)/2147483647);
 
 /* starfield */
-(function(){const c=$('#stars'),x=c.getContext('2d');let W,H,S=[];function rs(){W=c.width=innerWidth*DPR;H=c.height=innerHeight*DPR;c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';S=Array.from({length:Math.round(innerWidth*innerHeight/9000)},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.1*DPR+.2,a:Math.random()*.5+.1,t:Math.random()*6}));}
+(function(){const c=$('#stars'),x=c.getContext('2d');let W,H,S=[];function rs(){W=c.width=innerWidth*DPR;H=c.height=innerHeight*DPR;c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';S=Array.from({length:Math.round(innerWidth*innerHeight/26000)},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.1*DPR+.2,a:Math.random()*.5+.1,t:Math.random()*6}));}
 rs();addEventListener('resize',rs);function f(t){x.clearRect(0,0,W,H);for(const s of S){x.globalAlpha=s.a*(.6+.4*Math.sin(t/1400+s.t));x.fillStyle='#fff';x.beginPath();x.arc(s.x,s.y,s.r,0,7);x.fill();}if(!RM)requestAnimationFrame(f);}requestAnimationFrame(f);})();
 
 /* coins: metallic discs with a ticker */
@@ -352,8 +341,8 @@ function coin(i){const [a,b]=PAL[i%PAL.length],id='m'+i,t=TK[i%TK.length],fs=t.l
  <circle cx="50" cy="50" r="49" fill="url(#${id})"/><circle cx="50" cy="50" r="43" fill="none" stroke="url(#${id}r)" stroke-width="2.5"/><circle cx="50" cy="50" r="38" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="1" stroke-dasharray="1.5 3"/>
  <g transform="translate(50 37) scale(.42) translate(-50 -50)"><path d="${BOLT}" fill="rgba(0,0,0,.42)"/><path d="${BOLT}" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" transform="translate(-1.2 -1.4)"/></g><text x="50" y="70" text-anchor="middle" font-family="Geist,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-.5" fill="rgba(0,0,0,.62)">${t}</text>
  <ellipse cx="38" cy="22" rx="20" ry="8" fill="#fff" opacity=".22" transform="rotate(-20 38 22)"/></svg>`;}
-const wall=$('#wall');[['r1',0],['r2',7],['r3',13]].forEach(([cl,o])=>{const r=document.createElement('div');r.className='row '+cl;let h='';for(let i=0;i<18;i++){const k=i+o,lit=(k*7)%9===0;h+=`<div class="cn${lit?' lit':''}" style="--c:${PAL[k%PAL.length][1]}">${coin(k*3+o)}</div>`;}r.innerHTML=h+h;wall.appendChild(r);});
-const mas=$('#mascots');for(let i=0;i<9;i++){const d=document.createElement('div');d.className='orb';const L=[6,14,24,72,82,90,10,88,50][i],T=[18,62,82,12,58,80,40,36,90][i];d.style.cssText=`left:${L}%;top:${T}%;width:${46+i%3*16}px;height:${46+i%3*16}px;overflow:hidden;opacity:.85;animation-delay:-${i*.7}s`;d.innerHTML=coin(i*5+2);mas.appendChild(d);}
+const wall=$('#wall');[['r1',0],['r2',7]].forEach(([cl,o])=>{const r=document.createElement('div');r.className='row '+cl;let h='';for(let i=0;i<18;i++){const k=i+o,lit=false;h+=`<div class="cn${lit?' lit':''}" style="--c:${PAL[k%PAL.length][1]}">${coin(k*3+o)}</div>`;}r.innerHTML=h+h;wall.appendChild(r);});
+
 
 /* reveal */
 const io=new IntersectionObserver((es)=>es.forEach((e)=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.15});document.querySelectorAll('.rv').forEach((el)=>io.observe(el));
@@ -390,7 +379,7 @@ function drawFloor(){const W=fc.width,H=fc.height,wrap=$('.floorwrap'),r=wrap.ge
  line(floor,'#b8c2c7',2.2,12,true);line(price,'#ffd84d',2.6,22,false);
  const tag=(i,arr,col,txt,dy)=>{const x=X(i),y=Y(arr[i]);fx.save();fx.shadowColor=col;fx.shadowBlur=24*DPR;fx.fillStyle=col;fx.beginPath();fx.arc(x,y,6*DPR,0,7);fx.fill();fx.restore();fx.font=`600 ${12*DPR}px "Geist Mono",monospace`;const tw=fx.measureText(txt).width+18*DPR,bx=Math.min(x+12*DPR,W-tw-6*DPR),by=y-11*DPR+dy*DPR;fx.fillStyle='rgba(10,12,20,.85)';fx.strokeStyle=col;fx.lineWidth=1*DPR;fx.beginPath();fx.roundRect(bx,by,tw,22*DPR,11*DPR);fx.fill();fx.stroke();fx.fillStyle=col;fx.fillText(txt,bx+9*DPR,by+15*DPR);};
  tag(n-1,price,'#ffd84d','Price '+fmt(price[n-1]),-16);tag(n-1,floor,'#b8c2c7','Floor '+fmt(floor[n-1]),16);
- $('#fs-p').textContent=fmt(price[n-1]);$('#fs-f').textContent=fmt(floor[n-1]);$('#fs-t').textContent=Math.round(n*137).toLocaleString('en-US');}
+ }
 addEventListener('scroll',()=>requestAnimationFrame(drawFloor),{passive:true});drawFloor();
 
 /* fee ring: pick a trade size */
@@ -425,9 +414,8 @@ function depth(){const vh=innerHeight,sm=innerWidth<961;
  for(const c of T3){if(c.closest('#stack'))continue;const r=c.getBoundingClientRect(),o=((r.top+r.height/2)-vh/2)/vh,side=c.dataset.side==='r'?-1:c.dataset.side==='l'?1:0;
   const ry=sm?side*4:side*14+o*6,rx=(sm?4:8)*o;c.style.transform=`perspective(1400px) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg)`;}
  for(const f of FC){const r=f.parentElement.getBoundingClientRect(),y=(r.top-vh*.3)*(+f.dataset.sp);f.style.transform=`translate3d(0,${y.toFixed(1)}px,0) rotate(${(y*.08).toFixed(1)}deg)`;}}
-if(!RM){addEventListener('scroll',()=>requestAnimationFrame(depth),{passive:true});addEventListener('resize',depth);}depth();
-/* hero status: sample numbers ticking up */
-(function(){let r=1284,e=412.6,b=3.18;setInterval(()=>{r+=1+Math.floor(Math.random()*3);e+=Math.random()*.08;b+=Math.random()*.002;$('#st-r').textContent=r.toLocaleString('en-US');$('#st-e').textContent=e.toFixed(1);$('#st-b').textContent=b.toFixed(2)+'M';},1400);})();
+
+
 /* faq accordion */
 document.querySelectorAll('.q button').forEach((b)=>b.addEventListener('click',()=>b.parentElement.classList.toggle('open')));
 /* active nav link */
