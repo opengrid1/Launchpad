@@ -82,6 +82,26 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .rl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px}.rl b{font-weight:500}
 .tog{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}.sw{width:42px;height:24px;border-radius:999px;background:var(--s3);position:relative;transition:background .2s}.sw i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s}.sw.on{background:var(--y)}.sw.on i{left:21px}
 .sum{padding:20px;display:grid;gap:4px}.sum .pvw{display:flex;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:8px}.sum .pvw .cv{width:48px;height:48px;border-radius:50%;overflow:hidden;background:var(--s3)}.sum .pvw img{width:100%;height:100%;object-fit:cover}.sum .pvw b{display:block;font:600 17px var(--sans)}.sum .pvw span{color:var(--ink3);font-size:13px}
+
+/* terminal: list | chart | trade */
+.term{display:grid;grid-template-columns:300px minmax(0,1fr) 340px;gap:14px;align-items:start}
+.term>.col{min-width:0;display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+.lst{position:sticky;top:84px;max-height:calc(100vh - 100px);display:flex;flex-direction:column;overflow:hidden}
+.lst .hd{padding:12px;border-bottom:1px solid var(--line)}.lst .seg{width:100%;justify-content:space-between}.lst .seg button{flex:1;padding:0 6px}
+.lst .rows{overflow:auto;padding:6px}
+.lr2{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border-radius:12px;transition:background .15s}.lr2:hover{background:rgba(255,255,255,.035)}.lr2.on{background:rgba(255,216,77,.07);box-shadow:inset 2px 0 0 var(--y)}
+.lr2 .cv{width:40px;height:40px}.lr2 .nm b{display:block;font:600 14px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lr2 .nm span{font-size:12px;color:var(--ink3)}
+.lr2 .rt{text-align:right}.lr2 .rt b{display:block;font:500 14px var(--sans)}.lr2 .rt span{font-size:11.5px;color:var(--ink3)}
+.lr2 .fb{grid-column:2/4;height:3px;border-radius:9px;background:rgba(255,255,255,.05);overflow:hidden;margin-top:-2px}.lr2 .fb i{display:block;height:100%;background:linear-gradient(90deg,var(--silver),var(--y));border-radius:9px}
+.chd{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.chd .cv{width:52px;height:52px}.chd h1{font:600 24px var(--sans);letter-spacing:-.03em}.chd h1 span{color:var(--ink3);font-weight:500;font-size:17px;margin-left:6px}.chd .sub{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px;font-size:12.5px;color:var(--ink3)}
+.strip{display:grid;grid-template-columns:repeat(5,1fr)}.strip div{padding:14px 16px;border-left:1px solid var(--line)}.strip div:first-child{border-left:0}.strip span{display:block;font-size:12px;color:var(--ink3)}.strip b{font:500 19px var(--sans);letter-spacing:-.02em}.strip em{font-style:normal;font-size:12px;margin-left:4px}
+.cbox{padding:14px 14px 8px}.cbox .tb{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#cc{width:100%;height:380px;display:block;margin-top:10px;cursor:crosshair}
+.ohlc{font:500 12px var(--mono);color:var(--ink3);margin-top:8px;min-height:18px}.ohlc b{color:var(--ink2);font-weight:500}
+.act{padding:16px}.act .per{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.act .per button{padding:8px 0;border-radius:10px;text-align:center;border:1px solid transparent}.act .per button.on{background:rgba(255,255,255,.05);border-color:var(--line)}.act .per span{display:block;font-size:11.5px;color:var(--ink3)}.act .per b{font:500 14px var(--sans)}
+.split2{margin-top:14px}.split2 .tt{display:flex;justify-content:space-between;font-size:12px;color:var(--ink3)}.split2 .vv{display:flex;justify-content:space-between;font:500 15px var(--sans);margin-top:2px}.split2 .bb{display:flex;gap:3px;height:5px;margin-top:7px}.split2 .bb i{border-radius:9px}
+@media(max-width:1180px){.term{grid-template-columns:260px minmax(0,1fr)}.term>.col.r{grid-column:2}}
+@media(max-width:900px){.term.coin>.col.c,.term.coin>.col.r{display:contents}.term.coin .chd{order:1}.term.coin .strip{order:2}.term.coin .cbox{order:3}.term.coin .tp2{order:4}.term.coin .act{order:5}.term.coin .floorc{order:6}.term.coin .tabsc{order:7}.term{grid-template-columns:minmax(0,1fr)}.term>.col.r{grid-column:auto}.lst{position:static;max-height:none}.term.coin .lst{display:none}.term.home>.col:not(.l){display:none}.strip{grid-template-columns:repeat(3,1fr)}.strip div:nth-child(4){border-left:0}.strip div:nth-child(n+4){border-top:1px solid var(--line)}#cc{height:280px}}
 /* toast + mobile nav */
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;padding:12px 18px;border-radius:14px;background:var(--s3);border:1px solid var(--line2);font-size:14px;transition:all .3s;z-index:50;pointer-events:none;max-width:calc(100% - 32px)}.toast.on{opacity:1;transform:translateX(-50%)}
 .mnav{display:none}
@@ -92,7 +112,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <div class="banner">Preview with sample coins. <b>Zappy opens on Ethereum soon.</b></div>
 <header class="top"><div class="in">
   <a class="brand" href="/"><img src="/logo.png" alt=""><span>zappy.fun</span></a>
-  <nav class="tabs"><a href="#/" data-r="explore">Explore</a><a href="#/launch" data-r="launch">Launch</a></nav>
+  <nav class="tabs"><a href="#/" data-r="explore">Trade</a><a href="#/launch" data-r="launch">Launch</a></nav>
   <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" placeholder="Search coins" autocomplete="off"></label>
   <button class="btn w" id="connect">Connect</button>
 </div></header>
@@ -123,80 +143,69 @@ const usd=(v)=>v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(2)+'
 const pct=(v)=>(v>=0?'+':'')+v.toFixed(1)+'%',ago=(s)=>s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
 function spark(c,pts,up){const r=c.getBoundingClientRect();c.width=r.width*DPR;c.height=r.height*DPR;const x=c.getContext('2d'),W=c.width,H=c.height,mn=Math.min(...pts),mx=Math.max(...pts);x.strokeStyle=up?'#3ee08f':'#ff4f63';x.lineWidth=1.6*DPR;x.beginPath();pts.forEach((p,k)=>{const X=k/(pts.length-1)*W,Y=H-2*DPR-(p-mn)/((mx-mn)||1)*(H-4*DPR);k?x.lineTo(X,Y):x.moveTo(X,Y);});x.stroke();}
 
-/* ---------------- explore ---------------- */
-let sort='trending';
-function explore(){
- const z=COINS[0];
- $('#view').innerHTML=`
- <a class="card feat" href="#/coin/ZAPPY"><div class="l"><div class="ft">${art(0,'Z')}<div><h2>$ZAPPY</h2><span>The first coin on Zappy · burned by every launch</span></div></div>
-   <div class="kv"><div><span>Market cap</span><b class="num">${usd(z.mc)}</b></div><div><span>Floor</span><b class="num" style="color:var(--y)">${usd(z.floor)}</b></div><div><span>Above floor</span><b class="num">${(z.above*100).toFixed(0)}%</b></div><div><span>24h</span><b class="num ${z.ch>=0?'up':'dn'}">${pct(z.ch)}</b></div></div></div>
-   <div class="r"><canvas id="featc"></canvas></div></a>
- <div class="bar"><h2 class="h">Coins</h2><div class="seg" id="sort"><button data-s="trending">Trending</button><button data-s="new">New</button><button data-s="floor">Near floor</button><button data-s="mcap">Market cap</button></div></div>
- <div class="grid" id="grid"></div>`;
- $$('#sort button').forEach((b)=>{b.classList.toggle('on',b.dataset.s===sort);b.onclick=()=>{sort=b.dataset.s;explore();};});
- grid($('#q').value);
- // featured chart: price with floor under it
- const c=$('#featc'),r=c.getBoundingClientRect();c.width=r.width*DPR;c.height=r.height*DPR;const x=c.getContext('2d'),W=c.width,H=c.height;let p=0,f=0;const P=[],F=[];for(let k=0;k<120;k++){p+=.02+(rnd()-.45)*.07;P.push(p);f=Math.max(f,p-.35);F.push(f);}
- const mn=Math.min(...F),mx=Math.max(...P),Y=(v)=>H-12*DPR-(v-mn)/(mx-mn)*(H-30*DPR),X=(k)=>k/119*W;
- const line=(A,col,w,b,step)=>{x.save();x.shadowColor=col;x.shadowBlur=b*DPR;x.strokeStyle=col;x.lineWidth=w*DPR;x.beginPath();A.forEach((v,k)=>{if(!k)x.moveTo(X(k),Y(v));else{if(step)x.lineTo(X(k),Y(A[k-1]));x.lineTo(X(k),Y(v));}});x.stroke();x.restore();};
- line(F,'#b8c2c7',1.6,8,true);line(P,'#ffd84d',2,16,false);
-}
-function grid(q){
- let L=COINS.slice(1).filter((c)=>!q||(c.n+c.t).toLowerCase().includes(q.toLowerCase()));
- if(sort==='new')L.sort((a,b)=>a.age-b.age);else if(sort==='floor')L.sort((a,b)=>a.above-b.above);else if(sort==='mcap')L.sort((a,b)=>b.mc-a.mc);else L.sort((a,b)=>b.vol-a.vol);
- const g=$('#grid');if(!g)return;
- g.innerHTML=L.length?L.map((c)=>`<a class="card cc" href="#/coin/${c.t}"><div class="t">${art(c.i,c.t)}<div class="nm"><b>${c.n}</b><span>$${c.t} · ${c.pair} · ${ago(c.age)}</span></div><div class="ch ${c.ch>=0?'up':'dn'}">${pct(c.ch)}</div></div>
-  <div class="mc"><div><div class="lab">Market cap</div><b class="num">${usd(c.mc)}</b></div><canvas data-i="${c.i}"></canvas></div>
-  <div class="fl"><div class="row"><span>Floor <b class="num">${usd(c.floor)}</b></span><span><b class="num">${(c.above*100).toFixed(0)}%</b> above</span></div><div class="track"><i style="width:${Math.min(100,100/(1+c.above)).toFixed(0)}%"></i></div></div></a>`).join(''):'<div class="empty">No coins match.</div>';
- $$('canvas[data-i]',g).forEach((cv)=>{const c=COINS[+cv.dataset.i];spark(cv,c.pts,c.ch>=0);});
-}
-
-/* ---------------- coin page ---------------- */
-let side='b';
-function coinPage(t){
- const c=COINS.find((x)=>x.t===t)||COINS[0],px=c.mc/1e9,fp=c.floor/1e9;
- $('#view').innerHTML=`
- <div class="head">${art(c.i,c.t)}<div><h1>${c.n} <span style="color:var(--ink3);font-weight:500">$${c.t}</span></h1><div class="sub"><span class="pill">${c.pair} pair</span><span class="pill">Ethereum</span><span>by ${c.creator}</span><span>${ago(c.age)} ago</span></div></div></div>
- <div class="cp"><div style="display:grid;gap:14px;grid-template-columns:minmax(0,1fr);min-width:0">
-   <div class="card chartc"><div class="tp"><div class="pr"><div class="lab">Market cap</div><b class="num">${usd(c.mc)}</b><span class="${c.ch>=0?'up':'dn'}">${pct(c.ch)} 24h</span></div><div class="seg" id="tf"><button>1H</button><button class="on">1D</button><button>1W</button><button>All</button></div></div>
-     <canvas id="chart"></canvas><div class="leg"><span><i style="background:var(--y)"></i>Market cap</span><span><i style="background:var(--silver)"></i>Floor</span></div>
-     <div class="stats"><div><span>Price</span><b class="num">$${px.toPrecision(3)}</b></div><div><span>Floor price</span><b class="num" style="color:var(--y)">$${fp.toPrecision(3)}</b></div><div><span>Holders</span><b class="num">${c.holders.toLocaleString('en-US')}</b></div><div><span>24h volume</span><b class="num">${usd(c.vol)}</b></div></div></div>
-   <div class="card"><div class="ttab" id="tt"><button class="on" data-t="trades">Trades</button><button data-t="holders">Holders</button><button data-t="about">About</button></div><div id="tbody" style="overflow-x:auto"></div></div>
+/* ---------------- terminal: list | chart | trade ---------------- */
+let sort='trending',side='b',per='24h',cur='ZAPPY';
+function listRows(q){let L=COINS.filter((c)=>!q||(c.n+c.t).toLowerCase().includes(q.toLowerCase()));
+ if(sort==='new')L.sort((a,b)=>a.age-b.age);else if(sort==='floor')L.sort((a,b)=>a.above-b.above);else if(sort==='mcap')L.sort((a,b)=>b.mc-a.mc);else L.sort((a,b)=>(b.i===0)-(a.i===0)||b.vol-a.vol);
+ return L.length?L.map((c)=>`<a class="lr2 ${c.t===cur?'on':''}" href="#/coin/${c.t}">${art(c.i,c.t)}<div class="nm"><b>${c.n}</b><span>$${c.t} · ${ago(c.age)}</span></div><div class="rt"><b class="num">${usd(c.mc)}</b><span class="num">${usd(c.floor)} floor</span></div><div class="fb"><i style="width:${(100/(1+c.above)).toFixed(0)}%"></i></div></a>`).join(''):'<div class="empty">No coins match.</div>';}
+function terminal(t,home){
+ cur=t;const c=COINS.find((x)=>x.t===t)||COINS[0],px=c.mc/1e9,fp=c.floor/1e9;seed=c.i*31+7;
+ const chg={'5m':(rnd()-.45)*6,'1h':(rnd()-.4)*14,'6h':(rnd()-.4)*40,'24h':c.ch};
+ $('#view').innerHTML=`<div class="term ${home?'home':'coin'}">
+ <div class="col l"><div class="card lst"><div class="hd"><div class="seg" id="sort"><button data-s="trending">Hot</button><button data-s="new">New</button><button data-s="mcap">Mcap</button><button data-s="floor">Floor</button></div></div><div class="rows" id="rows"></div></div></div>
+ <div class="col c">
+  <div class="chd">${art(c.i,c.t)}<div><h1>${c.n}<span>$${c.t}</span></h1><div class="sub"><span class="pill">${c.pair} pair</span><span class="pill">Ethereum</span><span>${ago(c.age)} old</span><span>by ${c.creator}</span></div></div></div>
+  <div class="card strip"><div><span>Market cap</span><b class="num">${usd(c.mc)}</b><em class="${c.ch>=0?'up':'dn'}">${pct(c.ch)}</em></div><div><span>Floor</span><b class="num" style="color:var(--y)">${usd(c.floor)}</b></div><div><span>Price</span><b class="num">$${px.toPrecision(3)}</b></div><div><span>24h volume</span><b class="num">${usd(c.vol)}</b></div><div><span>Above floor</span><b class="num">${(c.above*100).toFixed(0)}%</b></div></div>
+  <div class="card cbox"><div class="tb"><div class="seg" id="tf"><button>5m</button><button>15m</button><button class="on">1h</button><button>4h</button><button>1d</button></div><div class="leg" style="margin:0"><span><i style="background:var(--g)"></i>Up</span><span><i style="background:var(--r)"></i>Down</span><span><i style="background:var(--y)"></i>Floor</span></div></div>
+   <canvas id="cc"></canvas><div class="ohlc" id="ohlc"></div></div>
+  <div class="card tabsc"><div class="ttab" id="tt"><button class="on" data-t="trades">Trades</button><button data-t="holders">Holders · ${c.holders.toLocaleString('en-US')}</button><button data-t="about">About</button></div><div id="tbody" style="overflow-x:auto"></div></div>
  </div>
- <aside class="side">
-   <div class="card tp2"><div class="bs"><button class="b ${side==='b'?'on':''}" data-x="b">Buy</button><button class="s ${side==='s'?'on':''}" data-x="s">Sell</button></div>
-     <div class="amt"><div class="lr"><span>You pay</span><span>Balance —</span></div><div class="in"><input id="amt" inputmode="decimal" placeholder="0" class="num"><span class="cur">${side==='b'?c.pair:'$'+c.t}</span></div></div>
-     <div class="quick">${side==='b'?'<button data-v="0.05">0.05</button><button data-v="0.1">0.1</button><button data-v="0.5">0.5</button><button data-v="1">1 ETH</button>':'<button data-v="25">25%</button><button data-v="50">50%</button><button data-v="75">75%</button><button data-v="100">Max</button>'}</div>
-     <div class="est"><div><span>You receive</span><b class="num" id="recv">—</b></div><div><span>Tax</span><b class="num">2.5%</b></div><div><span>Into the floor</span><b class="num" id="tofloor" style="color:var(--y)">—</b></div></div>
-     <button class="btn lg ${side==='b'?'y':'w'}" id="go">${side==='b'?'Buy $'+c.t:'Sell $'+c.t}</button></div>
-   <div class="card floorc"><div class="lab">Floor price</div><div class="big num">$${fp.toPrecision(3)}</div><div style="font-size:13px;color:var(--ink3);margin-top:2px">${(c.above*100).toFixed(0)}% under the price</div>
-     <div class="gaugeb"><i style="width:${(100/(1+c.above)).toFixed(0)}%"></i><em style="left:calc(${(100/(1+c.above)).toFixed(0)}% - 1px)"></em></div>
-     <div class="lines"><div><span>ETH in the floor</span><b class="num">${(c.floor*.32/ETH).toFixed(2)} ETH</b></div><div><span>Covers</span><b>every holder</b></div><div><span>Raised</span><b class="num">${Math.floor(20+c.holders/4)} times</b></div></div></div>
-   <div class="card floorc"><div class="lab">Creator</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span class="num">${c.creator}</span><span class="pill">0.6% of trades</span></div></div>
- </aside></div>`;
- drawChart(c);
- $$('#tf button').forEach((b)=>b.onclick=()=>{$$('#tf button').forEach((x)=>x.classList.toggle('on',x===b));drawChart(c);});
- $$('.bs button').forEach((b)=>b.onclick=()=>{side=b.dataset.x;coinPage(t);});
+ <div class="col r">
+  <div class="card tp2"><div class="bs"><button class="b ${side==='b'?'on':''}" data-x="b">Buy</button><button class="s ${side==='s'?'on':''}" data-x="s">Sell</button></div>
+   <div class="amt"><div class="lr"><span>You pay</span><span>Balance —</span></div><div class="in"><input id="amt" inputmode="decimal" placeholder="0" class="num"><span class="cur">${side==='b'?c.pair:'$'+c.t}</span></div></div>
+   <div class="quick">${side==='b'?'<button data-v="0.05">0.05</button><button data-v="0.1">0.1</button><button data-v="0.5">0.5</button><button data-v="1">1</button>':'<button data-v="25">25%</button><button data-v="50">50%</button><button data-v="75">75%</button><button data-v="100">Max</button>'}</div>
+   <div class="est"><div><span>You receive</span><b class="num" id="recv">—</b></div><div><span>Tax 2.5%, of which floor</span><b class="num" id="tofloor" style="color:var(--y)">—</b></div></div>
+   <button class="btn lg ${side==='b'?'y':'w'}" id="go">${side==='b'?'Buy':'Sell'} $${c.t}</button></div>
+  <div class="card act"><div class="per" id="per">${['5m','1h','6h','24h'].map((k)=>`<button data-p="${k}" class="${k===per?'on':''}"><span>${k}</span><b class="num ${chg[k]>=0?'up':'dn'}">${pct(chg[k])}</b></button>`).join('')}</div><div id="splits"></div></div>
+  <div class="card floorc"><div class="lab">Floor price</div><div class="big num">$${fp.toPrecision(3)}</div><div style="font-size:13px;color:var(--ink3);margin-top:2px">${(c.above*100).toFixed(0)}% under the price</div>
+   <div class="gaugeb"><i style="width:${(100/(1+c.above)).toFixed(0)}%"></i><em style="left:calc(${(100/(1+c.above)).toFixed(0)}% - 1px)"></em></div>
+   <div class="lines"><div><span>ETH in the floor</span><b class="num">${(c.floor*.32/ETH).toFixed(2)} ETH</b></div><div><span>Raised</span><b class="num">${Math.floor(20+c.holders/4)} times</b></div></div></div>
+ </div></div>`;
+ const rows=$('#rows');const fill=()=>{rows.innerHTML=listRows($('#q').value);};fill();
+ $$('#sort button').forEach((b)=>{b.classList.toggle('on',b.dataset.s===sort);b.onclick=()=>{sort=b.dataset.s;$$('#sort button').forEach((x)=>x.classList.toggle('on',x===b));fill();};});
+ $('#q').oninput=fill;
+ const splits=()=>{const k={'5m':.02,'1h':.1,'6h':.4,'24h':1}[per],bv=c.vol*k*(.45+rnd()*.25),sv=c.vol*k-bv,bn=Math.max(1,Math.round(c.holders*k*.6)),sn=Math.max(1,Math.round(bn*(.4+rnd()*.5)));
+  const bar=(a,b)=>`<div class="bb"><i style="flex:${a};background:var(--g)"></i><i style="flex:${b};background:var(--r)"></i></div>`;
+  $('#splits').innerHTML=`<div class="split2"><div class="tt"><span>Buy volume</span><span>Sell volume</span></div><div class="vv"><span class="num">${usd(bv)}</span><span class="num">${usd(sv)}</span></div>${bar(bv,sv)}</div><div class="split2"><div class="tt"><span>Buys</span><span>Sells</span></div><div class="vv"><span class="num">${bn}</span><span class="num">${sn}</span></div>${bar(bn,sn)}</div>`;};
+ $$('#per button').forEach((b)=>b.onclick=()=>{per=b.dataset.p;$$('#per button').forEach((x)=>x.classList.toggle('on',x===b));splits();});splits();
+ candles(c);$$('#tf button').forEach((b)=>b.onclick=()=>{$$('#tf button').forEach((x)=>x.classList.toggle('on',x===b));candles(c);});
+ $$('.bs button').forEach((b)=>b.onclick=()=>{side=b.dataset.x;terminal(t,home);});
  const amt=$('#amt');const est=()=>{const v=parseFloat(amt.value)||0;if(!v){$('#recv').textContent='—';$('#tofloor').textContent='—';return;}
-  if(side==='b'){const eth=c.pair==='ETH'?v:v*1.42e6/1e9/ETH*ETH;const tok=eth*ETH*.975/px;$('#recv').textContent=tok>=1e6?(tok/1e6).toFixed(2)+'M $'+c.t:Math.round(tok).toLocaleString('en-US')+' $'+c.t;$('#tofloor').textContent=(v*.015).toFixed(4)+' '+c.pair;}
+  if(side==='b'){const tok=v*ETH*.975/px;$('#recv').textContent=(tok>=1e6?(tok/1e6).toFixed(2)+'M':Math.round(tok).toLocaleString('en-US'))+' $'+c.t;$('#tofloor').textContent=(v*.015).toFixed(4)+' '+c.pair;}
   else{const tok=v/100*1e6,eth=tok*px*.975/ETH;$('#recv').textContent=eth.toFixed(4)+' ETH';$('#tofloor').textContent=(tok*px*.015/ETH).toFixed(5)+' ETH';}};
- amt.oninput=est;$$('.quick button').forEach((b)=>b.onclick=()=>{amt.value=b.dataset.v;est();});
- $('#go').onclick=()=>toast(PREVIEW);
- const tabs={trades(){let h='<table><tr><th>Wallet</th><th>Side</th><th class="r">ETH</th><th class="r">When</th></tr>';for(let k=0;k<10;k++){const b=rnd()>.38;h+=`<tr><td><span class="who"><span class="av" style="background:hsl(${Math.floor(rnd()*360)} 60% 60%)"></span><span class="num">0x${Math.floor(rnd()*1e8).toString(16)}…${Math.floor(rnd()*4096).toString(16)}</span></span></td><td class="${b?'up':'dn'}">${b?'Buy':'Sell'}</td><td class="r num">${(rnd()*1.2).toFixed(3)}</td><td class="r" style="color:var(--ink3)">${Math.floor(1+k*rnd()*9)}m</td></tr>`;}return h+'</table>';},
-  holders(){let h='<table><tr><th>#</th><th>Holder</th><th class="r">Share</th></tr>',left=60;for(let k=0;k<8;k++){const s=k===0?100-c.above*100/1.5:left*rnd()*.4;left-=s;h+=`<tr><td style="color:var(--ink3)">${k+1}</td><td>${k===0?'Pool (ZappyHook)':'<span class="num">0x'+Math.floor(rnd()*1e8).toString(16)+'…</span>'}</td><td class="r num">${Math.max(.1,Math.min(99,k===0?62+rnd()*20:s)).toFixed(1)}%</td></tr>`;}return h+'</table>';},
+ amt.oninput=est;$$('.quick button').forEach((b)=>b.onclick=()=>{amt.value=b.dataset.v;est();});$('#go').onclick=()=>toast(PREVIEW);
+ const tabs={trades(){let h='<table><tr><th>Wallet</th><th>Side</th><th class="r">ETH</th><th class="r">$'+c.t+'</th><th class="r">When</th></tr>';for(let k=0;k<12;k++){const b=rnd()>.38,e=rnd()*1.2;h+=`<tr><td><span class="who"><span class="av" style="background:hsl(${Math.floor(rnd()*360)} 55% 58%)"></span><span class="num">0x${Math.floor(rnd()*1e8).toString(16)}…${Math.floor(rnd()*4096).toString(16)}</span></span></td><td class="${b?'up':'dn'}">${b?'Buy':'Sell'}</td><td class="r num">${e.toFixed(3)}</td><td class="r num">${usd(e*ETH/px).replace('$','')}</td><td class="r" style="color:var(--ink3)">${Math.floor(1+k*3+rnd()*4)}m</td></tr>`;}return h+'</table>';},
+  holders(){let h='<table><tr><th>#</th><th>Holder</th><th class="r">Share</th></tr>';const sh=[0,8.4,5.1,3.9,2.7,2.2,1.6,1.1];sh.forEach((v,k)=>{h+=`<tr><td style="color:var(--ink3)">${k+1}</td><td>${k===0?'Pool (ZappyHook)':'<span class="num">0x'+Math.floor(rnd()*1e8).toString(16)+'…</span>'}</td><td class="r num">${(k===0?100/(1+c.above)*.9:v).toFixed(1)}%</td></tr>`;});return h+'</table>';},
   about(){return `<div style="padding:18px;display:grid;gap:10px;color:var(--ink2)"><p>${c.n} is a sample coin for this preview. Every Zappy coin starts near a $10K market cap with 1B tokens in its pool, a 2.5% tax on every trade, and a floor under its price.</p><div class="lines"><div><span>Supply</span><b>1,000,000,000</b></div><div><span>Pair</span><b>${c.pair}</b></div><div><span>Creator fee</span><b>0.6% of every trade</b></div></div></div>`;}};
- const showT=(k)=>{$$('#tt button').forEach((b)=>b.classList.toggle('on',b.dataset.t===k));$('#tbody').innerHTML=tabs[k]();};
- $$('#tt button').forEach((b)=>b.onclick=()=>showT(b.dataset.t));showT('trades');
+ const showT=(k)=>{$$('#tt button').forEach((b)=>b.classList.toggle('on',b.dataset.t===k));$('#tbody').innerHTML=tabs[k]();};$$('#tt button').forEach((b)=>b.onclick=()=>showT(b.dataset.t));showT('trades');
 }
-function drawChart(c){const cv=$('#chart'),r=cv.getBoundingClientRect();cv.width=r.width*DPR;cv.height=r.height*DPR;const x=cv.getContext('2d'),W=cv.width,H=cv.height;
- seed=c.i*97+13;const N=160,P=[],F=[];let p=Math.log(1e4),f=p;for(let k=0;k<N;k++){p+=(Math.log(c.mc)-Math.log(1e4))/N+(rnd()-.5)*.09;P.push(p);f=Math.max(f,p-Math.log(1+c.above)-.05*rnd());F.push(Math.min(f,p-.02));}
- const mn=Math.min(...F)-.1,mx=Math.max(...P)+.1,X=(k)=>k/(N-1)*(W-70*DPR),Y=(v)=>H-16*DPR-(v-mn)/(mx-mn)*(H-30*DPR);
- x.strokeStyle='rgba(255,255,255,.05)';x.lineWidth=DPR;x.fillStyle='rgba(138,147,150,.9)';x.font=`500 ${10.5*DPR}px Geist,sans-serif`;
- for(let g=0;g<=4;g++){const v=mn+(mx-mn)*g/4,y=Y(v);x.beginPath();x.moveTo(0,y);x.lineTo(W-70*DPR,y);x.stroke();x.fillText(usd(Math.exp(v)),W-64*DPR,y+4*DPR);}
- const gr=x.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(255,216,77,.16)');gr.addColorStop(1,'rgba(255,216,77,0)');x.beginPath();x.moveTo(X(0),H);P.forEach((v,k)=>x.lineTo(X(k),Y(v)));x.lineTo(X(N-1),H);x.closePath();x.fillStyle=gr;x.fill();
- const line=(A,col,w,b,step)=>{x.save();x.shadowColor=col;x.shadowBlur=b*DPR;x.strokeStyle=col;x.lineWidth=w*DPR;x.beginPath();A.forEach((v,k)=>{if(!k)x.moveTo(X(k),Y(v));else{if(step)x.lineTo(X(k),Y(A[k-1]));x.lineTo(X(k),Y(v));}});x.stroke();x.restore();};
- line(F,'#b8c2c7',1.6,6,true);line(P,'#ffd84d',2,12,false);
- x.fillStyle='#ffd84d';x.beginPath();x.arc(X(N-1),Y(P[N-1]),4*DPR,0,7);x.fill();}
+/* candlesticks with the floor under them and volume at the bottom */
+function candles(c){const cv=$('#cc');if(!cv)return;const r=cv.getBoundingClientRect();cv.width=r.width*DPR;cv.height=r.height*DPR;const x=cv.getContext('2d'),W=cv.width,H=cv.height,N=Math.max(40,Math.floor(r.width/9));
+ seed=c.i*53+Math.floor(N);let p=Math.log(c.mc)-.9,f=p-.6;const K=[];for(let k=0;k<N;k++){const o=p;p+=.9/N+(rnd()-.5)*.11;const hi=Math.max(o,p)+rnd()*.04,lo=Math.min(o,p)-rnd()*.04;f=Math.max(f,Math.min(lo-.08,p-Math.log(1+c.above)));K.push({o,c:p,h:hi,l:lo,f,v:rnd()**2});}
+ const pad=64*DPR,cw=W-pad,volH=H*.16,mn=Math.min(...K.map((k)=>k.f))-.05,mx=Math.max(...K.map((k)=>k.h))+.05,Y=(v)=>(H-volH-10*DPR)-(v-mn)/(mx-mn)*(H-volH-26*DPR),bw=cw/N;
+ const draw=(hv)=>{x.clearRect(0,0,W,H);x.font=`500 ${10.5*DPR}px Geist,sans-serif`;
+  for(let g=0;g<=4;g++){const v=mn+(mx-mn)*g/4,y=Y(v);x.strokeStyle='rgba(255,255,255,.045)';x.lineWidth=DPR;x.beginPath();x.moveTo(0,y);x.lineTo(cw,y);x.stroke();x.fillStyle='rgba(138,147,150,.9)';x.fillText(usd(Math.exp(v)),cw+8*DPR,y+4*DPR);}
+  // floor area and step line
+  x.beginPath();x.moveTo(0,H-volH);K.forEach((k,i)=>{x.lineTo(i*bw,Y(k.f));x.lineTo((i+1)*bw,Y(k.f));});x.lineTo(cw,H-volH);x.closePath();const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(255,216,77,.12)');g.addColorStop(1,'rgba(255,216,77,0)');x.fillStyle=g;x.fill();
+  x.save();x.shadowColor='#ffd84d';x.shadowBlur=8*DPR;x.strokeStyle='#ffd84d';x.lineWidth=1.6*DPR;x.beginPath();K.forEach((k,i)=>{i?x.lineTo(i*bw,Y(k.f)):x.moveTo(0,Y(k.f));x.lineTo((i+1)*bw,Y(k.f));});x.stroke();x.restore();
+  K.forEach((k,i)=>{const up=k.c>=k.o,col=up?'#3ee08f':'#ff4f63',cx=i*bw+bw/2;x.strokeStyle=col;x.lineWidth=Math.max(1,DPR);x.beginPath();x.moveTo(cx,Y(k.h));x.lineTo(cx,Y(k.l));x.stroke();x.fillStyle=col;const y1=Y(Math.max(k.o,k.c)),y2=Y(Math.min(k.o,k.c));x.fillRect(i*bw+bw*.18,y1,bw*.64,Math.max(DPR,y2-y1));
+   x.globalAlpha=.35;x.fillRect(i*bw+bw*.18,H-k.v*volH,bw*.64,k.v*volH);x.globalAlpha=1;});
+  const last=K[N-1];const ly=Y(last.c);x.setLineDash([3*DPR,4*DPR]);x.strokeStyle='rgba(255,255,255,.25)';x.beginPath();x.moveTo(0,ly);x.lineTo(cw,ly);x.stroke();x.setLineDash([]);
+  x.fillStyle='#e7ecea';x.fillRect(cw+2*DPR,ly-9*DPR,pad-4*DPR,18*DPR);x.fillStyle='#07080d';x.fillText(usd(Math.exp(last.c)),cw+8*DPR,ly+4*DPR);
+  const fy=Y(last.f);x.fillStyle='#ffd84d';x.fillRect(cw+2*DPR,fy-9*DPR,pad-4*DPR,18*DPR);x.fillStyle='#07080d';x.fillText(usd(Math.exp(last.f)),cw+8*DPR,fy+4*DPR);
+  if(hv!=null){const k=K[hv],cx=hv*bw+bw/2;x.strokeStyle='rgba(255,255,255,.2)';x.beginPath();x.moveTo(cx,0);x.lineTo(cx,H);x.stroke();$('#ohlc').innerHTML=`O <b>${usd(Math.exp(k.o))}</b>  H <b>${usd(Math.exp(k.h))}</b>  L <b>${usd(Math.exp(k.l))}</b>  C <b>${usd(Math.exp(k.c))}</b>  Floor <b style="color:var(--y)">${usd(Math.exp(k.f))}</b>`;}
+  else{const k=last;$('#ohlc').innerHTML=`C <b>${usd(Math.exp(k.c))}</b>  Floor <b style="color:var(--y)">${usd(Math.exp(k.f))}</b>  ${(c.above*100).toFixed(0)}% above floor`;}};
+ draw(null);cv.onpointermove=(e)=>{const rr=cv.getBoundingClientRect(),i=Math.floor((e.clientX-rr.left)*DPR/bw);if(i>=0&&i<N)draw(i);};cv.onpointerleave=()=>draw(null);}
 
 /* ---------------- launch ---------------- */
 const L={name:'',ticker:'',desc:'',pair:'ETH',buy:0,vest:false,img:''};
@@ -232,9 +241,9 @@ function launch(){
 /* ---------------- router ---------------- */
 function route(){const h=location.hash.replace(/^#/,'')||'/',m=h.match(/^\/coin\/([A-Za-z0-9]+)/),r=m?'coin':h.startsWith('/launch')?'launch':'explore';
  $$('[data-r]').forEach((a)=>a.classList.toggle('on',a.dataset.r===r&&(r!=='coin'||(m&&m[1]==='ZAPPY'))));
- window.scrollTo(0,0);if(m)coinPage(m[1]);else if(r==='launch')launch();else explore();}
-addEventListener('hashchange',route);$('#q').addEventListener('input',(e)=>{if(!/^#?\/?$/.test(location.hash)&&location.hash!=='#/')location.hash='#/';grid(e.target.value);});
-addEventListener('resize',()=>{const m=location.hash.match(/coin\/(\w+)/);if(m)drawChart(COINS.find((x)=>x.t===m[1])||COINS[0]);});
+ window.scrollTo(0,0);if(r==='launch'){$('#q').oninput=null;launch();}else terminal(m?m[1]:'ZAPPY',!m);}
+addEventListener('hashchange',route);
+addEventListener('resize',()=>{const c=COINS.find((x)=>x.t===cur);if(c)candles(c);});
 route();
 })();
 </script>
