@@ -11,8 +11,8 @@ window.PAGE = async () => {
   const I = { factory: new E.Interface(ABI.factory), hook: new E.Interface(ABI.hook), locker: new E.Interface(ABI.locker), vault: new E.Interface(ABI.vault), escrow: new E.Interface(ABI.escrow) };
   // a second generation of contracts on this chain (CFG chain.v2: factory, hook, locker): ownership and the launch switch
   const V2 = C.chain.v2 && C.chain.v2.factory ? C.chain.v2 : null;
-  const OWNED2 = V2 ? [['factoryV2', 'Factory v2'], ['hookV2', 'Hook v2'], ['lockerV2', 'Locker v2'], ...(V2.margin ? [['marginV2', 'Margin (leverage)']] : [])] : [];
-  if (V2) { Object.assign(K, { factoryV2: V2.factory, hookV2: V2.hook, lockerV2: V2.locker, marginV2: V2.margin || '' }); Object.assign(I, { factoryV2: new E.Interface(ABI.factoryV2 || ABI.factory), hookV2: new E.Interface(ABI.hookV2 || ABI.hook), lockerV2: V2.margin && ABI.lockerZ ? new E.Interface(ABI.lockerZ) : I.locker, marginV2: new E.Interface(ABI.marginV2 || []) }); }
+  const OWNED2 = V2 ? [['factoryV2', 'Factory v2'], ['hookV2', 'Hook v2'], ['lockerV2', 'Locker v2'], ...(V2.margin ? [['marginV2', 'Margin (leverage)']] : []), ...(V2.swapper ? [['swapperV2', 'Swapper (stock leverage)']] : [])] : [];
+  if (V2) { Object.assign(K, { factoryV2: V2.factory, hookV2: V2.hook, lockerV2: V2.locker, marginV2: V2.margin || '', swapperV2: V2.swapper || '' }); Object.assign(I, { factoryV2: new E.Interface(ABI.factoryV2 || ABI.factory), hookV2: new E.Interface(ABI.hookV2 || ABI.hook), lockerV2: V2.margin && ABI.lockerZ ? new E.Interface(ABI.lockerZ) : I.locker, marginV2: new E.Interface(ABI.marginV2 || []), swapperV2: new E.Interface(ABI.swapperV2 || []) }); }
   const PAIRS = V2 ? V2.pairs || [] : [];
   const pairOf = (a) => PAIRS.find((p) => String(p.addr).toLowerCase() === String(a || E.ZeroAddress).toLowerCase()) || { sym: a && a !== E.ZeroAddress ? APP.shortAddr(a) : C.chain.quote };
   const inPair = (wei, a) => Number(E.formatUnits(wei || 0n, pairOf(a).dec || 18)).toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' ' + pairOf(a).sym;
