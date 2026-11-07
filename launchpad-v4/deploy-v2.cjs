@@ -13,7 +13,7 @@
 const fs = require('fs'), path = require('path');
 const { ethers } = require('ethers');
 const NETS = {
-  robinhood: { chainId: 4663, rpc: process.env.ROBINHOOD_RPC || 'https://rpc.mainnet.chain.robinhood.com', pm: '0x8366a39CC670B4001A1121B8F6A443A643e40951', posm: '0x58daec3116aae6D93017bAAea7749052E8a04fA7', permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3', create2: '0x4e59b44847b379578588920cA78FbF26c0B4956C', tokenImpl: null },
+  robinhood: { chainId: 4663, rpc: process.env.ROBINHOOD_RPC || 'https://rpc.mainnet.chain.robinhood.com', pm: '0x8366a39CC670B4001A1121B8F6A443A643e40951', posm: '0x58daec3116aae6D93017bAAea7749052E8a04fA7', permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3', create2: '0x4e59b44847b379578588920cA78FbF26c0B4956C', tokenImpl: null, weth: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73', v3Factory: '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA' },
   base: { chainId: 8453, rpc: process.env.BASE_RPC || 'https://mainnet.base.org', pm: '0x498581fF718922c3f8e6A244956aF099B2652b2b', posm: '0x7C5f5A4bBd8fD63184577525326123B519429bDc', permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3', create2: '0x4e59b44847b379578588920cA78FbF26c0B4956C', tokenImpl: null },
 };
 const SEND = process.argv.includes('--send');
@@ -37,7 +37,7 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   console.log(`${netName}: deployer ${me}, ${ethers.formatEther(await P.getBalance(me))} ETH; owner-to-be ${OWNER}; gas ${ethers.formatUnits(fee.gasPrice, 'gwei')} gwei`);
   const Token = art('LiquidFiToken'), Locker = art(process.env.LEVERAGE ? 'ZappyLocker' : 'LiquidFiLocker'), Hook = art('BuzzPadHook'), Factory = art('BuzzPadFactory');
   const lockerInputs = Locker.abi.find((x) => x.type === 'constructor').inputs;
-  const lockerInit = Locker.bytecode + AC.encode(lockerInputs.map((i) => i.type), lockerInputs.map((i) => (/owner/i.test(i.name) ? me : N.posm))).slice(2);
+  const lockerInit = Locker.bytecode + AC.encode(lockerInputs.map((i) => i.type), lockerInputs.map((i) => (/owner/i.test(i.name) ? me : /permit2/i.test(i.name) ? N.permit2 : N.posm))).slice(2);
   const hookInit = Hook.bytecode + AC.encode(['address', 'address', 'address'], [N.pm, OWNER, me]).slice(2);
   const FLAGS = (1n << 13n) | (1n << 7n) | (1n << 6n) | (1n << 3n) | (1n << 2n);
   if (!prog.hookSalt) {
@@ -84,10 +84,27 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   const owned = [['hook', prog.hook, H], ['factory', F, FI], ['locker', lk.address, LI]];
   let lev = null;
   if (process.env.LEVERAGE) {
-    const Margin = art('ZappyMargin'), MI = new ethers.Interface(Margin.abi);
-    const M = (await step('ZappyMargin', { data: Margin.bytecode + AC.encode(['address', 'address'], [me, F]).slice(2) })).address;
+    const Margin = art('ZappyMargin'), MI = new ethers.Interface(Margin.abi), Swapper = art('ZappySwapper'), SI = new ethers.Interface(Swapper.abi);
+    const SW = (await step('ZappySwapper', { data: Swapper.bytecode + AC.encode(['address', 'address', 'address', 'address'], [me, N.pm, N.weth, N.v3Factory]).slice(2) })).address;
+    const M = (await step('ZappyMargin', { data: Margin.bytecode + AC.encode(['address', 'address', 'address'], [me, F, SW]).slice(2) })).address;
     await step('locker.setMargin', { to: lk.address, data: LI.encodeFunctionData('setMargin', [M]) });
-    owned.push(['margin', M, MI]); lev = { margin: M };
+    // every stock pair's ETH route and the pool depth (about 5 ETH's worth, in the stock) its coins need for leverage
+    if (process.env.STOCKS) {
+      const S = JSON.parse(fs.readFileSync(path.resolve(process.env.STOCKS), 'utf8'));
+      const depth = (usd) => (ethers.parseEther('5') * BigInt(Math.round(S.ethUsd * 1e6))) / BigInt(Math.round(usd * 1e6));
+      for (const st of S.stocks) {
+        const I = st.info, md = depth(st.usd);
+        if (I.route === 'v3') {
+          const tokens = I.path.filter((_, i) => i % 2 === 0), fees = I.path.filter((_, i) => i % 2 === 1);
+          await step('route ' + st.sym, { to: SW, data: SI.encodeFunctionData('setV3Route', [st.addr, tokens, fees, md]) });
+        } else {
+          let from = ethers.ZeroAddress; const keys = [];
+          for (const h of I.hops) { const [c0, c1] = BigInt(from) < BigInt(h.c) ? [from, h.c] : [h.c, from]; keys.push([c0, c1, h.fee, h.ts, h.hooks]); from = h.c; }
+          await step('route ' + st.sym, { to: SW, data: SI.encodeFunctionData('setV4Route', [st.addr, keys, md]) });
+        }
+      }
+    }
+    owned.push(['swapper', SW, SI], ['margin', M, MI]); lev = { margin: M, swapper: SW };
   }
   for (const [n, a, I] of owned) await step(n + '.transferOwnership', { to: a, data: I.encodeFunctionData('transferOwnership', [OWNER]) });
   const out = { network: netName, chainId: N.chainId, brand: BRAND, deployer: me, owner: OWNER, ownershipPending: true, poolManager: N.pm, positionManager: N.posm, permit2: N.permit2, hook: prog.hook, hookSalt: prog.hookSalt, locker: lk.address, tokenImplementation: tk.address, factory: F, ...(lev ? { leverage: { ...lev, opensEnabled: false } } : {}), ...(stockPairs.length ? { stockPairs } : {}), launchConfigs: [Object.fromEntries(Object.entries(ethCfg).map(([k, v]) => [k, typeof v === 'bigint' ? v.toString() : v]))], launchFee: ethers.parseEther('0.0002').toString(), launchEnabled: false, fromBlock: (prog.steps.LiquidFiToken || prog.steps.LiquidFiLocker || prog.steps.ZappyLocker).block, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };

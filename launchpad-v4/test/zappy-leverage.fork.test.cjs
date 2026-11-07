@@ -25,7 +25,7 @@ const later = async (s) => { await P.send('evm_increaseTime', [s]); await P.send
   for (const k in W) await P.send('hardhat_setBalance', [addr[k], '0x' + (1000n * 10n ** 18n).toString(16)]);
   const as = (n, a, w) => new ethers.Contract(a, art(n), w);
   const F = as('BuzzPadFactory', dep.factory, W.owner), L = as('ZappyLocker', dep.locker, W.owner), M = as('ZappyMargin', dep.leverage.margin, W.owner);
-  for (const [n, a] of [['BuzzPadHook', dep.hook], ['BuzzPadFactory', dep.factory], ['ZappyLocker', dep.locker], ['ZappyMargin', dep.leverage.margin]]) await (await as(n, a, W.owner).acceptOwnership()).wait();
+  for (const [n, a] of [['BuzzPadHook', dep.hook], ['BuzzPadFactory', dep.factory], ['ZappyLocker', dep.locker], ['ZappySwapper', dep.leverage.swapper], ['ZappyMargin', dep.leverage.margin]]) await (await as(n, a, W.owner).acceptOwnership()).wait();
   ok((await L.margin()) === dep.leverage.margin && (await M.locker()) === dep.locker, 'locker lends only to the margin contract');
   ok(await reverts(L.setMargin.staticCall(addr.owner), 'AlreadyInitialized'), 'the locker cannot be pointed at another borrower');
   await (await F.setLaunchEnabled(true)).wait();
@@ -45,24 +45,24 @@ const later = async (s) => { await P.send('evm_increaseTime', [s]); await P.send
 
   for (let i = 0; i < 3; i++) await buy(W.market, 1);
   ok((await T.balanceOf(addr.market)) > 0n, 'market buys 3 ETH through Robinhood Chain\'s UniversalRouter');
-  ok(await reverts(Mt.open.staticCall(coin, 30000, 0, { value: E(0.01) }), 'CoinTooNew'), 'no leverage in the first 10 minutes of a coin');
+  ok(await reverts(Mt.open.staticCall(coin, 30000, 0, 0, { value: E(0.01) }), 'CoinTooNew'), 'no leverage in the first 10 minutes of a coin');
   await later(600);
-  ok(await reverts(Mt.open.staticCall(coin, 30000, 0, { value: E(0.01) }), 'PoolTooThin'), `no leverage on a thin pool (${f(await M.poolDepth(coin))} ETH < 5 ETH)`);
+  ok(await reverts(Mt.open.staticCall(coin, 30000, 0, 0, { value: E(0.01) }), 'PoolTooThin'), `no leverage on a thin pool (${f(await M.poolDepth(coin))} ETH < 5 ETH)`);
   for (let i = 0; i < 12; i++) await buy(W.market, 1);
-  const depth = await M.poolDepth(coin), passed = await L.passedEth(coin), room = await L.lendable(coin);
+  const depth = await M.poolDepth(coin), passed = await L.passedPair(coin), room = await L.lendable(coin);
   ok(depth > E(5) && passed > 0n && room === (passed * 2000n) / 10000n, `after 15 ETH of buys: depth ${f(depth)} ETH, passed bands ${f(passed)} ETH, lendable ${f(room)} ETH (20%)`);
   const maxM = await M.maxMargin(coin, 30000);
-  ok(maxM > 0n && await reverts(Mt.open.staticCall(coin, 30000, 0, { value: (maxM * 101n) / 100n }), ''), `max margin at 3x now ${f(maxM)} ETH; 1% more is refused`);
-  ok(await reverts(Mt.open.staticCall(coin, 40000, 0, { value: E(0.01) }), 'InvalidLeverage'), 'no more than 3x');
+  ok(maxM > 0n && await reverts(Mt.open.staticCall(coin, 30000, 0, 0, { value: (maxM * 101n) / 100n }), ''), `max margin at 3x now ${f(maxM)} ETH; 1% more is refused`);
+  ok(await reverts(Mt.open.staticCall(coin, 40000, 0, 0, { value: E(0.01) }), 'InvalidLeverage'), 'no more than 3x');
   const m = (maxM * 9n) / 10n; // 90% of the largest position allowed
-  const openPos = async (margin = m) => { const rc = await (await Mt.open(coin, 30000, 0, { value: margin, gasLimit: 2_000_000n })).wait(); return rc.logs.map((l) => { try { return M.interface.parseLog(l); } catch { return null; } }).find((x) => x && x.name === 'PositionOpened').args; };
-  const passed0 = await L.passedEth(coin), idle0 = await L.idle(coin);
+  const openPos = async (margin = m) => { const rc = await (await Mt.open(coin, 30000, 0, 0, { value: margin, gasLimit: 2_000_000n })).wait(); return rc.logs.map((l) => { try { return M.interface.parseLog(l); } catch { return null; } }).find((x) => x && x.name === 'PositionOpened').args; };
+  const passed0 = await L.passedPair(coin), idle0 = await L.idle(coin);
   let p = await openPos();
   const fee = (p.borrowed * 30n) / 10000n;
   ok((await M.borrowFeeBps()) === 30n, 'borrow fee 0.3%, one time');
   let [debt, value, liq] = await M.health(p.id);
   ok(p.borrowed === m * 2n && !liq && (await L.lent(coin)) === p.borrowed, `3x long: margin ${f(m)}, borrowed ${f(p.borrowed)} from the coin's own pool, value ${f(value)}`);
-  const passed1 = await L.passedEth(coin);
+  const passed1 = await L.passedPair(coin);
   ok(passed0 - passed1 >= p.borrowed - fee - 10n ** 12n && passed0 - passed1 <= p.borrowed - fee + 10n ** 12n, `the loan left the passed band and the ${f(fee)} ETH borrow fee went back into it (idle before ${f(idle0)})`);
   console.log(`         liquidation price ${Number(ethers.formatEther(await M.liquidationPrice(p.id))).toPrecision(4)} ETH per coin`);
 
@@ -109,7 +109,7 @@ const later = async (s) => { await P.send('evm_increaseTime', [s]); await P.send
   { const mk2 = await T.balanceOf(addr.market); let n = 0; while (!(await M.health(p.id))[2] && n++ < 120) await sell(W.market, mk2 / 200n); }
   await (await Mk.flag(p.id)).wait();
   [debt] = await M.health(p.id);
-  await (await Mt.addMargin(p.id, { value: debt / 2n })).wait();
+  await (await Mt.addMargin(p.id, 0, { value: debt / 2n })).wait();
   ok(Number((await M.positions(p.id)).flaggedAt) === 0 && !(await M.health(p.id))[2], 'trader pays down half the debt: flag cleared, healthy');
 
   // no running interest: the debt is the same 30 days later

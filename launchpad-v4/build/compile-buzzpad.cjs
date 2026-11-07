@@ -8,7 +8,7 @@ const ROOT = path.join(__dirname, "..");
 const CONTRACTS = path.join(ROOT, "contracts");
 const S = JSON.parse(fs.readFileSync(path.join(__dirname, "verified-settings.json"), "utf8"));
 const hookSettings = Object.values(S).find((s) => /MemeHook/.test(s.fullyQualifiedName)).settings;
-const FILES = [["liquidfi", "LiquidFiToken"], ["liquidfi", "LiquidFiLocker"], ["buzzpad", "BuzzPadHook"], ["buzzpad", "BuzzPadFactory"], ["zappy", "ZappyLocker"], ["zappy", "ZappyMargin"]];
+const FILES = [["liquidfi", "LiquidFiToken"], ["liquidfi", "LiquidFiLocker"], ["buzzpad", "BuzzPadHook"], ["buzzpad", "BuzzPadFactory"], ["zappy", "ZappyLocker"], ["zappy", "ZappySwapper"], ["zappy", "ZappyMargin"]];
 const sources = Object.fromEntries(FILES.map(([d, f]) => [`src/${d}/${f}.sol`, { content: fs.readFileSync(path.join(CONTRACTS, "src", d, f + ".sol"), "utf8") }]));
 const findImports = (p) => { const f = [path.join(CONTRACTS, p), path.join(ROOT, p)].find((x) => fs.existsSync(x)); return f ? { contents: fs.readFileSync(f, "utf8") } : { error: "not found: " + p }; };
 const settings = { ...hookSettings, outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object"] } } };
