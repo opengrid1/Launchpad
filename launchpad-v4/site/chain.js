@@ -196,13 +196,20 @@
     return { chain: 'hyper', px, pxUsd: px * APP.hypeUsd, mcap: px * SUPPLY, liqHype: held.hype + held.tokens * px, hypeInPool: held.hype, vol24, volAll, feesAll, trades: trs.length, buys24, sells24, c5: (px / pxAgo(300) - 1) * 100, c1: (px / pxAgo(3600) - 1) * 100, c24: (px / pxAgo(86400) - 1) * 100, inPool: held.tokens, poolId: t.poolId, lockedIds: t.posIds, fee: feeState(t.addr), lastTs: trs.length ? trs[trs.length - 1].ts : t.createdAt };
   }
   const isPool = (t, w) => { const k = KK(t.net), v2 = V2of(t.net) || {}; return w === low(k.poolManager) || w === low(k.locker) || w === low(k.factory) || w === low(k.hook) || w === low(v2.locker) || w === low(v2.factory) || w === low(v2.hook) || (v2.margin && w === low(v2.margin)); };
+  // the leverage a coin offers now, from the margin contract's default terms (CFG.leverage overrides): an ETH-pair coin
+  // old enough with enough ETH in its pool; 0 where there is none (the token page reads the live terms)
+  function levMaxOf(t, m) {
+    const L = C.leverage || {}, on = DEMO || !!(V2of(t.net) || {}).margin; if (!on || isErc(t)) return 0;
+    if (now(t.net) - t.createdAt < (L.minAgeSec ?? 600) || m.hypeInPool < (L.minPoolEth ?? 5)) return 0;
+    return L.max ?? 3;
+  }
   function view(t) {
     const cached = VIEW.get(t.addr); if (cached && cached._usd === APP.hypeUsd) return cached; // rebuilt when the USD price arrives or moves
     const m = poolView(t), T = t.terms || {};
     const v = { addr: t.addr, mint: '', name: t.name, symbol: t.symbol, emoji: '', img: t.logo || APP.defaultImg(t.symbol, t.addr), desc: t.desc, links: { x: (t.socials || {}).x || '', tg: (t.socials || {}).tg || '', web: (t.socials || {}).web || '' }, creator: t.creator, feeRecipient: t.feeRecipient, creatorSol: '', createdAt: t.createdAt, age: APP.ago(t.createdAt), chains: ['hyper'], byChain: { hyper: m }, net: t.net, chainName: C.chainOf(t.net).name,
       px: m.px, pxUsd: m.pxUsd, mcap: m.mcap, mcapUsd: m.mcap * APP.hypeUsd, liqHype: m.liqHype, vol24: m.vol24, volAll: m.volAll, feesAll: m.feesAll, trades: m.trades, buys24: m.buys24, sells24: m.sells24, holders: t.holders.filter(([w]) => !isPool(t, w)).length, c5: m.c5, c1: m.c1, c24: m.c24,
       creatorTaxBps: t.taxBps, buyback: t.buyback, feeBps: T.hookFeeBps ?? E.feeBps, creatorShareBps: 10000 - (T.protocolShareBps ?? E.protocolShareBps), lastTs: m.lastTs, fee: m.fee, tx: t.tx, poolId: t.poolId,
-      v: t.v || 1, pair: t.pair || ZERO, pairSym: pairMeta(t).sym, pairLogo: pairMeta(t).logo };
+      v: t.v || 1, pair: t.pair || ZERO, pairSym: pairMeta(t).sym, pairLogo: pairMeta(t).logo, levMax: levMaxOf(t, m) };
     v._usd = APP.hypeUsd; VIEW.set(t.addr, v); return v;
   }
   function holders(a) {
@@ -252,7 +259,7 @@
   const DATA = window.DATA = {
     mode: 'live',
     async ready() {
-      if (DEMO && !document.getElementById('demo-bar')) { const b = document.createElement('div'); b.id = 'demo-bar'; b.textContent = 'Preview with sample coins. The contracts go live on Robinhood Chain soon.'; document.body.prepend(b); }
+      if (DEMO && !document.getElementById('demo-bar')) { const b = document.createElement('div'); b.id = 'demo-bar'; b.textContent = 'Preview with sample coins. The contracts go live on Robinhood Chain soon.'; (document.querySelector('main') || document.body).prepend(b); }
       await load(); if (!ALL.length && !Object.keys(SS).length) setTimeout(() => load(), 3000);
       if (!listeners++) { setInterval(() => { if (!document.hidden) load(); }, 6000); setInterval(() => { if (!document.hidden) refreshMine(); }, 20000); APP.onWallet(() => { myBal.clear(); refreshMine(); }); refreshMine(); }
       return true;
