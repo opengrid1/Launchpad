@@ -19,11 +19,21 @@ interface IPadStakingRewards {
     function notifyRewardAmount() external payable;
 }
 
+interface IPadAmmRouterLike {
+    function WNATIVE() external view returns (address);
+    function swapExactTokensForNative(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external returns (uint256[] memory);
+}
+
+interface IWNativeLike {
+    function withdraw(uint256) external;
+}
+
 /**
  * @title PadSplitter
  * @notice The protocol's fee recipient. Every launch fee and every protocol share of the trading fees is credited
- * to this contract in the fee escrow (native HYPE); `distribute` pulls it and splits it three ways on the owner's
- * shares: a stream to the stakers of the platform token, a buyback of the platform token that is burned, and the
+ * to this contract in the fee escrow (native HYPE), and the AMM pairs send their protocol fee here too; `distribute`
+ * pulls the escrow and splits the native balance on the owner's shares: a stream to the stakers of the platform
+ * token, a stream to the AMM's liquidity-mining farm, a buyback of the platform token that is burned, and the
  * treasury. The buyback leg is earmarked here and executed by the keeper with a minimum output, so a sandwich can
  * never pick its price. The owner can retune the shares, the destinations and the platform token, and can recover
  * any asset held here, so no value is ever stranded.
@@ -44,8 +54,12 @@ contract PadSplitter is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     error OwnershipCannotBeRenounced();
 
     event Distributed(uint256 toStaking, uint256 toBuyback, uint256 toTreasury);
+    event DistributedToFarm(uint256 toFarm);
     event BoughtBackAndBurned(uint256 quoteIn, uint256 tokensBurned);
-    event SharesSet(uint16 stakingBps, uint16 burnBps);
+    event SharesSet(uint16 stakingBps, uint16 burnBps, uint16 farmBps);
+    event FarmSet(address farm);
+    event AmmRouterSet(address router);
+    event Converted(address token, uint256 amountIn, uint256 nativeOut);
     event StakingSet(address staking);
     event TreasurySet(address treasury);
     event KeeperSet(address keeper);
@@ -59,10 +73,13 @@ contract PadSplitter is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     IPadFeeEscrow public immutable feeEscrow;
 
     address public staking;
+    address public farm;
+    address public ammRouter;
     address public treasury;
     address public keeper;
     uint16 public stakingBps;
     uint16 public burnBps;
+    uint16 public farmBps;
     /// @notice The platform token and its pool against native HYPE (currency0 = native).
     address public token;
     PoolKey public tokenKey;
@@ -90,11 +107,46 @@ contract PadSplitter is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         revert OwnershipCannotBeRenounced();
     }
 
-    function setShares(uint16 stakingBps_, uint16 burnBps_) external onlyOwner {
-        if (uint256(stakingBps_) + burnBps_ > BASIS_POINTS) revert SharesTooHigh();
+    /// @notice The split: stakers, buyback and burn, farm; the treasury gets the rest.
+    function setShares(uint16 stakingBps_, uint16 burnBps_, uint16 farmBps_) external onlyOwner {
+        if (uint256(stakingBps_) + burnBps_ + farmBps_ > BASIS_POINTS) revert SharesTooHigh();
         stakingBps = stakingBps_;
         burnBps = burnBps_;
-        emit SharesSet(stakingBps_, burnBps_);
+        farmBps = farmBps_;
+        emit SharesSet(stakingBps_, burnBps_, farmBps_);
+    }
+
+    function setFarm(address farm_) external onlyOwner {
+        farm = farm_;
+        emit FarmSet(farm_);
+    }
+
+    /// @notice The AMM router `convert` sells ERC-20 fees through.
+    function setAmmRouter(address router_) external onlyOwner {
+        ammRouter = router_;
+        emit AmmRouterSet(router_);
+    }
+
+    /// @notice Turns an ERC-20 the AMM pairs paid as protocol fee into native: wrapped native is unwrapped, anything
+    ///         else is sold on its native pair with a minimum output. Keeper or owner.
+    function convert(address tokenIn, uint256 amountIn, uint256 minNativeOut) external nonReentrant {
+        if (msg.sender != keeper && msg.sender != owner()) revert NotKeeper();
+        if (ammRouter == address(0)) revert TokenNotSet();
+        if (amountIn == 0) revert NothingToDo();
+        address wnative = IPadAmmRouterLike(ammRouter).WNATIVE();
+        uint256 before = address(this).balance;
+        if (tokenIn == wnative) {
+            IWNativeLike(wnative).withdraw(amountIn);
+        } else {
+            address[] memory path = new address[](2);
+            path[0] = tokenIn;
+            path[1] = wnative;
+            IERC20(tokenIn).forceApprove(ammRouter, amountIn);
+            IPadAmmRouterLike(ammRouter).swapExactTokensForNative(amountIn, minNativeOut, path, address(this), block.timestamp);
+        }
+        uint256 got = address(this).balance - before;
+        if (got < minNativeOut) revert SlippageExceeded(got, minNativeOut);
+        emit Converted(tokenIn, amountIn, got);
     }
 
     function setStaking(address staking_) external onlyOwner {
@@ -146,15 +198,18 @@ contract PadSplitter is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         uint256 free = address(this).balance - pendingBuyback;
         if (free == 0) revert NothingToDo();
         uint256 toStaking = staking == address(0) ? 0 : (free * stakingBps) / BASIS_POINTS;
+        uint256 toFarm = farm == address(0) ? 0 : (free * farmBps) / BASIS_POINTS;
         uint256 toBuyback = token == address(0) ? 0 : (free * burnBps) / BASIS_POINTS;
-        uint256 toTreasury = free - toStaking - toBuyback;
+        uint256 toTreasury = free - toStaking - toFarm - toBuyback;
         if (toStaking != 0) IPadStakingRewards(staking).notifyRewardAmount{value: toStaking}();
+        if (toFarm != 0) IPadStakingRewards(farm).notifyRewardAmount{value: toFarm}();
         pendingBuyback += toBuyback;
         if (toTreasury != 0) {
             (bool sent,) = payable(treasury).call{value: toTreasury}("");
             if (!sent) revert TransferFailed();
         }
         emit Distributed(toStaking, toBuyback, toTreasury);
+        if (toFarm != 0) emit DistributedToFarm(toFarm);
     }
 
     /// @notice Buys the platform token with `amount` of the earmarked HYPE and burns it. Keeper or owner only: the
