@@ -30,7 +30,7 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 .pill.big{height:52px;padding:0 26px;font-size:16px}
 
 /* hero */
-.hero{overflow:hidden;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:130px 0 0;position:relative}
+.hero{overflow:hidden;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:130px 0 80px;position:relative}
 .hero .glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(640px 380px at 50% 38%,rgba(255,216,77,.13),transparent 70%),radial-gradient(900px 500px at 50% 0,rgba(255,255,255,.04),transparent 70%)}
 .h1{position:relative;font:500 clamp(50px,6.7vw,96px)/1.02 var(--sans);letter-spacing:-.035em;text-shadow:-2px 0 0 rgba(255,77,106,.55),2px 0 0 rgba(91,124,255,.6),0 0 60px rgba(255,255,255,.12)}
 .h1 .ac{color:var(--y);text-shadow:-2px 0 0 rgba(255,77,106,.5),2px 0 0 rgba(91,124,255,.55),0 0 50px rgba(255,216,77,.45)}
@@ -38,13 +38,6 @@ main,footer,.nav{position:relative;z-index:1}main{overflow-x:clip}
 @keyframes rise{to{opacity:1;transform:none;filter:none}}
 .lede{position:relative;max-width:560px;margin:24px auto 0;font-size:19px;line-height:28.5px;color:var(--ink2);opacity:0;animation:rise 1s .35s forwards}
 .hero .ctas{display:flex;gap:12px;justify-content:center;margin-top:36px;opacity:0;animation:rise 1s .5s forwards}
-.wall{position:relative;width:100%;margin-top:86px;padding-bottom:20px;display:grid;gap:22px;-webkit-mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent),linear-gradient(#000 60%,transparent);-webkit-mask-composite:source-in;mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent) intersect,linear-gradient(#000 60%,transparent)}
-.row{display:flex;gap:22px;width:max-content;animation:slide 70s linear infinite}.row.r2{animation-direction:reverse;animation-duration:85s}.row.r3{animation-duration:100s;opacity:.4;filter:blur(1px)}
-@keyframes slide{to{transform:translateX(-50%)}}
-.cn{width:84px;height:84px;flex:none;border-radius:50%;position:relative;transition:transform .3s;filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
-.cn svg{width:100%;height:100%;display:block}
-.cn.lit{box-shadow:0 0 0 2px var(--c),0 0 34px -2px var(--c)}
-.row:hover{animation-play-state:paused}.cn:hover{transform:scale(1.12)}
 
 /* section scaffolding */
 .sec{padding:220px 0 0;position:relative}
@@ -180,7 +173,6 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:72px 0 32px}
   <h1 class="h1"><span class="ln">Every pump</span><span class="ln">builds a <span class="ac">floor.</span></span></h1>
   <p class="lede">Every Zappy coin keeps ETH under its price, sized to buy back every token in circulation. Each trade raises it.</p>
   <div class="ctas"><a class="pill w big" href="/app.html">Start trading</a><a class="pill o big" href="#floor">How it works</a></div>
-  <div class="wall" id="wall"></div>
 </section>
 
 <section class="sec" id="floor">
@@ -324,7 +316,7 @@ function coin(i){const [a,b]=PAL[i%PAL.length],id='m'+i,t=TK[i%TK.length],fs=t.l
  <circle cx="50" cy="50" r="49" fill="url(#${id})"/><circle cx="50" cy="50" r="43" fill="none" stroke="url(#${id}r)" stroke-width="2.5"/><circle cx="50" cy="50" r="38" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="1" stroke-dasharray="1.5 3"/>
  <g transform="translate(50 37) scale(.42) translate(-50 -50)"><path d="${BOLT}" fill="rgba(0,0,0,.42)"/><path d="${BOLT}" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" transform="translate(-1.2 -1.4)"/></g><text x="50" y="70" text-anchor="middle" font-family="Geist,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-.5" fill="rgba(0,0,0,.62)">${t}</text>
  <ellipse cx="38" cy="22" rx="20" ry="8" fill="#fff" opacity=".22" transform="rotate(-20 38 22)"/></svg>`;}
-const wall=$('#wall');[['r1',0],['r2',7]].forEach(([cl,o])=>{const r=document.createElement('div');r.className='row '+cl;let h='';for(let i=0;i<18;i++){const k=i+o,lit=false;h+=`<div class="cn${lit?' lit':''}" style="--c:${PAL[k%PAL.length][1]}">${coin(k*3+o)}</div>`;}r.innerHTML=h+h;wall.appendChild(r);});
+/* the coin wall shows real launches only: it stays empty until coins exist on Ethereum */
 
 
 /* reveal */
