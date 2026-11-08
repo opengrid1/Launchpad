@@ -267,6 +267,7 @@
     // a coin the cached state does not have yet (just launched, CDN copy a few seconds old): read fresh state until it shows
     async find(addr, ms = 45000) { const t0 = Date.now(); while (Date.now() - t0 < ms) { await load(true); if (BY.has(low(addr))) return DATA.token(addr); await new Promise((r) => setTimeout(r, 2500)); } return null; },
     tokens() { return ALL.filter((t) => t.name).map(view).sort((a, b) => b.createdAt - a.createdAt); },
+    raw(net) { return SS[net || C.chain.key] || null; }, // the indexer's answer for a chain (flywheel, amm, escrow)
     token(a) { const t = BY.get(low(a)); return t ? view(t) : null; },
     trades(a) { return (TR.get(low(a)) || []).map(trView).reverse(); },
     candles, holders, positions, feeState, quoteBuy, quoteSell, balance,
