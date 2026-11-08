@@ -16,7 +16,7 @@ window.PAGE = async () => {
   };
   const W = APP.W, lc = (a) => String(a || '').toLowerCase(), DEAD = '0x000000000000000000000000000000000000dEaD';
   const f18 = (v) => Number(E.formatEther(v || 0n));
-  let S = null, mode = 'stake', busy = false, flyAt = 0, fly = null;
+  let S = null, mode = 'stake', busy = false, flyAt = 0, fly = null, amt = '';
 
   async function rpc(method, params) {
     for (let i = 0; ; i++) {
@@ -72,7 +72,7 @@ window.PAGE = async () => {
     const m = S && S.mine, bal = mode === 'stake' ? (m ? m.wallet : 0n) : (m ? m.staked : 0n);
     return `<section class="card">
       <div class="seg"><button data-m="stake" class="${mode === 'stake' ? 'on' : ''}">Stake</button><button data-m="unstake" class="${mode === 'unstake' ? 'on' : ''}">Unstake</button></div>
-      <div class="amt"><div class="in"><input id="s-amt" inputmode="decimal" placeholder="0" autocomplete="off"><b>$${esc(SYM)}</b></div><div class="bal"><span>${mode === 'stake' ? 'In wallet' : 'Staked'}: ${fmtNum(f18(bal))}</span>${W.connected ? '<button id="s-max">Max</button>' : ''}</div></div>
+      <div class="amt"><div class="in"><input id="s-amt" inputmode="decimal" placeholder="0" autocomplete="off" value="${esc(amt)}"><b>$${esc(SYM)}</b></div><div class="bal"><span>${mode === 'stake' ? 'In wallet' : 'Staked'}: ${fmtNum(f18(bal))}</span>${W.connected ? '<button id="s-max">Max</button>' : ''}</div></div>
       ${!W.connected ? `<button class="btn pri full" id="s-conn">${ic('wallet')}Sign in</button>` : `<button class="btn pri full" id="s-go" ${busy || (S && S.paused && mode === 'stake') ? 'disabled' : ''}>${busy ? 'Confirm in your wallet…' : S && S.paused && mode === 'stake' ? 'Staking is paused' : mode === 'stake' ? 'Stake' : 'Unstake'}</button>`}
       ${m ? `<div class="kv"><div><span>Your stake</span><b>${fmtNum(f18(m.staked))} $${esc(SYM)}</b></div><div><span>Claimable</span><b>${fmtNum(f18(m.earned), 5)} ${esc(Q)} <span class="muted">${APP.usd(f18(m.earned))}</span></b></div></div>
       <div class="row" style="gap:8px"><button class="btn full" id="s-claim" ${m.earned > 0n && !busy ? '' : 'disabled'}>Claim ${esc(Q)}</button><button class="btn full" id="s-exit" ${m.staked > 0n && !busy ? '' : 'disabled'}>Claim and unstake all</button></div>` : ''}
@@ -93,15 +93,16 @@ window.PAGE = async () => {
     if (!live) { root.innerHTML = header() + `<div class="empty">Staking opens once $${esc(SYM)} is launched and the flywheel contracts are live.</div>`; return; }
     if (!S) { root.innerHTML = header() + '<div class="empty">Loading…</div>'; return; }
     root.innerHTML = header() + stats() + `<div class="two">${flywheel()}${panel()}</div>`;
-    $$('[data-m]', root).forEach((b) => b.onclick = () => { mode = b.dataset.m; render(); });
+    $$('[data-m]', root).forEach((b) => b.onclick = () => { mode = b.dataset.m; amt = ''; render(); });
+    const ai = $('#s-amt'); if (ai) ai.oninput = () => { amt = ai.value.replace(/[^0-9.]/g, ''); };
     const conn = $('#s-conn'); if (conn) conn.onclick = W.connect;
-    const mx = $('#s-max'); if (mx) mx.onclick = () => { $('#s-amt').value = E.formatEther(mode === 'stake' ? S.mine.wallet : S.mine.staked); };
+    const mx = $('#s-max'); if (mx) mx.onclick = () => { amt = E.formatEther(mode === 'stake' ? S.mine.wallet : S.mine.staked); $('#s-amt').value = amt; };
     const go = $('#s-go'); if (go) go.onclick = () => act(mode === 'stake' ? doStake : doUnstake);
     const cl = $('#s-claim'); if (cl) cl.onclick = () => act(() => tx('Claim', ST.staking, I.staking, 'getReward', [], 150000n));
     const ex = $('#s-exit'); if (ex) ex.onclick = () => act(() => tx('Claim and unstake', ST.staking, I.staking, 'exit', [], 200000n));
     const di = $('#s-dist'); if (di) di.onclick = () => act(() => tx('Distribute', ST.splitter, I.splitter, 'distribute', [], 400000n));
   }
-  const amount = () => { const v = ($('#s-amt').value || '').trim(); if (!v || !(Number(v) > 0)) throw new Error('Enter an amount'); return E.parseEther(v); };
+  const amount = () => { const v = (amt || '').trim(); if (!v || !(Number(v) > 0)) throw new Error('Enter an amount'); return E.parseEther(v); };
   async function doStake() {
     const a = amount(); if (a > S.mine.wallet) throw new Error(`You hold ${fmtNum(f18(S.mine.wallet))} $${SYM}`);
     if (S.mine.allowance < a) await tx('Approve', ST.token, I.erc20, 'approve', [ST.staking, E.MaxUint256], 80000n);
@@ -116,7 +117,7 @@ window.PAGE = async () => {
     try { const r = await c[fn](...args, { gasLimit: gas }); t.remove(); const t2 = APP.toast(label + ': waiting for the block', 'info', 120000); await r.wait(); t2.remove(); APP.toast(label + ' done', 'ok'); }
     catch (e) { t.remove(); throw e; }
   }
-  async function act(fn) { if (busy) return; busy = true; render(); try { await fn(); flyAt = 0; await Promise.all([load(), loadFly()]); } catch (e) { toast(errMsg(e), 'err', 7000); } busy = false; render(); }
+  async function act(fn) { if (busy) return; busy = true; render(); try { await fn(); amt = ''; flyAt = 0; await Promise.all([load(), loadFly()]); } catch (e) { toast(errMsg(e), 'err', 7000); } busy = false; render(); }
 
   render();
   try { await Promise.all([load(), loadFly()]); } catch (e) { toast('Could not read the staking contracts: ' + errMsg(e), 'err'); }

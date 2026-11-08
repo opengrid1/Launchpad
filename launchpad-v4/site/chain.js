@@ -321,7 +321,12 @@
       if (allow < amount) { APP.toast('Approve the token for trading (once)', 'info', 6000); await send({ to: a, data: I.erc20.encodeFunctionData('approve', [PERMIT2, X.MaxUint256]), gasLimit: 120000n }, 'approve'); }
       if (p2.amount < amount || Number(p2.expiration) < now() + 120) { APP.toast('Allow the swap router through Permit2 (once a month)', 'info', 6000); await send({ to: PERMIT2, data: I.permit2.encodeFunctionData('approve', [a, UR, (1n << 160n) - 1n, BigInt(now() + 30 * 86400)]), gasLimit: 120000n }, 'approve'); }
       const hook = (t.v === 2 ? V2of(t.net).hook : KK(t.net).hook);
-      const data = window.ROUTES.encodeCoinToCoin({ coinIn: a, coinOut: b, hook, amountIn: amount, minOut: wei(Math.max(0, minOut)), deadline: deadline(), hopLayout: !!(V2of(t.net) && V2of(t.net).hopLayout) });
+      // the router's multi-hop parameter layout differs between v4-periphery releases (HyperEVM's carries per-hop price
+      // limits); the chain config may say which, otherwise the first layout whose simulation passes is used
+      const enc = (hop) => window.ROUTES.encodeCoinToCoin({ coinIn: a, coinOut: b, hook, amountIn: amount, minOut: wei(Math.max(0, minOut)), deadline: deadline(), hopLayout: hop });
+      let data; const cfgHop = C.chainOf(t.net).hopLayout;
+      if (cfgHop !== undefined) data = enc(!!cfgHop);
+      else { let lastErr; for (const hop of [false, true]) { const d = enc(hop); try { await rpc('eth_call', [{ from: me, to: UR, data: d }, 'latest'], 2, t.net); data = d; break; } catch (e) { lastErr = e; } } if (!data) throw lastErr; }
       const r = await send({ to: UR, data, gasLimit: 1200000n }, 'swap');
       await afterTrade(a, parseInt(r.receipt.blockNumber, 16)); await afterTrade(b, parseInt(r.receipt.blockNumber, 16)); return { tx: r.hash };
     },
