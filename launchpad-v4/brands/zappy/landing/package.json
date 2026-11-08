@@ -1,0 +1,24 @@
+{
+  "name": "zappy-floor-site",
+  "private": true,
+  "description": "Zappy on Ethereum: the landing, the app and its API functions (state indexer, launch start signer, logo upload)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.2",
+    "ethers": "6.13.4"
+  },
+  "devDependencies": {
+    "@rainbow-me/rainbowkit": "2.2.11",
+    "@tanstack/react-query": "5.107.1",
+    "esbuild": "0.28.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "viem": "2.57.16",
+    "wagmi": "2.19.5"
+  }
+}
