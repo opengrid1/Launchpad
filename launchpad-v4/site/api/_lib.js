@@ -23,6 +23,8 @@ const NETS = {
     fromBlock: Number(E.LQF_FROM_BLOCK || 311758), // the factory's deploy block
     // the fee flywheel (Tidepool): the splitter that receives the protocol fees and the staking contract it streams to
     splitter: E.LQF_SPLITTER || '', staking: E.LQF_STAKING || '',
+    // the AMM (own pools) and its farm; wnative is the wrapped native coin the router uses
+    ammFactory: E.LQF_AMM_FACTORY || '', ammRouter: E.LQF_AMM_ROUTER || '', farm: E.LQF_FARM || '', wnative: E.LQF_WNATIVE || '0xba876237b0f021a6c6d852d6c26e107997cc5e81',
     maxRange: 0, maxChunks: 1, // eth_getLogs takes any range
     parent: E.DIRECT_SEND ? null : { rpc: E.HYPEREVM_RPC || 'https://rpc.hyperliquid.xyz/evm', chainId: 999, inbox: E.ELYSIUM_INBOX || '0xce59f8b65ad41c9dae4c07a0571a39824bd92cff' },
   },

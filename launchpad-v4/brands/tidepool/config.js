@@ -14,7 +14,10 @@ window.CFG = {
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
   official: [], // $TIDE: shown with an Official tag once launched
   /* the fee flywheel: protocol fees -> splitter -> stakers / buyback and burn of $TIDE / treasury */
-  stake: { splitter: '', staking: '', token: '', symbol: 'TIDE', stakingBps: 3500, burnBps: 3500, durationDays: 7 },
+  stake: { splitter: '', staking: '', token: '', symbol: 'TIDE', stakingBps: 2000, burnBps: 3500, farmBps: 1500, durationDays: 7 },
+  /* the AMM: our own pools for any two tokens (LP shares, 0.25% to LPs + 0.05% to the splitter per swap), and the farm
+     that pays LP stakers the splitter's farm share in HYPE. Native HYPE is wrapped by the router. */
+  amm: { factory: '', router: '', farm: '', wnative: '0xba876237b0f021a6c6d852d6c26e107997cc5e81', lpFeeBps: 25, protocolFeeBps: 5 },
   /* the launch economics, in HYPE (the *Hype names are the quote coin's amounts) */
   econ: {
     supply: 1e9, launchFeeHype: 0.005, maxDevBuyBps: 500,

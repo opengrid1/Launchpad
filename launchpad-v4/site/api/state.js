@@ -30,7 +30,17 @@ const T = {
   distributed: ev('Distributed(uint256,uint256,uint256)'),
   burned: ev('BoughtBackAndBurned(uint256,uint256)'),
   rewardAdded: ev('RewardAdded(uint256,uint256)'),
+  // the AMM pairs and the farm
+  pairCreated: ev('PairCreated(address,address,address,uint256)'),
+  sync: ev('Sync(uint112,uint112)'),
+  ammSwap: ev('Swap(address,uint256,uint256,uint256,uint256,address)'),
+  ammMint: ev('Mint(address,uint256,uint256,address)'),
+  ammBurn: ev('Burn(address,uint256,uint256,address)'),
+  poolAdded: ev('PoolAdded(uint256,address,uint256)'),
 };
+const ERC20_I = new ethers.Interface(['function symbol() view returns (string)', 'function name() view returns (string)', 'function decimals() view returns (uint8)']);
+const PAIR_I = new ethers.Interface(['function getReserves() view returns (uint112,uint112,uint32)', 'function totalSupply() view returns (uint256)']);
+const FARM_I = new ethers.Interface(['function poolLength() view returns (uint256)', 'function pools(uint256) view returns (address lpToken,uint256 allocPoint,uint256 lastRewardTime,uint256 accRewardPerShare,uint256 totalStaked)', 'function totalAllocPoint() view returns (uint256)', 'function rewardRate() view returns (uint256)', 'function periodFinish() view returns (uint256)']);
 const AC = ethers.AbiCoder.defaultAbiCoder();
 const addrOf = (topic) => ethers.getAddress('0x' + topic.slice(26));
 const dec = (types, data) => AC.decode(types, data);
@@ -55,7 +65,7 @@ async function getLogs(f) {
 }
 // the cache a warm instance keeps between requests
 const V2 = NET.v2 || null;
-const S = { skew: 0, last: NET.fromBlock - 1, factory: [], hook: [], escrow: [], vault: [], fly: [], pm: [], transfers: [], tokens: new Map(), byPool: new Map(), terms: new Map(), pending: null, at: 0, loaded: false, savedAt: 0, savedLast: 0, pend2: {}, pairs: {} };
+const S = { skew: 0, last: NET.fromBlock - 1, factory: [], hook: [], escrow: [], vault: [], fly: [], amm: [], ammPairs: [], pm: [], transfers: [], ammLive: { pairs: {}, tokens: {}, farm: null }, tokens: new Map(), byPool: new Map(), terms: new Map(), pending: null, at: 0, loaded: false, savedAt: 0, savedLast: 0, pend2: {}, pairs: {} };
 
 async function logsRange(filter, from, to) {
   try { return await getLogs({ ...filter, fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) }); }
@@ -73,7 +83,7 @@ async function stamp(logs) {
 const byOrder = (a, b) => (parseInt(a.blockNumber, 16) - parseInt(b.blockNumber, 16)) || (parseInt(a.logIndex, 16) - parseInt(b.logIndex, 16));
 
 // snapshots: state/<chain>-<block>.json in the Blob store, the newest one wins
-const SNAP_KEYS = ['last', 'skew', 'factory', 'hook', 'escrow', 'vault', 'fly', 'pm', 'transfers'];
+const SNAP_KEYS = ['last', 'skew', 'factory', 'hook', 'escrow', 'vault', 'fly', 'amm', 'ammPairs', 'pm', 'transfers'];
 async function loadSnapshot() {
   S.loaded = true; if (!process.env.BLOB_READ_WRITE_TOKEN) return;
   try {
@@ -113,8 +123,27 @@ async function sync(deadline = Date.now() + 35000) {
     await syncRange(from, to); S.last = to; pages++;
   }
   if (V2 && Date.now() < deadline) await within(refreshV2(), 8000, 'v2 pending and pair prices');
+  if (NET.ammFactory && Date.now() < deadline) await within(refreshAmm(), 8000, 'amm reserves, token metadata, farm');
   console.log(NET.key, 'synced', pages, 'pages to', S.last, 'head', head, Date.now() - t0 + 'ms');
   await within(saveSnapshot(), 8000, 'snapshot save');
+}
+// the AMM: live reserves and LP supply per pair, metadata of every token in a pair, the farm's pools and stream
+async function refreshAmm() {
+  const pairs = S.ammPairs, live = S.ammLive;
+  const toks = [...new Set(pairs.flatMap((p) => [p.token0, p.token1]))].filter((a) => !live.tokens[a]);
+  const calls = [];
+  for (const p of pairs) calls.push([p.addr, PAIR_I, 'getReserves'], [p.addr, PAIR_I, 'totalSupply']);
+  for (const a of toks) calls.push([a, ERC20_I, 'symbol'], [a, ERC20_I, 'name'], [a, ERC20_I, 'decimals']);
+  if (NET.farm) calls.push([NET.farm, FARM_I, 'poolLength'], [NET.farm, FARM_I, 'totalAllocPoint'], [NET.farm, FARM_I, 'rewardRate'], [NET.farm, FARM_I, 'periodFinish']);
+  if (!calls.length) return;
+  const r = await multicall(calls); let i = 0;
+  for (const p of pairs) { const rs = r[i++], ts = r[i++]; if (rs) live.pairs[p.addr] = { r0: rs[0].toString(), r1: rs[1].toString(), lp: (ts || 0n).toString() }; }
+  for (const a of toks) { const sym = r[i++], nm = r[i++], dec_ = r[i++]; live.tokens[a] = { symbol: sym || '?', name: nm || '', decimals: dec_ == null ? 18 : Number(dec_) }; }
+  if (NET.farm) {
+    const n = Number(r[i++] || 0n), total = (r[i++] || 0n).toString(), rate = (r[i++] || 0n).toString(), finish = Number(r[i++] || 0n);
+    const pr = n ? await multicall(Array.from({ length: n }, (_, k) => [NET.farm, FARM_I, 'pools', [k]])) : [];
+    live.farm = { addr: NET.farm.toLowerCase(), totalAllocPoint: total, rewardRate: rate, periodFinish: finish, pools: pr.map((x, k) => x ? { pid: k, lp: x[0].toLowerCase(), allocPoint: x[1].toString(), totalStaked: x[4].toString() } : null).filter(Boolean) };
+  }
 }
 // v2: what each pool owes its creator and the protocol right now, and the ERC-20 pairs' prices in ETH
 async function refreshV2() {
@@ -139,7 +168,7 @@ async function refreshV2() {
 }
 async function syncRange(from, head) {
   // one call for the protocol contracts (both generations), split by address
-  const core = await stamp(await logsRange({ address: [NET.factory, NET.hook, NET.escrow, NET.vault, NET.splitter, NET.staking, ...(V2 ? [V2.factory, V2.hook] : [])].filter(Boolean) }, from, head));
+  const core = await stamp(await logsRange({ address: [NET.factory, NET.hook, NET.escrow, NET.vault, NET.splitter, NET.staking, NET.ammFactory, NET.farm, ...(V2 ? [V2.factory, V2.hook] : [])].filter(Boolean) }, from, head));
   const of = (a) => (a ? core.filter((l) => l.address.toLowerCase() === a.toLowerCase()) : []);
   const fac = [...of(NET.factory), ...(V2 ? of(V2.factory) : [])].sort(byOrder), hook = [...of(NET.hook), ...(V2 ? of(V2.hook) : [])], esc = of(NET.escrow), vault = of(NET.vault);
   for (const l of fac) {
@@ -159,6 +188,11 @@ async function syncRange(from, head) {
     }
   }
   S.factory.push(...fac); S.hook.push(...hook); S.escrow.push(...esc); S.vault.push(...vault); S.fly.push(...of(NET.splitter), ...of(NET.staking));
+  // the AMM: new pairs from the factory, then every known pair's own logs (reserves, swaps, mints, burns) in this range
+  for (const l of of(NET.ammFactory)) if (l.topics[0] === T.pairCreated) { const [pair] = dec(['address', 'uint256'], l.data); S.ammPairs.push({ addr: pair.toLowerCase(), token0: addrOf(l.topics[1]).toLowerCase(), token1: addrOf(l.topics[2]).toLowerCase(), createdAt: parseInt(l.blockTimestamp, 16), block: parseInt(l.blockNumber, 16) }); }
+  S.amm.push(...of(NET.farm));
+  const pairAddrs = S.ammPairs.map((p) => p.addr);
+  for (let i = 0; i < pairAddrs.length; i += 100) S.amm.push(...await stamp(await logsRange({ address: pairAddrs.slice(i, i + 100), topics: [[T.sync, T.ammSwap, T.ammMint, T.ammBurn]] }, from, head)));
   const pools = [...S.byPool.keys()], addrs = [...S.tokens.values()].map((t) => t.addr);
   if (pools.length) {
     for (let i = 0; i < pools.length; i += 100) S.pm.push(...await stamp(await logsRange({ address: NET.poolManager, topics: [[T.init, T.modify, T.swap], pools.slice(i, i + 100)] }, from, head)));
@@ -252,7 +286,17 @@ function build() {
     }
     flywheel = { splitter: NET.splitter.toLowerCase(), staking: (NET.staking || '').toLowerCase(), ...tot, events: ev.sort((a, b) => b.ts - a.ts).slice(0, 100) };
   }
-  return { chainId: NET.chainId, block: S.last, at: Math.floor(Date.now() / 1000), skew: S.skew, poolManager: NET.poolManager.toLowerCase(), tokens, trades, escrow: credit, pairs: S.pairs, flywheel, v2: V2 ? { factory: V2.factory.toLowerCase(), hook: V2.hook.toLowerCase(), locker: V2.locker.toLowerCase() } : null };
+  // the AMM: pairs with reserves, 24h volume and fees (in each token's units), LP supply; token metadata; farm
+  let amm = null;
+  if (NET.ammFactory) {
+    const dayAgo = Math.floor(Date.now() / 1000) + S.skew - 86400, live = S.ammLive, lp24 = {};
+    for (const l of S.amm) { if (l.topics[0] !== T.ammSwap || parseInt(l.blockTimestamp, 16) < dayAgo) continue; const a = l.address.toLowerCase(); const [a0in, a1in, a0out, a1out] = dec(['uint256', 'uint256', 'uint256', 'uint256'], l.data); const x = lp24[a] || (lp24[a] = { in0: 0n, in1: 0n, out0: 0n, out1: 0n, n: 0 }); x.in0 += a0in; x.in1 += a1in; x.out0 += a0out; x.out1 += a1out; x.n++; }
+    const feeBps = BigInt(NET.ammLpFeeBps || 25) + BigInt(NET.ammProtocolFeeBps || 5);
+    amm = { factory: NET.ammFactory.toLowerCase(), router: (NET.ammRouter || '').toLowerCase(), wnative: (NET.wnative || '').toLowerCase(), lpFeeBps: Number(NET.ammLpFeeBps || 25), protocolFeeBps: Number(NET.ammProtocolFeeBps || 5),
+      pairs: S.ammPairs.map((p) => { const lv = live.pairs[p.addr] || { r0: '0', r1: '0', lp: '0' }, v = lp24[p.addr] || { in0: 0n, in1: 0n, out0: 0n, out1: 0n, n: 0 }; return { ...p, ...lv, vol0: (v.in0 + v.out0).toString(), vol1: (v.in1 + v.out1).toString(), fee0: (v.in0 * feeBps / 10000n).toString(), fee1: (v.in1 * feeBps / 10000n).toString(), swaps24: v.n }; }),
+      tokens: live.tokens, farm: live.farm };
+  }
+  return { chainId: NET.chainId, block: S.last, at: Math.floor(Date.now() / 1000), skew: S.skew, poolManager: NET.poolManager.toLowerCase(), tokens, trades, escrow: credit, pairs: S.pairs, flywheel, amm, v2: V2 ? { factory: V2.factory.toLowerCase(), hook: V2.hook.toLowerCase(), locker: V2.locker.toLowerCase() } : null };
 }
 
   return { S, sync, build, NET };

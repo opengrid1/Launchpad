@@ -1,5 +1,5 @@
 // Deploys the Pad launchpad stack (Tidepool): Uniswap's official v4 PositionManager build where the chain has none (Elysium), the fee
-// escrow and buyback vault, the hook (CREATE2, address mined for its flags), locker,
+// escrow and buyback vault, the hook, the fee splitter, the AMM (factory, router) and the farm, then the locker, token implementation and launch factory; the hook (CREATE2, address mined for its flags), locker,
 // token implementation and factory. The deployer is the first owner so it can wire everything; ownership is then
 // offered to the protocol owner, who completes it with acceptOwnership() on the hook, factory, locker and vault
 // (Ownable2Step). The deployer stays the fee sweep operator (the keeper) until the owner rotates it.
@@ -40,11 +40,13 @@ const NET = {
 const OWNER = process.env.PAD_OWNER || "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b"; // protocol owner and fee recipient
 const SNIPE_SECONDS = Number(process.env.SNIPE_SECONDS || 10);
 const HOOK_FEE_BPS = Number(process.env.HOOK_FEE_BPS || 250); // the pool fee on every trade (2.5%), split protocol / creator
-const SPLIT_STAKING_BPS = Number(process.env.SPLIT_STAKING_BPS || 3500), SPLIT_BURN_BPS = Number(process.env.SPLIT_BURN_BPS || 3500); // the rest to the treasury
+const SPLIT_STAKING_BPS = Number(process.env.SPLIT_STAKING_BPS || 2000), SPLIT_BURN_BPS = Number(process.env.SPLIT_BURN_BPS || 3500), SPLIT_FARM_BPS = Number(process.env.SPLIT_FARM_BPS || 1500); // the rest (30%) to the treasury
+const AMM_LP_FEE_BPS = Number(process.env.AMM_LP_FEE_BPS || 25), AMM_PROTOCOL_FEE_BPS = Number(process.env.AMM_PROTOCOL_FEE_BPS || 5); // 0.30% per swap on the AMM
+const FARM_DAYS = Number(process.env.FARM_DAYS || 7);
 const art = (n) => JSON.parse(fs.readFileSync(path.join(__dirname, "artifacts", n + ".json"), "utf8"));
 const HOOK_FLAGS = (1n << 13n) | (1n << 6n) | (1n << 2n), FLAG_MASK = (1n << 14n) - 1n; // beforeInitialize, afterSwap, afterSwapReturnDelta
 // gas measured on the fork test, for the dry run where estimates against placeholder addresses revert
-const MEASURED = { PadSplitter: 1_265_115n, PadStaking: 1_047_238n, PositionManager: 5_254_855n, PadFeeEscrow: 493_535n, PadHook: 4_323_289n, PadBuybackVault: 1_102_306n, PadLocker: 1_021_028n, PadToken: 759_223n, PadFactory: 4_522_025n, call: 60_000n, addLaunchConfig: 218_726n };
+const MEASURED = { PadSplitter: 1_659_648n, PadStaking: 1_047_238n, PadAmmFactory: 1_880_871n, PadAmmRouter: 1_659_270n, PadFarm: 1_246_536n, PositionManager: 5_254_855n, PadFeeEscrow: 493_535n, PadHook: 4_323_289n, PadBuybackVault: 1_102_306n, PadLocker: 1_021_028n, PadToken: 759_223n, PadFactory: 4_522_025n, call: 60_000n, addLaunchConfig: 218_726n };
 
 // The public Elysium RPC rate-limits (429 / -32005 "rate limited"); retry with backoff. A resent raw transaction the node
 // already has ("already known", "nonce too low") resolves to its own hash so the deploy carries on.
@@ -171,10 +173,17 @@ class RetryProvider extends ethers.JsonRpcProvider {
   const factory = await deploy("PadFactory", [me, N.poolManager, posm, N.permit2, locker, hookAddr, escrow, vault, impl, LAUNCH_FEE]);
   // the fee flywheel: the splitter takes the protocol's fees (treasury = the protocol owner until it says otherwise)
   const splitter = await deploy("PadSplitter", [me, N.poolManager, escrow, OWNER, SPLIT_STAKING_BPS, SPLIT_BURN_BPS]);
+  // the AMM: pairs anyone can open, their protocol fee to the splitter, and the farm the splitter streams to
+  const ammFactory = await deploy("PadAmmFactory", [me, splitter, AMM_LP_FEE_BPS, AMM_PROTOCOL_FEE_BPS]);
+  const ammRouter = await deploy("PadAmmRouter", [ammFactory, N.weth9]);
+  const farm = await deploy("PadFarm", [me, splitter, FARM_DAYS * 86400]);
   // 3. wiring and launch settings (launching stays off until the owner turns it on)
   await call("hook.setFactory", hookAddr, "PadHook", "setFactory", [factory]);
   await call("hook.setProtocolFeeRecipient", hookAddr, "PadHook", "setProtocolFeeRecipient", [splitter]);
   if (HOOK_FEE_BPS !== 100) await call("hook.setHookFeeBps", hookAddr, "PadHook", "setHookFeeBps", [HOOK_FEE_BPS]);
+  await call("splitter.setFarm", splitter, "PadSplitter", "setFarm", [farm]);
+  await call("splitter.setAmmRouter", splitter, "PadSplitter", "setAmmRouter", [ammRouter]);
+  await call("splitter.setShares", splitter, "PadSplitter", "setShares", [SPLIT_STAKING_BPS, SPLIT_BURN_BPS, SPLIT_FARM_BPS]);
   await call("hook.setBuybackVault", hookAddr, "PadHook", "setBuybackVault", [vault]);
   await call("vault.setFactory", vault, "PadBuybackVault", "setFactory", [factory]);
   await call("locker.setFactory", locker, "PadLocker", "setFactory", [factory]);
@@ -182,16 +191,16 @@ class RetryProvider extends ethers.JsonRpcProvider {
   if (SNIPE_SECONDS !== 10) await call("factory.setSnipeTaxSeconds", factory, "PadFactory", "setSnipeTaxSeconds", [SNIPE_SECONDS]);
   // 4. offer ownership to the protocol owner (two-step)
   if (OWNER.toLowerCase() !== me.toLowerCase()) {
-    for (const [n, a, abi] of [["hook", hookAddr, "PadHook"], ["factory", factory, "PadFactory"], ["locker", locker, "PadLocker"], ["vault", vault, "PadBuybackVault"], ["splitter", splitter, "PadSplitter"]]) await call(`${n}.transferOwnership`, a, abi, "transferOwnership", [OWNER]);
+    for (const [n, a, abi] of [["hook", hookAddr, "PadHook"], ["factory", factory, "PadFactory"], ["locker", locker, "PadLocker"], ["vault", vault, "PadBuybackVault"], ["splitter", splitter, "PadSplitter"], ["ammFactory", ammFactory, "PadAmmFactory"], ["farm", farm, "PadFarm"]]) await call(`${n}.transferOwnership`, a, abi, "transferOwnership", [OWNER]);
   }
   const total = steps.reduce((s, [, g]) => s + g, 0n);
   for (const [l, g] of steps) console.log(`  ${l.padEnd(28)} ${g.toString().padStart(9)} gas`);
   console.log(`  total ${total} gas = ${ethers.formatEther(total * gasPrice)} ${N.native} at ${ethers.formatUnits(gasPrice, "gwei")} gwei`);
   if (send) {
-    const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookFeeBps: HOOK_FEE_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
+    const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookFeeBps: HOOK_FEE_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, splitFarmBps: SPLIT_FARM_BPS, ammFactory, ammRouter, farm, wnative: N.weth9, ammLpFeeBps: AMM_LP_FEE_BPS, ammProtocolFeeBps: AMM_PROTOCOL_FEE_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
     const file = path.join(__dirname, "deployments", `pad-${netName}.json`);
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
     console.log("written " + path.relative(__dirname, file));
-    if (out.ownershipPending) console.log(`next: ${OWNER} calls acceptOwnership() on the hook, factory, locker, vault and splitter, then factory.setLaunchEnabled(true); after the platform token launches: node deploy-pad.cjs --staking <token> and splitter.setStaking / setToken from the admin page`);
+    if (out.ownershipPending) console.log(`next: ${OWNER} calls acceptOwnership() on the hook, factory, locker, vault, splitter, AMM factory and farm, then factory.setLaunchEnabled(true); after the platform token launches: node deploy-pad.cjs --staking <token> and splitter.setStaking / setToken from the admin page`);
   } else console.log("dry run: add --send");
 })().catch((e) => { console.error("FAILED", e.shortMessage || e.message, JSON.stringify(e.error || e.info || {}).slice(0, 600)); process.exit(1); });
