@@ -40,13 +40,14 @@ input,select{height:38px;padding:0 12px;border-radius:10px;background:var(--bg);
    with the ETH price, set the launch fee and dev-buy cap, collect part of a pool's floor, and claim the team's revenue.
    Every write goes through the connected wallet; nothing here holds a key. */
 const X = ethers, AC = X.AbiCoder.defaultAbiCoder(), $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const C = { factory: '0xeE2D9c1b5a5bb1B742746888956476FBF78097e5', hook: '0x0ccaD7b1035c7eDd95201ED8737dBC29eEA868eC', revenue: '0xd1A0021055ed53f06c8D9A715D67f7053FfaF847', limitOrders: '0xd9f5717DA70Fd5464352Ddd66c7d7D6B2513746e', burner: '0xd0b28a369024870a547d273503a5bB6Eb1608E03', vesting: '0x2bd0844E2D0CfeDF44bDDa92fA78C4283fe5A0af', zappy: '0xB1c323BdD0caa8013027fc61DA2bFB12dfDe7bb0', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11', explorer: 'https://etherscan.io', chainId: 1, spacing: 60 };
+const C = { factory: '0xeE2D9c1b5a5bb1B742746888956476FBF78097e5', hook: '0x0ccaD7b1035c7eDd95201ED8737dBC29eEA868eC', stateView: '0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227', revenue: '0xd1A0021055ed53f06c8D9A715D67f7053FfaF847', limitOrders: '0xd9f5717DA70Fd5464352Ddd66c7d7D6B2513746e', burner: '0xd0b28a369024870a547d273503a5bB6Eb1608E03', vesting: '0x2bd0844E2D0CfeDF44bDDa92fA78C4283fe5A0af', zappy: '0xB1c323BdD0caa8013027fc61DA2bFB12dfDe7bb0', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11', explorer: 'https://etherscan.io', chainId: 1, spacing: 60 };
 const OWNED = [['factory', 'ZappyFactory'], ['hook', 'ZappyHook'], ['revenue', 'ZappyRevenue'], ['limitOrders', 'ZappyLimitOrders'], ['burner', 'ZappyBurner']];
 const RPCS = ['https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io', 'https://eth.drpc.org'];
 const I = {
   owned: new X.Interface(['function owner() view returns (address)', 'function pendingOwner() view returns (address)', 'function acceptOwnership()', 'function transferOwnership(address)']),
   factory: new X.Interface(['function startBandLow() view returns (int24)', 'function startBandHigh() view returns (int24)', 'function launchFeeEth() view returns (uint256)', 'function devBuyMax() view returns (uint256)', 'function launchesPaused() view returns (bool)', 'function startSigner() view returns (address)', 'function team() view returns (address)', 'function setStartBand(int24,int24)', 'function setLaunchesPaused(bool)', 'function setLaunchFee(uint256)', 'function setDevBuyMax(uint256)']),
-  hook: new X.Interface(['function pools(bytes32) view returns (address token,address creator,uint40 launchedAt,int24 tickStart,int24 tickF,int24 refTick,uint64 refBlock,uint64 lastRaiseBlock,uint128 snipePot,uint128 snipeReleased,uint8 merged,uint128 liqBand,uint256 pot,uint256 creatorOwed,uint256 reserve,int24 tickB)', 'function floorOf((address,address,uint24,int24,address) key) view returns (int24 tickF, uint160 sqrtPriceX96, uint256 circulating)', 'function teamOwed(address) view returns (uint256)', 'function collectFloor((address,address,uint24,int24,address) key, uint16 bps, address to)', 'function claimTeam(address)']),
+  hook: new X.Interface(['function pools(bytes32) view returns (address token,address creator,uint40 launchedAt,int24 tickStart,int24 tickF,int24 refTick,uint64 refBlock,uint64 lastRaiseBlock,uint128 snipePot,uint128 snipeReleased,uint8 merged,uint128 liqBand,uint256 pot,uint256 creatorOwed,uint256 reserve,int24 tickB)', 'function floorOf((address,address,uint24,int24,address) key) view returns (int24 tickF, uint160 sqrtPriceX96, uint256 circulating)', 'function teamOwed(address) view returns (uint256)', 'function trancheOf((address,address,uint24,int24,address) key, uint256 i) view returns (int24 top, uint128 liquidity)', 'function collectFloor((address,address,uint24,int24,address) key, uint16 bps, address to)', 'function claimTeam(address)']),
+  stateView: new X.Interface(['function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)']),
   revenue: new X.Interface(['function owed(address,address) view returns (uint256)', 'function team() view returns (address)', 'function claim(address account, address currency, address to) returns (uint256)']),
   feed: new X.Interface(['function latestRoundData() view returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80)']),
   mc: new X.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])']),
@@ -125,18 +126,16 @@ async function load() {
   render();
 }
 async function loadPool() {
-  const [p, f] = await multicall([[C.hook, I.hook, 'pools', [poolIdOf(D.coin.addr)]], [C.hook, I.hook, 'floorOf', [keyOf(D.coin.addr)]]]);
-  D.pool = p; D.floor = f;
+  const id = poolIdOf(D.coin.addr);
+  const [p, f, s0, t0] = await multicall([[C.hook, I.hook, 'pools', [id]], [C.hook, I.hook, 'floorOf', [keyOf(D.coin.addr)]], [C.stateView, I.stateView, 'getSlot0', [id]], [C.hook, I.hook, 'trancheOf', [keyOf(D.coin.addr), 0]]]);
+  D.pool = p; D.floor = f; D.tick = s0 ? Number(s0[1]) : null; D.tranche0 = t0;
 }
-// the band's ETH: a single-tick range [tickB, tickB+60] that holds only ETH while the price is below it (tick < tickB)
-function bandEth(p, f) {
-  if (!p || !f || p.liqBand === 0n) return 0;
-  const L = Number(p.liqBand), tB = Number(p.tickB), curTick = Math.floor(Math.log((Number(f.sqrtPriceX96) / 2 ** 96) ** 2) / Math.log(1.0001));
-  const sL = 1.0001 ** (tB / 2), sU = 1.0001 ** ((tB + 60) / 2);
-  if (curTick >= tB + 60) return 0; // all tokens
-  const sA = Math.max(sL, Math.min(sU, 1.0001 ** (curTick / 2)));
-  return L * (1 / sA - 1 / sU) / 1e18; // eth below the current price inside the band
-}
+// ETH held by a liquidity range [a, b] at the pool's current tick: all ETH below the range, none above, part inside
+function rangeEth(L, a, b, cur) { if (!L || cur == null || cur >= b) return 0; const sq = (t) => 1.0001 ** (t / 2), sP = cur <= a ? sq(a) : sq(cur); return Number(L) * (1 / sP - 1 / sq(b)) / 1e18; }
+// the floor band is the single tick [tickB, tickB+60]; the curve's tranche 0 spans [MIN_TICK, its top] and holds the
+// ETH buyers paid, which only the sellers can take back out (no admin function touches it)
+const bandEth = (p) => p ? rangeEth(p.liqBand, Number(p.tickB), Number(p.tickB) + 60, D.tick) : 0;
+const curveEth = (t) => t ? rangeEth(t[1], -887220, Number(t[0]), D.tick) : 0;
 // the $10k start tick at this ETH price (tokens per ETH, rounded up the 60-tick grid), as api/sign.js computes it
 function startTick(ethUsd) { const ratio = (1e9 * ethUsd) / 10000; let t = Math.floor(Math.log(ratio) / Math.log(1.0001)); const r = ((t % 60) + 60) % 60; if (r !== 0) t = t - r + 60; return t; }
 const tickUsd = (tick, ethUsd) => 1e9 / (1.0001 ** tick) * ethUsd; // market cap in USD for a start tick
@@ -149,7 +148,7 @@ function render() {
   const me = low(W.address), isOwner = (k) => me && low(D.own[k].owner) === me, isPending = (k) => me && low(D.own[k].pending) === me;
   const anyOwner = OWNED.some(([k]) => isOwner(k)), anyPending = OWNED.some(([k]) => isPending(k));
   const f = D.fac, sugg = startTick(D.ethUsd), width = 6960;
-  const p = D.pool, fl = D.floor, potEth = p ? Number(X.formatEther(p.pot)) : 0, bEth = bandEth(p, fl);
+  const p = D.pool, fl = D.floor, potEth = p ? Number(X.formatEther(p.pot)) : 0, bEth = bandEth(p), cEth = curveEth(D.tranche0);
   m.innerHTML = `
   ${!me ? `<div class="warn">Connect the admin wallet (${short(D.own.factory.pending !== ZERO ? D.own.factory.pending : D.own.factory.owner)}) to use the buttons. Everything below is readable without it.</div>` : (!anyOwner && !anyPending) ? `<div class="warn">${short(W.address)} is neither the owner nor the pending owner of these contracts. Reads work, writes will be refused.</div>` : ''}
   <section class="card"><h2>Ownership <small>two-step: the deployer proposed, the admin wallet accepts</small></h2>
@@ -173,7 +172,7 @@ function render() {
   </div>
   <section class="card"><h2>Collect floor <small>ZappyHook.collectFloor: part of a pool's floor pot and band, paid in ETH</small></h2>
    <div class="fr"><label>Coin</label><select id="coin">${D.coins.map((c) => `<option value="${c.addr}" ${D.coin && low(c.addr) === low(D.coin.addr) ? 'selected' : ''}>${esc(c.name)} · $${esc(c.ticker)} · ${usd(c.mc)}</option>`).join('')}</select></div>
-   ${p ? `<div class="grid"><div class="kv"><span>Pot (ETH waiting for the floor)</span><b class="num">${fmt(potEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(potEth * D.ethUsd)}</span></b></div><div class="kv"><span>Band (ETH in the floor itself)</span><b class="num">${fmt(bEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(bEth * D.ethUsd)}</span></b></div><div class="kv"><span>Floor tick / band tick</span><b class="num">${Number(p.tickF)} / ${Number(p.tickB)}</b></div><div class="kv"><span>Circulating</span><b class="num">${fmt(Number(X.formatEther(fl.circulating)) / 1e6, 2)}M tokens</b></div><div class="kv"><span>Snipe pot still vesting</span><b class="num">${fmt(Number(X.formatEther(p.snipePot - p.snipeReleased)), 5)} ETH</b></div><div class="kv"><span>Creator owed</span><b class="num">${fmt(Number(X.formatEther(p.creatorOwed)), 5)} ETH</b></div></div>
+   ${p ? `<div class="grid"><div class="kv"><span>Pot (ETH waiting for the floor)</span><b class="num">${fmt(potEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(potEth * D.ethUsd)}</span></b></div><div class="kv"><span>Band (ETH in the floor itself)</span><b class="num">${fmt(bEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(bEth * D.ethUsd)}</span></b></div><div class="kv"><span>Curve liquidity (not collectable)</span><b class="num">${fmt(cEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(cEth * D.ethUsd)}</span></b></div><div class="kv"><span>Floor tick / band tick / price tick</span><b class="num">${Number(p.tickF)} / ${Number(p.tickB)} / ${D.tick ?? '—'}</b></div><div class="kv"><span>Circulating</span><b class="num">${fmt(Number(X.formatEther(fl.circulating)) / 1e6, 2)}M tokens</b></div><div class="kv"><span>Snipe pot still vesting</span><b class="num">${fmt(Number(X.formatEther(p.snipePot - p.snipeReleased)), 5)} ETH</b></div><div class="kv"><span>Creator owed</span><b class="num">${fmt(Number(X.formatEther(p.creatorOwed)), 5)} ETH</b></div></div>
    <div class="fr"><label>Share (%)</label><input class="w num" id="bps" value="50"><label style="min-width:0">To</label><input class="mono" id="to" style="width:min(100%,420px)" value="${W.address || D.fac.team}"><button class="btn y" id="collect" ${isOwner('hook') ? '' : 'disabled'}>Collect</button></div>
    <div class="note" id="cest"></div>
    ${me && !isOwner('hook') ? `<span class="hint">${isPending('hook') ? 'Collect unlocks once you accept ownership of ZappyHook in the Ownership card above.' : 'Only the owner of ZappyHook can collect.'}</span>` : ''}
