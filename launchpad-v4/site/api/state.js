@@ -26,6 +26,10 @@ const T = {
   claimed: ev('Claimed(address,uint256)'),
   locked: ev('Locked(address,address,uint256,uint256)'),
   released: ev('Released(address,uint256,uint256)'),
+  // the fee flywheel (splitter + staking)
+  distributed: ev('Distributed(uint256,uint256,uint256)'),
+  burned: ev('BoughtBackAndBurned(uint256,uint256)'),
+  rewardAdded: ev('RewardAdded(uint256,uint256)'),
 };
 const AC = ethers.AbiCoder.defaultAbiCoder();
 const addrOf = (topic) => ethers.getAddress('0x' + topic.slice(26));
@@ -51,7 +55,7 @@ async function getLogs(f) {
 }
 // the cache a warm instance keeps between requests
 const V2 = NET.v2 || null;
-const S = { skew: 0, last: NET.fromBlock - 1, factory: [], hook: [], escrow: [], vault: [], pm: [], transfers: [], tokens: new Map(), byPool: new Map(), terms: new Map(), pending: null, at: 0, loaded: false, savedAt: 0, savedLast: 0, pend2: {}, pairs: {} };
+const S = { skew: 0, last: NET.fromBlock - 1, factory: [], hook: [], escrow: [], vault: [], fly: [], pm: [], transfers: [], tokens: new Map(), byPool: new Map(), terms: new Map(), pending: null, at: 0, loaded: false, savedAt: 0, savedLast: 0, pend2: {}, pairs: {} };
 
 async function logsRange(filter, from, to) {
   try { return await getLogs({ ...filter, fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) }); }
@@ -69,7 +73,7 @@ async function stamp(logs) {
 const byOrder = (a, b) => (parseInt(a.blockNumber, 16) - parseInt(b.blockNumber, 16)) || (parseInt(a.logIndex, 16) - parseInt(b.logIndex, 16));
 
 // snapshots: state/<chain>-<block>.json in the Blob store, the newest one wins
-const SNAP_KEYS = ['last', 'skew', 'factory', 'hook', 'escrow', 'vault', 'pm', 'transfers'];
+const SNAP_KEYS = ['last', 'skew', 'factory', 'hook', 'escrow', 'vault', 'fly', 'pm', 'transfers'];
 async function loadSnapshot() {
   S.loaded = true; if (!process.env.BLOB_READ_WRITE_TOKEN) return;
   try {
@@ -79,7 +83,7 @@ async function loadSnapshot() {
     const j = await (await fetch(best.b.url, { cache: 'no-store' })).json();
     if (j.v !== 2 || j.factory !== NET.factory) return;
     if ((j.s.tokens || []).some((t) => !t.createdAt)) return; // written while the RPC's zero log timestamps went unread: index again
-    for (const k of SNAP_KEYS) S[k] = j.s[k];
+    for (const k of SNAP_KEYS) if (j.s[k] !== undefined) S[k] = j.s[k];
     S.tokens = new Map(j.s.tokens.map((t) => [t.addr.toLowerCase(), t])); S.byPool = new Map([...S.tokens.values()].map((t) => [t.poolId, t])); S.terms = new Map(j.s.terms);
     S.savedLast = S.last;
   } catch (e) { console.warn('snapshot load', NET.key, e.message); }
@@ -135,7 +139,7 @@ async function refreshV2() {
 }
 async function syncRange(from, head) {
   // one call for the protocol contracts (both generations), split by address
-  const core = await stamp(await logsRange({ address: [NET.factory, NET.hook, NET.escrow, NET.vault, ...(V2 ? [V2.factory, V2.hook] : [])].filter(Boolean) }, from, head));
+  const core = await stamp(await logsRange({ address: [NET.factory, NET.hook, NET.escrow, NET.vault, NET.splitter, NET.staking, ...(V2 ? [V2.factory, V2.hook] : [])].filter(Boolean) }, from, head));
   const of = (a) => (a ? core.filter((l) => l.address.toLowerCase() === a.toLowerCase()) : []);
   const fac = [...of(NET.factory), ...(V2 ? of(V2.factory) : [])].sort(byOrder), hook = [...of(NET.hook), ...(V2 ? of(V2.hook) : [])], esc = of(NET.escrow), vault = of(NET.vault);
   for (const l of fac) {
@@ -154,7 +158,7 @@ async function syncRange(from, head) {
       const t = S.tokens.get(addrOf(l.topics[1]).toLowerCase()); if (t) t.buyback = dec(['bool'], l.data)[0];
     }
   }
-  S.factory.push(...fac); S.hook.push(...hook); S.escrow.push(...esc); S.vault.push(...vault);
+  S.factory.push(...fac); S.hook.push(...hook); S.escrow.push(...esc); S.vault.push(...vault); S.fly.push(...of(NET.splitter), ...of(NET.staking));
   const pools = [...S.byPool.keys()], addrs = [...S.tokens.values()].map((t) => t.addr);
   if (pools.length) {
     for (let i = 0; i < pools.length; i += 100) S.pm.push(...await stamp(await logsRange({ address: NET.poolManager, topics: [[T.init, T.modify, T.swap], pools.slice(i, i + 100)] }, from, head)));
@@ -236,7 +240,19 @@ function build() {
       v: t.v || 1, pair: t.pair || ethers.ZeroAddress, ...(t.v === 2 ? { pend: S.pend2[t.poolId] || { creator: 0, protocol: 0 }, paid: paid2[t.poolId] || { creator: 0, protocol: 0 } } : {}),
       holders, holderCount: Object.values(b).filter((v) => v > 0n).length };
   });
-  return { chainId: NET.chainId, block: S.last, at: Math.floor(Date.now() / 1000), skew: S.skew, poolManager: NET.poolManager.toLowerCase(), tokens, trades, escrow: credit, pairs: S.pairs, v2: V2 ? { factory: V2.factory.toLowerCase(), hook: V2.hook.toLowerCase(), locker: V2.locker.toLowerCase() } : null };
+  // the flywheel: every distribution and buyback, newest first, with running totals
+  let flywheel = null;
+  if (NET.splitter) {
+    const ev = []; const tot = { toStaking: 0, toBuyback: 0, toTreasury: 0, burnedQuote: 0, burnedTokens: 0, rewards: 0 };
+    for (const l of S.fly) {
+      const ts = parseInt(l.blockTimestamp, 16);
+      if (l.topics[0] === T.distributed) { const [a, b, c] = dec(['uint256', 'uint256', 'uint256'], l.data).map(f18); tot.toStaking += a; tot.toBuyback += b; tot.toTreasury += c; ev.push({ kind: 'dist', ts, tx: l.transactionHash, toStaking: a, toBuyback: b, toTreasury: c }); }
+      else if (l.topics[0] === T.burned) { const [q, t] = dec(['uint256', 'uint256'], l.data).map(f18); tot.burnedQuote += q; tot.burnedTokens += t; ev.push({ kind: 'burn', ts, tx: l.transactionHash, quote: q, tokens: t }); }
+      else if (l.topics[0] === T.rewardAdded) { const [r] = dec(['uint256', 'uint256'], l.data); tot.rewards += f18(r); }
+    }
+    flywheel = { splitter: NET.splitter.toLowerCase(), staking: (NET.staking || '').toLowerCase(), ...tot, events: ev.sort((a, b) => b.ts - a.ts).slice(0, 100) };
+  }
+  return { chainId: NET.chainId, block: S.last, at: Math.floor(Date.now() / 1000), skew: S.skew, poolManager: NET.poolManager.toLowerCase(), tokens, trades, escrow: credit, pairs: S.pairs, flywheel, v2: V2 ? { factory: V2.factory.toLowerCase(), hook: V2.hook.toLowerCase(), locker: V2.locker.toLowerCase() } : null };
 }
 
   return { S, sync, build, NET };

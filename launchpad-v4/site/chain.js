@@ -312,6 +312,19 @@
       const r = await send({ to: UR, data: t.v === 2 ? routeTx(t, false, amount, wei(Math.max(0, minOut))) : v4Swap(t, false, amount, wei(Math.max(0, minOut))), gasLimit: 900000n }, 'sell');
       const q = quoteSell(a, chain, tokens); await afterTrade(a, parseInt(r.receipt.blockNumber, 16)); return { tx: r.hash, buy: false, tokens, hype: q.hype };
     },
+    // coin -> coin in one transaction: coinIn's pool to the quote coin, then coinOut's pool (both under our hook)
+    async swapCoins(a, b, chain, tokens, minOut) {
+      const t = BY.get(low(a)), u = BY.get(low(b)); if (!t || !u) throw new Error('Unknown token'); if (t.net !== u.net) throw new Error('Both coins must live on the same chain');
+      await onChainOf(t); await APP.W.require(); const me = APP.W.address, UR = KK(t.net).router;
+      const have = await exactBalance(a, me); let amount = wei(tokens); if (amount > have || Number(X.formatEther(have)) - tokens < 1e-6) amount = have; if (amount <= 0n) throw new Error('Not enough tokens');
+      const [[allow], p2] = await Promise.all([call(a, I.erc20, 'allowance', [me, PERMIT2], t.net), call(PERMIT2, I.permit2, 'allowance', [me, a, UR], t.net)]);
+      if (allow < amount) { APP.toast('Approve the token for trading (once)', 'info', 6000); await send({ to: a, data: I.erc20.encodeFunctionData('approve', [PERMIT2, X.MaxUint256]), gasLimit: 120000n }, 'approve'); }
+      if (p2.amount < amount || Number(p2.expiration) < now() + 120) { APP.toast('Allow the swap router through Permit2 (once a month)', 'info', 6000); await send({ to: PERMIT2, data: I.permit2.encodeFunctionData('approve', [a, UR, (1n << 160n) - 1n, BigInt(now() + 30 * 86400)]), gasLimit: 120000n }, 'approve'); }
+      const hook = (t.v === 2 ? V2of(t.net).hook : KK(t.net).hook);
+      const data = window.ROUTES.encodeCoinToCoin({ coinIn: a, coinOut: b, hook, amountIn: amount, minOut: wei(Math.max(0, minOut)), deadline: deadline(), hopLayout: !!(V2of(t.net) && V2of(t.net).hopLayout) });
+      const r = await send({ to: UR, data, gasLimit: 1200000n }, 'swap');
+      await afterTrade(a, parseInt(r.receipt.blockNumber, 16)); await afterTrade(b, parseInt(r.receipt.blockNumber, 16)); return { tx: r.hash };
+    },
     async launch(p) {
       if (V2of(C.chain.key)) return launchV2(p);
       await APP.W.require(); const me = APP.W.address, net = C.chain.key, K = KK(net);

@@ -72,6 +72,14 @@
     }
     return UR.encodeFunctionData('execute', [commands, inputs, deadline]);
   }
-  const api = { encode };
+  // coin -> coin on two of our pools in one swap: coinIn -> native (its pool) -> coinOut (its pool); only the final
+  // amount carries the caller's minimum
+  function encodeCoinToCoin({ coinIn, coinOut, hook, amountIn, minOut, deadline, hopLayout }) {
+    HOP = !!hopLayout; coinIn = X.getAddress(coinIn); coinOut = X.getAddress(coinOut); hook = X.getAddress(hook);
+    const path = [[Z, 0, 200, hook, '0x'], [coinOut, 0, 200, hook, '0x']];
+    const inputs = [v4([A.SWAP_EXACT_IN, A.SETTLE_ALL, A.TAKE_ALL], [multi(coinIn, path, amountIn, minOut), amt(coinIn, amountIn), amt(coinOut, minOut)])];
+    return UR.encodeFunctionData('execute', [cmds([CMD.V4_SWAP]), inputs, deadline]);
+  }
+  const api = { encode, encodeCoinToCoin };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.ROUTES = api;
 })(typeof window !== 'undefined' ? window : globalThis);

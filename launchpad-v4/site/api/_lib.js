@@ -21,6 +21,8 @@ const NETS = {
     quoter: E.LQF_QUOTER || '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5',
     multicall: E.LQF_MULTICALL || '0xcA11bde05977b3631167028862bE2a173976CA11',
     fromBlock: Number(E.LQF_FROM_BLOCK || 311758), // the factory's deploy block
+    // the fee flywheel (Tidepool): the splitter that receives the protocol fees and the staking contract it streams to
+    splitter: E.LQF_SPLITTER || '', staking: E.LQF_STAKING || '',
     maxRange: 0, maxChunks: 1, // eth_getLogs takes any range
     parent: E.DIRECT_SEND ? null : { rpc: E.HYPEREVM_RPC || 'https://rpc.hyperliquid.xyz/evm', chainId: 999, inbox: E.ELYSIUM_INBOX || '0xce59f8b65ad41c9dae4c07a0571a39824bd92cff' },
   },
