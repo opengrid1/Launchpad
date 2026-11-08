@@ -28,8 +28,10 @@ input,select{height:38px;padding:0 12px;border-radius:10px;background:var(--bg);
 .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:760px){.two{grid-template-columns:1fr}}
 #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--s3);border:1px solid var(--line2);color:var(--ink);padding:10px 16px;border-radius:12px;font-size:13.5px;opacity:0;pointer-events:none;transition:.2s;max-width:min(92vw,560px);word-break:break-word}#toast.on{opacity:1;transform:translateX(-50%)}
 .warn{background:rgba(255,79,99,.1);border:1px solid rgba(255,79,99,.35);color:#ffb3bd;border-radius:12px;padding:10px 14px;font-size:13px}
+.hint{display:block;margin-top:8px;color:var(--y);font-size:12.5px}
+@media(max-width:640px){header{padding:12px 14px;gap:10px}header h1{font-size:15px;white-space:nowrap}header .net,header a.back{display:none}.si{height:34px;padding:0 12px;font-size:13px}main{padding:14px}.card{padding:14px}.fr label{min-width:100%}input.w{width:120px}}
 </style></head><body>
-<header><a href="/app"><img src="/logo.png" alt=""></a><h1>Zappy admin</h1><span class="grey">Ethereum mainnet</span><span class="sp"></span><a class="back" href="/app">Open the app</a><button class="si" id="signin">Connect wallet</button></header>
+<header><a href="/app"><img src="/logo.png" alt=""></a><h1>Zappy admin</h1><span class="grey net">Ethereum mainnet</span><span class="sp"></span><a class="back" href="/app">Open the app</a><button class="si" id="signin">Connect wallet</button></header>
 <main id="main"><div class="card"><div class="grey">Loading the contracts…</div></div></main>
 <div id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
@@ -174,6 +176,7 @@ function render() {
    ${p ? `<div class="grid"><div class="kv"><span>Pot (ETH waiting for the floor)</span><b class="num">${fmt(potEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(potEth * D.ethUsd)}</span></b></div><div class="kv"><span>Band (ETH in the floor itself)</span><b class="num">${fmt(bEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(bEth * D.ethUsd)}</span></b></div><div class="kv"><span>Floor tick / band tick</span><b class="num">${Number(p.tickF)} / ${Number(p.tickB)}</b></div><div class="kv"><span>Circulating</span><b class="num">${fmt(Number(X.formatEther(fl.circulating)) / 1e6, 2)}M tokens</b></div><div class="kv"><span>Snipe pot still vesting</span><b class="num">${fmt(Number(X.formatEther(p.snipePot - p.snipeReleased)), 5)} ETH</b></div><div class="kv"><span>Creator owed</span><b class="num">${fmt(Number(X.formatEther(p.creatorOwed)), 5)} ETH</b></div></div>
    <div class="fr"><label>Share (%)</label><input class="w num" id="bps" value="50"><label style="min-width:0">To</label><input class="mono" id="to" style="width:min(100%,420px)" value="${W.address || D.fac.team}"><button class="btn y" id="collect" ${isOwner('hook') ? '' : 'disabled'}>Collect</button></div>
    <div class="note" id="cest"></div>
+   ${me && !isOwner('hook') ? `<span class="hint">${isPending('hook') ? 'Collect unlocks once you accept ownership of ZappyHook in the Ownership card above.' : 'Only the owner of ZappyHook can collect.'}</span>` : ''}
    <div class="note">Takes that share of the pot and of the band's ETH, then re-places the band at the lowest tick where what is left still buys back every circulating token: the floor drops to what remains. 100% leaves no band until the pot can carry every holder again.</div>` : '<div class="note">No pools yet.</div>'}
   </section>
   <section class="card"><h2>Team revenue <small>the protocol's 0.4% of every swap, claimed in ETH</small></h2>
