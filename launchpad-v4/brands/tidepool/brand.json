@@ -4,6 +4,14 @@
   "themeColor": "#f5f5f7",
   "replace": [
     [
+      "Pool fee 1.0%.",
+      "Pool fee 2.5%."
+    ],
+    [
+      "<dt>Pool fee</dt><dd>1% (hook)",
+      "<dt>Pool fee</dt><dd>2.5% (hook)"
+    ],
+    [
       "the 1% pool fee",
       "the 2.5% pool fee"
     ],
