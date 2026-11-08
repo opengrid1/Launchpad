@@ -154,7 +154,7 @@ contract SecurityReviewTest is ZappyBase {
     }
 
     function _assertEthClaims() internal view {
-        (,,,,,,,, uint128 snipe, uint128 released,,, uint256 pot, uint256 creator,) = hook.pools(zappyKey.toId());
+        (,,,,,,,, uint128 snipe, uint128 released,,, uint256 pot, uint256 creator,,) = hook.pools(zappyKey.toId());
         Currency eth = Currency.wrap(address(0));
         assertEq(
             pm.balanceOf(address(hook), 0),

@@ -91,7 +91,7 @@ abstract contract HookFloor is HookStorage {
         }
         // price past the band: nothing to do. Inside it (being eaten), only a buyback may move the floor: it burns the
         // tokens the band bought back and lifts the price over the new band
-        if (c.cur >= tickF + SPACING) return c;
+        if (c.cur >= p.tickB + SPACING) return c;
         // lowest candidate: one full spacing above both the start-of-block tick and the current tick
         int24 base = c.cur > p.refTick ? c.cur : p.refTick;
         c.tLow = Ticks.alignDown(base) + 2 * SPACING;
@@ -116,19 +116,17 @@ abstract contract HookFloor is HookStorage {
         // allows, so the rebuilt positions never miss C by a wei (FloorBroken)
         bool canBuy = c.tBuyMin <= c.tBuy - SPACING && nextStart <= c.cur && c.cur >= p.refTick;
         c.sF = TickMath.getSqrtPriceAtTick(tickF);
-        uint256 band = FloorMath.quote(
-            c.sCur > c.sF ? c.sCur : c.sF, TickMath.getSqrtPriceAtTick(tickF + SPACING), p.liqBand, false
-        );
+        uint160 sB = TickMath.getSqrtPriceAtTick(p.tickB);
+        uint256 band =
+            FloorMath.quote(c.sCur > sB ? c.sCur : sB, TickMath.getSqrtPriceAtTick(p.tickB + SPACING), p.liqBand, false);
         c.vested = _vested(p);
         c.qBase = p.pot + c.vested + band;
         if (c.tLow > c.tHigh - SPACING && !canBuy) {
             _drainIfOver(p, c);
             return c;
         }
-        // every tranche's lower tick is MIN_TICK, and the band's ticks hold at most those same positions' upper ends: a
-        // band within this always fits v4's per-tick cap (a floor that can't use all its money leaves the rest in pot)
-        (uint128 placed,) = poolManager.getTickLiquidity(id, MIN_TICK);
-        c.lbMax = V4Pool.tickSpacingToMaxLiquidityPerTick(SPACING) - placed;
+        // a floor that can't use all its money within the per-tick cap leaves the rest in pot
+        c.lbMax = _lbMax(id);
         // Only tranches the price has reached (cur < start) can be passed: every candidate t is above the current tick.
         // Starts only rise with i, so the first one not reached ends the reached ones.
         uint256 i = c.first;
@@ -180,10 +178,12 @@ abstract contract HookFloor is HookStorage {
         c.drain = true;
         c.keep = p.liqBand;
         uint160 sF = TickMath.getSqrtPriceAtTick(p.tickF);
-        uint160 sF1 = TickMath.getSqrtPriceAtTick(p.tickF + SPACING);
-        uint160 sLow = c.sCur > sF ? c.sCur : sF;
-        uint256 band = FloorMath.quote(sLow, sF1, c.keep, true);
-        (uint256 lMax, uint256 room) = _bandMax(c, c.sCur, sLow, sF1, p.liqs[0], band);
+        uint160 sB1 = TickMath.getSqrtPriceAtTick(p.tickB + SPACING);
+        uint160 sTop = c.sCur > sF ? c.sCur : sF; // tranche 0's top
+        uint160 sLow = TickMath.getSqrtPriceAtTick(p.tickB);
+        if (c.sCur > sLow) sLow = c.sCur; // the band's near edge
+        uint256 band = FloorMath.quote(sLow, sB1, c.keep, true);
+        (uint256 lMax, uint256 room) = _bandMax(c, c.sCur, sTop, sLow, sB1, p.liqs[0], band);
         // forge-lint: disable-next-line(unsafe-typecast)
         if (lMax < c.keep) c.keep = uint128(lMax); // lMax < keep, a uint128
         // cut or not, the band takes `band` of the room or all of it (a cut band's quote was more than the room)
@@ -193,24 +193,25 @@ abstract contract HookFloor is HookStorage {
         room -= pot - c.potOut;
         if (c.vested > room) (c.swept, c.vested) = (c.swept + c.vested - room, room);
         // the snipe tax and pot that leave, and the band's quote above `keep` (both rounded up, so 0 if it isn't cut)
-        c.go = c.swept + c.potOut + band - FloorMath.quote(sLow, sF1, c.keep, true) > c.cap / DRAIN_SLACK;
+        c.go = c.swept + c.potOut + band - FloorMath.quote(sLow, sB1, c.keep, true) > c.cap / DRAIN_SLACK;
     }
 
     /// @dev Most liquidity a band over [sA, sB] may hold: what c.cap buys after the quote tranche 0 (liquidity `l0`) holds
-    ///      between the price sP and sA, which the circulating tokens sell into first, but never less than what absorbs
-    ///      every circulating token that curve doesn't (the invariant; rounds against itself). No limit (the uint256 max)
-    ///      while the band's quote `q` fits: c.cap can be astronomically large, so its liquidity is only computed when
-    ///      it is below a real amount. Also returns the quote c.cap leaves after the curve, for the band and the pot.
-    function _bandMax(Ctx memory c, uint160 sP, uint160 sA, uint160 sB, uint128 l0, uint256 q)
+    ///      between the price sP and its top sTop (sA, unless a collect moved the band off it), which the circulating
+    ///      tokens sell into first, but never less than what absorbs every circulating token that curve doesn't (the
+    ///      invariant; rounds against itself). No limit (the uint256 max) while the band's quote `q` fits: c.cap can be
+    ///      astronomically large, so its liquidity is only computed when it is below a real amount. Also returns the quote
+    ///      c.cap leaves after the curve, for the band and the pot.
+    function _bandMax(Ctx memory c, uint160 sP, uint160 sTop, uint160 sA, uint160 sB, uint128 l0, uint256 q)
         internal
         pure
         returns (uint256 lMax, uint256 room)
     {
-        uint256 qc = FloorMath.quote(sP, sA, l0, true);
+        uint256 qc = FloorMath.quote(sP, sTop, l0, true);
         room = c.cap > qc ? c.cap - qc : 0;
         if (q <= room) return (type(uint256).max, room);
         lMax = FloorMath.liquidityForQuote(sA, sB, room);
-        uint256 tc = FloorMath.token(sP, sA, l0, false);
+        uint256 tc = FloorMath.token(sP, sTop, l0, false);
         if (c.circulating > tc) {
             uint256 need = uint256(FloorMath.liquidityForToken(sA, sB, c.circulating - tc)) + 1;
             if (need > lMax) lMax = need;
@@ -274,21 +275,33 @@ abstract contract HookFloor is HookStorage {
         p.snipeReleased += (c.vested + c.swept).toUint128();
         p.pot = p.pot + c.vested - c.potOut;
         if (c.keep < p.liqBand) {
-            BalanceDelta d = _modify(key, p.tickF, p.tickF + SPACING, -int256(uint256(p.liqBand - c.keep)), SALT_BAND);
-            p.liqBand = c.keep;
-            // removing liquidity only ever pays out
-            uint256 q = uint256(int256(d.amount0()));
-            uint256 t = uint256(int256(d.amount1()));
-            if (q != 0) poolManager.mint(address(this), key.currency0.toId(), q);
-            if (t != 0) {
-                poolManager.mint(address(this), key.currency1.toId(), t);
-                p.reserve += t;
-            }
+            (uint256 q,) = _pullBand(key, p, p.liqBand - c.keep);
             amount += q;
             // every token left can still sell into what remains of the band
             if (_absorbNow(p, c.sCur) < c.circulating) revert FloorBroken();
         }
         if (amount != 0) emit FloorSwept(id, amount, _burnShare(p, id, key.currency0, amount));
+    }
+
+    /// @dev Takes `liq` of the band out: its quote becomes the hook's claims (returned, for the caller to account for),
+    ///      its tokens (a band the price is inside) join the dust reserve as claims. Removing liquidity only ever pays out.
+    function _pullBand(PoolKey memory key, Pool storage p, uint128 liq) internal returns (uint256 q, uint256 t) {
+        BalanceDelta d = _modify(key, p.tickB, p.tickB + SPACING, -int256(uint256(liq)), SALT_BAND);
+        p.liqBand -= liq;
+        q = uint256(int256(d.amount0()));
+        t = uint256(int256(d.amount1()));
+        if (q != 0) poolManager.mint(address(this), key.currency0.toId(), q);
+        if (t != 0) {
+            poolManager.mint(address(this), key.currency1.toId(), t);
+            p.reserve += t;
+        }
+    }
+
+    /// @dev Most liquidity the band may hold: v4's per-tick cap less everything placed at MIN_TICK (every tranche's lower
+    ///      tick; the band's ticks hold at most those same positions' upper ends, so a band within this always fits).
+    function _lbMax(PoolId id) internal view returns (uint128) {
+        (uint128 placed,) = poolManager.getTickLiquidity(id, MIN_TICK);
+        return V4Pool.tickSpacingToMaxLiquidityPerTick(SPACING) - placed;
     }
 
     /// @dev Would a band at [t, t+60] (funded by the pot, the old band and the quote freed above t) plus the curve
@@ -343,7 +356,9 @@ abstract contract HookFloor is HookStorage {
     function _absorbNow(Pool storage p, uint160 sCur) internal view returns (uint256 absorb) {
         uint160 sF = TickMath.getSqrtPriceAtTick(p.tickF);
         absorb = FloorMath.token(sCur, sF, p.liqs[0], false)
-            + FloorMath.token(sF, TickMath.getSqrtPriceAtTick(p.tickF + SPACING), p.liqBand, false);
+            + FloorMath.token(
+                TickMath.getSqrtPriceAtTick(p.tickB), TickMath.getSqrtPriceAtTick(p.tickB + SPACING), p.liqBand, false
+            );
         for (uint256 i = uint256(p.merged) + 1; i < N_TRANCHES; i++) {
             uint160 sS = TickMath.getSqrtPriceAtTick(_start(p, i));
             if (sCur >= sS) break; // not reached yet, and starts only rise from here
@@ -360,9 +375,10 @@ abstract contract HookFloor is HookStorage {
             uint160 sS = TickMath.getSqrtPriceAtTick(_start(p, i));
             held += FloorMath.token(sMin, sCur < sS ? sCur : sS, p.liqs[i], false);
         }
-        if (sCur > sF) {
-            uint160 sF1 = TickMath.getSqrtPriceAtTick(p.tickF + SPACING);
-            held += FloorMath.token(sF, sCur < sF1 ? sCur : sF1, p.liqBand, false);
+        uint160 sB = TickMath.getSqrtPriceAtTick(p.tickB);
+        if (sCur > sB) {
+            uint160 sB1 = TickMath.getSqrtPriceAtTick(p.tickB + SPACING);
+            held += FloorMath.token(sB, sCur < sB1 ? sCur : sB1, p.liqBand, false);
         }
         uint256 supply = IZappyToken(p.token).totalSupply();
         return supply > held ? supply - held : 0;
@@ -383,7 +399,7 @@ abstract contract HookFloor is HookStorage {
         int256 d1;
         BalanceDelta d;
         if (p.liqBand != 0) {
-            d = _modify(key, p.tickF, p.tickF + SPACING, -int256(uint256(p.liqBand)), SALT_BAND);
+            d = _modify(key, p.tickB, p.tickB + SPACING, -int256(uint256(p.liqBand)), SALT_BAND);
             (d0, d1) = (d0 + d.amount0(), d1 + d.amount1());
         }
         uint128 l0 = p.liqs[0];
@@ -442,7 +458,7 @@ abstract contract HookFloor is HookStorage {
         uint128 lb = _bandLiquidity(sT, sT1, available, c.lbMax);
         // beyond _bandMax (c.cap less tranche 0's quote over the price) the band's quote would only wait for whoever buys
         // past the next tranche's start: it stays in the pot and leaves below
-        (uint256 lCap, uint256 room) = _bandMax(c, sNow, sT, sT1, lNew, available);
+        (uint256 lCap, uint256 room) = _bandMax(c, sNow, sT, sT, sT1, lNew, available);
         // forge-lint: disable-next-line(unsafe-typecast)
         if (lb > lCap) lb = uint128(lCap); // lCap < lb, a uint128
         d = _modify(key, t, t + SPACING, int256(uint256(lb)), SALT_BAND);
@@ -472,6 +488,7 @@ abstract contract HookFloor is HookStorage {
         }
         // forge-lint: disable-end(unsafe-typecast)
         p.tickF = t;
+        p.tickB = t; // the band sits on tranche 0's top again (Zappy: a collect may have moved it off)
         p.liqBand = lb;
         // the pot keeps what c.cap leaves after the band; the rest leaves for the burn
         room = room > bandQuote ? room - bandQuote : 0;

@@ -116,12 +116,17 @@ contract ZappyBase is Test {
 
     /// A pool's creator: claimCreator's recipient when anyone sends it (address(0) for $ZAPPY's pool: `to` unused)
     function _creatorOf(PoolKey memory k) internal view returns (address c) {
-        (, c,,,,,,,,,,,,,) = hook.pools(k.toId());
+        (, c,,,,,,,,,,,,,,) = hook.pools(k.toId());
+    }
+
+    /// The PoolManager the stack is deployed on: a fresh one here (the mainnet fork test overrides it with Ethereum's)
+    function _poolManager() internal virtual returns (IPoolManager) {
+        return IPoolManager(address(new PoolManager(address(this))));
     }
 
     function setUp() public virtual {
         vm.warp(1_700_000_000);
-        pm = IPoolManager(address(new PoolManager(address(this))));
+        pm = _poolManager();
         router = new PoolSwapTest(pm);
         vesting = new ZappyVesting();
         factory = new ZappyFactory(pm, address(this), team, FEE, vesting);
@@ -323,8 +328,14 @@ contract ZappyBase is Test {
         );
     }
 
+    /// Test addresses: makeAddr here; the mainnet fork test salts them, since makeAddr("bob") and friends exist on
+    /// mainnet (some even with EIP-7702 code that sweeps what they receive)
+    function _addr(string memory name) internal virtual returns (address) {
+        return makeAddr(name);
+    }
+
     function _user(string memory name) internal returns (address u) {
-        u = makeAddr(name);
+        u = _addr(name);
         vm.deal(u, 1_000_000 ether);
         vm.startPrank(u);
         if (zappy != address(0)) ZappyToken(zappy).approve(address(router), type(uint256).max);
@@ -353,7 +364,7 @@ contract ZappyBase is Test {
         view
         returns (int24 tickF, uint256 pot, uint256 creatorOwed, uint256 reserve, uint128 liqBand)
     {
-        (,,,, tickF,,,,,,, liqBand, pot, creatorOwed, reserve) = hook.pools(key.toId());
+        (,,,, tickF,,,,,,, liqBand, pot, creatorOwed, reserve,) = hook.pools(key.toId());
     }
 
     /// Sets a pool's dust reserve (pools[id].reserve, found by matching the public getter: layout-independent). The
@@ -374,12 +385,12 @@ contract ZappyBase is Test {
     }
 
     function _snipe(PoolKey memory key) internal view returns (uint128 snipePot, uint128 snipeReleased) {
-        (,,,,,,,, snipePot, snipeReleased,,,,,) = hook.pools(key.toId());
+        (,,,,,,,, snipePot, snipeReleased,,,,,,) = hook.pools(key.toId());
     }
 
     function _merged(PoolKey memory key) internal view returns (uint256 m) {
         uint8 m8;
-        (,,,,,,,,,, m8,,,,) = hook.pools(key.toId());
+        (,,,,,,,,,, m8,,,,,) = hook.pools(key.toId());
         m = m8;
     }
 
@@ -2241,7 +2252,7 @@ contract ZappyTest is ZappyBase {
         PoolKey memory k = hook.keyFor(address(0), kumo);
         assertEq(PoolId.unwrap(k.toId()), PoolId.unwrap(id), "the ETH/token pool");
         assertEq(_tick(k), ZAPPY_TICK, "starts at the signed tick, in tokens per ETH");
-        (, address creator,,,,,,,,,,,,,) = hook.pools(k.toId());
+        (, address creator,,,,,,,,,,,,,,) = hook.pools(k.toId());
         assertEq(creator, alice);
         assertTrue(factory.startUsed(alice, s));
         assertEq(ZappyToken(kumo).balanceOf(alice), 0);
@@ -2951,7 +2962,7 @@ contract ZappyTest is ZappyBase {
         drop;
         uint256 e0 = eve.balance;
         _swap(eve, zappyKey, true, -10 ether, 10 ether); // pump on the block's first swap
-        (,,,,, int24 ref, uint64 refBlock, uint64 lastRaise,,,,,,,) = hook.pools(zappyKey.toId());
+        (,,,,, int24 ref, uint64 refBlock, uint64 lastRaise,,,,,,,,) = hook.pools(zappyKey.toId());
         assertEq(ref, blockStart, "reference = the tick at the block's start, not the pumped one");
         assertEq(lastRaise, vm.getBlockNumber(), "the block's first swap raised");
         (int24 f0,,,,) = _pool(zappyKey);
@@ -2971,7 +2982,7 @@ contract ZappyTest is ZappyBase {
         }
         (int24 f1,,,,) = _pool(zappyKey);
         (, uint128 rel1) = _snipe(zappyKey);
-        (,,,,, int24 ref1, uint64 refBlock1,,,,,,,,) = hook.pools(zappyKey.toId());
+        (,,,,, int24 ref1, uint64 refBlock1,,,,,,,,,) = hook.pools(zappyKey.toId());
         assertEq(f1, f0, "one raise per block");
         assertEq(rel1, rel0, "time inside the block releases nothing");
         assertEq(ref1, ref, "the reference holds for the whole block");
@@ -2989,7 +3000,7 @@ contract ZappyTest is ZappyBase {
         vm.warp(vm.getBlockTimestamp() + 1);
         int24 nextStart = _tick(zappyKey);
         _swap(carol, zappyKey, true, -0.05 ether, 0.05 ether);
-        (,,,,, int24 ref2,, uint64 lastRaise2,,,,,,,) = hook.pools(zappyKey.toId());
+        (,,,,, int24 ref2,, uint64 lastRaise2,,,,,,,,) = hook.pools(zappyKey.toId());
         (int24 f2,,,,) = _pool(zappyKey);
         (, uint128 rel2) = _snipe(zappyKey);
         assertEq(ref2, nextStart);

@@ -43,13 +43,13 @@ contract AuditInvTest is ZappyBase {
     uint256[3] spent;
 
     function _obl(PoolKey memory k) internal view returns (uint256) {
-        (,,,,,,,, uint128 sp, uint128 rel,,, uint256 pot, uint256 cr,) = hook.pools(k.toId());
+        (,,,,,,,, uint128 sp, uint128 rel,,, uint256 pot, uint256 cr,,) = hook.pools(k.toId());
         return pot + sp - rel + cr;
     }
 
     function _reserve(PoolKey memory k) internal view returns (uint256 r) {
         (,,,, r,) = (0, 0, 0, 0, 0, 0);
-        (,,,,,,,,,,,,,, r) = hook.pools(k.toId());
+        (,,,,,,,,,,,,,, r,) = hook.pools(k.toId());
     }
 
     function _check() internal view {
@@ -77,7 +77,7 @@ contract AuditInvTest is ZappyBase {
         assertEq(pm.balanceOf(address(revenue), eth.toId()), revEth, "ZappyRevenue ETH claims == owed");
         assertEq(pm.balanceOf(address(revenue), fb.toId()), revZappy, "ZappyRevenue ZAPPY claims == owed");
         for (uint256 i; i < 3; i++) {
-            (,,,, int24 f,,,,,,,,,,) = hook.pools(keys[i].toId());
+            (,,,, int24 f,,,,,,,,,,,) = hook.pools(keys[i].toId());
             assertLe(f, lastF[i], "floor never drops");
         }
     }
@@ -145,7 +145,7 @@ contract AuditInvTest is ZappyBase {
         keys[1] = hook.keyFor(address(0), kumo);
         keys[2] = hook.keyFor(zappy, neko);
         for (uint256 i; i < 3; i++) {
-            (,,,, int24 f,,,,,,,,,,) = hook.pools(keys[i].toId());
+            (,,,, int24 f,,,,,,,,,,,) = hook.pools(keys[i].toId());
             lastF[i] = f;
             if ((seed >> 252) % 2 == 0) {
                 spent[i] = _reserve(keys[i]);
@@ -207,14 +207,14 @@ contract AuditInvTest is ZappyBase {
             }
             _check();
             for (uint256 i; i < 3; i++) {
-                (,,,, int24 f,,,,,,,,,,) = hook.pools(keys[i].toId());
+                (,,,, int24 f,,,,,,,,,,,) = hook.pools(keys[i].toId());
                 lastF[i] = f;
             }
         }
         // everyone exits from the child pools, then $ZAPPY
         for (uint256 pi = 3; pi > 0; pi--) {
             PoolKey memory k = keys[pi - 1];
-            (,,,, int24 tickF,,,,,,,,,,) = hook.pools(k.toId());
+            (,,,, int24 tickF,,,,,,,,,,,) = hook.pools(k.toId());
             address[] memory all = new address[](5);
             for (uint256 i; i < 4; i++) {
                 all[i] = us[i];
@@ -337,12 +337,12 @@ contract AuditInvLowStartTest is ZappyBase {
     address iq;
 
     function _iobl(PoolKey memory k) internal view returns (uint256) {
-        (,,,,,,,, uint128 sp, uint128 rel,,, uint256 pot, uint256 cr,) = hook.pools(k.toId());
+        (,,,,,,,, uint128 sp, uint128 rel,,, uint256 pot, uint256 cr,,) = hook.pools(k.toId());
         return pot + sp - rel + cr;
     }
 
     function _ires(PoolKey memory k) internal view returns (uint256 r) {
-        (,,,,,,,,,,,,,, r) = hook.pools(k.toId());
+        (,,,,,,,,,,,,,, r,) = hook.pools(k.toId());
     }
 
     function _icheck() internal {
@@ -361,7 +361,7 @@ contract AuditInvLowStartTest is ZappyBase {
             assertEq(pm.balanceOf(address(hook), ik[i].currency1.toId()), _ires(ik[i]), "token claims == reserve");
         }
         for (uint256 i; i < 3; i++) {
-            (,,,, int24 f,,,,,,,,,,) = hook.pools(ik[i].toId());
+            (,,,, int24 f,,,,,,,,,,,) = hook.pools(ik[i].toId());
             assertLe(f, ilastF[i], "floor never drops");
             ilastF[i] = f;
         }
@@ -398,7 +398,7 @@ contract AuditInvLowStartTest is ZappyBase {
         ik[1] = hook.keyFor(address(0), kumo);
         ik[2] = hook.keyFor(iq, low);
         for (uint256 i; i < 3; i++) {
-            (,,,, int24 f,,,,,,,,,,) = hook.pools(ik[i].toId());
+            (,,,, int24 f,,,,,,,,,,,) = hook.pools(ik[i].toId());
             ilastF[i] = f;
         }
         for (uint256 i; i < 4; i++) {
@@ -454,7 +454,7 @@ contract AuditInvLowStartTest is ZappyBase {
         }
         for (uint256 pi = 3; pi > 0; pi--) {
             PoolKey memory k = ik[pi - 1];
-            (,,,, int24 tickF,,,,,,,,,,) = hook.pools(k.toId());
+            (,,,, int24 tickF,,,,,,,,,,,) = hook.pools(k.toId());
             address tok = Currency.unwrap(k.currency1);
             for (uint256 i; i < 4; i++) {
                 uint256 b = ZappyToken(tok).balanceOf(ius[i]);

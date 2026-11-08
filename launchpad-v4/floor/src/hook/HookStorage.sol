@@ -118,6 +118,10 @@ abstract contract HookStorage is BaseHook, IZappyHook {
         // liqs[0]: tranche 0's liquidity, which grows as tranches merge in; liqs[i > 0]: what tranche i was placed with
         // (live while i > merged, then part of liqs[0])
         uint128[N_TRANCHES] liqs;
+        // Zappy: the band's tick, [tickB, tickB + 60]. Equal to tickF (the band sits on tranche 0's top) until the owner
+        // collects part of the floor: the band then moves up to where what is left still buys back every circulating
+        // token, leaving a gap over tranche 0, and the next raise puts both back together (HookFloor._rebuild)
+        int24 tickB;
     }
 
     mapping(PoolId => Pool) public pools;

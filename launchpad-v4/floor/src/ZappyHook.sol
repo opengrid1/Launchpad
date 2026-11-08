@@ -106,6 +106,7 @@ contract ZappyHook is HookClaims, IUnlockCallback, Owned {
         p.launchedAt = uint40(block.timestamp); // seconds: < 2^40 for ~34,000 years
         p.tickStart = tickStart;
         p.tickF = tickStart;
+        p.tickB = tickStart;
         // the hook initialises its own pools; beforeInitialize rejects everyone else (self-calls skip it)
         poolManager.initialize(key, TickMath.getSqrtPriceAtTick(tickStart));
         poolManager.unlock(abi.encode(ACTION_PLACE, abi.encode(key)));
@@ -157,28 +158,71 @@ contract ZappyHook is HookClaims, IUnlockCallback, Owned {
         poolManager.unlock(abi.encode(ACTION_COLLECT, abi.encode(key, bps, to)));
     }
 
+    /// @dev Takes `bps` of the pot and of the band's quote. The whole band comes out (its tokens, if the price was inside
+    ///      it, join the dust reserve) and what is kept goes back in at the lowest tick at or above the old band where it
+    ///      still buys back every circulating token (_lowerBand): the floor drops to what the money left can hold, the
+    ///      invariant every raise checks (HookFloor.FloorBroken) holds again right away, and the raises go on from there.
+    ///      A full collect leaves no band: the next raise rebuilds one once the pot can carry every holder.
     function _collectFloor(PoolKey memory key, uint16 bps, address to) internal {
         PoolId id = key.toId();
         Pool storage p = pools[id];
         uint256 quoteOut = p.pot * bps / 10_000;
         p.pot -= quoteOut;
         uint256 tokens;
-        uint128 cut = uint128(uint256(p.liqBand) * bps / 10_000);
-        if (cut != 0) {
-            BalanceDelta d = _modify(key, p.tickF, p.tickF + SPACING, -int256(uint256(cut)), SALT_BAND);
-            p.liqBand -= cut;
-            // removing liquidity only ever pays out
-            uint256 q = uint256(int256(d.amount0()));
-            tokens = uint256(int256(d.amount1()));
-            if (q != 0) poolManager.mint(address(this), key.currency0.toId(), q);
-            if (tokens != 0) {
-                poolManager.mint(address(this), key.currency1.toId(), tokens);
-                p.reserve += tokens;
-            }
-            quoteOut += q;
+        uint256 keep;
+        if (p.liqBand != 0) {
+            (uint256 q, uint256 t) = _pullBand(key, p, p.liqBand);
+            tokens = t;
+            uint256 out = q * bps / 10_000;
+            quoteOut += out;
+            keep = q - out;
         }
+        uint256 bandQuote;
+        if (keep != 0) bandQuote = _lowerBand(key, p, id, keep);
         if (quoteOut != 0) poolManager.redeem(key.currency0, to, quoteOut);
-        emit FloorCollected(id, bps, quoteOut, tokens, to);
+        emit FloorCollected(id, bps, quoteOut, tokens, to, p.tickB, bandQuote);
+    }
+
+    /// @dev Puts `keep` of quote (held as claims) back as the band at the lowest tick (highest floor) at or above both the
+    ///      current tick and tranche 0's top where tranche 0's quote over the price, the unreached tranches and this band
+    ///      together absorb every circulating token (HookFloor._absorbNow's terms). A binary search over the ticks: a
+    ///      cheaper band buys more tokens with the same quote, so the check is monotonic. Rounding dust the band can't
+    ///      take stays in the pot. Returns the quote the band took.
+    function _lowerBand(PoolKey memory key, Pool storage p, PoolId id, uint256 keep) internal returns (uint256) {
+        (uint160 sCur, int24 cur,,) = poolManager.getSlot0(id);
+        uint256 circulating = _circulating(p, sCur);
+        uint256 fixedAbsorb = _absorbNow(p, sCur); // liqBand is 0 here: tranche 0 and the unreached tranches
+        uint128 lbMax = _lbMax(id);
+        int24 low = Ticks.alignDown(cur) + SPACING; // the band stays over the price
+        if (low < p.tickF) low = p.tickF;
+        int256 lo = int256(low / SPACING);
+        int256 hi = int256(TickMath.MAX_TICK / SPACING) - 2; // the band's far edge within the usable ticks
+        while (lo < hi) {
+            int256 mid = (lo + hi) >> 1;
+            // forge-lint: disable-next-line(unsafe-typecast)
+            if (fixedAbsorb + _bandTokens(int24(mid * SPACING), keep, lbMax) >= circulating) hi = mid;
+            else lo = mid + 1;
+        }
+        // forge-lint: disable-next-line(unsafe-typecast)
+        int24 tB = int24(hi * SPACING); // lo <= hi: between two int24 ticks
+        uint128 lb = _bandLiquidity(
+            TickMath.getSqrtPriceAtTick(tB), TickMath.getSqrtPriceAtTick(tB + SPACING), keep, lbMax
+        );
+        BalanceDelta d = _modify(key, tB, tB + SPACING, int256(uint256(lb)), SALT_BAND);
+        // a band over the price only ever takes quote; rounding leaves it at most `keep`
+        uint256 used = uint256(int256(-d.amount0()));
+        poolManager.burn(address(this), key.currency0.toId(), used);
+        p.pot += keep - used;
+        p.tickB = tB;
+        p.liqBand = lb;
+        return used;
+    }
+
+    /// @dev Tokens a band at [t, t+60] funded with `keep` of quote (capped at lbMax) buys back.
+    function _bandTokens(int24 t, uint256 keep, uint128 lbMax) internal pure returns (uint256) {
+        uint160 sT = TickMath.getSqrtPriceAtTick(t);
+        uint160 sT1 = TickMath.getSqrtPriceAtTick(t + SPACING);
+        return FloorMath.token(sT, sT1, _bandLiquidity(sT, sT1, keep, lbMax), false);
     }
 
     function _place(PoolKey memory key) internal {
@@ -229,7 +273,8 @@ contract ZappyHook is HookClaims, IUnlockCallback, Owned {
     {
         Pool storage p = pools[key.toId()];
         (uint160 sCur,,,) = poolManager.getSlot0(key.toId());
-        return (p.tickF, TickMath.getSqrtPriceAtTick(p.tickF + SPACING), _circulating(p, sCur));
+        // Zappy: the band's tick (tranche 0's top until a collect moves the band off it)
+        return (p.tickB, TickMath.getSqrtPriceAtTick(p.tickB + SPACING), _circulating(p, sCur));
     }
 
     /// @notice A pool's tick at the start of this block: the one stored by the block's first swap (or poke); with none

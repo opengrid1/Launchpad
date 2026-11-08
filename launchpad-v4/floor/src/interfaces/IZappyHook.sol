@@ -48,8 +48,18 @@ interface IZappyHook {
     ///         fee in its creatorOwed, which claimCreator credits to ZappyRevenue)
     event CreditFailed(PoolId indexed poolId, uint256 amount);
     /// @notice Zappy: the owner took `bps` of a pool's floor (its band and its pot): `quote` of the pair to `to`, and
-    ///         `tokens` the band held (a band the price is inside) into the dust reserve.
-    event FloorCollected(PoolId indexed poolId, uint16 bps, uint256 quote, uint256 tokens, address indexed to);
+    ///         `tokens` the band held (a band the price is inside) into the dust reserve. The band went back in with
+    ///         `quoteInFloor` at `tickF` (0 of it after a full collect), the lowest tick where that still buys back every
+    ///         circulating token: the floor dropped to what the money left can hold (floorOf reads the new worst case).
+    event FloorCollected(
+        PoolId indexed poolId,
+        uint16 bps,
+        uint256 quote,
+        uint256 tokens,
+        address indexed to,
+        int24 tickF,
+        uint256 quoteInFloor
+    );
 
     error NotFactory();
     error ZeroAddress();

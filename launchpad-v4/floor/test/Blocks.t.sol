@@ -85,7 +85,7 @@ contract ArbitrumBlocksTest is ArbitrumBase {
         vm.warp(vm.getBlockTimestamp() + 2 minutes);
         int24 start = _tick(zappyKey);
         _swap(eve, zappyKey, true, -10 ether, 10 ether); // pump on L2 block 1001's first swap
-        (,,,,, int24 ref, uint64 refBlock, uint64 lastRaise,,,,,,,) = hook.pools(zappyKey.toId());
+        (,,,,, int24 ref, uint64 refBlock, uint64 lastRaise,,,,,,,,) = hook.pools(zappyKey.toId());
         assertEq(refBlock, 1_001, "the reference is keyed on the L2 block");
         assertEq(lastRaise, 1_001, "L2 block 1001's first swap raised");
         assertEq(ref, start, "reference = the tick at the L2 block's start, not the pumped one");
@@ -96,7 +96,7 @@ contract ArbitrumBlocksTest is ArbitrumBase {
         vm.roll(l1 + 5);
         vm.warp(vm.getBlockTimestamp() + 1);
         _swap(carol, zappyKey, true, -1 ether, 1 ether);
-        (,,,,, int24 ref1, uint64 refBlock1, uint64 lastRaise1,,,,,,,) = hook.pools(zappyKey.toId());
+        (,,,,, int24 ref1, uint64 refBlock1, uint64 lastRaise1,,,,,,,,) = hook.pools(zappyKey.toId());
         (int24 f1,,,,) = _pool(zappyKey);
         assertEq(refBlock1, 1_001);
         assertEq(lastRaise1, 1_001);
@@ -111,7 +111,7 @@ contract ArbitrumBlocksTest is ArbitrumBase {
             int24 next = _tick(zappyKey);
             assertEq(hook.startOfBlockTick(zappyKey.toId()), next, "a new L2 block starts at the current tick");
             _swap(carol, zappyKey, true, -1 ether, 1 ether);
-            (,,,,, int24 refN, uint64 refBlockN, uint64 lastRaiseN,,,,,,,) = hook.pools(zappyKey.toId());
+            (,,,,, int24 refN, uint64 refBlockN, uint64 lastRaiseN,,,,,,,,) = hook.pools(zappyKey.toId());
             assertEq(refBlockN, b);
             assertEq(refN, next);
             assertEq(lastRaiseN, b, "one raise per L2 block");
@@ -168,7 +168,7 @@ contract ArbitrumBlocksTest is ArbitrumBase {
             assertTrue(logs[i].topics[0] != IZappyHook.RaiseFailed.selector, "a raise failed silently");
         }
         assertEq(buybacks, 1);
-        (,,,,,,, uint64 lastRaise,,,,,,,) = hook.pools(zappyKey.toId());
+        (,,,,,,, uint64 lastRaise,,,,,,,,) = hook.pools(zappyKey.toId());
         assertEq(lastRaise, 13);
         _dumpAll(zappyKey, _one(carol));
     }
@@ -227,12 +227,12 @@ contract PlainBlocksTest is ZappyBase {
         vm.roll(vm.getBlockNumber() + 1);
         address bob = _user("bob");
         _swap(bob, zappyKey, true, -1 ether, 1 ether);
-        (,,,,,, uint64 refBlock,,,,,,,,) = hook.pools(zappyKey.toId());
+        (,,,,,, uint64 refBlock,,,,,,,,,) = hook.pools(zappyKey.toId());
         assertEq(refBlock, vm.getBlockNumber());
         vm.etch(ARB_SYS, ""); // nothing there: still fine
         vm.roll(vm.getBlockNumber() + 1);
         _swap(bob, zappyKey, true, -1 ether, 1 ether);
-        (,,,,,, refBlock,,,,,,,,) = hook.pools(zappyKey.toId());
+        (,,,,,, refBlock,,,,,,,,,) = hook.pools(zappyKey.toId());
         assertEq(refBlock, vm.getBlockNumber());
     }
 }

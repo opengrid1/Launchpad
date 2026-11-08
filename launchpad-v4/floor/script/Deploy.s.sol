@@ -27,7 +27,8 @@ import {StartTick} from "./StartTick.sol";
 /// hook when the hook is set; ZappyBurner takes the hook once (setHook checks it names this burner). ETH needs no
 /// ZappyBurner route (ETH -> the $ZAPPY pool is built in); other quotes get theirs from the Owner Safe when they are
 /// allowed (setRoute, docs/DEPLOYMENT.md section 9.1).
-///   POOL_MANAGER   v4 PoolManager on the target chain (unset on a local chain: a fresh one is deployed)
+///   POOL_MANAGER   v4 PoolManager on the target chain (unset: Uniswap's on Ethereum mainnet (1); on a local chain a
+///                  fresh one is deployed)
 ///   TEAM           team wallet, an EOA or a Safe (the hook's team balances, and ZappyRevenue's team recipient: the rest of
 ///                  the protocol fee)
 ///   OWNER          final owner (the Owner Safe) of the factory, ZappyRevenue, ZappyLimitOrders and ZappyBurner; ownership of each is offered
@@ -45,9 +46,8 @@ import {StartTick} from "./StartTick.sol";
 ///                  which binds signed-up traders to their referrers (registerBy); unset = none (the Owner Safe can set it)
 ///   ETH_USD_FEED   ZappyLimitOrders' ETH/USD feed, native ETH's pay-token price (setPayToken; Chainlink AggregatorV3
 ///                  interface, at most 18 decimals). Other pay tokens (USDG) are the Owner Safe's later (docs/DEPLOYMENT.md
-///                  section 9.4). Defaults to
-///                  Chainlink's on Robinhood Chain mainnet; unset on a local chain: a MockEthUsdFeed at ETH_USD is
-///                  deployed (the deployer sets its price)
+///                  section 9.4). Defaults to Chainlink's on Ethereum mainnet (1) and on Robinhood Chain mainnet; unset
+///                  on a local chain: a MockEthUsdFeed at ETH_USD is deployed (the deployer sets its price)
 ///   ETH_USD_FEED_MAX_AGE  oldest feed answer (seconds) a fill accepts: the feed's heartbeat plus a margin. Required
 ///                  with ETH_USD_FEED; the local mock defaults to 365 days (the local clock jumps hours at a time)
 ///   SEQUENCER_UPTIME_FEED  optional: the chain's Chainlink L2 sequencer uptime feed; fills wait while the sequencer is
@@ -66,6 +66,13 @@ contract Deploy is Script {
     uint256 internal constant LOCAL_CHAIN_ID = 31337; // anvil
     uint256 internal constant ROBINHOOD_CHAIN_ID = 4663;
     uint256 internal constant ROBINHOOD_TESTNET_CHAIN_ID = 46630;
+    uint256 internal constant ETHEREUM_CHAIN_ID = 1;
+    /// Uniswap v4 PoolManager on Ethereum mainnet (docs.uniswap.org/contracts/v4/deployments)
+    address internal constant ETHEREUM_POOL_MANAGER = 0x000000000004444c5dc75cB358380D2e3dE08A90;
+    /// Chainlink's ETH / USD proxy on Ethereum mainnet (8 decimals, 1 h heartbeat, 0.5% deviation)
+    address internal constant ETHEREUM_ETH_USD_FEED = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    /// The heartbeat plus an hour
+    uint256 internal constant ETHEREUM_ETH_USD_MAX_AGE = 2 hours;
     /// Chainlink's ETH / USD proxy on Robinhood Chain mainnet (8 decimals, 24 h heartbeat, 0.5% deviation), from
     /// Chainlink's feed directory (docs.chain.link/data-feeds/price-feeds/addresses?network=robinhood)
     address internal constant ROBINHOOD_ETH_USD_FEED = 0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9;
@@ -110,10 +117,12 @@ contract Deploy is Script {
             // Zappy: the owner may be an EOA (the admin wallet) as well as a Safe
         }
         IPoolManager pm = IPoolManager(vm.envOr("POOL_MANAGER", address(0)));
+        if (address(pm) == address(0) && block.chainid == ETHEREUM_CHAIN_ID) pm = IPoolManager(ETHEREUM_POOL_MANAGER);
         if (address(pm) == address(0)) {
             require(block.chainid == LOCAL_CHAIN_ID, "set POOL_MANAGER");
             pm = IPoolManager(address(new PoolManager(msg.sender)));
         }
+        require(address(pm).code.length != 0, "POOL_MANAGER has no code");
         ZappyVesting vesting = new ZappyVesting();
         factory = new ZappyFactory(pm, msg.sender, team, launchFee, vesting);
         require(address(factory.vesting()) == address(vesting), "factory's vesting");
@@ -274,15 +283,17 @@ contract Deploy is Script {
         // Robinhood Chain mainnet: Chainlink's ETH/USD unless ETH_USD_FEED overrides it (there's no sequencer uptime feed
         // there: Chainlink doesn't publish one for Robinhood Chain)
         bool isRobinhood = block.chainid == ROBINHOOD_CHAIN_ID;
-        feed = vm.envOr("ETH_USD_FEED", isRobinhood ? ROBINHOOD_ETH_USD_FEED : address(0));
+        bool isEthereum = block.chainid == ETHEREUM_CHAIN_ID;
+        address dflt = isRobinhood ? ROBINHOOD_ETH_USD_FEED : isEthereum ? ETHEREUM_ETH_USD_FEED : address(0);
+        feed = vm.envOr("ETH_USD_FEED", dflt);
         if (feed == address(0)) {
             require(block.chainid == LOCAL_CHAIN_ID, "set ETH_USD_FEED");
             return (localEthUsdFeed(ethUsd), vm.envOr("ETH_USD_FEED_MAX_AGE", uint256(365 days)));
         }
         maxAge = isRobinhood
             ? vm.envOr("ETH_USD_FEED_MAX_AGE", ROBINHOOD_ETH_USD_MAX_AGE)
-            : vm.envUint("ETH_USD_FEED_MAX_AGE");
-        checkEthUsdFeed(IAggregatorV3(feed), maxAge, ethUsd, feed == ROBINHOOD_ETH_USD_FEED);
+            : isEthereum ? vm.envOr("ETH_USD_FEED_MAX_AGE", ETHEREUM_ETH_USD_MAX_AGE) : vm.envUint("ETH_USD_FEED_MAX_AGE");
+        checkEthUsdFeed(IAggregatorV3(feed), maxAge, ethUsd, feed == dflt && dflt != address(0));
     }
 
     /// A local chain's MockEthUsdFeed at `ethUsd` (whole dollars), 8 decimals, owned by the deployer
@@ -341,6 +352,7 @@ contract Deploy is Script {
     /// Deployment files are named like the chain's Substreams network, so the indexer config finds them by that name.
     function networkName() internal view returns (string memory) {
         if (block.chainid == LOCAL_CHAIN_ID) return "local";
+        if (block.chainid == ETHEREUM_CHAIN_ID) return "ethereum";
         if (block.chainid == ROBINHOOD_CHAIN_ID) return "robinhood";
         if (block.chainid == ROBINHOOD_TESTNET_CHAIN_ID) return "robinhood-sepolia";
         revert("unknown chain: set DEPLOYMENT");

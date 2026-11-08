@@ -129,6 +129,9 @@ contract DeployScriptTest is Test {
         assertEq(d.network(), "robinhood-sepolia");
         vm.chainId(1);
         assertFalse(d.arbitrum());
+        assertEq(d.network(), "ethereum");
+        vm.chainId(8453);
+        assertFalse(d.arbitrum());
         vm.expectRevert(bytes("unknown chain: set DEPLOYMENT"));
         d.network();
     }
