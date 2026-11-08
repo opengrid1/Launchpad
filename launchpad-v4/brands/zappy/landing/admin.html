@@ -1,0 +1,203 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Zappy admin</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#080b0d">
+<link rel="icon" href="/logo.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#080b0d;--s1:#111619;--s2:#171d21;--s3:#20282c;--line:#1c2428;--line2:#263034;--ink:#e7ecea;--ink2:#b3bcbb;--grey:#8a9396;--y:#ffd84d;--y2:#fff3c4;--on-y:#1a1403;--green:#4ade80;--on-green:#04150a;--red:#ff4f63;--sans:Geist,system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button,input,select{font:inherit;color:inherit}button{background:none;border:0;cursor:pointer;padding:0}button:disabled{opacity:.45;cursor:default}h1,h2,p{margin:0}svg{display:block}
+.num{font-variant-numeric:tabular-nums}.grey{color:var(--grey)}.up{color:var(--green)}.dn{color:var(--red)}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+header img{width:28px;height:28px;border-radius:8px}header h1{font:600 16px var(--sans)}header .sp{flex:1}header a.back{color:var(--grey);font-size:13px}
+.si{height:36px;padding:0 14px;border-radius:999px;background:var(--y);color:var(--on-y);font:600 14px var(--sans)}.si.on{background:var(--s2);color:var(--ink);border:1px solid var(--line2)}
+main{max-width:1080px;margin:0 auto;padding:20px;display:grid;gap:18px}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card h2{font:600 15px var(--sans);display:flex;align-items:center;gap:10px}.card h2 small{font:400 12.5px var(--sans);color:var(--grey)}
+.note{margin-top:4px;color:var(--grey);font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px}th{text-align:left;color:var(--grey);font-weight:500;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line)}td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}tr:last-child td{border-bottom:0}
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:600}.pill.ok{background:rgba(74,222,128,.14);color:var(--green)}.pill.wait{background:rgba(255,216,77,.14);color:var(--y)}.pill.off{background:var(--s3);color:var(--grey)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;font:600 13.5px var(--sans);white-space:nowrap;border:1px solid var(--line2);color:var(--ink)}.btn:hover:not(:disabled){background:var(--s2)}
+.btn.y{background:var(--y);color:var(--on-y);border-color:transparent}.btn.y:hover:not(:disabled){background:var(--y2)}.btn.g{background:var(--green);color:var(--on-green);border-color:transparent}.btn.r{color:var(--red);border-color:rgba(255,79,99,.4)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
+.kv{background:var(--s2);border-radius:12px;padding:12px 14px}.kv span{display:block;font-size:12px;color:var(--grey)}.kv b{display:block;font:600 15px var(--sans);margin-top:2px;word-break:break-all}
+.fr{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}.fr label{font-size:12.5px;color:var(--grey);min-width:110px}
+input,select{height:38px;padding:0 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line2);outline:0;min-width:0}input:focus,select:focus{border-color:var(--grey)}input.w{width:150px}select{width:100%;max-width:420px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:760px){.two{grid-template-columns:1fr}}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--s3);border:1px solid var(--line2);color:var(--ink);padding:10px 16px;border-radius:12px;font-size:13.5px;opacity:0;pointer-events:none;transition:.2s;max-width:min(92vw,560px);word-break:break-word}#toast.on{opacity:1;transform:translateX(-50%)}
+.warn{background:rgba(255,79,99,.1);border:1px solid rgba(255,79,99,.35);color:#ffb3bd;border-radius:12px;padding:10px 14px;font-size:13px}
+</style></head><body>
+<header><a href="/app"><img src="/logo.png" alt=""></a><h1>Zappy admin</h1><span class="grey">Ethereum mainnet</span><span class="sp"></span><a class="back" href="/app">Open the app</a><button class="si" id="signin">Connect wallet</button></header>
+<main id="main"><div class="card"><div class="grey">Loading the contracts…</div></div></main>
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script>
+/* The owner's console for the Zappy floor stack: accept ownership of each contract, pause launches, move the start band
+   with the ETH price, set the launch fee and dev-buy cap, collect part of a pool's floor, and claim the team's revenue.
+   Every write goes through the connected wallet; nothing here holds a key. */
+const X = ethers, AC = X.AbiCoder.defaultAbiCoder(), $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const C = { factory: '0xeE2D9c1b5a5bb1B742746888956476FBF78097e5', hook: '0x0ccaD7b1035c7eDd95201ED8737dBC29eEA868eC', revenue: '0xd1A0021055ed53f06c8D9A715D67f7053FfaF847', limitOrders: '0xd9f5717DA70Fd5464352Ddd66c7d7D6B2513746e', burner: '0xd0b28a369024870a547d273503a5bB6Eb1608E03', vesting: '0x2bd0844E2D0CfeDF44bDDa92fA78C4283fe5A0af', zappy: '0xB1c323BdD0caa8013027fc61DA2bFB12dfDe7bb0', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11', explorer: 'https://etherscan.io', chainId: 1, spacing: 60 };
+const OWNED = [['factory', 'ZappyFactory'], ['hook', 'ZappyHook'], ['revenue', 'ZappyRevenue'], ['limitOrders', 'ZappyLimitOrders'], ['burner', 'ZappyBurner']];
+const RPCS = ['https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io', 'https://eth.drpc.org'];
+const I = {
+  owned: new X.Interface(['function owner() view returns (address)', 'function pendingOwner() view returns (address)', 'function acceptOwnership()', 'function transferOwnership(address)']),
+  factory: new X.Interface(['function startBandLow() view returns (int24)', 'function startBandHigh() view returns (int24)', 'function launchFeeEth() view returns (uint256)', 'function devBuyMax() view returns (uint256)', 'function launchesPaused() view returns (bool)', 'function startSigner() view returns (address)', 'function team() view returns (address)', 'function setStartBand(int24,int24)', 'function setLaunchesPaused(bool)', 'function setLaunchFee(uint256)', 'function setDevBuyMax(uint256)']),
+  hook: new X.Interface(['function pools(bytes32) view returns (address token,address creator,uint40 launchedAt,int24 tickStart,int24 tickF,int24 refTick,uint64 refBlock,uint64 lastRaiseBlock,uint128 snipePot,uint128 snipeReleased,uint8 merged,uint128 liqBand,uint256 pot,uint256 creatorOwed,uint256 reserve,int24 tickB)', 'function floorOf((address,address,uint24,int24,address) key) view returns (int24 tickF, uint160 sqrtPriceX96, uint256 circulating)', 'function teamOwed(address) view returns (uint256)', 'function collectFloor((address,address,uint24,int24,address) key, uint16 bps, address to)', 'function claimTeam(address)']),
+  revenue: new X.Interface(['function owed(address,address) view returns (uint256)', 'function team() view returns (address)', 'function claim(address account, address currency, address to) returns (uint256)']),
+  feed: new X.Interface(['function latestRoundData() view returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80)']),
+  mc: new X.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns ((bool success,bytes returnData)[])']),
+};
+const FEED = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', ZERO = X.ZeroAddress;
+const low = (s) => String(s || '').toLowerCase(), short = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : '—', esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const toast = (t, ms = 3600) => { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), ms); };
+const fmt = (n, d = 4) => Number(n).toLocaleString('en-US', { maximumFractionDigits: d });
+const usd = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: n >= 100 ? 0 : 2 });
+const keyOf = (token) => [ZERO, X.getAddress(token), 0, C.spacing, C.hook];
+const poolIdOf = (token) => X.keccak256(AC.encode(['address', 'address', 'uint24', 'int24', 'address'], keyOf(token)));
+
+let rid = 0, cur = 0;
+async function rpc(method, params) {
+  let last = '';
+  for (let i = 0; i < 6; i++) {
+    const url = RPCS[(cur + i) % RPCS.length];
+    try { const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: ++rid, method, params }), signal: AbortSignal.timeout(12000) }); const j = await r.json(); if (!j.error) { cur = (cur + i) % RPCS.length; return j.result; } last = j.error.message; const skip = j.error.code === -32601 || j.error.code === -32001 || /rate|limit|busy|timeout|timed out|unavailable|whitelist|not supported|unsupported|method not found|beyond current head/i.test(last); if (!skip) { const e = new Error(last); e.data = j.error.data; throw e; } }
+    catch (e) { if (e.data !== undefined) throw e; last = e.message; }
+    await new Promise((s) => setTimeout(s, 300 * 2 ** i));
+  }
+  throw new Error('Ethereum RPC unavailable: ' + last);
+}
+async function multicall(calls) {
+  const data = I.mc.encodeFunctionData('aggregate3', [calls.map(([t, iface, f, a]) => [t, true, iface.encodeFunctionData(f, a || [])])]);
+  const [res] = I.mc.decodeFunctionResult('aggregate3', await rpc('eth_call', [{ to: C.multicall, data }, 'latest']));
+  return res.map(([ok, rd], k) => { if (!ok) return null; try { const r = calls[k][1].decodeFunctionResult(calls[k][2], rd); return r.length === 1 ? r[0] : r; } catch { return null; } });
+}
+
+/* ---- wallet: RainbowKit when it loaded (window.RK), else the injected provider ---- */
+const W = { provider: null, address: '' };
+const RK = (window.RK = window.RK || { listeners: [] });
+RK.listeners.push(async (s) => { if (!s.address || !s.provider) { if (W.address) { W.provider = null; W.address = ''; render(); } return; } W.provider = s.provider; W.address = X.getAddress(s.address); if (s.chainId && s.chainId !== C.chainId) { toast('Switch the wallet to Ethereum mainnet'); try { await RK.switchChain(); } catch { } } render(); });
+async function connect() {
+  if (W.address) { if (RK.disconnect) RK.disconnect(); W.provider = null; W.address = ''; render(); return; }
+  if (RK.ready && RK.open) return RK.open();
+  const p = window.ethereum; if (!p) return toast('No wallet found in this browser');
+  const [a] = await p.request({ method: 'eth_requestAccounts' });
+  const cid = await p.request({ method: 'eth_chainId' }); if (cid !== '0x1') await p.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x1' }] });
+  W.provider = p; W.address = X.getAddress(a); p.on && p.on('accountsChanged', (x) => { W.address = x[0] ? X.getAddress(x[0]) : ''; render(); }); render();
+}
+$('#signin').onclick = () => connect().catch((e) => toast(e.message));
+function revertText(e) { const m = (e && (e.shortMessage || e.message)) || String(e); const d = e && e.data && (typeof e.data === 'string' ? e.data : e.data.data); if (d && d.length >= 10) { const sel = d.slice(0, 10); for (const iface of Object.values(I)) { try { const er = iface.parseError(d); if (er) return er.name + (er.args.length ? ' ' + er.args.join(', ') : ''); } catch { } } if (sel === '0x118cdaa7') return 'Not the owner (OwnableUnauthorizedAccount)'; return m + ' ' + sel; } return m.length > 220 ? m.slice(0, 220) + '…' : m; }
+async function send(to, data, label, value = 0n) {
+  if (!W.provider) throw new Error('Connect the admin wallet first');
+  const req = { from: W.address, to, data, value: '0x' + value.toString(16) };
+  try { await rpc('eth_call', [req, 'latest']); } catch (e) { if (e.data !== undefined) throw new Error(label + ' would revert: ' + revertText(e)); }
+  let gas; try { gas = parseInt(await rpc('eth_estimateGas', [req]), 16); } catch (e) { throw new Error(label + ' would revert: ' + revertText(e)); }
+  req.gas = '0x' + Math.ceil(gas * 1.3).toString(16);
+  let hash; try { hash = await W.provider.request({ method: 'eth_sendTransaction', params: [req] }); } catch (e) { throw new Error(revertText(e)); }
+  toast(label + ' sent. Waiting for Ethereum…', 30000);
+  const t0 = Date.now();
+  while (Date.now() - t0 < 300000) { const r = await rpc('eth_getTransactionReceipt', [hash]).catch(() => null); if (r) { if (parseInt(r.status, 16) !== 1) throw new Error(label + ' reverted. ' + C.explorer + '/tx/' + hash); toast(label + ' confirmed'); return hash; } await new Promise((s) => setTimeout(s, 2500)); }
+  throw new Error('Still pending after 5 minutes: ' + C.explorer + '/tx/' + hash);
+}
+const act = async (btn, label, fn) => { btn.disabled = true; const t = btn.textContent; btn.textContent = 'Confirm in wallet…'; try { await fn(); await load(); } catch (e) { toast(e.message, 7000); } btn.disabled = false; btn.textContent = t; render(); };
+
+/* ---- reads ---- */
+const D = { own: {}, fac: {}, ethUsd: 0, teamRev: 0n, teamHook: 0n, coins: [], coin: null, pool: null, floor: null, loaded: false, err: '' };
+async function load() {
+  try {
+    const calls = [];
+    for (const [k] of OWNED) calls.push([C[k], I.owned, 'owner'], [C[k], I.owned, 'pendingOwner']);
+    calls.push([C.factory, I.factory, 'startBandLow'], [C.factory, I.factory, 'startBandHigh'], [C.factory, I.factory, 'launchFeeEth'], [C.factory, I.factory, 'devBuyMax'], [C.factory, I.factory, 'launchesPaused'], [C.factory, I.factory, 'startSigner'], [C.factory, I.factory, 'team'], [FEED, I.feed, 'latestRoundData'], [C.hook, I.hook, 'teamOwed', [ZERO]]);
+    const r = await multicall(calls);
+    OWNED.forEach(([k], i) => { D.own[k] = { owner: r[2 * i], pending: r[2 * i + 1] }; });
+    const o = OWNED.length * 2;
+    D.fac = { low: Number(r[o]), high: Number(r[o + 1]), fee: r[o + 2], devBuyMax: r[o + 3], paused: r[o + 4], signer: r[o + 5], team: r[o + 6] };
+    D.ethUsd = Number(r[o + 7][1]) / 1e8; D.teamHook = r[o + 8] || 0n;
+    [D.teamRev] = await multicall([[C.revenue, I.revenue, 'owed', [D.fac.team, ZERO]]]);
+    const st = await fetch('/api/state').then((x) => x.json()).catch(() => null);
+    if (st && st.tokens) { D.coins = st.tokens.map((t) => ({ addr: t.addr, name: t.name, ticker: t.ticker, mc: (t.p || 0) * (t.supply || 1e9) * (st.ethUsd || D.ethUsd) })); if (!D.coin && D.coins.length) D.coin = D.coins.find((c) => low(c.addr) === low(C.zappy)) || D.coins[0]; }
+    if (D.coin) await loadPool();
+    D.loaded = true; D.err = '';
+  } catch (e) { D.err = e.message; }
+  render();
+}
+async function loadPool() {
+  const [p, f] = await multicall([[C.hook, I.hook, 'pools', [poolIdOf(D.coin.addr)]], [C.hook, I.hook, 'floorOf', [keyOf(D.coin.addr)]]]);
+  D.pool = p; D.floor = f;
+}
+// the band's ETH: a single-tick range [tickB, tickB+60] that holds only ETH while the price is below it (tick < tickB)
+function bandEth(p, f) {
+  if (!p || !f || p.liqBand === 0n) return 0;
+  const L = Number(p.liqBand), tB = Number(p.tickB), curTick = Math.floor(Math.log((Number(f.sqrtPriceX96) / 2 ** 96) ** 2) / Math.log(1.0001));
+  const sL = 1.0001 ** (tB / 2), sU = 1.0001 ** ((tB + 60) / 2);
+  if (curTick >= tB + 60) return 0; // all tokens
+  const sA = Math.max(sL, Math.min(sU, 1.0001 ** (curTick / 2)));
+  return L * (1 / sA - 1 / sU) / 1e18; // eth below the current price inside the band
+}
+// the $10k start tick at this ETH price (tokens per ETH, rounded up the 60-tick grid), as api/sign.js computes it
+function startTick(ethUsd) { const ratio = (1e9 * ethUsd) / 10000; let t = Math.floor(Math.log(ratio) / Math.log(1.0001)); const r = ((t % 60) + 60) % 60; if (r !== 0) t = t - r + 60; return t; }
+const tickUsd = (tick, ethUsd) => 1e9 / (1.0001 ** tick) * ethUsd; // market cap in USD for a start tick
+
+/* ---- view ---- */
+function render() {
+  const si = $('#signin'); si.textContent = W.address ? short(W.address) : 'Connect wallet'; si.classList.toggle('on', !!W.address);
+  const m = $('#main');
+  if (!D.loaded) { m.innerHTML = `<div class="card"><div class="grey">${D.err ? 'Could not read the contracts: ' + esc(D.err) : 'Loading the contracts…'}</div></div>`; return; }
+  const me = low(W.address), isOwner = (k) => me && low(D.own[k].owner) === me, isPending = (k) => me && low(D.own[k].pending) === me;
+  const anyOwner = OWNED.some(([k]) => isOwner(k)), anyPending = OWNED.some(([k]) => isPending(k));
+  const f = D.fac, sugg = startTick(D.ethUsd), width = 6960;
+  const p = D.pool, fl = D.floor, potEth = p ? Number(X.formatEther(p.pot)) : 0, bEth = bandEth(p, fl);
+  m.innerHTML = `
+  ${!me ? `<div class="warn">Connect the admin wallet (${short(D.own.factory.pending !== ZERO ? D.own.factory.pending : D.own.factory.owner)}) to use the buttons. Everything below is readable without it.</div>` : (!anyOwner && !anyPending) ? `<div class="warn">${short(W.address)} is neither the owner nor the pending owner of these contracts. Reads work, writes will be refused.</div>` : ''}
+  <section class="card"><h2>Ownership <small>two-step: the deployer proposed, the admin wallet accepts</small></h2>
+   <table><thead><tr><th>Contract</th><th>Owner</th><th>Pending owner</th><th></th></tr></thead><tbody>
+   ${OWNED.map(([k, n]) => `<tr><td><b>${n}</b><br><a class="mono grey" href="${C.explorer}/address/${C[k]}" target="_blank" rel="noopener">${short(C[k])}</a></td><td class="mono">${short(D.own[k].owner)}${low(D.own[k].owner) === me ? ' <span class="pill ok">you</span>' : ''}</td><td class="mono">${D.own[k].pending === ZERO ? '<span class="pill off">none</span>' : short(D.own[k].pending) + (isPending(k) ? ' <span class="pill wait">you</span>' : '')}</td><td style="text-align:right">${isPending(k) ? `<button class="btn y" data-accept="${k}">Accept</button>` : D.own[k].pending === ZERO && low(D.own[k].owner) === me ? '<span class="pill ok">accepted</span>' : ''}</td></tr>`).join('')}
+   </tbody></table>
+   ${anyPending ? `<div class="fr"><button class="btn y" id="accept-all">Accept all (${OWNED.filter(([k]) => isPending(k)).length} transactions)</button><span class="note">Until accepted, the deployer key still owns these; the admin wallet gets every setter and collect once it has.</span></div>` : ''}
+  </section>
+  <div class="two">
+  <section class="card"><h2>Launches <small>ZappyFactory</small></h2>
+   <div class="grid"><div class="kv"><span>Status</span><b class="${f.paused ? 'dn' : 'up'}">${f.paused ? 'Paused' : 'Open'}</b></div><div class="kv"><span>Launch fee</span><b class="num">${fmt(X.formatEther(f.fee), 6)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(Number(X.formatEther(f.fee)) * D.ethUsd)}</span></b></div><div class="kv"><span>Dev buy cap</span><b class="num">${fmt(Number(X.formatEther(f.devBuyMax)) / 1e6, 1)}M tokens (${(Number(X.formatEther(f.devBuyMax)) / 1e7).toFixed(1)}%)</b></div><div class="kv"><span>Start signer</span><b class="mono" style="font-weight:500">${short(f.signer)}</b></div><div class="kv"><span>Team</span><b class="mono" style="font-weight:500">${short(f.team)}</b></div><div class="kv"><span>ETH/USD (Chainlink)</span><b class="num">${usd(D.ethUsd)}</b></div></div>
+   <div class="fr"><button class="btn ${f.paused ? 'g' : 'r'}" id="pause" ${isOwner('factory') ? '' : 'disabled'}>${f.paused ? 'Resume launches' : 'Pause launches'}</button></div>
+   <div class="fr"><label>Launch fee (ETH)</label><input class="w num" id="fee" value="${X.formatEther(f.fee)}"><button class="btn" id="setfee" ${isOwner('factory') ? '' : 'disabled'}>Set fee</button></div>
+   <div class="fr"><label>Dev buy cap (%)</label><input class="w num" id="dev" value="${(Number(X.formatEther(f.devBuyMax)) / 1e7).toFixed(1)}"><button class="btn" id="setdev" ${isOwner('factory') ? '' : 'disabled'}>Set cap</button><span class="note">of the 1B supply, at most 5%</span></div>
+  </section>
+  <section class="card"><h2>Start band <small>where a new coin may start, in ticks</small></h2>
+   <div class="grid"><div class="kv"><span>Band now</span><b class="num">${f.low} … ${f.high}</b><span class="num">${usd(tickUsd(f.high, D.ethUsd))} … ${usd(tickUsd(f.low, D.ethUsd))} market cap at this ETH price</span></div><div class="kv"><span>$10K start today</span><b class="num">tick ${sugg}</b><span class="${sugg >= f.low && sugg <= f.high ? 'up' : 'dn'}">${sugg >= f.low && sugg <= f.high ? 'inside the band' : 'outside the band: move it'}</span></div></div>
+   <div class="fr"><label>Low</label><input class="w num" id="blo" value="${f.low}"><label style="min-width:0">High</label><input class="w num" id="bhi" value="${f.high}"><button class="btn" id="bsugg">Center on $10K</button><button class="btn y" id="setband" ${isOwner('factory') ? '' : 'disabled'}>Set band</button></div>
+   <div class="note">At most 13,920 ticks wide (±6,960 around the $10K tick is the full width). The signer clamps every start into this band, so a stale band after a big ETH move starts coins away from $10K.</div>
+  </section>
+  </div>
+  <section class="card"><h2>Collect floor <small>ZappyHook.collectFloor: part of a pool's floor pot and band, paid in ETH</small></h2>
+   <div class="fr"><label>Coin</label><select id="coin">${D.coins.map((c) => `<option value="${c.addr}" ${D.coin && low(c.addr) === low(D.coin.addr) ? 'selected' : ''}>${esc(c.name)} · $${esc(c.ticker)} · ${usd(c.mc)}</option>`).join('')}</select></div>
+   ${p ? `<div class="grid"><div class="kv"><span>Pot (ETH waiting for the floor)</span><b class="num">${fmt(potEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(potEth * D.ethUsd)}</span></b></div><div class="kv"><span>Band (ETH in the floor itself)</span><b class="num">${fmt(bEth, 5)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(bEth * D.ethUsd)}</span></b></div><div class="kv"><span>Floor tick / band tick</span><b class="num">${Number(p.tickF)} / ${Number(p.tickB)}</b></div><div class="kv"><span>Circulating</span><b class="num">${fmt(Number(X.formatEther(fl.circulating)) / 1e6, 2)}M tokens</b></div><div class="kv"><span>Snipe pot still vesting</span><b class="num">${fmt(Number(X.formatEther(p.snipePot - p.snipeReleased)), 5)} ETH</b></div><div class="kv"><span>Creator owed</span><b class="num">${fmt(Number(X.formatEther(p.creatorOwed)), 5)} ETH</b></div></div>
+   <div class="fr"><label>Share (%)</label><input class="w num" id="bps" value="50"><label style="min-width:0">To</label><input class="mono" id="to" style="width:min(100%,420px)" value="${W.address || D.fac.team}"><button class="btn y" id="collect" ${isOwner('hook') ? '' : 'disabled'}>Collect</button></div>
+   <div class="note" id="cest"></div>
+   <div class="note">Takes that share of the pot and of the band's ETH, then re-places the band at the lowest tick where what is left still buys back every circulating token: the floor drops to what remains. 100% leaves no band until the pot can carry every holder again.</div>` : '<div class="note">No pools yet.</div>'}
+  </section>
+  <section class="card"><h2>Team revenue <small>the protocol's 0.4% of every swap, claimed in ETH</small></h2>
+   <div class="grid"><div class="kv"><span>In ZappyRevenue for the team</span><b class="num">${fmt(X.formatEther(D.teamRev), 6)} ETH <span class="grey" style="display:inline;font-size:12px">${usd(Number(X.formatEther(D.teamRev)) * D.ethUsd)}</span></b></div><div class="kv"><span>Held by the hook for the team</span><b class="num">${fmt(X.formatEther(D.teamHook), 6)} ETH</b></div></div>
+   <div class="fr"><button class="btn" id="claimrev" ${W.address && D.teamRev > 0n ? '' : 'disabled'}>Claim revenue to ${short(f.team)}</button><button class="btn" id="claimhook" ${W.address && D.teamHook > 0n ? '' : 'disabled'}>Claim hook balance</button><span class="note">Anyone may trigger these; both pay the team address.</span></div>
+  </section>`;
+  // handlers
+  $$('[data-accept]').forEach((b) => b.onclick = () => act(b, 'Accept ' + b.dataset.accept, () => send(C[b.dataset.accept], I.owned.encodeFunctionData('acceptOwnership'), 'acceptOwnership')));
+  const aa = $('#accept-all'); if (aa) aa.onclick = () => act(aa, 'Accept all', async () => { for (const [k] of OWNED) if (isPending(k)) await send(C[k], I.owned.encodeFunctionData('acceptOwnership'), 'Accept ' + k); });
+  $('#pause').onclick = () => act($('#pause'), 'pause', () => send(C.factory, I.factory.encodeFunctionData('setLaunchesPaused', [!f.paused]), f.paused ? 'Resume' : 'Pause'));
+  $('#setfee').onclick = () => act($('#setfee'), 'fee', () => send(C.factory, I.factory.encodeFunctionData('setLaunchFee', [X.parseEther($('#fee').value.trim())]), 'Set fee'));
+  $('#setdev').onclick = () => act($('#setdev'), 'dev', () => { const pct = parseFloat($('#dev').value); if (!(pct >= 0 && pct <= 5)) throw new Error('0 to 5 percent'); return send(C.factory, I.factory.encodeFunctionData('setDevBuyMax', [X.parseEther(String(Math.round(pct * 1e7)))]), 'Set dev buy cap'); });
+  $('#bsugg').onclick = () => { $('#blo').value = sugg - width; $('#bhi').value = sugg + width; };
+  $('#setband').onclick = () => act($('#setband'), 'band', () => { const lo = parseInt($('#blo').value), hi = parseInt($('#bhi').value); if (!(lo < hi) || hi - lo > 13920) throw new Error('Low must be under high and the band at most 13,920 wide'); return send(C.factory, I.factory.encodeFunctionData('setStartBand', [lo, hi]), 'Set band'); });
+  const sel = $('#coin'); if (sel) sel.onchange = async () => { D.coin = D.coins.find((c) => low(c.addr) === low(sel.value)); D.pool = null; await loadPool(); render(); };
+  const est = () => { const e = $('#cest'); if (!e) return; const pct = parseFloat($('#bps').value) || 0; e.textContent = pct > 0 && pct <= 100 ? `About ${fmt((potEth + bEth) * pct / 100, 5)} ETH (${usd((potEth + bEth) * pct / 100 * D.ethUsd)}) would come out; the exact amount is set by the contract at execution.` : 'Enter 0.01 to 100 percent.'; };
+  const bi = $('#bps'); if (bi) { bi.oninput = est; est(); }
+  const col = $('#collect'); if (col) col.onclick = () => act(col, 'collect', () => { const pct = parseFloat($('#bps').value), bps = Math.round(pct * 100); if (!(bps >= 1 && bps <= 10000)) throw new Error('Share must be 0.01 to 100 percent'); const to = X.getAddress($('#to').value.trim()); if (!confirm(`Collect ${pct}% of the $${D.coin.ticker} floor (about ${fmt((potEth + bEth) * pct / 100, 5)} ETH) to ${short(to)}?`)) throw new Error('Cancelled'); return send(C.hook, I.hook.encodeFunctionData('collectFloor', [keyOf(D.coin.addr), bps, to]), 'Collect floor'); });
+  $('#claimrev').onclick = () => act($('#claimrev'), 'claim', () => send(C.revenue, I.revenue.encodeFunctionData('claim', [f.team, ZERO, f.team]), 'Claim revenue'));
+  $('#claimhook').onclick = () => act($('#claimhook'), 'claim', () => send(C.hook, I.hook.encodeFunctionData('claimTeam', [ZERO]), 'Claim hook balance'));
+}
+load(); setInterval(() => { if (!document.hidden) load(); }, 30000);
+</script>
+<link rel="stylesheet" href="/rk/rk.css">
+<script>window.WC_PROJECT_ID = '5b1ae833abd22d348cbf5d53cf58b3b2';</script>
+<script type="module" src="/rk/rk.js"></script>
+</body></html>

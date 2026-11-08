@@ -6,7 +6,7 @@ const { ethers } = require('ethers');
 const E = process.env;
 const NET = {
   key: 'ethereum', name: 'Ethereum', chainId: 1,
-  rpcs: [...(E.ETH_RPC ? [E.ETH_RPC] : []), 'https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io', 'https://rpc.flashbots.net'],
+  rpcs: [...(E.ETH_RPC ? [E.ETH_RPC] : []), 'https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io', 'https://eth.drpc.org'],
   factory: '0xeE2D9c1b5a5bb1B742746888956476FBF78097e5',
   hook: '0x0ccaD7b1035c7eDd95201ED8737dBC29eEA868eC',
   revenue: '0xd1A0021055ed53f06c8D9A715D67f7053FfaF847',
@@ -38,8 +38,10 @@ async function rpc(method, params, tries = 8) {
       const j = await r.json().catch(() => null);
       if (j && !j.error) { cursor = (cursor + i) % NET.rpcs.length; return j.result; }
       last = (j && j.error && j.error.message) || 'HTTP ' + r.status;
-      if (j && j.error && !/rate|limit|busy|not ready|timed out|unavailable|archive|plan|usage|range/i.test(last)) { const e = new Error(last); e.data = j.error.data; throw e; }
-    } catch (e) { if (e.data !== undefined) throw e; last = e.message; if (!/rate|limit|busy|not ready|timed out|unavailable|fetch|abort|HTTP|archive|plan|usage|range|JSON/i.test(last)) throw e; }
+      // an endpoint that lacks the method (whitelists, -32601), is rate limited or lags is skipped; a revert is thrown at once
+      const skip = (j && j.error && (j.error.code === -32601 || j.error.code === -32001)) || /rate|limit|busy|not ready|timed out|timeout|unavailable|archive|plan|usage|range|whitelist|not supported|unsupported|method not found|does not exist|beyond current head/i.test(last);
+      if (j && j.error && !skip) { const e = new Error(last); e.data = j.error.data; throw e; }
+    } catch (e) { if (e.data !== undefined) throw e; last = e.message; if (!/rate|limit|busy|not ready|timed out|timeout|unavailable|fetch|abort|HTTP|archive|plan|usage|range|JSON|whitelist|not supported|unsupported|method not found|does not exist|beyond current head/i.test(last)) throw e; }
     await sleep(Math.min(4000, 300 * 2 ** i) + Math.random() * 200);
   }
   throw new Error('Ethereum RPC unavailable: ' + last);
