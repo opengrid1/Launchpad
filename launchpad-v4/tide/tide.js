@@ -324,16 +324,31 @@
     state.route = r; window.scrollTo(0, 0); ticker();
     if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'swap') swap(); else if (r === 'pools') pools(); else if (r === 'pool') pool(parts[1]); else if (r === 'stake') stake(); else if (r === 'create') create(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else home();
   }
-  // the phone menu: every page, the HYPE price, the wallet
+  // the phone menu: a bottom sheet with every page, the HYPE price and the wallet
+  const MI = {
+    home: '<svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>',
+    swap: '<svg class="ico" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4 4 4M17 8v12m0 0 4-4m-4 4-4-4"/></svg>',
+    pools: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>',
+    stake: '<svg class="ico" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>',
+    create: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+    profile: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    docs: '<svg class="ico" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg>',
+    admin: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  };
   function menuSheet() {
     const W = APP.W, sym = ST.symbol || 'TIDE';
-    const links = [['#/', 'Launches'], ['#/swap', 'Swap'], ['#/pools', 'Pools'], ['#/stake', `Stake $${sym}`], ['#/create', 'Create'], ['#/profile', 'Profile'], ['#/docs', 'Docs'], ['/admin', 'Admin'], ...(C.x ? [[C.x, 'X']] : [])];
-    const ov = APP.dialog('Menu', `<div class="menu">${links.map(([h, l]) => `<a href="${h}" ${/^https?:/.test(h) ? 'target="_blank" rel="noopener"' : ''}>${l}</a>`).join('')}</div>
-      <div class="kv" style="margin-top:12px"><span>${esc(Q)}</span><b class="num">${fmtUsd(APP.hypeUsd)}</b></div>
-      ${W.connected ? `<div class="kv"><span>Wallet</span><b class="num">${esc(W.short)}</b></div><button class="btn full" id="m-out" style="margin-top:12px">Disconnect</button>` : `<button class="btn pri full lg" id="m-in" style="margin-top:12px">Connect wallet</button>`}`);
-    $$('a', ov).forEach((a) => a.onclick = () => ov.remove());
-    const i = $('#m-in', ov); if (i) i.onclick = () => { ov.remove(); W.connect(); };
-    const o = $('#m-out', ov); if (o) o.onclick = () => { W.disconnect(); ov.remove(); };
+    const links = [['#/', 'Launches', MI.home], ['#/swap', 'Swap', MI.swap], ['#/pools', 'Pools', MI.pools], ['#/stake', `Stake $${sym}`, MI.stake], ['#/create', 'Create a coin', MI.create], ['#/profile', 'Profile', MI.profile], ['#/docs', 'Docs', MI.docs], ['/admin', 'Admin', MI.admin], ...(C.x ? [[C.x, 'X', ICON.x]] : [])];
+    const ov = document.createElement('div'); ov.className = 'ov sheetov';
+    ov.innerHTML = `<div class="sheet"><div class="grip"></div>
+      <div class="mlist">${links.map(([h, l, i]) => `<a href="${h}" ${/^https?:/.test(h) ? 'target="_blank" rel="noopener"' : ''}>${i}<span>${l}</span>${ICON.chev}</a>`).join('')}</div>
+      <div class="mfoot"><div class="mpx"><i></i><span>${esc(Q)}</span><b class="num">${fmtUsd(APP.hypeUsd)}</b></div>
+        ${W.connected ? `<button class="wallet on" id="m-out"><i style="background-image:url('${APP.identicon(W.address)}')"></i>${esc(W.short)} · Disconnect</button>` : `<button class="wallet" id="m-in">Connect</button>`}</div></div>`;
+    document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('in'));
+    const close = () => { ov.classList.remove('in'); setTimeout(() => ov.remove(), 180); };
+    ov.onclick = (e) => { if (e.target === ov) close(); };
+    $$('a', ov).forEach((a) => a.onclick = close);
+    const i = $('#m-in', ov); if (i) i.onclick = () => { close(); W.connect(); };
+    const o = $('#m-out', ov); if (o) o.onclick = () => { W.disconnect(); close(); };
   }
   function searchDialog() { const ov = APP.dialog('Search', `<div class="picker"><input class="inp" id="sq" placeholder="Search" autocomplete="off"><div class="list" id="sq-list"></div></div>`); const draw = (s) => { const ls = DATA.tokens().filter((t) => s && (t.name.toLowerCase().includes(s) || t.symbol.toLowerCase().includes(s) || t.addr.includes(s))).slice(0, 8); $('#sq-list', ov).innerHTML = ls.map((t) => `<a class="row" href="${link(t)}"><span class="av">${APP.img(t)}</span><span><b>${esc(t.name)}</b><small>${esc(t.symbol)} · ${fmtUsd(t.mcapUsd)}</small></span></a>`).join(''); $$('a', ov).forEach((a) => a.onclick = () => ov.remove()); }; $('#sq', ov).oninput = (e) => draw(e.target.value.trim().toLowerCase()); setTimeout(() => $('#sq', ov).focus(), 30); }
   APP.boot(async () => {

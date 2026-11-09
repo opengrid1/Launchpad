@@ -125,8 +125,13 @@ textarea.inp{height:auto;min-height:88px;padding:12px 14px;resize:vertical}
 /* docs */
 .docs{max-width:760px}
 
-/* phone menu */
-.menu{display:grid;grid-template-columns:1fr 1fr;gap:6px}.menu a{display:flex;align-items:center;height:46px;padding:0 14px;border-radius:12px;background:var(--s2);font-weight:600}.menu a:hover{background:var(--s3)}
+/* phone menu: bottom sheet */
+.tabs a svg{display:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sheetov{align-items:end;padding:0;opacity:0;transition:opacity .18s}.sheetov.in{opacity:1}
+.sheet{width:100%;max-width:560px;margin:0 auto;background:var(--s1);border-radius:24px 24px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:var(--sh2);transform:translateY(24px);transition:transform .22s cubic-bezier(.2,.8,.2,1)}.sheetov.in .sheet{transform:none}
+.grip{width:40px;height:4px;border-radius:2px;background:var(--line2);margin:4px auto 10px}
+.mlist{display:flex;flex-direction:column}.mlist a{display:flex;align-items:center;gap:14px;height:54px;padding:0 6px;border-bottom:1px solid var(--line);font-size:15.5px;font-weight:600}.mlist a:last-child{border-bottom:0}.mlist a .ico{width:22px;height:22px;color:var(--ink2)}.mlist a span{flex:1}.mlist a svg:last-child{width:16px;height:16px;color:var(--dim);transform:rotate(-90deg)}
+.mfoot{display:flex;align-items:center;gap:10px;margin-top:12px}.mpx{flex:1;display:flex;align-items:center;gap:8px;height:52px;padding:0 16px;border-radius:14px;background:var(--s2);font-size:13.5px}.mpx i{width:7px;height:7px;border-radius:50%;background:var(--up)}.mpx span{color:var(--mute);font-weight:600}.mpx b{margin-left:auto;font-weight:600}.mfoot .wallet{flex:1}
 
 /* modals, toasts */
 #toasts{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;z-index:100;pointer-events:none;width:min(92vw,480px);align-items:center}
@@ -143,7 +148,7 @@ textarea.inp{height:auto;min-height:88px;padding:12px 14px;resize:vertical}
 @media(max-width:900px){
   :root{--nav:64px}
   .nav{gap:8px;padding:0 12px}.navpill{height:44px;padding:0 10px}.brand{border-right:0;padding-right:0;margin-right:0}.brand span{display:none}.brand img{width:24px;height:24px}
-  .tabs{position:fixed;left:12px;right:12px;bottom:12px;height:56px;margin:0;z-index:40;background:var(--s1);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh2);justify-content:space-around;padding:4px}.tabs a{flex:1;justify-content:center;padding:0;font-size:12px;height:100%;border-radius:14px}
+  .tabs{position:fixed;left:12px;right:12px;bottom:12px;height:64px;margin:0;z-index:40;background:var(--s1);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh2);justify-content:space-around;padding:4px}.tabs a{flex:1;flex-direction:column;justify-content:center;gap:3px;padding:0;font-size:11px;height:100%;border-radius:14px}.tabs a svg{display:block}.tabs a.on{background:transparent;color:var(--ink)}.tabs a.on svg{color:var(--teal)}.tabs a.create{color:var(--mute)}.tabs a.create.on{color:var(--ink)}
   .ib,.px,.wallet{height:44px}.ib{width:44px;border-radius:12px}.px{display:none}.wallet{border-radius:12px;padding:0 14px}.ib.menu{display:grid}
   .page{padding:8px 12px 100px}
   .cards3{grid-template-columns:1fr;gap:10px}.scard{height:150px;padding:16px 18px 0}.scard b{font-size:22px}.scard canvas{height:64px}
