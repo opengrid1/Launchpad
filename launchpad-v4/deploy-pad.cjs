@@ -43,7 +43,7 @@ const HOOK_FEE_BPS = Number(process.env.HOOK_FEE_BPS || 250); // the pool fee on
 const PROTOCOL_SHARE_BPS = Number(process.env.PROTOCOL_SHARE_BPS || 6000); // 60% of the fee to the protocol, 40% (1% of volume) to the creator
 const MAX_CREATOR_TAX_BPS = Number(process.env.MAX_CREATOR_TAX_BPS || 0); // no extra creator fee: the pool fee is fixed
 const VOL_EXTRA_BPS = Number(process.env.VOL_EXTRA_BPS || 0); // no volatility surcharge: the fee does not move on a pump or a dump
-const SPLIT_STAKING_BPS = Number(process.env.SPLIT_STAKING_BPS || 2000), SPLIT_BURN_BPS = Number(process.env.SPLIT_BURN_BPS || 3500), SPLIT_FARM_BPS = Number(process.env.SPLIT_FARM_BPS || 1500); // the rest (30%) to the treasury
+const SPLIT_STAKING_BPS = Number(process.env.SPLIT_STAKING_BPS || 0), SPLIT_BURN_BPS = Number(process.env.SPLIT_BURN_BPS || 5000), SPLIT_FARM_BPS = Number(process.env.SPLIT_FARM_BPS || 0); // the rest (50%) to the treasury: platform revenue
 const AMM_LP_FEE_BPS = Number(process.env.AMM_LP_FEE_BPS || 25), AMM_PROTOCOL_FEE_BPS = Number(process.env.AMM_PROTOCOL_FEE_BPS || 5); // 0.30% per swap on the AMM
 const FARM_DAYS = Number(process.env.FARM_DAYS || 7);
 const art = (n) => JSON.parse(fs.readFileSync(path.join(__dirname, "artifacts", n + ".json"), "utf8"));

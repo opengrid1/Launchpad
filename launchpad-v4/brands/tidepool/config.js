@@ -39,7 +39,7 @@ window.CFG = {
     arbSys: '0x0000000000000000000000000000000000000064', nodeInterface: '0x00000000000000000000000000000000000000C8',
     claimDays: '6 to 7', anyChain: { coins: ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB'], note: 'Send from any wallet or exchange; it arrives as HYPE on HyperEVM, one click away from Elysium.' },
   },
-  stake: { splitter: '', staking: '', token: '', symbol: 'KINEX', stakingBps: 2000, burnBps: 3500, farmBps: 1500, durationDays: 7 },
+  stake: { splitter: '', staking: '', token: '', symbol: 'KINEX', stakingBps: 0, burnBps: 5000, farmBps: 0, durationDays: 7 },
   /* the AMM: our own pools for any two tokens (LP shares, 0.25% to LPs + 0.05% to the splitter per swap), and the farm
      that pays LP stakers the splitter's farm share in HYPE. Native HYPE is wrapped by the router. */
   amm: { factory: '', router: '', farm: '', wnative: '0xba876237b0f021a6c6d852d6c26e107997cc5e81', lpFeeBps: 25, protocolFeeBps: 5 },
