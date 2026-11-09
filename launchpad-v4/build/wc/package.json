@@ -1,1 +1,14 @@
-{ "name": "kinex-wc", "private": true, "description": "Bundles WalletConnect (Reown) for the Kinex site: node build/wc/build.cjs", "dependencies": { "@walletconnect/ethereum-provider": "2.26.0", "@reown/appkit": "1.8.24" }, "devDependencies": { "esbuild": "0.25.10" } }
+{
+  "name": "kinex-wc",
+  "private": true,
+  "description": "Bundles WalletConnect (Reown) for the Kinex site: node build/wc/build.cjs",
+  "dependencies": {
+    "@reown/appkit": "1.8.24",
+    "@reown/appkit-adapter-ethers": "1.8.24",
+    "@ethersproject/sha2": "5.8.0",
+    "ethers": "6.15.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}
