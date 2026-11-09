@@ -40,6 +40,9 @@ const NET = {
 const OWNER = process.env.PAD_OWNER || "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b"; // protocol owner and fee recipient
 const SNIPE_SECONDS = Number(process.env.SNIPE_SECONDS || 10);
 const HOOK_FEE_BPS = Number(process.env.HOOK_FEE_BPS || 250); // the pool fee on every trade (2.5%), split protocol / creator
+const PROTOCOL_SHARE_BPS = Number(process.env.PROTOCOL_SHARE_BPS || 6000); // 60% of the fee to the protocol, 40% (1% of volume) to the creator
+const MAX_CREATOR_TAX_BPS = Number(process.env.MAX_CREATOR_TAX_BPS || 0); // no extra creator fee: the pool fee is fixed
+const VOL_EXTRA_BPS = Number(process.env.VOL_EXTRA_BPS || 0); // no volatility surcharge: the fee does not move on a pump or a dump
 const SPLIT_STAKING_BPS = Number(process.env.SPLIT_STAKING_BPS || 2000), SPLIT_BURN_BPS = Number(process.env.SPLIT_BURN_BPS || 3500), SPLIT_FARM_BPS = Number(process.env.SPLIT_FARM_BPS || 1500); // the rest (30%) to the treasury
 const AMM_LP_FEE_BPS = Number(process.env.AMM_LP_FEE_BPS || 25), AMM_PROTOCOL_FEE_BPS = Number(process.env.AMM_PROTOCOL_FEE_BPS || 5); // 0.30% per swap on the AMM
 const FARM_DAYS = Number(process.env.FARM_DAYS || 7);
@@ -181,6 +184,8 @@ class RetryProvider extends ethers.JsonRpcProvider {
   await call("hook.setFactory", hookAddr, "PadHook", "setFactory", [factory]);
   await call("hook.setProtocolFeeRecipient", hookAddr, "PadHook", "setProtocolFeeRecipient", [splitter]);
   if (HOOK_FEE_BPS !== 100) await call("hook.setHookFeeBps", hookAddr, "PadHook", "setHookFeeBps", [HOOK_FEE_BPS]);
+  if (PROTOCOL_SHARE_BPS !== 3000) await call("hook.setProtocolFeeShareBps", hookAddr, "PadHook", "setProtocolFeeShareBps", [PROTOCOL_SHARE_BPS]);
+  if (VOL_EXTRA_BPS !== 200) await call("hook.setVolatilityTerms", hookAddr, "PadHook", "setVolatilityTerms", [VOL_EXTRA_BPS ? 1000 : 0, 60, VOL_EXTRA_BPS, 120]);
   await call("splitter.setFarm", splitter, "PadSplitter", "setFarm", [farm]);
   await call("splitter.setAmmRouter", splitter, "PadSplitter", "setAmmRouter", [ammRouter]);
   await call("splitter.setShares", splitter, "PadSplitter", "setShares", [SPLIT_STAKING_BPS, SPLIT_BURN_BPS, SPLIT_FARM_BPS]);
@@ -189,6 +194,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   await call("locker.setFactory", locker, "PadLocker", "setFactory", [factory]);
   await call("factory.addLaunchConfig", factory, "PadFactory", "addLaunchConfig", [CONFIG]);
   if (SNIPE_SECONDS !== 10) await call("factory.setSnipeTaxSeconds", factory, "PadFactory", "setSnipeTaxSeconds", [SNIPE_SECONDS]);
+  if (MAX_CREATOR_TAX_BPS !== 1000) await call("factory.setMaxCreatorTaxBps", factory, "PadFactory", "setMaxCreatorTaxBps", [MAX_CREATOR_TAX_BPS]);
   // 4. offer ownership to the protocol owner (two-step)
   if (OWNER.toLowerCase() !== me.toLowerCase()) {
     for (const [n, a, abi] of [["hook", hookAddr, "PadHook"], ["factory", factory, "PadFactory"], ["locker", locker, "PadLocker"], ["vault", vault, "PadBuybackVault"], ["splitter", splitter, "PadSplitter"], ["ammFactory", ammFactory, "PadAmmFactory"], ["farm", farm, "PadFarm"]]) await call(`${n}.transferOwnership`, a, abi, "transferOwnership", [OWNER]);
@@ -197,7 +203,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   for (const [l, g] of steps) console.log(`  ${l.padEnd(28)} ${g.toString().padStart(9)} gas`);
   console.log(`  total ${total} gas = ${ethers.formatEther(total * gasPrice)} ${N.native} at ${ethers.formatUnits(gasPrice, "gwei")} gwei`);
   if (send) {
-    const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookFeeBps: HOOK_FEE_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, splitFarmBps: SPLIT_FARM_BPS, ammFactory, ammRouter, farm, wnative: N.weth9, ammLpFeeBps: AMM_LP_FEE_BPS, ammProtocolFeeBps: AMM_PROTOCOL_FEE_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
+    const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookFeeBps: HOOK_FEE_BPS, protocolShareBps: PROTOCOL_SHARE_BPS, maxCreatorTaxBps: MAX_CREATOR_TAX_BPS, volExtraBps: VOL_EXTRA_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, splitFarmBps: SPLIT_FARM_BPS, ammFactory, ammRouter, farm, wnative: N.weth9, ammLpFeeBps: AMM_LP_FEE_BPS, ammProtocolFeeBps: AMM_PROTOCOL_FEE_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
     const file = path.join(__dirname, "deployments", `pad-${netName}.json`);
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
     console.log("written " + path.relative(__dirname, file));

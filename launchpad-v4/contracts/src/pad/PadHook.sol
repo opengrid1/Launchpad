@@ -106,7 +106,7 @@ contract PadHook is BaseHook, IUnlockCallback, IPadFeePolicy, Ownable2Step, Reen
     }
 
     uint256 private constant BASIS_POINTS = 10_000;
-    uint256 private constant MAX_PROTOCOL_FEE_SHARE_BPS = 5_000;
+    uint256 private constant MAX_PROTOCOL_FEE_SHARE_BPS = 8_000;
     uint256 private constant MAX_HOOK_FEE_BPS = 1_000;
     // Mirrors the bonding curve's own ceiling, so a graduated pool can never
     // charge more per trade than the curve it graduated from.

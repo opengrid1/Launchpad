@@ -51,7 +51,7 @@ window.PAGE = async () => {
       owners: Object.fromEntries(OWNED.map(([k]) => [k, { owner: DEMO_DEPLOYER, pending: C.admin }])),
       launchEnabled: false, launchFee: E.parseEther(String(e.launchFeeHype)), maxCreatorTaxBps: e.creatorTaxMaxBps, snipeStartBps: e.snipeStartBps, snipeSeconds: e.snipeSeconds, tokenCount: 0,
       hookFeeBps: e.feeBps, protocolShareBps: e.protocolShareBps, buybackBurnBps: e.buybackShareBps, maxImpactBps: 500, protocolFeeRecipient: C.admin, feeSweepOperator: DEMO_DEPLOYER,
-      vol: { threshold: e.volThresholdBps, window: e.volWindowSec, extra: 200, decay: e.volDecaySec },
+      vol: { threshold: e.volThresholdBps, window: e.volWindowSec, extra: e.volPeakBps - e.feeBps, decay: e.volDecaySec },
       configs: [{ supply: E.parseEther('1000000000'), startMcap: E.parseEther('50'), band1Mcap: E.parseEther('200'), band2Mcap: E.parseEther('1000'), band0Bps: 2000, band1Bps: 3000, tickSpacing: 200, enabled: true }],
       escrowBal: 0n, escrowNative: 0n,
     };

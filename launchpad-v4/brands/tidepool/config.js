@@ -3,7 +3,7 @@
    site shows its empty states. `stake` points at the fee flywheel: the splitter that turns protocol fees into rewards
    and the staking contract that pays them to $TIDE stakers. Built into a deployable copy by build/brand-site.cjs tidepool. */
 window.CFG = {
-  brand: 'Tidepool', tagline: 'Launch on Elysium. HYPE pair on Uniswap v4, 2.5% fee, 70% to the creator, and every protocol fee flows back to $TIDE stakers.',
+  brand: 'Tidepool', tagline: 'Launch on Elysium. HYPE pair on Uniswap v4, a fixed 2.5% fee, 1% of every trade to the creator, and the protocol share buys $TIDE back.',
   x: 'https://x.com/tidepool_fun', site: 'https://tidepool.fun',
   mode: 'live',
   chains: [
@@ -43,10 +43,10 @@ window.CFG = {
   /* the launch economics, in HYPE (the *Hype names are the quote coin's amounts) */
   econ: {
     supply: 1e9, launchFeeHype: 0.005, maxDevBuyBps: 500,
-    feeBps: 250, creatorShareBps: 7000, protocolShareBps: 3000, creatorTaxMaxBps: 1000,
+    feeBps: 250, creatorShareBps: 4000, protocolShareBps: 6000, creatorTaxMaxBps: 0,
     buybackShareBps: 5000, buybackVestYears: 5,
     snipeSeconds: 10, snipeStartBps: 9900, snipeHalvings: 14,
-    volThresholdBps: 1000, volPeakBps: 300, volWindowSec: 60, volDecaySec: 120,
+    volThresholdBps: 0, volPeakBps: 250, volWindowSec: 60, volDecaySec: 120, // the fee never moves on a pump or a dump
     openMcapHype: 50, bands: [[50, 200, 20], [200, 1000, 30], [1000, Infinity, 50]], // [from mcap, to mcap, % of supply]
     vanityZeros: 4, bridgeMinutes: 1,
   },
