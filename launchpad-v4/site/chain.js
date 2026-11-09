@@ -290,7 +290,8 @@
     await Promise.all([fresh, refreshMine(), APP.W.connected ? exactBalance(a, APP.W.address).catch(() => {}) : null]); APP.emit();
   }
 
-  (APP.priceHooks || (APP.priceHooks = [])).push(() => { if (ALL.some(isStk)) { index(); APP.emit(); } });
+  // pages that load this before APP exists (the admin page) skip the price hook
+  if (typeof APP !== 'undefined') (APP.priceHooks || (APP.priceHooks = [])).push(() => { if (ALL.some(isStk)) { index(); APP.emit(); } });
   const DATA = window.DATA = {
     mode: 'live',
     async ready() {
