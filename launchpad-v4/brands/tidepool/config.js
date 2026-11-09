@@ -6,6 +6,7 @@ window.CFG = {
   demo: true, // preview: sample coins from /demo-state.json until the contracts are live on Elysium
   brand: 'Kinex', tagline: 'Launch on Elysium. HYPE pair on Uniswap v4, a fixed 2.5% fee, 1% of every trade to the creator, and the protocol share buys $KINEX back.',
   x: 'https://x.com/kinex_fun', site: 'https://kinex.fun',
+  walletConnect: { projectId: 'e1bda672d5deb56579fe084dddfb9174' }, // Reown (WalletConnect) project; public by design, it ships to every browser
   mode: 'live',
   chains: [
     // Elysium (gas in HYPE, settles to HyperEVM): Uniswap's v4 PoolManager and UniversalRouter, our PositionManager build

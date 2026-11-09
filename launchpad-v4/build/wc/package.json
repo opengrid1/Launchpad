@@ -1,0 +1,1 @@
+{ "name": "kinex-wc", "private": true, "description": "Bundles WalletConnect (Reown) for the Kinex site: node build/wc/build.cjs", "dependencies": { "@walletconnect/ethereum-provider": "2.26.0", "@reown/appkit": "1.8.24" }, "devDependencies": { "esbuild": "0.25.10" } }

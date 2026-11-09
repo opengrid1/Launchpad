@@ -35,6 +35,23 @@
   const wl = []; APP.onWallet = (fn) => wl.push(fn); const emitW = () => { renderWallet(); for (const f of wl) try { f(); } catch (e) { console.error(e); } };
   window.addEventListener('eip6963:announceProvider', (e) => { if (!W.providers.some((p) => p.info.uuid === e.detail.info.uuid)) W.providers.push(e.detail); });
   window.dispatchEvent(new Event('eip6963:requestProvider'));
+  // WalletConnect through Reown (C.walletConnect.projectId): the bundle (wc.js) loads only when it is picked or restored
+  const WC_ID = (C.walletConnect || {}).projectId || '', WC_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233396FF'/%3E%3Cpath fill='%23fff' d='M9.59 11.86a9.13 9.13 0 0 1 12.82 0l.43.42a.45.45 0 0 1 0 .64l-1.46 1.46a.23.23 0 0 1-.32 0l-.59-.59a6.37 6.37 0 0 0-8.94 0l-.63.63a.23.23 0 0 1-.32 0l-1.46-1.46a.45.45 0 0 1 0-.64zm15.84 3.01 1.29 1.3a.45.45 0 0 1 0 .64l-5.85 5.85a.45.45 0 0 1-.64 0l-4.15-4.15a.11.11 0 0 0-.16 0l-4.15 4.15a.45.45 0 0 1-.64 0l-5.85-5.85a.45.45 0 0 1 0-.64l1.3-1.3a.45.45 0 0 1 .64 0l4.15 4.15a.11.11 0 0 0 .16 0l4.15-4.15a.45.45 0 0 1 .64 0l4.15 4.15a.11.11 0 0 0 .16 0l4.15-4.15a.45.45 0 0 1 .65 0z'/%3E%3C/svg%3E";
+  let wcP = null;
+  function wcProvider() {
+    if (wcP) return wcP;
+    wcP = (async () => {
+      if (!window.WCEthereumProvider) await new Promise((ok, bad) => { const sc = document.createElement('script'); sc.src = '/wc.js?v=1'; sc.onload = ok; sc.onerror = () => bad(new Error('WalletConnect could not load')); document.head.appendChild(sc); });
+      const evm = C.chains.filter((c) => c.evm !== false && c.id), ids = [...new Set([C.chain.id, ...evm.map((c) => c.id)])];
+      const p = await window.WCEthereumProvider.init({ projectId: WC_ID, optionalChains: ids, rpcMap: Object.fromEntries(evm.map((c) => [c.id, c.rpc])), showQrModal: true,
+        metadata: { name: C.brand, description: C.tagline || C.brand, url: location.origin, icons: [location.origin + '/img/icon-192.png'] },
+        qrModalOptions: { themeMode: 'light', themeVariables: { '--w3m-accent': '#0d2522', '--w3m-font-family': 'Inter, system-ui, sans-serif', '--w3m-border-radius-master': '2px' } } });
+      p.on('disconnect', () => { if (W.name === 'WalletConnect') W.disconnect(); });
+      return p;
+    })();
+    wcP.catch(() => { wcP = null; });
+    return wcP;
+  }
   async function useProvider(p, name) {
     W.provider = p; W.name = name;
     const accs = await p.request({ method: 'eth_requestAccounts' }); if (!accs || !accs[0]) throw new Error('No account');
@@ -48,11 +65,12 @@
   }
   W.connect = () => {
     const list = W.providers.length ? W.providers.map((p) => ({ name: p.info.name, icon: p.info.icon, p: p.provider })) : (window.ethereum ? [{ name: 'Browser wallet', icon: '', p: window.ethereum }] : []);
+    if (WC_ID) list.push({ name: 'WalletConnect', icon: WC_ICON, wc: true });
     if (!list.length) { APP.toast('No wallet found', 'err', 6000); return; }
     const ov = APP.dialog('Connect a wallet', `<div class="wl">${list.map((w, i) => `<button data-i="${i}">${w.icon ? `<img src="${esc(w.icon)}" alt="">` : '<svg class="ico" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H6a2 2 0 0 0-2 2v2"/></svg>'}${esc(w.name)}</button>`).join('')}</div><p class="mute" style="margin-top:12px;font-size:12px">${esc(C.chain.name)} (chain ${C.chain.id}). The wallet is asked to switch to it, or to add it.</p>`);
-    $$('[data-i]', ov).forEach((b) => b.onclick = async () => { const w = list[+b.dataset.i]; ov.remove(); try { await useProvider(w.p, w.name); } catch (e) { APP.toast(APP.errMsg(e), 'err'); } });
+    $$('[data-i]', ov).forEach((b) => b.onclick = async () => { const w = list[+b.dataset.i]; ov.remove(); try { if (w.wc) APP.toast('Opening WalletConnect…', 'info', 5000); await useProvider(w.wc ? await wcProvider() : w.p, w.name); } catch (e) { if (!/reject|closed|cancel/i.test(String(e && e.message))) APP.toast(APP.errMsg(e), 'err'); } });
   };
-  W.disconnect = () => { W.connected = false; W.address = ''; W.short = ''; W.provider = null; try { localStorage.removeItem('wallet'); } catch {} emitW(); };
+  W.disconnect = () => { if (W.name === 'WalletConnect' && W.provider && W.provider.disconnect) { const p = W.provider; W.name = ''; p.disconnect().catch(() => {}); } W.connected = false; W.address = ''; W.short = ''; W.provider = null; try { localStorage.removeItem('wallet'); } catch {} emitW(); };
   W.switchChain = async () => {
     if (!W.provider) return; const ch = C.chain;
     try { await W.provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ch.hex }] }); }
@@ -65,6 +83,7 @@
   APP.isAdmin = () => W.connected && W.address === String(C.admin || '').toLowerCase();
   async function autoConnect() {
     let n = ''; try { n = localStorage.getItem('wallet') || ''; } catch {} if (!n) return; await new Promise((r) => setTimeout(r, 250));
+    if (n === 'WalletConnect') { if (!WC_ID) return; try { const p = await wcProvider(); if (p.session && p.accounts && p.accounts[0]) await useProvider(p, n); } catch {} return; }
     const p = W.providers.find((x) => x.info.name === n); try { const prov = p ? p.provider : window.ethereum; if (!prov) return; const accs = await prov.request({ method: 'eth_accounts' }); if (accs && accs[0]) await useProvider(prov, n); } catch {}
   }
   function renderWallet() {
