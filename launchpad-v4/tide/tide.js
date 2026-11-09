@@ -320,12 +320,58 @@
       ${sec(`Contracts · ${esc(C.chain.name)}`, [['Launch factory', C.chain.contracts.factory], ['Hook', C.chain.contracts.hook], ['Locker', C.chain.contracts.locker], ['Fee escrow', C.chain.contracts.escrow], ['Splitter', ST.splitter], ['Staking', ST.staking], ['AMM factory', (C.amm || {}).factory], ['AMM router', (C.amm || {}).router], ['Farm', (C.amm || {}).farm]].map(([n, a]) => [n, a ? `<a class="num" href="${APP.explorer('address', a)}" target="_blank" rel="noopener">${esc(a)}</a>` : '<span class="mute">not deployed</span>']))}</div>`;
   }
 
+  // ---- airdrop: points from every trade and launch, a share of the pool per wallet, a leaderboard, an address lookup
+  const AD = C.airdrop || null; let adTimer = null;
+  function adPoints() {
+    const ts = DATA.tokens(), pts = new Map(), vol = new Map(), add = (m, k, v) => m.set(k, (m.get(k) || 0) + v);
+    for (const t of ts) for (const x of DATA.trades(t.addr)) { const w = low(x.wallet); add(vol, w, x.hype); if (t.creator && low(t.creator) !== w) add(pts, low(t.creator), x.hype * AD.creatorPts); }
+    for (const [w, h] of vol) if (h >= AD.minHype) add(pts, w, h * AD.tradePts);
+    const rows = [...pts.entries()].map(([w, p]) => ({ w, p, h: vol.get(w) || 0 })).sort((a, b) => b.p - a.p);
+    return { rows, total: rows.reduce((s, r) => s + r.p, 0), vol };
+  }
+  function airdrop() {
+    if (!AD) { view.innerHTML = '<div class="page"><div class="empty">No airdrop configured.</div></div>'; return; }
+    const sym = ST.symbol || 'TIDE', tok = ST.token ? DATA.token(low(ST.token)) : null, px = tok ? tok.pxUsd : 0, supply = C.econ.supply || 1e9;
+    const totalPct = AD.pools.reduce((s, p) => s + p.pct, 0), totalTok = supply * totalPct / 100, main = AD.pools[0], mainTok = supply * main.pct / 100;
+    const { rows, total } = adPoints(), me = APP.W.connected ? low(APP.W.address) : '', ends = new Date(AD.ends).getTime(), live = Date.now() < ends;
+    const tokOf = (p) => (total ? p / total * mainTok : 0), usdOf = (n) => (px ? fmtUsd(n * px) : '—');
+    const perHype = total ? AD.tradePts / total * mainTok : mainTok / AD.tradePts;
+    const rank = (i) => `<div class="pod r${i + 1}"><span class="n">${i + 1}</span>${rows[i] ? `<b>${usdOf(tokOf(rows[i].p))}</b><small>${fmtNum(tokOf(rows[i].p))} ${esc(sym)}</small><a class="num" href="#/profile/${rows[i].w}">${esc(shortAddr(rows[i].w))}</a>` : '<small class="mute">open</small>'}</div>`;
+    const share = (w) => { const r = rows.find((x) => x.w === low(w)); if (!r) return `<div class="adres"><b>—</b><small>No points yet for this address${AD.minHype ? ` (trade at least ${AD.minHype} ${esc(Q)})` : ''}.</small></div>`; const i = rows.indexOf(r); return `<div class="adres"><b>${usdOf(tokOf(r.p))}</b><small>${fmtNum(tokOf(r.p))} ${esc(sym)} · ${fmtNum(r.p)} points · rank ${i + 1} of ${rows.length} · ${hype(r.h, 2)} traded</small></div>`; };
+    view.innerHTML = `<div class="page ad">
+      <section class="adhero"><div class="l"><span class="eyebrow">The $${esc(sym)} airdrop</span><h1>${px ? fmtUsd(totalTok * px) : fmtNum(totalTok) + ' ' + esc(sym)}</h1><p>${totalPct}% of the supply, ${fmtNum(totalTok)} $${esc(sym)}, for everyone who trades, launches and provides liquidity on Tidepool.</p>
+          <div class="cd"><span>${live ? 'Ends' : 'Ended'} ${new Date(AD.ends).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${new Date(AD.ends).toISOString().slice(11, 16)} UTC</span><b id="ad-cd" class="num">—</b></div>
+          <a class="btn pri lg" href="#ad-check">Check eligibility</a></div>
+        <div class="r"><h2>The biggest airdrops</h2><small class="mute">Preliminary. Every trade can reorder them.</small><div class="podium">${rank(1)}${rank(0)}${rank(2)}</div></div></section>
+      <div class="grid2 adg">
+        <section class="card pad" id="ad-check"><h2>What's your share?</h2><p class="mute">Paste any address, or connect. Nothing to sign.</p>
+          <div class="adin"><input class="inp" id="ad-addr" placeholder="0x…" value="${esc(me)}" autocomplete="off"><button class="btn" id="ad-conn">${me ? 'Connected' : 'Connect'}</button></div>
+          <p class="mute" style="font-size:13px">At today's totals, 1 ${esc(Q)} traded earns about ${fmtNum(perHype)} ${esc(sym)}${px ? ` (${fmtUsd(perHype * px)})` : ''}. It drops as more people trade.</p>
+          <div id="ad-res">${me ? share(me) : '<div class="adres"><b class="dim">$—</b><small>Your estimate shows here.</small></div>'}</div></section>
+        <section class="card pad"><h2>Where it goes</h2><div class="wave" style="margin-top:12px">${AD.pools.map((p, i) => `<i style="width:${p.pct / totalPct * 100}%;background:${i ? 'var(--acc2)' : 'var(--teal)'}"></i>`).join('')}</div>
+          ${AD.pools.map((p) => `<div class="adpool"><div class="amt"><b>${px ? fmtUsd(supply * p.pct / 100 * px) : p.pct + '%'}</b><small>${fmtNum(supply * p.pct / 100)} ${esc(sym)}</small></div><div><b>${esc(p.title)}</b><small>${esc(p.note)}</small></div></div>`).join('')}</section>
+      </div>
+      <h2 class="adh">How points work</h2>
+      <div class="grid2 adg">
+        <section class="card pad"><h3>Trade on Tidepool</h3><div class="big"><span class="av">${C.chain.logo ? `<img src="${esc(C.chain.logo)}" alt="">` : ''}</span>1 ${esc(Q)} <i>→</i> <b>${AD.tradePts}</b> points</div>
+          <div class="kv"><span>Launch a coin</span><b>${AD.creatorPts} points per ${esc(Q)} others trade on it</b></div><div class="kv"><span>Minimum</span><b>${AD.minHype} ${esc(Q)} traded, then points go live</b></div><div class="kv"><span>Counts</span><b>every buy and sell since launch, until the end</b></div></section>
+        <section class="card pad"><h3>Liquidity providers and stakers</h3><p class="mute" style="margin-top:6px">${esc(AD.pools[1] ? AD.pools[1].note : '')}</p>
+          <div class="kv"><span>Farm</span><b>LP staked in the farm at the snapshot</b></div><div class="kv"><span>Staking</span><b>$${esc(sym)} staked at the snapshot</b></div><div class="kv"><span>Split</span><b>pro rata by value in ${esc(Q)}</b></div></section>
+      </div>
+      <section class="card" style="margin-top:14px"><div class="tw"><table class="tb keep"><thead><tr><th>Rank</th><th>Wallet</th><th class="r">Traded</th><th class="r">Points</th><th class="r">Estimate</th></tr></thead><tbody>${rows.slice(0, 25).map((r, i) => `<tr class="link" data-go="#/profile/${r.w}"><td class="mute">${i + 1}</td><td><span class="num">${esc(shortAddr(r.w))}</span>${r.w === me ? ' <span class="pill teal">you</span>' : ''}</td><td class="r num">${hype(r.h, 2)}</td><td class="r num">${fmtNum(r.p)}</td><td class="r num"><b>${fmtNum(tokOf(r.p))} ${esc(sym)}</b></td></tr>`).join('') || '<tr><td colspan="5"><div class="empty">No points yet.</div></td></tr>'}</tbody></table></div></section>
+      <details class="terms" style="margin-top:14px"><summary>Terms</summary><p>Figures are preliminary estimates from indexed trades and change with every trade. Wallets flagged as sybils, bots or wash traders, creator self-trades and protocol wallets are excluded. Allocations are reviewed after the end date before release; the release schedule is published before release. Rules can change; taking part creates no right to tokens.</p></details></div>`;
+    bindGo();
+    const inp = $('#ad-addr'), res = $('#ad-res'); inp.oninput = () => { const v = inp.value.trim(); if (/^0x[0-9a-fA-F]{40}$/.test(v)) res.innerHTML = share(v); };
+    $('#ad-conn').onclick = () => { if (!APP.W.connected) return APP.W.connect(); inp.value = APP.W.address; res.innerHTML = share(APP.W.address); };
+    clearInterval(adTimer); const tick = () => { const el = $('#ad-cd'); if (!el) return clearInterval(adTimer); const s = Math.max(0, Math.floor((ends - Date.now()) / 1000)), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; el.textContent = s ? `${d}d ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : 'Ended'; }; tick(); adTimer = setInterval(tick, 1000);
+  }
+
   // ---- router
   function route() {
     const h = location.hash.replace(/^#/, '') || '/', parts = h.split('/').filter(Boolean), r = parts[0] || 'home';
     $$('#tabs a').forEach((a) => a.classList.toggle('on', a.dataset.r === (r === 'token' ? 'home' : r === 'pool' ? 'pools' : r)));
     state.route = r; window.scrollTo(0, 0); ticker();
-    if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'swap') swap(); else if (r === 'pools') pools(); else if (r === 'pool') pool(parts[1]); else if (r === 'stake') stake(); else if (r === 'create') create(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else home();
+    if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'swap') swap(); else if (r === 'pools') pools(); else if (r === 'pool') pool(parts[1]); else if (r === 'stake') stake(); else if (r === 'create') create(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else if (r === 'airdrop') airdrop(); else home();
   }
   // the phone menu: a bottom sheet with every page, the HYPE price and the wallet
   const MI = {
@@ -335,12 +381,13 @@
     stake: '<svg class="ico" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>',
     create: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
     profile: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    gift: '<svg class="ico" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9M12 8c-2-3-5-3-5-1s3 1 5 1zm0 0c2-3 5-3 5-1s-3 1-5 1z"/></svg>',
     docs: '<svg class="ico" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg>',
     admin: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
   function menuSheet() {
     const W = APP.W, sym = ST.symbol || 'TIDE';
-    const links = [['#/', 'Launches', MI.home], ['#/swap', 'Swap', MI.swap], ['#/pools', 'Pools', MI.pools], ['#/stake', `Stake $${sym}`, MI.stake], ['#/create', 'Create a coin', MI.create], ['#/profile', 'Profile', MI.profile], ['#/docs', 'Docs', MI.docs], ...(C.x ? [[C.x, 'X', ICON.x]] : [])];
+    const links = [['#/', 'Launches', MI.home], ['#/swap', 'Swap', MI.swap], ['#/pools', 'Pools', MI.pools], ['#/stake', `Stake $${sym}`, MI.stake], ['#/create', 'Create a coin', MI.create], ['#/profile', 'Profile', MI.profile], ['#/airdrop', 'Airdrop', MI.gift], ['#/docs', 'Docs', MI.docs], ...(C.x ? [[C.x, 'X', ICON.x]] : [])];
     const ov = document.createElement('div'); ov.className = 'ov sheetov';
     ov.innerHTML = `<div class="sheet"><div class="grip"></div>
       <div class="mlist">${links.map(([h, l, i]) => `<a href="${h}" ${/^https?:/.test(h) ? 'target="_blank" rel="noopener"' : ''}>${i}<span>${l}</span>${ICON.chev}</a>`).join('')}</div>
@@ -359,7 +406,7 @@
     document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); searchDialog(); } });
     try { await DATA.ready(); } catch (e) { APP.toast('Could not load the chain state: ' + APP.errMsg(e), 'err', 6000); }
     route(); addEventListener('hashchange', route);
-    APP.onWallet(() => { if (['home', 'token', 'swap', 'pools', 'pool', 'stake', 'profile', 'create'].includes(state.route) && !state.busy) route(); });
+    APP.onWallet(() => { if (['home', 'token', 'swap', 'pools', 'pool', 'stake', 'profile', 'create', 'airdrop'].includes(state.route) && !state.busy) route(); });
     let last = 0; APP.onUpdate(() => { if (state.busy || Date.now() - last < 8000) return; if (!['home', 'token'].includes(state.route)) return; if (document.activeElement && /input|textarea/i.test(document.activeElement.tagName)) return; last = Date.now(); route(); });
   });
 })();

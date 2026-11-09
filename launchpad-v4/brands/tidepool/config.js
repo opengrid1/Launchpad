@@ -14,6 +14,9 @@ window.CFG = {
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
   official: [], // $TIDE: shown with an Official tag once launched
   /* the fee flywheel: protocol fees -> splitter -> stakers / buyback and burn of $TIDE / treasury */
+  // the $TIDE airdrop: 20% of supply; points from trades and launches on Tidepool, a share for liquidity providers and
+  // stakers (snapshot at the end). ends: ISO date; pools in percent of total supply
+  airdrop: { ends: '2026-12-20T00:00:00Z', tradePts: 100, creatorPts: 10, minHype: 1, pools: [{ key: 'traders', pct: 15, title: 'Traders and creators', note: 'By volume, and by launching coins others trade.' }, { key: 'lps', pct: 5, title: 'Liquidity providers and stakers', note: 'LP in the farm and staked $TIDE, snapshot at the end.' }] },
   stake: { splitter: '', staking: '', token: '', symbol: 'TIDE', stakingBps: 2000, burnBps: 3500, farmBps: 1500, durationDays: 7 },
   /* the AMM: our own pools for any two tokens (LP shares, 0.25% to LPs + 0.05% to the splitter per swap), and the farm
      that pays LP stakers the splitter's farm share in HYPE. Native HYPE is wrapped by the router. */
