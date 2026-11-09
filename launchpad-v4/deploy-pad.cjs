@@ -197,7 +197,9 @@ class RetryProvider extends ethers.JsonRpcProvider {
   // same dollar market cap as the HYPE config; prices from Hyperliquid's spot book
   const pairCfgs = [];
   if ((netName === "elysium" || process.env.FORK_OF === "elysium") && process.env.STOCK_PAIRS !== "0") {
-    const list = JSON.parse(fs.readFileSync(path.join(__dirname, "brands/tidepool/eqx-pairs.json"), "utf8")).pairs;
+    const rd = (f) => JSON.parse(fs.readFileSync(path.join(__dirname, "brands/tidepool", f), "utf8")).pairs;
+    // the EQX stocks first (config ids 1 to 11), then the other token pairs (KNTQ, 12): ids never move once deployed
+    const list = [...rd("eqx-pairs.json").map((p) => ({ ...p, kind: "stock" })), ...rd("token-pairs.json").map((p) => ({ ...p, kind: "crypto" }))];
     const info = (b) => fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }).then((r) => r.json());
     const [meta, ctxs] = await info({ type: "spotMetaAndAssetCtxs" }), mids = await info({ type: "allMids" });
     const mid = (coin) => Number((ctxs.find((c) => c.coin === coin) || {}).midPx || 0), hypeUsd = Number(mids.HYPE || 0);
@@ -210,7 +212,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
       const cfg = { ...CONFIG, pairToken: p.elysium, startMcap: units(open) };
       await call(`factory.approve ${p.sym}`, factory, "PadFactory", "setPairTokenApproved", [p.elysium, true]);
       await call(`factory.addLaunchConfig ${p.sym}`, factory, "PadFactory", "addLaunchConfig", [cfg]);
-      pairCfgs.push({ key: p.key, sym: p.sym, name: p.name, ticker: p.ticker, addr: p.elysium.toLowerCase(), decimals: p.decimals, spot: p.spot, cfg: id++, open: Number(open.toFixed(4)), usdAtDeploy: Number(px.toFixed(2)) });
+      pairCfgs.push({ key: p.key, kind: p.kind, sym: p.sym, name: p.name, ticker: p.ticker, addr: p.elysium.toLowerCase(), decimals: p.decimals, spot: p.spot, cfg: id++, open: Number(open.toFixed(4)), usdAtDeploy: Number(px.toFixed(2)) });
     }
   }
   if (SNIPE_SECONDS !== 10) await call("factory.setSnipeTaxSeconds", factory, "PadFactory", "setSnipeTaxSeconds", [SNIPE_SECONDS]);
