@@ -250,3 +250,11 @@ html,body{overflow-x:clip;max-width:100%}
 }
 
 .stkfees{margin-top:14px;display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}.stkfees>div{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:14px}.stkfees>div small{grid-column:2;text-align:right;color:var(--mute);font-size:12px}.stkfees p{font-size:12px;margin:2px 0 0}
+
+/* launch form without the side preview: one column, a slim summary above the button */
+.lform{grid-template-columns:minmax(0,1fr);max-width:820px}
+.lsum{display:grid;gap:4px;padding:16px 0 12px;border-top:1px solid var(--line);margin-top:4px}
+.lsum>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:15px}
+.lsum>div span{color:var(--mute)}
+.lsum>div b{font-size:18px}
+.lsum small{color:var(--mute);font-size:12.5px;line-height:1.5}
