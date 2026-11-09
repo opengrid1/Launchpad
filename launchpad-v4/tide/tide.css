@@ -39,6 +39,8 @@ main{min-height:calc(100vh - var(--nav) - 60px)}
 .btn.pri{background:var(--acc);color:var(--acc-ink);border-color:transparent;font:700 14px var(--disp);text-transform:uppercase;letter-spacing:-.01em;box-shadow:0 0 0 0 rgba(34,227,161,0)}.btn.pri:hover:not(:disabled){background:var(--acc2);box-shadow:0 8px 24px -8px rgba(34,227,161,.7)}
 .btn.sell{background:var(--dn);color:#fff;border-color:transparent;font:600 12.5px var(--disp);text-transform:uppercase;letter-spacing:.02em}.btn.sell:hover:not(:disabled){filter:brightness(1.06)}
 .btn.ghost{border-color:transparent;background:transparent;color:var(--mute);box-shadow:none}.btn.ghost:hover:not(:disabled){color:var(--ink);background:transparent}
+.btn.full{white-space:normal;height:auto;min-height:44px;padding-top:10px;padding-bottom:10px;line-height:1.2}.btn.lg.full{min-height:60px}
+.form>*,.form .fld,.card>*{min-width:0}
 .btn.sm{height:34px;padding:0 12px;font-size:13px;border-radius:10px}.btn.lg{height:60px;font-size:16px;border-radius:15px}.btn.pri.lg{font-size:20px}.btn.full{width:100%}
 .seg{display:inline-flex;gap:2px;padding:3px;background:var(--s2);border-radius:10px}.seg button{height:30px;padding:0 12px;color:var(--mute);font-weight:600;font-size:13px;border-radius:8px}.seg button:hover{color:var(--ink)}.seg button.on{background:var(--s1);color:var(--ink);box-shadow:var(--sh)}.seg.sm button{height:26px;padding:0 10px;font-size:12px}
 .inp{height:48px;padding:0 16px;border-radius:15px;background:var(--s1);border:1px solid var(--line);outline:0;color:var(--ink);width:100%}.inp:focus{border-color:var(--ink)}.inp::placeholder{color:var(--dim)}
@@ -176,7 +178,7 @@ body::after{content:"";position:fixed;left:50%;top:-240px;width:900px;height:520
   .nav{gap:8px;padding:0 12px}.navpill{height:44px;padding:0 10px}.brand{border-right:0;padding-right:0;margin-right:0}.brand span{display:none}.brand img{width:24px;height:24px}
   .tabs{position:fixed;left:12px;right:12px;bottom:12px;height:64px;margin:0;z-index:40;background:var(--s1);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh2);justify-content:space-around;padding:4px}.tabs a{flex:1;flex-direction:column;justify-content:center;gap:3px;padding:0;font-size:11px;height:100%;border-radius:14px}.tabs a svg{display:block}.tabs a.on{background:transparent;color:var(--ink)}.tabs a.on svg{color:var(--teal)}.tabs a.create{color:var(--mute)}.tabs a.create.on{color:var(--ink)}
   .ib,.px,.wallet{height:44px}.ib{width:44px;border-radius:12px}.px{display:none}.wallet{border-radius:12px;padding:0 14px}.ib.menu{display:grid}
-  .page{padding:8px 12px 130px}
+  .page{padding:8px 12px 130px}.inp,textarea.inp,.sbox input,.trade .in input,.lpin input{font-size:16px}.sbox input,.trade .in input{font-size:28px}.lpin input{font-size:24px}
   .cards3{grid-template-columns:1fr;gap:10px}.scard{height:150px;padding:16px 18px 0}.scard b{font-size:22px}.scard canvas{height:64px}
   .bar .inp.search{min-width:100%}.filters{height:44px}.filters button{height:36px;padding:0 12px}.bar .btn.pri{height:44px;flex:1}
   .grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}
