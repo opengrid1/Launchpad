@@ -324,9 +324,20 @@
     state.route = r; window.scrollTo(0, 0); ticker();
     if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'swap') swap(); else if (r === 'pools') pools(); else if (r === 'pool') pool(parts[1]); else if (r === 'stake') stake(); else if (r === 'create') create(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else home();
   }
+  // the phone menu: every page, the HYPE price, the wallet
+  function menuSheet() {
+    const W = APP.W, sym = ST.symbol || 'TIDE';
+    const links = [['#/', 'Launches'], ['#/swap', 'Swap'], ['#/pools', 'Pools'], ['#/stake', `Stake $${sym}`], ['#/create', 'Create'], ['#/profile', 'Profile'], ['#/docs', 'Docs'], ['/admin', 'Admin'], ...(C.x ? [[C.x, 'X']] : [])];
+    const ov = APP.dialog('Menu', `<div class="menu">${links.map(([h, l]) => `<a href="${h}" ${/^https?:/.test(h) ? 'target="_blank" rel="noopener"' : ''}>${l}</a>`).join('')}</div>
+      <div class="kv" style="margin-top:12px"><span>${esc(Q)}</span><b class="num">${fmtUsd(APP.hypeUsd)}</b></div>
+      ${W.connected ? `<div class="kv"><span>Wallet</span><b class="num">${esc(W.short)}</b></div><button class="btn full" id="m-out" style="margin-top:12px">Disconnect</button>` : `<button class="btn pri full lg" id="m-in" style="margin-top:12px">Connect wallet</button>`}`);
+    $$('a', ov).forEach((a) => a.onclick = () => ov.remove());
+    const i = $('#m-in', ov); if (i) i.onclick = () => { ov.remove(); W.connect(); };
+    const o = $('#m-out', ov); if (o) o.onclick = () => { W.disconnect(); ov.remove(); };
+  }
   function searchDialog() { const ov = APP.dialog('Search', `<div class="picker"><input class="inp" id="sq" placeholder="Search" autocomplete="off"><div class="list" id="sq-list"></div></div>`); const draw = (s) => { const ls = DATA.tokens().filter((t) => s && (t.name.toLowerCase().includes(s) || t.symbol.toLowerCase().includes(s) || t.addr.includes(s))).slice(0, 8); $('#sq-list', ov).innerHTML = ls.map((t) => `<a class="row" href="${link(t)}"><span class="av">${APP.img(t)}</span><span><b>${esc(t.name)}</b><small>${esc(t.symbol)} · ${fmtUsd(t.mcapUsd)}</small></span></a>`).join(''); $$('a', ov).forEach((a) => a.onclick = () => ov.remove()); }; $('#sq', ov).oninput = (e) => draw(e.target.value.trim().toLowerCase()); setTimeout(() => $('#sq', ov).focus(), 30); }
   APP.boot(async () => {
-    $('#n-search').onclick = searchDialog; $('#n-menu').onclick = searchDialog;
+    $('#n-search').onclick = searchDialog; $('#n-menu').onclick = menuSheet;
     document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); searchDialog(); } });
     try { await DATA.ready(); } catch (e) { APP.toast('Could not load the chain state: ' + APP.errMsg(e), 'err', 6000); }
     route(); addEventListener('hashchange', route);
