@@ -51,7 +51,7 @@ window.CFG = {
     buybackShareBps: 5000, buybackVestYears: 5,
     snipeSeconds: 10, snipeStartBps: 9900, snipeHalvings: 14,
     volThresholdBps: 0, volPeakBps: 250, volWindowSec: 60, volDecaySec: 120, // the fee never moves on a pump or a dump
-    openMcapHype: 50, bands: [[50, 200, 20], [200, 1000, 30], [1000, Infinity, 50]], // [from mcap, to mcap, % of supply]
+    openMcapHype: 50, bands: [[50, Infinity, 100]], // one single-sided range: the whole supply from the opening market cap to the top
     vanityZeros: 4, bridgeMinutes: 1,
   },
   limits: { name: 32, ticker: 10, desc: 256, imageMb: 5 },

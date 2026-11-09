@@ -11,6 +11,7 @@ const T = {
   launched: ev('TokenLaunched(address,address,bytes32,uint256,address,uint16,bool,uint256[3])'),
   launched2: ev('TokenLaunched(address,address,bytes32,uint256,address,address,uint16,uint256[3])'), // v2: adds the pair
   launched3: ev('TokenLaunched(address,address,bytes32,uint256,address,address,uint16,bool,uint256[3])'), // pad with a pair: config, pair, recipient, tax, buyback, positions
+  launched4: ev('TokenLaunched(address,address,bytes32,uint256,address,address,uint16,bool,uint256)'), // pad, one position (no bands)
   feesPaid: ev('FeesPaid(bytes32,address,uint256,address,uint256)'),
   metadata: ev('TokenMetadata(address,string,string,string,string,(string,string,string,string,string))'),
   recipient: ev('CreatorFeeRecipientUpdated(address,address,address)'),
@@ -176,9 +177,9 @@ async function syncRange(from, head) {
   const of = (a) => (a ? core.filter((l) => l.address.toLowerCase() === a.toLowerCase()) : []);
   const fac = [...of(NET.factory), ...(V2 ? of(V2.factory) : [])].sort(byOrder), hook = [...of(NET.hook), ...(V2 ? of(V2.hook) : [])], esc = of(NET.escrow), vault = of(NET.vault);
   for (const l of fac) {
-    if (l.topics[0] === T.launched || l.topics[0] === T.launched2 || l.topics[0] === T.launched3) {
-      const v2 = l.topics[0] === T.launched2, v3 = l.topics[0] === T.launched3;
-      const [cfgId, pair, rec, tax, bb, ids] = v3 ? dec(['uint256', 'address', 'address', 'uint16', 'bool', 'uint256[3]'], l.data) : v2 ? (([a, b, c, d, e]) => [a, b, c, d, false, e])(dec(['uint256', 'address', 'address', 'uint16', 'uint256[3]'], l.data)) : (([a, c, d, e, f]) => [a, ethers.ZeroAddress, c, d, e, f])(dec(['uint256', 'address', 'uint16', 'bool', 'uint256[3]'], l.data));
+    if (l.topics[0] === T.launched || l.topics[0] === T.launched2 || l.topics[0] === T.launched3 || l.topics[0] === T.launched4) {
+      const v2 = l.topics[0] === T.launched2, v4 = l.topics[0] === T.launched4, v3 = l.topics[0] === T.launched3 || v4;
+      const [cfgId, pair, rec, tax, bb, ids] = v4 ? (([a, b, c, d, e, f]) => [a, b, c, d, e, [f]])(dec(['uint256', 'address', 'address', 'uint16', 'bool', 'uint256'], l.data)) : v3 ? dec(['uint256', 'address', 'address', 'uint16', 'bool', 'uint256[3]'], l.data) : v2 ? (([a, b, c, d, e]) => [a, b, c, d, false, e])(dec(['uint256', 'address', 'address', 'uint16', 'uint256[3]'], l.data)) : (([a, c, d, e, f]) => [a, ethers.ZeroAddress, c, d, e, f])(dec(['uint256', 'address', 'uint16', 'bool', 'uint256[3]'], l.data));
       const t = { addr: addrOf(l.topics[1]), creator: addrOf(l.topics[2]), poolId: l.topics[3], configId: Number(cfgId), feeRecipient: rec, taxBps: Number(tax), buyback: bb, posIds: ids.map(String), createdAt: parseInt(l.blockTimestamp, 16), block: parseInt(l.blockNumber, 16), tx: l.transactionHash, v: v3 ? 3 : v2 ? 2 : 1, pair: pair.toLowerCase() };
       S.tokens.set(t.addr.toLowerCase(), t); S.byPool.set(t.poolId, t);
     } else if (l.topics[0] === T.metadata) {

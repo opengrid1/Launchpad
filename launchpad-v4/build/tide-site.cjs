@@ -7,6 +7,15 @@ execSync(`node ${path.join(__dirname, "brand-site.cjs")} tidepool ${OUT}`, { std
 // the shared pages the new front-end replaces (admin.html and its scripts stay)
 for (const f of ["index.html", "launch.html", "token.html", "creator.html", "docs.html", "swap.html", "stake.html", "trends.html", "pg-home.js", "pg-launch.js", "pg-token.js", "pg-creator.js", "pg-swap.js", "pg-stake.js", "pg-trends.js", "chart.js", "README.md", "amm.js"]) { const p = path.join(OUT, f); if (fs.existsSync(p)) fs.rmSync(p); }
 fs.cpSync(path.join(ROOT, "tide"), OUT, { recursive: true }); // the front-end, including the wallet modal chunks in wc/
+// the admin page's contract interfaces come from the compiled pad contracts (one position per launch, the pair in the
+// launch config), laid over the shared abi.js, so the owner tools match the deployed code
+{
+  const { ethers } = require(path.join(ROOT, "node_modules/ethers"));
+  const src = fs.readFileSync(path.join(OUT, "abi.js"), "utf8"), w = {}; new Function("window", src)(w);
+  const art = (n) => new ethers.Interface(JSON.parse(fs.readFileSync(path.join(ROOT, "artifacts", n + ".json"), "utf8")).abi).format();
+  Object.assign(w.ABI, { factory: art("PadFactory"), hook: art("PadHook"), locker: art("PadLocker"), vault: art("PadBuybackVault"), escrow: art("PadFeeEscrow") });
+  fs.writeFileSync(path.join(OUT, "abi.js"), "window.ABI = " + JSON.stringify(w.ABI) + ";\n");
+}
 // the admin page is unlisted: no links to it, and search engines are told to skip it
 const ap = path.join(OUT, "admin.html"); if (fs.existsSync(ap)) fs.writeFileSync(ap, fs.readFileSync(ap, "utf8").replace("<head>", '<head><meta name="robots" content="noindex,nofollow">'));
 // routing: clean URLs, every app path to the single page (hash routes inside), the admin page as is

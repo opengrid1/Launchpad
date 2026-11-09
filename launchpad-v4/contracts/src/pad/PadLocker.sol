@@ -14,10 +14,11 @@ import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 
 /**
  * @title PadLocker
- * @notice Holds the three Uniswap V4 position NFTs of every Pad launch.
+ * @notice Holds the Uniswap V4 position NFT of every Pad launch: one single-sided
+ * position from the opening price to the top of the range.
  * Creators and traders have no function here. The protocol owner keeps
- * `collect`, which takes a share of a launch's liquidity out of its three
- * positions in proportion and sends the withdrawn token and HYPE to a
+ * `collect`, which takes a share (up to all) of a launch's liquidity out of its
+ * position and sends the withdrawn token and HYPE to a
  * recipient, with the same signature and behaviour as OneHook's factory
  * `collect`. Every call emits `Collected`.
  * @dev Positions accrue no LP fees (the pools charge an LP fee of zero; the
@@ -35,7 +36,7 @@ contract PadLocker is Ownable2Step, ReentrancyGuard {
     error OwnershipCannotBeRenounced();
 
     event FactorySet(address factory);
-    event PositionsLocked(address indexed token, uint256[3] tokenIds);
+    event PositionLocked(address indexed token, uint256 tokenId);
     event Collected(
         address indexed token, uint16 bps, uint256 tokenAmount, uint256 pairAmount, address indexed recipient
     );
@@ -45,7 +46,7 @@ contract PadLocker is Ownable2Step, ReentrancyGuard {
     IPositionManager public immutable positionManager;
     address public factory;
 
-    mapping(address token => uint256[3] tokenIds) private _positions;
+    mapping(address token => uint256 tokenId) private _positions;
     mapping(address token => bool locked) public isLocked;
 
     constructor(address initialOwner, IPositionManager positionManager_) Ownable(initialOwner) {
@@ -86,27 +87,25 @@ contract PadLocker is Ownable2Step, ReentrancyGuard {
     }
 
     /**
-     * @notice Records custody of a launch's three positions, called once by
-     * the factory right after it minted them to this address.
+     * @notice Records custody of a launch's position, called once by the
+     * factory right after it minted it to this address.
      */
-    function lockPositions(address token, uint256[3] calldata tokenIds) external onlyFactory {
+    function lockPosition(address token, uint256 tokenId) external onlyFactory {
         if (isLocked[token]) revert PositionAlreadyLocked();
-        for (uint256 i; i < 3; ++i) {
-            if (IERC721(address(positionManager)).ownerOf(tokenIds[i]) != address(this)) revert PositionNotHeld();
-        }
+        if (IERC721(address(positionManager)).ownerOf(tokenId) != address(this)) revert PositionNotHeld();
         isLocked[token] = true;
-        _positions[token] = tokenIds;
-        emit PositionsLocked(token, tokenIds);
+        _positions[token] = tokenId;
+        emit PositionLocked(token, tokenId);
     }
 
-    function positionsOf(address token) external view returns (uint256[3] memory) {
+    function positionOf(address token) external view returns (uint256) {
         return _positions[token];
     }
 
     /**
-     * @notice Owner only. Removes `bps` (1 to 10,000) of the liquidity of each
-     * of `token`'s three positions and sends what comes out, in the launch
-     * token and in the pair currency, to `recipient`.
+     * @notice Owner only. Removes `bps` (1 to 10,000; 10,000 is all of it) of
+     * the liquidity of `token`'s position and sends what comes out, in the
+     * launch token and in the pair currency, to `recipient`.
      * @return tokenAmount Launch tokens `recipient` received.
      * @return pairAmount Pair currency (HYPE) `recipient` received.
      */
@@ -118,24 +117,15 @@ contract PadLocker is Ownable2Step, ReentrancyGuard {
     {
         if (bps == 0 || bps > BASIS_POINTS || recipient == address(0)) revert InvalidParams();
         if (!isLocked[token]) revert UnknownToken();
-        uint256[3] memory ids = _positions[token];
-        (PoolKey memory key,) = positionManager.getPoolAndPositionInfo(ids[0]);
+        uint256 id = _positions[token];
+        (PoolKey memory key,) = positionManager.getPoolAndPositionInfo(id);
+        uint256 removed = (uint256(positionManager.getPositionLiquidity(id)) * bps) / BASIS_POINTS;
+        if (removed == 0) revert InvalidParams();
 
-        bytes memory actions;
-        bytes[] memory params = new bytes[](4);
-        uint256 n;
-        for (uint256 i; i < 3; ++i) {
-            uint256 removed = (uint256(positionManager.getPositionLiquidity(ids[i])) * bps) / BASIS_POINTS;
-            if (removed == 0) continue;
-            actions = abi.encodePacked(actions, uint8(Actions.DECREASE_LIQUIDITY));
-            params[n++] = abi.encode(ids[i], removed, uint128(0), uint128(0), bytes(""));
-        }
-        if (n == 0) revert InvalidParams();
-        actions = abi.encodePacked(actions, uint8(Actions.TAKE_PAIR));
-        params[n++] = abi.encode(key.currency0, key.currency1, recipient);
-        assembly {
-            mstore(params, n)
-        }
+        bytes memory actions = abi.encodePacked(uint8(Actions.DECREASE_LIQUIDITY), uint8(Actions.TAKE_PAIR));
+        bytes[] memory params = new bytes[](2);
+        params[0] = abi.encode(id, removed, uint128(0), uint128(0), bytes(""));
+        params[1] = abi.encode(key.currency0, key.currency1, recipient);
 
         Currency tokenCurrency = Currency.unwrap(key.currency0) == token ? key.currency0 : key.currency1;
         Currency pairCurrency = Currency.unwrap(key.currency0) == token ? key.currency1 : key.currency0;

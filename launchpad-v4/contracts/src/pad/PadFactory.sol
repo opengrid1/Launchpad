@@ -34,9 +34,8 @@ import {PadToken} from "./PadToken.sol";
  * @title PadFactory
  * @notice One call, one launch. Clones the token, opens its Uniswap V4 pool
  * against native HYPE (LP fee 0, the Pad hook), places the whole supply
- * into three single-sided positions above the opening price (by default 20%
- * from 50 to 200 HYPE market cap, 30% from 200 to 1,000, 50% from 1,000 to
- * the top of the range), hands the three position NFTs to the locker, takes
+ * into one single-sided position from the opening price to the top of the
+ * range (no bands), hands the position NFT to the locker, takes
  * the launch fee and, if asked, makes the creator's opening buy in the same
  * transaction. No bonding curve, no graduation.
  *
@@ -52,13 +51,8 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     struct LaunchConfig {
         address pairToken; // address(0) = native HYPE, else an approved ERC-20 (a tokenized stock, USDC)
         uint256 supply;
-        // Market caps in the pair currency's smallest unit bounding the three positions.
+        // The opening market cap, in the pair currency's smallest unit; the position runs from it to the top.
         uint256 startMcap;
-        uint256 band1Mcap;
-        uint256 band2Mcap;
-        // Shares of the supply in the first two positions; the third takes the rest.
-        uint16 band0Bps;
-        uint16 band1Bps;
         int24 tickSpacing;
         bool enabled;
     }
@@ -66,8 +60,6 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     // Ticks derived from a config when it is set, so a launch only reads them.
     struct ConfigTicks {
         int24 start;
-        int24 band1;
-        int24 band2;
         int24 floor;
     }
 
@@ -163,7 +155,7 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         address creatorFeeRecipient,
         uint16 creatorTaxBps,
         bool buybackEnabled,
-        uint256[3] positionIds
+        uint256 positionId
     );
     event TokenMetadata(
         address indexed token, string name, string symbol, string logo, string description, Socials socials
@@ -520,10 +512,10 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
             uint32(snipeTaxSeconds)
         );
 
-        // 3. the three positions, minted straight to the locker
-        uint256[3] memory ids = _mintPositions(token, key, config, ticks);
-        locker.lockPositions(token, ids);
-        // Rounding leaves a few wei of the supply here; they go to the locker with the positions.
+        // 3. the single position, minted straight to the locker
+        uint256 positionId = _mintPosition(token, key, config, ticks);
+        locker.lockPosition(token, positionId);
+        // Rounding leaves a few wei of the supply here; they go to the locker with the position.
         uint256 dust = IERC20(token).balanceOf(address(this));
         if (dust != 0) IERC20(token).transfer(address(locker), dust);
 
@@ -544,7 +536,7 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         if (launchFee != 0) feeEscrow.credit{value: launchFee}(hook.protocolFeeRecipient());
 
         emit TokenLaunched(
-            token, msg.sender, key.toId(), launchConfigId, config.pairToken, feeRecipient, params.creatorTaxBps, params.buybackEnabled, ids
+            token, msg.sender, key.toId(), launchConfigId, config.pairToken, feeRecipient, params.creatorTaxBps, params.buybackEnabled, positionId
         );
         emit TokenMetadata(token, params.name, params.symbol, params.logo, params.description, params.socials);
 
@@ -605,30 +597,22 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         return abi.encode(tokensOut);
     }
 
-    function _mintPositions(address token, PoolKey memory key, LaunchConfig memory config, ConfigTicks memory ticks)
+    function _mintPosition(address token, PoolKey memory key, LaunchConfig memory config, ConfigTicks memory ticks)
         private
-        returns (uint256[3] memory ids)
+        returns (uint256 id)
     {
-        uint256 a0 = (config.supply * config.band0Bps) / BASIS_POINTS;
-        uint256 a1 = (config.supply * config.band1Bps) / BASIS_POINTS;
-        uint256 a2 = config.supply - a0 - a1;
-
         IERC20(token).approve(address(permit2), config.supply);
         permit2.approve(token, address(positionManager), uint160(config.supply), 0);
 
-        bytes memory actions = abi.encodePacked(
-            uint8(Actions.MINT_POSITION), uint8(Actions.MINT_POSITION), uint8(Actions.MINT_POSITION), uint8(Actions.SETTLE)
-        );
-        bytes[] memory params = new bytes[](4);
-        params[0] = _mintParams(key, ticks.band1, ticks.start, a0);
-        params[1] = _mintParams(key, ticks.band2, ticks.band1, a1);
-        params[2] = _mintParams(key, ticks.floor, ticks.band2, a2);
+        bytes memory actions = abi.encodePacked(uint8(Actions.MINT_POSITION), uint8(Actions.SETTLE));
+        bytes[] memory params = new bytes[](2);
+        // the whole supply, from the opening price to the top of the range
+        params[0] = _mintParams(key, ticks.floor, ticks.start, config.supply);
         // amount 0 = the whole open debt, paid by this contract through Permit2
-        params[3] = abi.encode(key.currency1, uint256(0), true);
+        params[1] = abi.encode(key.currency1, uint256(0), true);
 
-        uint256 first = positionManager.nextTokenId();
+        id = positionManager.nextTokenId();
         positionManager.modifyLiquidities(abi.encode(actions, params), block.timestamp);
-        ids = [first, first + 1, first + 2];
     }
 
     function _mintParams(PoolKey memory key, int24 lower, int24 upper, uint256 amount1)
@@ -664,22 +648,17 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     /**
      * @dev With HYPE as currency0 and the token as currency1, the pool price
      * is tokens per HYPE, supply / market cap: it falls as the market cap
-     * rises. The three positions sit below the opening tick, so they hold
-     * only the token until buys walk the price down into them.
+     * rises. The single position sits below the opening tick, so it holds
+     * only the token until buys walk the price down into it.
      */
     function _validateLaunchConfig(LaunchConfig calldata c) private view returns (ConfigTicks memory t) {
         if (c.pairToken != address(0) && !approvedPairTokens[c.pairToken]) revert PairTokenValidationFailed();
         if (c.tickSpacing <= 0 || c.tickSpacing > 16_384) revert InvalidLaunchConfig();
         if (c.supply < 1e18 || c.supply > type(uint128).max) revert InvalidLaunchConfig();
-        if (c.startMcap == 0 || c.band1Mcap <= c.startMcap || c.band2Mcap <= c.band1Mcap) revert InvalidLaunchConfig();
-        if (c.band0Bps == 0 || c.band1Bps == 0 || uint256(c.band0Bps) + c.band1Bps >= BASIS_POINTS) {
-            revert InvalidLaunchConfig();
-        }
+        if (c.startMcap == 0) revert InvalidLaunchConfig();
         t.start = _tickForMcap(c.supply, c.startMcap, c.tickSpacing);
-        t.band1 = _tickForMcap(c.supply, c.band1Mcap, c.tickSpacing);
-        t.band2 = _tickForMcap(c.supply, c.band2Mcap, c.tickSpacing);
         t.floor = TickMath.minUsableTick(c.tickSpacing);
-        if (!(t.start > t.band1 && t.band1 > t.band2 && t.band2 > t.floor)) revert InvalidLaunchConfig();
+        if (!(t.start > t.floor)) revert InvalidLaunchConfig();
         if (t.start > TickMath.maxUsableTick(c.tickSpacing)) revert InvalidLaunchConfig();
     }
 
