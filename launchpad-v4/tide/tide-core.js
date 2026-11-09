@@ -71,7 +71,7 @@
     const b = $('#n-wallet'); if (!b) return;
     if (!W.connected) { b.className = 'wallet'; b.textContent = 'Connect'; b.onclick = W.connect; return; }
     b.className = 'wallet on'; b.innerHTML = `<i style="background-image:url('${APP.identicon(W.address)}')"></i>${esc(W.short)}${W.chainOk ? '' : ' <span class="pill coral">wrong chain</span>'}`;
-    b.onclick = () => { const ov = APP.dialog('Your wallet', `<div class="num" style="font-size:13px;word-break:break-all;color:var(--ink2)">${esc(W.address)}</div>${W.chainOk ? '' : `<p class="mute" style="margin-top:8px;font-size:13px">Not on ${esc(C.chain.name)}.</p>`}<a class="btn lg full pri" href="#/fees" id="w-fees" style="margin-top:16px">Your fees</a><button class="btn lg full" id="w-out" style="margin-top:8px">Disconnect</button>`); $('#w-fees', ov).onclick = () => ov.remove(); $('#w-out', ov).onclick = () => { W.disconnect(); ov.remove(); }; };
+    b.onclick = () => { const ov = APP.dialog('Your wallet', `<div class="num" style="font-size:13px;word-break:break-all;color:var(--ink2)">${esc(W.address)}</div>${W.chainOk ? '' : `<p class="mute" style="margin-top:8px;font-size:13px">Not on ${esc(C.chain.name)}.</p>`}<a class="btn lg full pri" href="#/profile" id="w-fees" style="margin-top:16px">Your profile and fees</a><button class="btn lg full" id="w-out" style="margin-top:8px">Disconnect</button>`); $('#w-fees', ov).onclick = () => ov.remove(); $('#w-out', ov).onclick = () => { W.disconnect(); ov.remove(); }; };
   }
 
   // ---- prices
