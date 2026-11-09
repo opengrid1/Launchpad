@@ -1,11 +1,11 @@
-/* Tidepool site configuration: the launchpad on Elysium (gas in HYPE), every coin paired with native HYPE on Uniswap v4
-   under the Tidepool hook. Contract addresses come from deployments/pad-elysium.json once deployed; until then the
+/* Kinex site configuration: the launchpad on Elysium (gas in HYPE), every coin paired with native HYPE on Uniswap v4
+   under the Kinex hook. Contract addresses come from deployments/pad-elysium.json once deployed; until then the
    site shows its empty states. `stake` points at the fee flywheel: the splitter that turns protocol fees into rewards
-   and the staking contract that pays them to $TIDE stakers. Built into a deployable copy by build/brand-site.cjs tidepool. */
+   and the staking contract that pays them to $KINEX stakers. Built into a deployable copy by build/brand-site.cjs tidepool. */
 window.CFG = {
   demo: true, // preview: sample coins from /demo-state.json until the contracts are live on Elysium
-  brand: 'Tidepool', tagline: 'Launch on Elysium. HYPE pair on Uniswap v4, a fixed 2.5% fee, 1% of every trade to the creator, and the protocol share buys $TIDE back.',
-  x: 'https://x.com/tidepool_fun', site: 'https://tidepool.fun',
+  brand: 'Kinex', tagline: 'Launch on Elysium. HYPE pair on Uniswap v4, a fixed 2.5% fee, 1% of every trade to the creator, and the protocol share buys $KINEX back.',
+  x: 'https://x.com/kinex_fun', site: 'https://kinex.fun',
   mode: 'live',
   chains: [
     // Elysium (gas in HYPE, settles to HyperEVM): Uniswap's v4 PoolManager and UniversalRouter, our PositionManager build
@@ -15,17 +15,17 @@ window.CFG = {
       contracts: { factory: '', hook: '', locker: '', escrow: '', vault: '', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', positionManager: '', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11', router: '0xA13f7611115752DEB2B13813BDDE16A5073e4b45', quoter: '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5' } },
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
-  official: [], // $TIDE: shown with an Official tag once launched
-  /* the fee flywheel: protocol fees -> splitter -> stakers / buyback and burn of $TIDE / treasury */
-  // the $TIDE airdrop: 20% of the supply in three pools. Points: 1 HYPE traded on Tidepool = tradePts (from minHype on),
+  official: [], // $KINEX: shown with an Official tag once launched
+  /* the fee flywheel: protocol fees -> splitter -> stakers / buyback and burn of $KINEX / treasury */
+  // the $KINEX airdrop: 20% of the supply in three pools. Points: 1 HYPE traded on Kinex = tradePts (from minHype on),
   // a creator earns creatorPts per HYPE other wallets trade on their coin; trades on other Elysium launchpads earn
-  // otherBeforePts per HYPE before Tidepool opened and otherAfterPts after, half of that pool by points and half equally
-  // among wallets that swapped 1 HYPE before Tidepool; the holders pool is claimed after the campaign. ends/review: ISO.
+  // otherBeforePts per HYPE before Kinex opened and otherAfterPts after, half of that pool by points and half equally
+  // among wallets that swapped 1 HYPE before Kinex; the holders pool is claimed after the campaign. ends/review: ISO.
   airdrop: {
     ends: '2026-12-20T00:00:00Z', review: '2026-12-23T00:00:00Z', launchAt: '2026-11-15T00:00:00Z',
     tradePts: 100, creatorPts: 10, minHype: 1, otherBeforePts: 200, otherAfterPts: 100,
-    pools: [{ key: 'traders', pct: 10, title: 'Tidepool traders and creators', note: 'Earned by volume, and by launching coins others trade.' },
-      { key: 'other', pct: 5, title: 'Traders on other platforms', note: 'Swap 1 HYPE elsewhere on Elysium. Volume before Tidepool counts double.' },
+    pools: [{ key: 'traders', pct: 10, title: 'Kinex traders and creators', note: 'Earned by volume, and by launching coins others trade.' },
+      { key: 'other', pct: 5, title: 'Traders on other platforms', note: 'Swap 1 HYPE elsewhere on Elysium. Volume before Kinex counts double.' },
       { key: 'holders', pct: 5, title: 'HYPE and KNTQ holders', note: 'For holders of both assets. Claim after the campaign.' }],
     venues: ['Volta', 'BOXA', 'Kleos', 'ElysPump', 'Montra', 'Ascend', 'Stockium', 'Agora', 'Elysa'],
     holderAssets: ['HYPE', 'KNTQ'],
@@ -39,7 +39,7 @@ window.CFG = {
     arbSys: '0x0000000000000000000000000000000000000064', nodeInterface: '0x00000000000000000000000000000000000000C8',
     claimDays: '6 to 7', anyChain: { coins: ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB'], note: 'Send from any wallet or exchange; it arrives as HYPE on HyperEVM, one click away from Elysium.' },
   },
-  stake: { splitter: '', staking: '', token: '', symbol: 'TIDE', stakingBps: 2000, burnBps: 3500, farmBps: 1500, durationDays: 7 },
+  stake: { splitter: '', staking: '', token: '', symbol: 'KINEX', stakingBps: 2000, burnBps: 3500, farmBps: 1500, durationDays: 7 },
   /* the AMM: our own pools for any two tokens (LP shares, 0.25% to LPs + 0.05% to the splitter per swap), and the farm
      that pays LP stakers the splitter's farm share in HYPE. Native HYPE is wrapped by the router. */
   amm: { factory: '', router: '', farm: '', wnative: '0xba876237b0f021a6c6d852d6c26e107997cc5e81', lpFeeBps: 25, protocolFeeBps: 5 },

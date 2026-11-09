@@ -1,5 +1,5 @@
 {
-  "name": "Tidepool",
+  "name": "Kinex",
   "theme": ":root{--acid:#2fd4c2;--acid-hover:#22bfae;--acid-ink:#06302d;--acid-quiet:rgba(47,212,194,.2)}[data-theme=dark]{--acid:#3ee0ce;--acid-hover:#2fd4c2;--acid-quiet:rgba(62,224,206,.18)}",
   "themeColor": "#f5f5f7",
   "replace": [
@@ -37,7 +37,7 @@
     ],
     [
       "LiquidFi runs on two chains: HyperEVM, and Elysium, the HYPE-gas chain that settles to HyperEVM. A token lives on the chain it launched on. Tokens launch directly into Uniswap v4 and are quoted against HYPE only.",
-      "Tidepool runs on Elysium, the HYPE-gas chain that settles to HyperEVM. Tokens launch directly into Uniswap v4 and are quoted against HYPE only. Every protocol fee flows into the Tidepool flywheel: 35% streams to $TIDE stakers, 35% buys $TIDE on its own pool and burns it, 30% funds the treasury."
+      "Kinex runs on Elysium, the HYPE-gas chain that settles to HyperEVM. Tokens launch directly into Uniswap v4 and are quoted against HYPE only. Every protocol fee flows into the Kinex flywheel: 35% streams to $KINEX stakers, 35% buys $KINEX on its own pool and burns it, 30% funds the treasury."
     ],
     [
       "<dl class=\"defs\"><div><dt>Network</dt><dd>HyperEVM</dd></div><div><dt>Chain ID</dt><dd>999</dd></div><div><dt>Public RPC</dt><dd>https://rpc.hyperliquid.xyz/evm</dd></div><div><dt>Explorer</dt><dd>hyperevmscan.io</dd></div></dl>",
@@ -69,23 +69,23 @@
     ],
     [
       "LiquidFi Coin",
-      "Tidepool Coin"
+      "Kinex Coin"
     ],
     [
       "placeholder=\"LIQ\"",
-      "placeholder=\"TIDE\""
+      "placeholder=\"KINEX\""
     ],
     [
       "liquidfi.fun",
-      "tidepool.fun"
+      "kinex.fun"
     ],
     [
       "liquidfi_fun",
-      "tidepool_fun"
+      "kinex_fun"
     ],
     [
       "LiquidFi",
-      "Tidepool"
+      "Kinex"
     ]
   ],
   "files": "html,js",

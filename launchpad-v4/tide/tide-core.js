@@ -1,4 +1,4 @@
-/* Tidepool core: the APP object the data layer (chain.js) expects, plus helpers the views use. Wallet through
+/* Kinex core: the APP object the data layer (chain.js) expects, plus helpers the views use. Wallet through
    EIP-6963 injected providers (switch or add the chain), the quote coin's USD price from Hyperliquid's info API,
    toasts and modals, formatting. No page logic here. */
 (function () {

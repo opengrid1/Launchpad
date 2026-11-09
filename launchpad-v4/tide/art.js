@@ -1,4 +1,4 @@
-/* Tidepool artwork, drawn in code so every page gets a unique piece: tide-line contours (ripples) and ribbons. */
+/* Kinex artwork, drawn in code so every page gets a unique piece: tide-line contours (ripples) and ribbons. */
 (function () {
   const rnd = (seed) => { let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; };
   // concentric tide lines around one or two drop points, like a tide chart. w×h viewBox, stroke color from CSS
