@@ -6,5 +6,6 @@ dist/
 
 # local fork deploy records
 deployments/*-fork.json
+deployments/*-elysfork.json
 deployments/*-local.json
 deployments/*-local.progress.json
