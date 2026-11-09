@@ -7,6 +7,8 @@ execSync(`node ${path.join(__dirname, "brand-site.cjs")} tidepool ${OUT}`, { std
 // the shared pages the new front-end replaces (admin.html and its scripts stay)
 for (const f of ["index.html", "launch.html", "token.html", "creator.html", "docs.html", "swap.html", "stake.html", "trends.html", "pg-home.js", "pg-launch.js", "pg-token.js", "pg-creator.js", "pg-swap.js", "pg-stake.js", "pg-trends.js", "chart.js", "README.md"]) { const p = path.join(OUT, f); if (fs.existsSync(p)) fs.rmSync(p); }
 for (const f of fs.readdirSync(path.join(ROOT, "tide"))) fs.copyFileSync(path.join(ROOT, "tide", f), path.join(OUT, f));
+// the admin page is unlisted: no links to it, and search engines are told to skip it
+const ap = path.join(OUT, "admin.html"); if (fs.existsSync(ap)) fs.writeFileSync(ap, fs.readFileSync(ap, "utf8").replace("<head>", '<head><meta name="robots" content="noindex,nofollow">'));
 // routing: clean URLs, every app path to the single page (hash routes inside), the admin page as is
 const v = JSON.parse(fs.readFileSync(path.join(OUT, "vercel.json"), "utf8"));
 v.rewrites = [{ source: "/token/:addr", destination: "/" }, { source: "/swap", destination: "/" }, { source: "/pools", destination: "/" }, { source: "/stake", destination: "/" }, { source: "/create", destination: "/" }, { source: "/profile", destination: "/" }, { source: "/docs", destination: "/" }];

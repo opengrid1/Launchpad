@@ -80,5 +80,5 @@
     const px = $('#n-px span'); if (px) px.textContent = fmtUsd(APP.hypeUsd);
     APP.emit();
   }
-  APP.boot = async (start) => { renderWallet(); loadPrices(); setInterval(loadPrices, 30000); autoConnect(); const fx = $('#f-x'); if (fx) fx.href = C.x || '#'; await start(); };
+  APP.boot = async (start) => { try { document.documentElement.style.setProperty('--chain-logo', `url('${C.chain.logo}')`); } catch {} renderWallet(); loadPrices(); setInterval(loadPrices, 30000); autoConnect(); const fx = $('#f-x'); if (fx) fx.href = C.x || '#'; await start(); };
 })();
