@@ -158,7 +158,7 @@ details.terms{color:var(--mute);font-size:13px;margin-top:16px}details.terms sum
 .steps{display:grid;gap:12px}
 /* bridge from any chain */
 .abhead{display:flex;align-items:center;gap:14px}.abhead .stack{display:flex;align-items:center}.abhead .stack .av{width:34px;height:34px;border:2px solid var(--s1)}.abhead .stack .av+.av{margin-left:-12px}.abhead h2{font-size:30px}.abhead p{margin-top:2px;font-size:14px}
-.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.cgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}.cgrid>*{min-width:0}.ctile>div{min-width:0;flex:1}
 .ctile{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:var(--r2);background:var(--s2);text-align:left;transition:border-color .15s,background .15s}.ctile:hover{border-color:var(--line2);background:var(--s1)}.ctile .av{width:36px;height:36px;flex:none}.ctile b{display:block;font-size:14px}.ctile small{display:block;font:400 11.5px var(--mono);color:var(--mute);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctile.all .av{display:grid;place-items:center;background:var(--s1);border:1px solid var(--line)}.ctile.all svg{width:18px;height:18px;fill:none;stroke:var(--acc2);stroke-width:2;stroke-linecap:round}
 .absearch{margin-top:14px}.clist{margin-top:10px;max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:var(--r2);background:var(--s1)}
 .crow{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}.crow:last-child{border-bottom:0}.crow:hover{background:var(--s2)}.crow .av{width:28px;height:28px;flex:none}.crow b{font-weight:600}.crow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.crow small{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);white-space:nowrap}
@@ -209,6 +209,7 @@ details.terms{color:var(--mute);font-size:13px;margin-top:16px}details.terms sum
 .slip{display:flex;gap:4px}.slip button{height:30px;padding:0 10px;border-radius:var(--r);border:1px solid var(--line);font:500 12px var(--mono);color:var(--ink2)}.slip button.on{background:var(--deep);color:#fff;border-color:var(--deep)}
 
 /* shrink + wrap */
+html,body{overflow-x:clip;max-width:100%}
 .grid4>*,.grid3>*,.grid2>*,.tk>*,.mk>*,.lform>*,.docs>*,.bflow>*,.fwgrid>*,.lists>*,.charts>*,.row2>*,.card,.tw,.form>*,.form .fld,.card>*,.adhero>*,.bcards>*,.lead>*,.roads>*{min-width:0}.kv b,.kv span,.prof .head .mute,.meta{overflow-wrap:anywhere}.kv b{text-align:right}
 
 /* phone */
@@ -240,6 +241,6 @@ details.terms{color:var(--mute);font-size:13px;margin-top:16px}details.terms sum
   .adhero .cd{flex-wrap:wrap;gap:6px 14px}.adhero .cd b{font-size:22px}
   .bbox .lab,.lab{gap:8px}.bbox .lab>*,.lab>*{min-width:0}.bbox .sub{gap:10px}.bbox .sub>*{min-width:0;overflow-wrap:anywhere}
   .adpool .amt{font-size:22px}.lists .card .kv b{font-size:12px}
-  .cgrid{grid-template-columns:1fr 1fr}.depbox{grid-template-columns:1fr}.depbox .qr{width:160px;height:160px}.timeline{grid-template-columns:1fr 1fr}.abhead h2{font-size:24px}.abcoin .btn{flex:none}
+  .cgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.depbox{grid-template-columns:1fr}.depbox .qr{width:160px;height:160px}.timeline{grid-template-columns:1fr 1fr}.abhead h2{font-size:24px}.abcoin .btn{flex:none}
   #toasts{bottom:88px}
 }
