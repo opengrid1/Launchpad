@@ -1,4 +1,4 @@
-/* Tidepool views. Hash routes: #/ launches, #/token/<addr>, #/swap, #/pools, #/pool/<pair>, #/stake, #/create,
+/* Tidepool views. Hash routes: #/ launches, #/token/<addr>, #/airdrop, #/create,
    #/profile[/<addr>], #/docs. Data from DATA (the launch pools, chain.js) and AMM (amm.js). */
 (function () {
   const C = window.CFG, X = window.ethers, { $, $$, esc, fmtNum, fmtPrice, fmtUsd, fmtPct, shortAddr, ago, fmtDate } = APP;
@@ -37,7 +37,7 @@
     // 24 buckets over the last day, or over the whole history while the protocol is younger than a day
     const now = Math.floor(Date.now() / 1000), N = 24, all = ts.flatMap((t) => DATA.trades(t.addr)), oldest = all.reduce((m, x) => Math.min(m, x.ts), now), span = Math.min(86400, Math.max(1800, now - oldest + 60)), step = span / N;
     const vol = new Array(N).fill(0), fee = new Array(N).fill(0), net = new Array(N).fill(0);
-    for (const x of all) { const age = now - x.ts; if (age < 0 || age >= span) continue; const i = N - 1 - Math.floor(age / step); vol[i] += x.hype; fee[i] += x.fee || 0; net[i] += x.buy ? x.hype : -x.hype; }
+    for (const x of all) { const age = now - x.ts; if (age < 0 || age >= span) continue; const i = N - 1 - Math.floor(age / step); vol[i] += x.hype; fee[i] += (x.fee || 0) * (C.econ.creatorShareBps / 10000); net[i] += x.buy ? x.hype : -x.hype; }
     const liq = new Array(N).fill(0); let v = tvl; for (let i = N - 1; i >= 0; i--) { liq[i] = Math.max(0, v); v -= net[i]; }
     const col = { liq: '#0ea789', vol: '#16a34a', fee: '#3b82f6' }, ser = { liq, vol, fee };
     $$('[data-area]').forEach((cv) => area(cv, ser[cv.dataset.area], col[cv.dataset.area]));
@@ -57,7 +57,7 @@
 
   // ---- home
   function home() {
-    const ts = DATA.tokens(), s = DATA.stats(), fly = (DATA.raw() || {}).flywheel, pools = AMM.live() ? AMM.pairs() : [];
+    const ts = DATA.tokens(), s = DATA.stats(), fly = (DATA.raw() || {}).flywheel, pools = [];
     const tvl = ts.reduce((a, t) => a + t.liqHype, 0) + pools.reduce((a, p) => a + p.tvl, 0), vol = s.vol24 + pools.reduce((a, p) => a + p.vol, 0);
     const rising = [...ts].sort((a, b) => b.vol24 - a.vol24).slice(0, 8), sort = state.sort || 'new';
     const list = [...ts].filter((t) => !state.q || (t.name + t.symbol + t.addr).toLowerCase().includes(state.q)).sort((a, b) => sort === 'mcap' ? b.mcapUsd - a.mcapUsd : sort === 'active' ? b.vol24 - a.vol24 : b.createdAt - a.createdAt);
@@ -65,9 +65,9 @@
     view.innerHTML = `<div class="page">
       ${rising.length ? `<div class="trend"><div class="trail">${rising.slice(0, 6).map((t) => `<a class="tcard ${t.c24 >= 0 ? 'up' : 'dn'}" href="${link(t)}"><div class="top"><span class="av badge">${APP.img(t)}</span><b>${esc(t.symbol)}</b><span class="px2"><b class="num">${fmtUsd(t.mcapUsd)}</b>${chip(t.c24)}</span></div><canvas data-spark="${t.addr}"></canvas></a>`).join('')}</div></div>` : ''}
       <div class="cards3">
-        <a class="scard" href="#/pools"><span>Liquidity</span><b>${fmtUsd(tvl * APP.hypeUsd)}</b><small>${hype(tvl, 1)} across ${ts.length} launch pools and ${pools.length} AMM pools</small><canvas data-area="liq"></canvas></a>
+        <div class="scard"><span>Liquidity</span><b>${fmtUsd(tvl * APP.hypeUsd)}</b><small>${hype(tvl, 1)} across ${ts.length} launch pools</small><canvas data-area="liq"></canvas></div>
         <div class="scard"><span>24h volume</span><b>${fmtUsd(vol * APP.hypeUsd)}</b><small>${s.launches24} launches today</small><canvas data-area="vol"></canvas></div>
-        <a class="scard" href="#/stake"><span>Fees to stakers and LPs</span><b>${fly ? fmtUsd((fly.toStaking + (fly.toFarm || 0)) * APP.hypeUsd) : '$0'}</b><small>${fly ? fmtNum(fly.burnedTokens) + ' ' + esc(sym) + ' burned' : 'no distribution yet'}</small><canvas data-area="fee"></canvas></a>
+        <div class="scard"><span>Paid to creators</span><b>${fmtUsd(ts.reduce((a, t) => a + t.feesAll * (t.creatorShareBps / 10000), 0) * APP.hypeUsd)}</b><small>${C.econ.creatorShareBps / 100}% of every trading fee, all time</small><canvas data-area="fee"></canvas></div>
       </div>
       <div class="bar"><input class="inp search" id="h-q" placeholder="Search coins" value="${esc(state.q || '')}"><div class="filters">${[['new', 'New'], ['mcap', 'Market cap'], ['active', 'Active']].map(([k, l]) => `<button data-sort="${k}" class="${sort === k ? 'on' : ''}">${l}</button>`).join('')}</div><a class="btn pri" href="#/create">Create</a></div>
       <div class="tw"><table class="tb cards"><thead><tr><th>Coin</th><th class="r">Price</th><th class="r">24h</th><th class="r">Volume 24h</th><th class="r">Liquidity</th><th class="r">Holders</th><th class="r">Market cap</th><th></th></tr></thead><tbody>${list.length ? list.slice(0, 100).map(coinRow).join('') : `<tr><td colspan="8"><div class="empty">${ts.length ? 'Nothing matches.' : 'No launches yet.'}</div></td></tr>`}</tbody></table></div></div>`;
@@ -83,7 +83,7 @@
     if (C.chain.key !== t.net) C.useChain(t.net, false);
     const fs = DATA.feeState(t.addr) || { kind: 'base', bps: C.econ.feeBps, total: C.econ.feeBps }, me = APP.W.connected ? APP.W.address : '', isCreator = me && (me === t.creator || me === t.feeRecipient);
     if (state.tfFor !== t.addr) { state.tfFor = t.addr; const age = Date.now() / 1000 - (t.createdAt || 0); state.tf = age < 3 * 3600 ? 60 : age < 86400 ? 300 : 900; }
-    const trades = DATA.trades(t.addr), holders = DATA.holders(t.addr), pos = DATA.positions(t.addr), ammPair = AMM.live() ? AMM.pairs().find((p) => (p.t0.addr === t.addr || p.t1.addr === t.addr)) : null;
+    const trades = DATA.trades(t.addr), holders = DATA.holders(t.addr), pos = DATA.positions(t.addr), ammPair = null;
     const feeBar = fs.kind === 'snipe' ? `<div class="feemeter"><div style="display:flex;justify-content:space-between"><b>Launch protection</b><span class="pill coral">${(fs.snipeBps / 100).toFixed(1)}% extra on buys</span></div><div class="bar"><i style="width:${Math.min(100, fs.snipeBps / 99)}%;background:var(--coral)"></i></div><div class="leg"><span>fades to ${(fs.bps / 100).toFixed(2)}% in ${fs.left}s</span><span>sells pay ${(fs.bps / 100).toFixed(2)}%</span></div></div>`
       : `<div class="feemeter"><div style="display:flex;justify-content:space-between"><b>Fee on this trade</b><span class="pill ${fs.kind === 'vol' ? 'coral' : 'teal'}">${(fs.total / 100).toFixed(2)}%</span></div><div class="bar"><i style="width:${t.creatorShareBps / 100}%;background:var(--teal)"></i><i style="width:${100 - t.creatorShareBps / 100}%;background:var(--s3)"></i>${fs.extraBps ? `<i style="width:${Math.min(40, fs.extraBps / 10)}%;background:var(--coral)"></i>` : ''}</div><div class="leg"><span>creator ${((fs.bps * t.creatorShareBps) / 1e6).toFixed(2)}% · protocol ${((fs.bps * (10000 - t.creatorShareBps)) / 1e6).toFixed(2)}%</span><span>${fs.kind === 'vol' ? `volatility +${(fs.extraBps / 100).toFixed(2)}%, ${fs.left}s` : ''}</span></div></div>`;
     view.innerHTML = `<div class="page"><div class="tk">
@@ -313,11 +313,10 @@
       ${sec('Launch', [['Supply', '1,000,000,000, fixed'], ['Opens at', `${fmtNum(E.openMcapHype)} ${Q} market cap`], ['Liquidity', `Uniswap v4 pool, three bands: ${bands}`], ['Positions', 'held by the protocol locker'], ['Launch fee', `${E.launchFeeHype} ${Q}`]])}
       ${sec('Trading', [['Fee', `${(E.feeBps / 100).toFixed(1)}% on the ${Q} side`], ['Split', `${E.creatorShareBps / 100}% creator · ${100 - E.creatorShareBps / 100}% protocol`], ['Extra creator fee', `up to ${E.creatorTaxMaxBps / 100}%`], ['Creator claims', 'from the fee escrow, any time']])}
       ${sec('Launch protection', [['Anti-snipe', `first ${E.snipeSeconds}s · ${E.snipeStartBps / 100}% halving ${E.snipeHalvings}× to 0`], ['Volatility fee', `up to ${(E.volPeakBps - E.feeBps) / 100}% after a ${E.volThresholdBps / 100}% move, decays over ${E.volDecaySec / 60} min`]])}
-      ${sec('AMM', [['Pairs', 'any two tokens'], ['LP fee', `${((C.amm || {}).lpFeeBps || 25) / 100}% stays in the pool`], ['Protocol fee', `${((C.amm || {}).protocolFeeBps || 5) / 100}% to the fee splitter`], ['LP shares', 'stakeable in the farm'], ['Ownership', 'liquidity belongs to whoever added it']])}
-      ${sec('Fee split', [['Stakers', `${(ST.stakingBps || 0) / 100}%`], ['LP farm', `${(ST.farmBps || 0) / 100}%`], ['Buyback and burn', `${(ST.burnBps || 0) / 100}% · $${sym} bought on its pool, sent to 0xdead`], ['Treasury', `${(10000 - (ST.stakingBps || 0) - (ST.farmBps || 0) - (ST.burnBps || 0)) / 100}%`], ['Streams', `${ST.durationDays || 7} days · anyone can trigger a distribution`]])}
-      ${sec('Protocol owner', [['Can', 'pause launches · change fee terms for new launches · withdraw launch-pool liquidity'], ['Cannot', `touch AMM liquidity, farm stakes or staked $${sym}`]])}
+      ${sec('Protocol share', [['Goes to', `buying $${sym} on its pool and burning it, and the treasury`], ['Split', 'set on-chain, shown on the explorer']])}
+      ${sec('Protocol owner', [['Can', 'pause launches · change fee terms for new launches · withdraw launch-pool liquidity'], ['Cannot', 'touch tokens or liquidity that belong to users']])}
       ${sec('Risk', [['Coins', 'issued by their creators; can lose all value'], ['Launch pools', 'protocol-owned liquidity, may be withdrawn']])}
-      ${sec(`Contracts · ${esc(C.chain.name)}`, [['Launch factory', C.chain.contracts.factory], ['Hook', C.chain.contracts.hook], ['Locker', C.chain.contracts.locker], ['Fee escrow', C.chain.contracts.escrow], ['Splitter', ST.splitter], ['Staking', ST.staking], ['AMM factory', (C.amm || {}).factory], ['AMM router', (C.amm || {}).router], ['Farm', (C.amm || {}).farm]].map(([n, a]) => [n, a ? `<a class="num" href="${APP.explorer('address', a)}" target="_blank" rel="noopener">${esc(a)}</a>` : '<span class="mute">not deployed</span>']))}</div>`;
+      ${sec(`Contracts · ${esc(C.chain.name)}`, [['Launch factory', C.chain.contracts.factory], ['Hook', C.chain.contracts.hook], ['Locker', C.chain.contracts.locker], ['Fee escrow', C.chain.contracts.escrow], ['Splitter', ST.splitter]].map(([n, a]) => [n, a ? `<a class="num" href="${APP.explorer('address', a)}" target="_blank" rel="noopener">${esc(a)}</a>` : '<span class="mute">not deployed</span>']))}</div>`;
   }
 
   // ---- airdrop: points from every trade and launch, a share of the pool per wallet, a leaderboard, an address lookup
@@ -339,7 +338,7 @@
     const rank = (i) => `<div class="pod r${i + 1}"><span class="n">${i + 1}</span>${rows[i] ? `<b>${usdOf(tokOf(rows[i].p))}</b><small>${fmtNum(tokOf(rows[i].p))} ${esc(sym)}</small><a class="num" href="#/profile/${rows[i].w}">${esc(shortAddr(rows[i].w))}</a>` : '<small class="mute">open</small>'}</div>`;
     const share = (w) => { const r = rows.find((x) => x.w === low(w)); if (!r) return `<div class="adres"><b>—</b><small>No points yet for this address${AD.minHype ? ` (trade at least ${AD.minHype} ${esc(Q)})` : ''}.</small></div>`; const i = rows.indexOf(r); return `<div class="adres"><b>${usdOf(tokOf(r.p))}</b><small>${fmtNum(tokOf(r.p))} ${esc(sym)} · ${fmtNum(r.p)} points · rank ${i + 1} of ${rows.length} · ${hype(r.h, 2)} traded</small></div>`; };
     view.innerHTML = `<div class="page ad">
-      <section class="adhero"><div class="l"><span class="eyebrow">The $${esc(sym)} airdrop</span><h1>${px ? fmtUsd(totalTok * px) : fmtNum(totalTok) + ' ' + esc(sym)}</h1><p>${totalPct}% of the supply, ${fmtNum(totalTok)} $${esc(sym)}, for everyone who trades, launches and provides liquidity on Tidepool.</p>
+      <section class="adhero"><div class="l"><span class="eyebrow">The $${esc(sym)} airdrop</span><h1>${px ? fmtUsd(totalTok * px) : fmtNum(totalTok) + ' ' + esc(sym)}</h1><p>${totalPct}% of the supply, ${fmtNum(totalTok)} $${esc(sym)}, for everyone who trades and launches on Tidepool.</p>
           <div class="cd"><span>${live ? 'Ends' : 'Ended'} ${new Date(AD.ends).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${new Date(AD.ends).toISOString().slice(11, 16)} UTC</span><b id="ad-cd" class="num">—</b></div>
           <a class="btn pri lg" href="#ad-check">Check eligibility</a></div>
         <div class="r"><h2>The biggest airdrops</h2><small class="mute">Preliminary. Every trade can reorder them.</small><div class="podium">${rank(1)}${rank(0)}${rank(2)}</div></div></section>
@@ -355,8 +354,8 @@
       <div class="grid2 adg">
         <section class="card pad"><h3>Trade on Tidepool</h3><div class="big"><span class="av">${C.chain.logo ? `<img src="${esc(C.chain.logo)}" alt="">` : ''}</span>1 ${esc(Q)} <i>→</i> <b>${AD.tradePts}</b> points</div>
           <div class="kv"><span>Launch a coin</span><b>${AD.creatorPts} points per ${esc(Q)} others trade on it</b></div><div class="kv"><span>Minimum</span><b>${AD.minHype} ${esc(Q)} traded, then points go live</b></div><div class="kv"><span>Counts</span><b>every buy and sell since launch, until the end</b></div></section>
-        <section class="card pad"><h3>Liquidity providers and stakers</h3><p class="mute" style="margin-top:6px">${esc(AD.pools[1] ? AD.pools[1].note : '')}</p>
-          <div class="kv"><span>Farm</span><b>LP staked in the farm at the snapshot</b></div><div class="kv"><span>Staking</span><b>$${esc(sym)} staked at the snapshot</b></div><div class="kv"><span>Split</span><b>pro rata by value in ${esc(Q)}</b></div></section>
+        <section class="card pad"><h3>Hold $${esc(sym)}</h3><p class="mute" style="margin-top:6px">${esc(AD.pools[1] ? AD.pools[1].note : '')}</p>
+          <div class="kv"><span>Snapshot</span><b>wallet balances after the end date</b></div><div class="kv"><span>Split</span><b>pro rata by balance</b></div><div class="kv"><span>Claim</span><b>after the review, conditions published before</b></div></section>
       </div>
       <section class="card" style="margin-top:14px"><div class="tw"><table class="tb keep"><thead><tr><th>Rank</th><th>Wallet</th><th class="r">Traded</th><th class="r">Points</th><th class="r">Estimate</th></tr></thead><tbody>${rows.slice(0, 25).map((r, i) => `<tr class="link" data-go="#/profile/${r.w}"><td class="mute">${i + 1}</td><td><span class="num">${esc(shortAddr(r.w))}</span>${r.w === me ? ' <span class="pill teal">you</span>' : ''}</td><td class="r num">${hype(r.h, 2)}</td><td class="r num">${fmtNum(r.p)}</td><td class="r num"><b>${fmtNum(tokOf(r.p))} ${esc(sym)}</b></td></tr>`).join('') || '<tr><td colspan="5"><div class="empty">No points yet.</div></td></tr>'}</tbody></table></div></section>
       <details class="terms" style="margin-top:14px"><summary>Terms</summary><p>Figures are preliminary estimates from indexed trades and change with every trade. Wallets flagged as sybils, bots or wash traders, creator self-trades and protocol wallets are excluded. Allocations are reviewed after the end date before release; the release schedule is published before release. Rules can change; taking part creates no right to tokens.</p></details></div>`;
@@ -371,7 +370,7 @@
     const h = location.hash.replace(/^#/, '') || '/', parts = h.split('/').filter(Boolean), r = parts[0] || 'home';
     $$('#tabs a').forEach((a) => a.classList.toggle('on', a.dataset.r === (r === 'token' ? 'home' : r === 'pool' ? 'pools' : r)));
     state.route = r; window.scrollTo(0, 0); ticker();
-    if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'swap') swap(); else if (r === 'pools') pools(); else if (r === 'pool') pool(parts[1]); else if (r === 'stake') stake(); else if (r === 'create') create(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else if (r === 'airdrop') airdrop(); else home();
+    if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'swap' || r === 'pools' || r === 'pool' || r === 'stake') { location.hash = '#/'; return; } else if (r === 'create') create(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else if (r === 'airdrop') airdrop(); else home();
   }
   // the phone menu: a bottom sheet with every page, the HYPE price and the wallet
   const MI = {
@@ -387,7 +386,7 @@
   };
   function menuSheet() {
     const W = APP.W, sym = ST.symbol || 'TIDE';
-    const links = [['#/', 'Launches', MI.home], ['#/swap', 'Swap', MI.swap], ['#/pools', 'Pools', MI.pools], ['#/stake', `Stake $${sym}`, MI.stake], ['#/create', 'Create a coin', MI.create], ['#/profile', 'Profile', MI.profile], ['#/airdrop', 'Airdrop', MI.gift], ['#/docs', 'Docs', MI.docs], ...(C.x ? [[C.x, 'X', ICON.x]] : [])];
+    const links = [['#/', 'Launches', MI.home], ['#/create', 'Create a coin', MI.create], ['#/profile', 'Profile', MI.profile], ['#/airdrop', 'Airdrop', MI.gift], ['#/docs', 'Docs', MI.docs], ...(C.x ? [[C.x, 'X', ICON.x]] : [])];
     const ov = document.createElement('div'); ov.className = 'ov sheetov';
     ov.innerHTML = `<div class="sheet"><div class="grip"></div>
       <div class="mlist">${links.map(([h, l, i]) => `<a href="${h}" ${/^https?:/.test(h) ? 'target="_blank" rel="noopener"' : ''}>${i}<span>${l}</span>${ICON.chev}</a>`).join('')}</div>
