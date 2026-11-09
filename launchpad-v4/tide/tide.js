@@ -15,7 +15,7 @@
     profile: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     docs: '<svg class="ico" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg>',
   };
-  const state = { route: '', tf: 900, cmode: 'mcap', side: 'b', ttab: 'trades', busy: false, slip: Number((() => { try { return localStorage.getItem('slip'); } catch { return 0; } })() || 100) };
+  const state = { route: '', tf: 900, cmode: 'mcap', ckind: 'line', side: 'b', ttab: 'trades', busy: false, slip: Number((() => { try { return localStorage.getItem('slip'); } catch { return 0; } })() || 100) };
   const link = (t) => `#/token/${t.addr}`;
   const etch = (name) => `<picture><source media="(max-width:900px)" srcset="/img/etch-${name}-sm.webp"><img class="etch" src="/img/etch-${name}.webp" alt="" decoding="async"></picture>`;
   const pct = (shareBps) => String(+((C.econ.feeBps / 100) * shareBps / 10000).toFixed(2));
@@ -34,17 +34,37 @@
   }
   function drawChart(cv, t) {
     const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1; cv.width = r.width * dpr; cv.height = r.height * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr); const W = r.width, H = r.height;
-    const cs = DATA.candles(t.addr, state.tf); if (!cs.length) return;
-    const mul = (state.cmode === 'mcap' ? C.econ.supply : 1) * APP.hypeUsd; const K = cs.slice(-120).map((b) => ({ ...b, o: b.o * mul, h: b.h * mul, l: b.l * mul, c: b.c * mul }));
-    const pad = 74, cw = W - pad, vb = H - 22, volH = H * .14, vals = K.flatMap((b) => [b.h, b.l]), mn = Math.min(...vals) * .98, mx = Math.max(...vals) * 1.02 || 1, maxV = Math.max(1e-9, ...K.map((b) => b.v));
-    const Y = (v) => 14 + (1 - (v - mn) / (mx - mn)) * (vb - volH - 24), lab = (v) => (state.cmode === 'mcap' ? fmtUsd(v) : '$' + fmtPrice(v).replace(/<[^>]+>/g, '')), bw = (cw - 14) / K.length;
-    g.font = '500 11px "Geist Mono",monospace'; g.fillStyle = '#95a8a3'; g.strokeStyle = 'rgba(13,37,34,.07)'; g.lineWidth = 1;
-    const lastY = Y(K[K.length - 1].c);
-    for (let i = 0; i <= 4; i++) { const v = mn + (mx - mn) * i / 4, y = Y(v); g.beginPath(); g.moveTo(14, y); g.lineTo(cw, y); g.stroke(); if (Math.abs(y - lastY) > 12) g.fillText(lab(v), cw + 8, y + 4); }
-    K.forEach((b, i) => { const up = b.c >= b.o, col = up ? '#128a5e' : '#c73a47', x = 14 + i * bw + bw / 2; g.strokeStyle = col; g.beginPath(); g.moveTo(x, Y(b.h)); g.lineTo(x, Y(b.l)); g.stroke(); g.fillStyle = col; const y1 = Y(Math.max(b.o, b.c)), y2 = Y(Math.min(b.o, b.c)); g.fillRect(14 + i * bw + bw * .22, y1, Math.max(1, bw * .56), Math.max(1, y2 - y1)); if (b.v > 0) { g.globalAlpha = .3; g.fillRect(14 + i * bw + bw * .22, vb - (b.v / maxV) * volH, Math.max(1, bw * .56), (b.v / maxV) * volH); g.globalAlpha = 1; } });
-    const last = K[K.length - 1], ly = Y(last.c); g.setLineDash([3, 3]); g.strokeStyle = last.c >= last.o ? '#128a5e' : '#c73a47'; g.beginPath(); g.moveTo(14, ly); g.lineTo(cw, ly); g.stroke(); g.setLineDash([]);
-    g.fillStyle = last.c >= last.o ? '#128a5e' : '#c73a47'; g.beginPath(); g.roundRect(cw + 4, ly - 9, pad - 8, 18, 4); g.fill(); g.fillStyle = '#ffffff'; g.font = '600 11px "Geist Mono",monospace'; g.fillText(lab(last.c), cw + 9, ly + 4);
-    g.fillStyle = '#95a8a3'; g.font = '500 11px "Geist Mono",monospace'; const n = Math.max(2, Math.min(6, Math.floor(W / 160))); let prev = ''; for (let i = 0; i < n; i++) { const b = K[Math.round(i * (K.length - 1) / (n - 1))], d = new Date(b.t * 1000), s = state.tf >= 86400 ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); if (s === prev) continue; prev = s; g.fillText(s, 14 + (i + .5) / n * (cw - 14) - g.measureText(s).width / 2, H - 6); }
+    const all = DATA.candles(t.addr, state.tf), oh = $('#ohlc'); if (!all.length) { if (oh) oh.innerHTML = '<span class="mute">No trades yet.</span>'; return; }
+    const mul = (state.cmode === 'mcap' ? C.econ.supply : 1) * APP.hypeUsd, lab = (v) => (state.cmode === 'mcap' ? fmtUsd(v) : '$' + fmtPrice(v).replace(/<[^>]+>/g, ''));
+    const K = all.slice(-140).map((b) => ({ ...b, o: b.o * mul, h: b.h * mul, l: b.l * mul, c: b.c * mul })), last = K[K.length - 1], prev = K.length > 1 ? K[K.length - 2].c : last.o, athV = Math.max(...all.map((b) => b.h)) * mul;
+    const line = state.ckind === 'line', trades = DATA.trades(t.addr).filter((x) => x.ts >= last.t && x.ts < last.t + state.tf).length;
+    if (oh) oh.innerHTML = `<b>${lab(last.c)}</b><span class="${last.c >= prev ? 'up' : 'dn'}">${fmtPct(prev ? (last.c / prev - 1) * 100 : 0)}</span><span><i>H</i>${lab(last.h)}</span><span><i>L</i>${lab(last.l)}</span><span><i>Vol</i>${fmtUsd(last.v * APP.hypeUsd)}</span><span><i>Trades</i>${trades}</span><span><i>ATH</i>${lab(athV)}</span>`;
+    const padR = 78, x0 = 14, cw = W - padR, top = 16, volH = Math.round(H * .16), base = H - 24, plotB = base - volH - 10;
+    const vals = line ? K.map((b) => b.c) : K.flatMap((b) => [b.h, b.l]); let mn = Math.min(...vals), mx = Math.max(...vals, athV); const span = (mx - mn) || mx || 1; mn -= span * .06; mx += span * .06;
+    const Y = (v) => top + (1 - (v - mn) / (mx - mn)) * (plotB - top), X = (i) => x0 + (i + .5) / K.length * (cw - x0), bw = (cw - x0) / K.length, maxV = Math.max(1e-9, ...K.map((b) => b.v));
+    const mono = '"Geist Mono",monospace', up = '#128a5e', dn = '#c73a47', ink = '#0b2b2a';
+    g.font = '500 11px ' + mono; g.fillStyle = '#95a8a3'; g.strokeStyle = 'rgba(13,37,34,.07)'; g.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) { const v = mn + (mx - mn) * i / 4, y = Y(v); g.beginPath(); g.moveTo(x0, y); g.lineTo(cw, y); g.stroke(); if (Math.abs(y - Y(last.c)) > 12 && Math.abs(y - Y(athV)) > 12) g.fillText(lab(v), cw + 8, y + 4); }
+    // volume
+    K.forEach((b, i) => { if (!(b.v > 0)) return; const h = (b.v / maxV) * volH; g.fillStyle = b.c >= b.o ? up : dn; g.globalAlpha = .28; g.fillRect(x0 + i * bw + bw * .2, base - h, Math.max(1, bw * .6), h); g.globalAlpha = 1; });
+    g.fillStyle = '#95a8a3'; g.fillText(fmtUsd(maxV * APP.hypeUsd), cw + 8, base - volH + 4); g.fillText('$0', cw + 8, base + 2);
+    if (line) {
+      const pts = K.map((b, i) => [X(i), Y(b.c)]); const path = () => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); };
+      path(); g.lineTo(pts[pts.length - 1][0], plotB); g.lineTo(pts[0][0], plotB); g.closePath(); const gr = g.createLinearGradient(0, top, 0, plotB); gr.addColorStop(0, 'rgba(23,181,149,.28)'); gr.addColorStop(1, 'rgba(23,181,149,0)'); g.fillStyle = gr; g.fill();
+      path(); g.strokeStyle = '#17b595'; g.lineWidth = 1.8; g.lineJoin = 'round'; g.stroke();
+      const [lx, ly] = pts[pts.length - 1]; g.fillStyle = '#fff'; g.beginPath(); g.arc(lx, ly, 4.5, 0, 7); g.fill(); g.strokeStyle = '#17b595'; g.lineWidth = 2; g.stroke();
+    } else {
+      K.forEach((b, i) => { const col = b.c >= b.o ? up : dn, x = X(i); g.strokeStyle = col; g.lineWidth = 1; g.beginPath(); g.moveTo(x, Y(b.h)); g.lineTo(x, Y(b.l)); g.stroke(); g.fillStyle = col; const y1 = Y(Math.max(b.o, b.c)), y2 = Y(Math.min(b.o, b.c)); g.fillRect(x0 + i * bw + bw * .22, y1, Math.max(1, bw * .56), Math.max(1, y2 - y1)); });
+    }
+    // all-time high
+    const ay = Y(athV); g.setLineDash([2, 4]); g.strokeStyle = 'rgba(13,37,34,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, ay); g.lineTo(cw, ay); g.stroke(); g.setLineDash([]);
+    g.fillStyle = '#5b6b68'; g.beginPath(); g.roundRect(cw + 4, ay - 9, padR - 8, 18, 3); g.fill(); g.fillStyle = '#fff'; g.font = '600 10.5px ' + mono; g.fillText('ATH ' + lab(athV), cw + 8, ay + 4);
+    // last value
+    const ly = Y(last.c); g.setLineDash([3, 3]); g.strokeStyle = last.c >= prev ? up : dn; g.beginPath(); g.moveTo(x0, ly); g.lineTo(cw, ly); g.stroke(); g.setLineDash([]);
+    g.fillStyle = last.c >= prev ? up : dn; g.beginPath(); g.roundRect(cw + 4, ly - 9, padR - 8, 18, 3); g.fill(); g.fillStyle = '#fff'; g.font = '600 11px ' + mono; g.fillText(lab(last.c), cw + 8, ly + 4);
+    // time axis
+    g.fillStyle = '#95a8a3'; g.font = '500 11px ' + mono; const n = Math.max(2, Math.min(7, Math.floor(W / 150))); let prevS = ''; for (let i = 0; i < n; i++) { const b = K[Math.round(i * (K.length - 1) / (n - 1))], d = new Date(b.t * 1000), s_ = state.tf >= 86400 ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); if (s_ === prevS) continue; prevS = s_; g.fillText(s_, x0 + (i + .5) / n * (cw - x0) - g.measureText(s_).width / 2, H - 7); }
+    void ink;
   }
   function area(cv, s, color, { bars = false } = {}) {
     const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1, W = r.width || 300, H = r.height || 160; cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr); if (!s.length) return;
@@ -110,33 +130,51 @@
     const fs = DATA.feeState(t.addr) || { kind: 'base', bps: C.econ.feeBps, total: C.econ.feeBps }, me = APP.W.connected ? APP.W.address : '', isCreator = me && (me === t.creator || me === t.feeRecipient);
     if (state.tfFor !== t.addr) { state.tfFor = t.addr; const age = Date.now() / 1000 - (t.createdAt || 0); state.tf = age < 3 * 3600 ? 60 : age < 86400 ? 300 : 900; }
     const trades = DATA.trades(t.addr), holders = DATA.holders(t.addr), pos = DATA.positions(t.addr), cs = DATA.candles(t.addr, 900), ath = cs.length ? Math.max(...cs.map((b) => b.h)) * C.econ.supply * APP.hypeUsd : t.mcapUsd;
-    const feeBar = fs.kind === 'snipe' ? `<div class="feemeter"><div style="display:flex;justify-content:space-between"><b>Launch protection</b><span class="pill coral">${(fs.snipeBps / 100).toFixed(1)}% extra on buys</span></div><div class="bar"><i style="width:${Math.min(100, fs.snipeBps / 99)}%;background:var(--coral)"></i></div><div class="leg"><span>fades to ${(fs.bps / 100).toFixed(2)}% in ${fs.left}s</span><span>sells pay ${(fs.bps / 100).toFixed(2)}%</span></div></div>`
-      : `<div class="feemeter"><div style="display:flex;justify-content:space-between"><b>${state.side === 'b' ? 'Buy' : 'Sell'} fee now</b><span class="pill ${fs.kind === 'vol' ? 'coral' : 'teal'}">${(fs.total / 100).toFixed(2)}%</span></div><div class="bar"><i style="width:${t.creatorShareBps / 100}%;background:var(--acc)"></i><i style="width:${100 - t.creatorShareBps / 100}%;background:var(--s3)"></i>${fs.extraBps ? `<i style="width:${Math.min(40, fs.extraBps / 10)}%;background:var(--coral)"></i>` : ''}</div><div class="leg"><span>creator ${((fs.bps * t.creatorShareBps) / 1e6).toFixed(2)}% · protocol ${((fs.bps * (10000 - t.creatorShareBps)) / 1e6).toFixed(2)}%</span><span>${fs.kind === 'vol' ? `volatility +${(fs.extraBps / 100).toFixed(2)}%, ${fs.left}s` : ''}</span></div></div>`;
+    const slipPct = (state.slip / 100).toFixed(state.slip % 100 ? 1 : 0), buys = t.buys24 || 0, sells = t.sells24 || 0, bshare = buys + sells ? buys / (buys + sells) * 100 : 50;
+    const links = `<div class="lnks">${t.links.web ? `<a class="lnk" href="${esc(t.links.web)}" target="_blank" rel="noopener" aria-label="Website"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></a>` : ''}${t.links.x ? `<a class="lnk" href="${esc(t.links.x)}" target="_blank" rel="noopener" aria-label="X">${ICON.x}</a>` : ''}${t.links.tg ? `<a class="lnk" href="${esc(t.links.tg)}" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24"><path d="M21 4 3 11l6 2 2 6 3-4 5 3z"/><path d="m9 13 10-9"/></svg></a>` : ''}<button class="lnk num" data-copy="${t.addr}">${esc(shortAddr(t.addr))} ${ICON.copy}</button><a class="lnk" href="${APP.explorer('address', t.addr)}" target="_blank" rel="noopener">Explorer ${ICON.ext}</a></div>`;
+    const snipeRow = fs.kind === 'snipe' ? `<div class="trow warn"><span>Launch protection</span><b>+${(fs.snipeBps / 100).toFixed(1)}% on buys, fades in ${fs.left}s</b></div>` : '';
     view.innerHTML = `<div class="page"><div class="tk">
-      <div>
+      <div class="tk-top">
         <div class="tband">${ribbon(t.symbol)}
-          <div class="hd"><span class="av badge">${APP.img(t)}</span><div style="min-width:0;flex:1"><h1>${esc(t.name)} <span>$${esc(t.symbol)} / ${esc(Q)} · ${esc(t.age)}</span> ${APP.ofc(t)}</h1>${t.desc ? `<p>${esc(t.desc)}</p>` : ''}<div class="meta"><a href="#/profile/${t.creator}">by ${esc(shortAddr(t.creator))}</a><a class="num" href="${APP.explorer('address', t.addr)}" target="_blank" rel="noopener">${esc(shortAddr(t.addr))} ↗</a><button class="ib" style="width:24px;height:24px;border-radius:5px" data-copy="${t.addr}" aria-label="Copy address">${ICON.copy}</button>${t.links.x ? `<a href="${esc(t.links.x)}" target="_blank" rel="noopener">X ↗</a>` : ''}${t.links.tg ? `<a href="${esc(t.links.tg)}" target="_blank" rel="noopener">Telegram ↗</a>` : ''}${t.links.web ? `<a href="${esc(t.links.web)}" target="_blank" rel="noopener">Website ↗</a>` : ''}</div></div></div>
-          <div class="tstats"><div class="stat"><span>Market cap</span><b>${fmtUsd(t.mcapUsd)}</b><small>${fmtPct(t.c24)} 24h</small></div><div class="stat"><span>Price</span><b>$${fmtPrice(t.pxUsd)}</b><small>${fmtPrice(t.px)} ${esc(Q)}</small></div><div class="stat"><span>Liquidity</span><b>${fmtUsd(t.liqHype * APP.hypeUsd)}</b><small>${hype(t.liqHype, 2)}</small></div><div class="stat"><span>Volume 24h</span><b>${fmtUsd(t.vol24 * APP.hypeUsd)}</b><small>${fmtUsd(t.volAll * APP.hypeUsd)} all time</small></div><div class="stat"><span>Holders</span><b>${t.holders}</b><small>${fmtNum(C.econ.supply)} supply</small></div><div class="stat"><span>Buys, 24h</span><b>${t.buys24}</b><small>${t.sells24} sells</small></div></div></div>
-        <div class="cbar"><div class="seg sm"><button data-cm="mcap" class="${state.cmode === 'mcap' ? 'on' : ''}">Market cap</button><button data-cm="price" class="${state.cmode === 'price' ? 'on' : ''}">Price</button></div><div class="seg sm">${[[60, '1m'], [300, '5m'], [900, '15m'], [3600, '1h'], [14400, '4h'], [86400, '1d']].map(([s, l]) => `<button data-tf="${s}" class="${state.tf === s ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-        <canvas class="chart" id="chart"></canvas>
+          <div class="hd"><span class="av badge">${APP.img(t)}</span><div class="who"><span class="eyebrow">$${esc(t.symbol)} / ${esc(Q)} · ${esc(t.age)} ${APP.ofc(t)}</span><h1>${esc(t.name)}</h1>${t.desc ? `<p>${esc(t.desc)}</p>` : ''}${links}</div><div class="mcap"><span>Market cap</span><b>${fmtUsd(t.mcapUsd)}</b><small class="${t.c24 >= 0 ? 'up' : 'dn'}">${fmtPct(t.c24)} <i>24h</i></small></div></div>
+          <div class="tstats"><div class="stat"><span>Price</span><b>$${fmtPrice(t.pxUsd)}</b><small>${fmtPrice(t.px)} ${esc(Q)}</small></div><div class="stat"><span>Liquidity</span><b>${fmtUsd(t.liqHype * APP.hypeUsd)}</b><small>${hype(t.liqHype, 2)}</small></div><div class="stat"><span>Volume 24h</span><b>${fmtUsd(t.vol24 * APP.hypeUsd)}</b><small>${fmtUsd(t.volAll * APP.hypeUsd)} all time</small></div><div class="stat"><span>Holders</span><b>${t.holders}</b><small>${fmtNum(C.econ.supply)} supply</small></div><div class="stat"><span>Buys, 24h</span><div class="ratio"><i style="width:${bshare.toFixed(1)}%"></i></div><small><em class="up">${buys} buys</em><em class="dn">${sells} sells</em></small></div><div class="stat"><span>Creator</span><b class="num" style="font-size:14px;margin-top:6px"><a href="#/profile/${t.creator}">${esc(shortAddr(t.creator))}</a></b><small>${isCreator ? 'you' : 'earns ' + pct(t.creatorShareBps) + '% of volume'}</small></div></div></div>
+        <div class="chartcard">
+          <div class="cbar"><div class="seg sm"><button data-cm="mcap" class="${state.cmode === 'mcap' ? 'on' : ''}">Market cap</button><button data-cm="price" class="${state.cmode === 'price' ? 'on' : ''}">Price</button></div><div class="cright"><div class="seg sm"><button data-ck="line" class="${state.ckind === 'line' ? 'on' : ''}">Line</button><button data-ck="candles" class="${state.ckind === 'candles' ? 'on' : ''}">Candles</button></div><div class="seg sm">${[[60, '1m'], [300, '5m'], [900, '15m'], [3600, '1h'], [14400, '4h'], [86400, '1d']].map(([s_, l]) => `<button data-tf="${s_}" class="${state.tf === s_ ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
+          <div class="ohlc" id="ohlc"></div>
+          <canvas class="chart" id="chart"></canvas>
+        </div>
+      </div>
+      <aside class="tk-side">
+        <div class="trade card pad">
+          <h3>Trade</h3>
+          <div class="seg side"><button data-side="b" class="${state.side === 'b' ? 'on buy' : ''}">Buy</button><button data-side="s" class="${state.side === 's' ? 'on sell' : ''}">Sell</button></div>
+          <div class="in"><label><span>You pay</span><span id="t-bal"></span></label><div class="row"><input id="t-amt" inputmode="decimal" placeholder="0.0" autocomplete="off"><span class="tok"><span class="av">${state.side === 'b' ? `<img src="${esc(C.chain.logo)}" alt="">` : APP.img(t)}</span>${state.side === 'b' ? esc(Q) : esc(t.symbol)}</span></div></div>
+          <div class="chips">${state.side === 'b' ? ['0.1', '0.5', '1', '5'].map((v) => `<button data-v="${v}">${v}</button>`).join('') : ['25', '50', '75', '100'].map((v) => `<button data-p="${v}">${v}%</button>`).join('')}</div>
+          <div class="trows">
+            <div class="trow"><span>You receive</span><b><span id="t-recv">—</span> <small id="t-recv2">${state.side === 'b' ? esc(t.symbol) : esc(Q)}</small></b></div>
+            <div class="trow"><span>Minimum</span><b id="t-min">—</b></div>
+            <div class="trow"><span>${state.side === 'b' ? 'Buy' : 'Sell'} fee now</span><b>${(fs.total / 100).toFixed(2)}% <small>creator ${pct(t.creatorShareBps)}% · protocol ${pct(10000 - t.creatorShareBps)}%</small></b></div>
+            ${snipeRow}
+            <div class="trow"><span>Slippage</span><b class="slipchips">${[100, 300, 500].map((v) => `<button data-s="${v}" class="${state.slip === v ? 'on' : ''}">${v / 100}%</button>`).join('')}<button id="t-slip" class="${[100, 300, 500].includes(state.slip) ? '' : 'on'}">${[100, 300, 500].includes(state.slip) ? 'Custom' : slipPct + '%'}</button></b></div>
+          </div>
+          <button class="btn lg full ${state.side === 'b' ? 'pri' : 'sell'}" id="t-go">${!APP.W.connected ? 'Connect' : state.side === 'b' ? 'Buy $' + esc(t.symbol) : 'Sell $' + esc(t.symbol)}</button>
+          ${AD ? `<div class="adpts"><span class="av"><img src="/img/mark.svg" alt=""></span><span>Airdrop points</span><b>${AD.tradePts} per ${esc(Q)} traded</b></div>` : ''}
+          ${isCreator ? `<div class="card pad" style="margin-top:12px;padding:14px"><h3 style="font:400 18px var(--serif)">Your creator fees</h3><div class="kv"><span>Claimable</span><b id="t-claimable">…</b></div><button class="btn sm full" id="t-claim" style="margin-top:8px">Claim</button></div>` : ''}
+        </div>
         <div class="card rules"><h3>Rules of this market</h3><div class="big"><b>${feeOf(t)}</b><span>fee on every trade, fixed for life</span></div>
-          <div class="split"><div><span>To the creator ${t.creatorShareBps / 100}%</span><b>${fmtUsd(t.feesAll * (t.creatorShareBps / 10000) * APP.hypeUsd)}</b></div><div><span>To the protocol ${100 - t.creatorShareBps / 100}%</span><b>${fmtUsd(t.feesAll * (1 - t.creatorShareBps / 10000) * APP.hypeUsd)}</b></div></div>
-          <p>Of each fee, paid in ${esc(Q)}, ${t.creatorShareBps / 100}% goes to the creator and ${100 - t.creatorShareBps / 100}% to the protocol, which buys $${esc(sym())} and burns it. Anti-snipe: buys in the first ${C.econ.snipeSeconds}s started at ${C.econ.snipeStartBps / 100}% and fell to ${feeOf(t)}. ATH ${fmtUsd(ath)}. Creator ${esc(shortAddr(t.creator))}.</p></div>
+          <div class="rbar"><i style="width:${t.creatorShareBps / 100}%"></i></div>
+          <div class="kv"><span>To the creator · ${t.creatorShareBps / 100}%</span><b>${fmtUsd(t.feesAll * (t.creatorShareBps / 10000) * APP.hypeUsd)}</b></div>
+          <div class="kv"><span>Buys and burns $${esc(sym())} · ${100 - t.creatorShareBps / 100}%</span><b>${fmtUsd(t.feesAll * (1 - t.creatorShareBps / 10000) * APP.hypeUsd)}</b></div>
+          <div class="kv"><span>All-time high</span><b>${fmtUsd(ath)}</b></div>
+          <p>Of each fee, paid in ${esc(Q)}, ${t.creatorShareBps / 100}% goes to the creator and ${100 - t.creatorShareBps / 100}% to the protocol, which buys $${esc(sym())} and burns it. Anti-snipe: buys in the first ${C.econ.snipeSeconds}s started at ${C.econ.snipeStartBps / 100}% and fell to ${feeOf(t)}. Creator ${esc(shortAddr(t.creator))}.</p></div>
+      </aside>
+      <div class="tk-bottom">
         <div class="ttabs">${[['trades', 'Trades'], ['holders', `Holders · ${t.holders}`], ['pool', 'Pool']].map(([k, l]) => `<button data-tt="${k}" class="${state.ttab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div id="tbody">${tokenTab(t, trades, holders, pos)}</div>
-      </div>
-      <aside class="trade card pad">
-        <div style="display:flex;justify-content:space-between;align-items:center"><div class="seg"><button data-side="b" class="${state.side === 'b' ? 'on' : ''}">Buy</button><button data-side="s" class="${state.side === 's' ? 'on' : ''}">Sell</button></div><button class="btn sm ghost" id="t-slip">${(state.slip / 100).toFixed(1)}% slippage</button></div>
-        <div class="in"><label><span>You pay</span><span id="t-bal"></span></label><div class="row"><input id="t-amt" inputmode="decimal" placeholder="0" autocomplete="off"><span class="tok"><span class="av">${state.side === 'b' ? `<img src="${esc(C.chain.logo)}" alt="">` : APP.img(t)}</span>${state.side === 'b' ? esc(Q) : esc(t.symbol)}</span></div></div>
-        <div class="chips">${state.side === 'b' ? ['0.1', '0.5', '1', '5'].map((v) => `<button data-v="${v}">${v}</button>`).join('') : ['25', '50', '75', '100'].map((v) => `<button data-p="${v}">${v}%</button>`).join('')}</div>
-        <div class="recv"><span>You receive</span><b id="t-recv">—</b><small id="t-recv2">${state.side === 'b' ? esc(t.symbol) : esc(Q)}</small></div>
-        ${feeBar}
-        <button class="btn lg full ${state.side === 'b' ? 'pri' : 'sell'}" id="t-go">${!APP.W.connected ? 'Connect' : state.side === 'b' ? 'Buy $' + esc(t.symbol) : 'Sell $' + esc(t.symbol)}</button>
-        ${AD ? `<div class="adpts"><span>Airdrop points</span><b>${AD.tradePts} per ${esc(Q)} traded</b></div>` : ''}
-        ${isCreator ? `<div class="card pad" style="margin-top:12px;padding:14px"><h3>Your creator fees</h3><div class="kv"><span>Claimable</span><b id="t-claimable">…</b></div><button class="btn sm full" id="t-claim" style="margin-top:8px">Claim</button></div>` : ''}
-      </aside></div></div>`;
+      </div></div></div>`;
     const cv = $('#chart'); drawChart(cv, t);
     $$('[data-tf]').forEach((b) => b.onclick = () => { state.tf = Number(b.dataset.tf); token(addr); }); $$('[data-cm]').forEach((b) => b.onclick = () => { state.cmode = b.dataset.cm; token(addr); });
+    $$('[data-ck]').forEach((b) => b.onclick = () => { state.ckind = b.dataset.ck; token(addr); }); $$('.slipchips [data-s]').forEach((b) => b.onclick = () => { state.slip = Number(b.dataset.s); try { localStorage.setItem('slip', state.slip); } catch {} token(addr); });
     $$('[data-tt]').forEach((b) => b.onclick = () => { state.ttab = b.dataset.tt; $$('[data-tt]').forEach((x) => x.classList.toggle('on', x === b)); $('#tbody').innerHTML = tokenTab(t, trades, holders, pos); bindGo(); });
     $$('[data-side]').forEach((b) => b.onclick = () => { state.side = b.dataset.side; token(addr); });
     $('#t-slip').onclick = () => slipDialog(() => token(addr));
@@ -155,7 +193,7 @@
     const myTok = me ? DATA.balance(t.addr, 'hyper', me) : 0, myHype = DATA.hypeBalance();
     bal.textContent = me ? (state.side === 'b' ? `Balance ${fmtNum(myHype, 4)} ${Q}` : `Balance ${fmtNum(myTok)} ${t.symbol}`) : '';
     const parse = () => parseFloat((amt.value || '').replace(/[^0-9.]/g, '')) || 0;
-    const est = () => { const v = parse(), seq = ++qseq; if (!v) { recv.textContent = '—'; recv2.textContent = state.side === 'b' ? t.symbol : Q; return; } if (state.side === 'b') { const q = DATA.quoteBuy(t.addr, t.net, v); if (seq !== qseq) return; recv.textContent = fmtNum(q.tokens); recv2.textContent = `${t.symbol} · ${usd(v)} · impact ${fmtNum(q.impact, 2)}%`; } else { const q = DATA.quoteSell(t.addr, t.net, v); if (seq !== qseq) return; recv.textContent = fmtNum(q.hype, 5); recv2.textContent = `${Q} · ${usd(q.hype)} · fee ${(q.feeBps / 100).toFixed(2)}%`; } };
+    const est = () => { const v = parse(), seq = ++qseq; if (!v) { recv.textContent = '—'; recv2.textContent = state.side === 'b' ? t.symbol : Q; const mn0 = $('#t-min'); if (mn0) mn0.textContent = '—'; return; } if (state.side === 'b') { const q = DATA.quoteBuy(t.addr, t.net, v); if (seq !== qseq) return; recv.textContent = fmtNum(q.tokens); recv2.textContent = `${t.symbol} · impact ${fmtNum(q.impact, 2)}%`; const mn = $('#t-min'); if (mn) mn.textContent = `${fmtNum(q.tokens * (1 - state.slip / 10000))} ${t.symbol}`; } else { const q = DATA.quoteSell(t.addr, t.net, v); if (seq !== qseq) return; recv.textContent = fmtNum(q.hype, 5); recv2.textContent = `${Q} · ${usd(q.hype)}`; const mn = $('#t-min'); if (mn) mn.textContent = `${fmtNum(q.hype * (1 - state.slip / 10000), 5)} ${Q}`; } };
     amt.oninput = est;
     $$('[data-v]').forEach((b) => b.onclick = () => { amt.value = b.dataset.v; est(); }); $$('[data-p]').forEach((b) => b.onclick = () => { amt.value = String(Math.floor(myTok * Number(b.dataset.p) / 100 * 1e6) / 1e6); est(); });
     go.onclick = () => { if (!APP.W.connected) return APP.W.connect(); const v = parse(); if (!v) return APP.toast('Enter an amount', 'err'); act(async () => { if (state.side === 'b') { const q = DATA.quoteBuy(t.addr, t.net, v); const r = await DATA.buy(t.addr, t.net, v, q.tokens * (1 - state.slip / 10000)); APP.toast(`Bought ${fmtNum(r.tokens)} ${t.symbol}`, 'ok', 5000); } else { const q = DATA.quoteSell(t.addr, t.net, v); const r = await DATA.sell(t.addr, t.net, v, q.hype * (1 - state.slip / 10000)); APP.toast(`Sold for ${fmtNum(r.hype, 5)} ${Q}`, 'ok', 5000); } }, () => token(t.addr)); };
