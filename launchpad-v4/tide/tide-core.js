@@ -48,7 +48,7 @@
   }
   W.connect = () => {
     const list = W.providers.length ? W.providers.map((p) => ({ name: p.info.name, icon: p.info.icon, p: p.provider })) : (window.ethereum ? [{ name: 'Browser wallet', icon: '', p: window.ethereum }] : []);
-    if (!list.length) { APP.toast('No wallet found. Install MetaMask, Rabby or another browser wallet, or open this page inside your wallet app.', 'err', 6000); return; }
+    if (!list.length) { APP.toast('No wallet found', 'err', 6000); return; }
     const ov = APP.dialog('Connect a wallet', `<div class="wl">${list.map((w, i) => `<button data-i="${i}">${w.icon ? `<img src="${esc(w.icon)}" alt="">` : '<svg class="ico" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H6a2 2 0 0 0-2 2v2"/></svg>'}${esc(w.name)}</button>`).join('')}</div><p class="mute" style="margin-top:12px;font-size:12px">${esc(C.chain.name)} (chain ${C.chain.id}). The wallet is asked to switch to it, or to add it.</p>`);
     $$('[data-i]', ov).forEach((b) => b.onclick = async () => { const w = list[+b.dataset.i]; ov.remove(); try { await useProvider(w.p, w.name); } catch (e) { APP.toast(APP.errMsg(e), 'err'); } });
   };
