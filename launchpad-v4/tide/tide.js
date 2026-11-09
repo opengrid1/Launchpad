@@ -2,7 +2,7 @@
    #/flywheel, #/fees, #/docs, #/profile[/<addr>]. Data from DATA (the launch pools, chain.js) and BRIDGE (bridge.js). */
 (function () {
   const C = window.CFG, X = window.ethers, { $, $$, esc, fmtNum, fmtPrice, fmtUsd, fmtPct, shortAddr, ago, fmtDate } = APP;
-  const Q = C.chain.quote, ST = C.stake || {}, AD = C.airdrop || null, BR = C.bridge || null, view = $('#view'), low = (a) => String(a || '').toLowerCase();
+  const Q = C.chain.quote, ST = C.stake || {}, AD = null /* the airdrop is off for now; its terms stay in C.airdrop */, BR = C.bridge || null, view = $('#view'), low = (a) => String(a || '').toLowerCase();
   const usd = (q) => APP.usd(q), hype = (n, d) => fmtNum(n, d ?? (Math.abs(n) >= 100 ? 1 : Math.abs(n) >= 1 ? 3 : 5)) + ' ' + Q, sym = () => ST.symbol || 'KINEX';
   const ICON = { x: '<svg class="ico" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>', copy: '<svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', ext: '<svg class="ico" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>', chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' };
   const MI = {
@@ -35,10 +35,11 @@
   // the price chart: TradingView Lightweight Charts (Apache 2.0), loaded once from unpkg
   let lwLoad = null; const lw = () => lwLoad || (lwLoad = window.LightweightCharts ? Promise.resolve(window.LightweightCharts) : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js'; sc.onload = () => ok(window.LightweightCharts); sc.onerror = () => { lwLoad = null; no(new Error('chart library')); }; document.head.appendChild(sc); }));
   async function drawChart(el, t) {
-    if (!el) return; if (state.lw) { try { state.lw.remove(); } catch {} state.lw = null; }
-    const all = DATA.candles(t.addr, state.tf), oh = $('#ohlc'); if (!all.length) { if (oh) oh.innerHTML = '<span class="mute">No trades yet.</span>'; return; }
+    if (!el) return; if (state.lw) { try { state.lw.remove(); } catch {} state.lw = null; } state.lwUpd = null;
+    let all = DATA.candles(t.addr, state.tf); const oh = $('#ohlc'); if (!all.length) { if (oh) oh.innerHTML = '<span class="mute">No trades yet.</span>'; return; }
     const mul = (state.cmode === 'mcap' ? C.econ.supply : 1) * APP.hypeUsd, lab = (v) => (state.cmode === 'mcap' ? (v >= 1000 ? fmtUsd(v).replace(/\.\d\d$/, '') : fmtUsd(v)) : '$' + fmtPrice(v).replace(/<[^>]+>/g, ''));
-    const K = all.slice(-500).map((b) => ({ ...b, o: b.o * mul, h: b.h * mul, l: b.l * mul, c: b.c * mul })), athV = Math.max(...all.map((b) => b.h)) * mul, line = state.ckind === 'line';
+    const scale = (a) => a.slice(-500).map((b) => ({ ...b, o: b.o * mul, h: b.h * mul, l: b.l * mul, c: b.c * mul })), line = state.ckind === 'line';
+    let K = scale(all), athV = Math.max(...all.map((b) => b.h)) * mul;
     const strip = (b, i) => { const prev = i > 0 ? K[i - 1].c : b.o, trades = DATA.trades(t.addr).filter((x) => x.ts >= b.t && x.ts < b.t + state.tf).length; if (oh) oh.innerHTML = `<b>${lab(b.c)}</b><span class="${b.c >= prev ? 'up' : 'dn'}">${fmtPct(prev ? (b.c / prev - 1) * 100 : 0)}</span><span><i>H</i>${lab(b.h)}</span><span><i>L</i>${lab(b.l)}</span><span><i>Vol</i>${fmtUsd(b.v * APP.hypeUsd)}</span><span><i>Trades</i>${trades}</span><span><i>ATH</i>${lab(athV)}</span>`; };
     strip(K[K.length - 1], K.length - 1);
     let LW; try { LW = await lw(); } catch { el.innerHTML = '<div class="empty">The chart could not load.</div>'; return; }
@@ -50,16 +51,21 @@
     const series = line
       ? chart.addAreaSeries({ lineColor: acc, lineWidth: 2, topColor: 'rgba(23,181,149,.28)', bottomColor: 'rgba(23,181,149,0)', priceFormat, lastValueVisible: true, priceLineVisible: true, priceLineStyle: LW.LineStyle.Dotted, priceLineColor: acc, crosshairMarkerRadius: 4 })
       : chart.addCandlestickSeries({ upColor: up, downColor: dn, borderUpColor: up, borderDownColor: dn, wickUpColor: up, wickDownColor: dn, priceFormat, priceLineStyle: LW.LineStyle.Dotted });
-    series.setData(line ? K.map((b) => ({ time: b.t, value: b.c })) : K.map((b) => ({ time: b.t, open: b.o, high: b.h, low: b.l, close: b.c })));
-    series.createPriceLine({ price: athV, color: 'rgba(13,37,34,.45)', lineWidth: 1, lineStyle: LW.LineStyle.Dashed, axisLabelVisible: true, title: 'ATH' });
+    const sData = () => (line ? K.map((b) => ({ time: b.t, value: b.c })) : K.map((b) => ({ time: b.t, open: b.o, high: b.h, low: b.l, close: b.c })));
+    series.setData(sData());
+    const athLine = series.createPriceLine({ price: athV, color: 'rgba(13,37,34,.45)', lineWidth: 1, lineStyle: LW.LineStyle.Dashed, axisLabelVisible: true, title: 'ATH' });
     const vol = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol', lastValueVisible: false, priceLineVisible: false });
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: .9, bottom: 0 }, borderVisible: false, visible: false });
-    vol.setData(K.map((b) => ({ time: b.t, value: b.v * APP.hypeUsd, color: b.c >= b.o ? 'rgba(18,138,94,.22)' : 'rgba(199,58,71,.22)' })));
+    const vData = () => K.map((b) => ({ time: b.t, value: b.v * APP.hypeUsd, color: b.c >= b.o ? 'rgba(18,138,94,.22)' : 'rgba(199,58,71,.22)' }));
+    vol.setData(vData());
     chart.timeScale().fitContent();
     chart.subscribeCrosshairMove((pt) => { if (!pt || !pt.time) { strip(K[K.length - 1], K.length - 1); return; } const i = K.findIndex((b) => b.t === pt.time); if (i >= 0) strip(K[i], i); });
     const ro = new ResizeObserver(() => { if (document.body.contains(el)) chart.applyOptions({ width: el.clientWidth, height: el.clientHeight }); else { ro.disconnect(); } }); ro.observe(el);
     state.lw = chart;
+    // new trades: replace the data, keep the user's zoom and scroll
+    state.lwUpd = (t2) => { if (t2.addr !== t.addr) return false; all = DATA.candles(t.addr, state.tf); if (!all.length) return true; K = scale(all); athV = Math.max(...all.map((b) => b.h)) * mul; series.setData(sData()); vol.setData(vData()); athLine.applyOptions({ price: athV }); strip(K[K.length - 1], K.length - 1); return true; };
   }
+  function chartUpdate(t) { if (!(state.lwUpd && state.lw && state.lwUpd(t))) drawChart($('#chart'), t); }
   function area(cv, s, color, { bars = false } = {}) {
     const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1, W = r.width || 300, H = r.height || 160; cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr); if (!s.length) return;
     const mx = Math.max(...s) || 1, mn = bars ? 0 : Math.min(...s), rg = mx - mn || mx || 1;
@@ -78,7 +84,7 @@
   const allTrades = () => DATA.tokens().flatMap((t) => DATA.trades(t.addr).map((x) => ({ ...x, token: t })));
 
   // ---- home (explore)
-  function home() {
+  function home(live) {
     const ts = DATA.tokens(), sort = state.sort || 'trending', q = state.q || '', pf = state.pf || 'all', hasStocks = (C.chain.pairs || []).some((p) => p.kind === 'stock');
     const vol = ts.reduce((a, t) => a + t.vol24, 0), volAll = ts.reduce((a, t) => a + t.volAll, 0), traders = new Set(allTrades().map((x) => low(x.wallet))).size, trades24 = ts.reduce((a, t) => a + t.buys24 + t.sells24, 0);
     const lead = [...ts].sort((a, b) => b.mcapUsd - a.mcapUsd).slice(0, 4), tide = ST.token ? DATA.token(low(ST.token)) : null;
@@ -86,7 +92,7 @@
     const tape = allTrades().sort((a, b) => b.ts - a.ts).slice(0, 12), byVol = [...ts].sort((a, b) => b.vol24 - a.vol24).slice(0, 6);
     const creatorPaid = ts.reduce((a, t) => a + t.feesAll * (t.creatorShareBps / 10000), 0), fly = (DATA.raw() || {}).flywheel, adPct = AD ? AD.pools.reduce((a, p) => a + p.pct, 0) : 0;
     const flies = tape.slice(0, 3).map((x, i) => `<a class="fly" href="${link(x.token)}" style="left:${[6, 54, 24][i]}%;top:${[18, 40, 72][i]}%"><span class="av">${APP.img(x.token)}</span><span class="${x.buy ? 'up' : 'dn'}">${x.buy ? 'Buy' : 'Sell'}</span> $${esc(x.token.symbol)} ${fmtUsd(x.hype * APP.hypeUsd)} · ${ago(x.ts)}</a>`).join('');
-    view.innerHTML = `<div class="page">
+    const html = `<div class="page">
       <section class="hero"><div><span class="eyebrow">The launchpad on Elysium, on Uniswap v4</span>
           <h1 class="disp">Every launch<br>fills the <em>pool.</em></h1>
           <p>One transaction opens a token and its ${hasStocks ? esc(Q) + ' or stock' : esc(Q)} pool. Every trade pays a fixed ${(C.econ.feeBps / 100).toFixed(1)}%: ${pct(C.econ.creatorShareBps)}% to the creator, ${pct(C.econ.protocolShareBps)}% buys $${esc(sym())} and burns it.</p>
@@ -108,17 +114,23 @@
       <div class="roads">
         <div class="road"><h3>To the creator</h3><div class="amt">${fmtUsd(creatorPaid * APP.hypeUsd)}</div><small>paid so far · ${ts.length} tokens</small><p>Paid to the launcher, to claim whenever they like. A creator can add up to ${C.econ.creatorTaxMaxBps / 100}% on top.</p><a class="arrow" href="#/fees">Your fees</a></div>
         <div class="road"><h3>To buybacks</h3><div class="amt">${fly ? fmtUsd(fly.burnedQuote * APP.hypeUsd) : '$0'}</div><small>spent so far · ${fly ? fmtNum(fly.burnedTokens) : 0} $${esc(sym())} burned</small><p>The protocol's share buys $${esc(sym())} from its own pool and burns it, so its supply only falls.</p><a class="arrow" href="#/flywheel">The flywheel</a></div>
-        <div class="road"><h3>To the airdrop</h3><div class="amt">${AD ? adPct + '%' : '—'}</div><small>of the supply · ${AD ? fmtNum(C.econ.supply * adPct / 100) : 0} $${esc(sym())}</small><p>Points for every ${esc(Q)} traded and every token launched, until ${AD ? new Date(AD.ends).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}.</p><a class="arrow" href="#/airdrop">Check eligibility</a></div>
+        ${AD ? `<div class="road"><h3>To the airdrop</h3><div class="amt">${AD ? adPct + '%' : '—'}</div><small>of the supply · ${AD ? fmtNum(C.econ.supply * adPct / 100) : 0} $${esc(sym())}</small><p>Points for every ${esc(Q)} traded and every token launched, until ${AD ? new Date(AD.ends).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}.</p><a class="arrow" href="#/airdrop">Check eligibility</a></div>` : ''}
       </div>
       ${AD ? `<div class="dark banner">${art(5, 900, 300)}<div style="position:relative"><h3>The $${esc(sym())} airdrop</h3><p>${adPct}% of the supply, for everyone who trades on Elysium.</p></div><div class="amt" style="position:relative">${fmtNum(C.econ.supply * adPct / 100)} $${esc(sym())}</div><a class="btn cta arrow" href="#/airdrop" style="position:relative">Check eligibility</a></div>` : ''}
     </div>`;
+    if (live && $('.page > .hero')) { // live update: swap the figures and lists in place; the search box, filters and scroll stay
+      const tmp = document.createElement('div'); tmp.innerHTML = html;
+      for (const sel of ['.hstats', '.lead', '.board', '.mk .side', '.roads']) { const x = $(sel), y = tmp.querySelector(sel); if (x && y && x.innerHTML !== y.innerHTML) x.innerHTML = y.innerHTML; }
+      drawSparks(ts); bindGo(); return;
+    }
+    view.innerHTML = html;
     drawSparks(ts); bindGo();
     $$('[data-sort]').forEach((b) => b.onclick = () => { state.sort = b.dataset.sort; home(); }); $$('[data-pf]').forEach((b) => b.onclick = () => { state.pf = b.dataset.pf; home(); });
-    const qi = $('#h-q'); qi.oninput = () => { state.q = qi.value.trim().toLowerCase(); const pos = qi.selectionStart; home(); const n = $('#h-q'); n.focus(); n.setSelectionRange(pos, pos); };
+    const qi = $('#h-q'); qi.oninput = () => { state.q = qi.value.trim().toLowerCase(); home(true); };
   }
 
   // ---- token
-  function token(addr) {
+  function token(addr, live) {
     const t = DATA.token(addr); if (!t) { view.innerHTML = '<div class="page"><div class="empty">Unknown token.</div></div>'; return; }
     if (C.chain.key !== t.net) C.useChain(t.net, false);
     const pp = DATA.pairOf(t.addr), PQ = pp ? pp.sym : Q, PLOGO = pp ? pp.logo : C.chain.logo;
@@ -128,7 +140,7 @@
     const slipPct = (state.slip / 100).toFixed(state.slip % 100 ? 1 : 0), buys = t.buys24 || 0, sells = t.sells24 || 0, bshare = buys + sells ? buys / (buys + sells) * 100 : 50;
     const links = `<div class="lnks">${t.links.web ? `<a class="lnk" href="${esc(t.links.web)}" target="_blank" rel="noopener" aria-label="Website"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></a>` : ''}${t.links.x ? `<a class="lnk" href="${esc(t.links.x)}" target="_blank" rel="noopener" aria-label="X">${ICON.x}</a>` : ''}${t.links.tg ? `<a class="lnk" href="${esc(t.links.tg)}" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24"><path d="M21 4 3 11l6 2 2 6 3-4 5 3z"/><path d="m9 13 10-9"/></svg></a>` : ''}<button class="lnk num" data-copy="${t.addr}">${esc(shortAddr(t.addr))} ${ICON.copy}</button><a class="lnk" href="${APP.explorer('address', t.addr)}" target="_blank" rel="noopener">Explorer ${ICON.ext}</a></div>`;
     const snipeRow = fs.kind === 'snipe' ? `<div class="trow warn"><span>Launch protection</span><b>+${(fs.snipeBps / 100).toFixed(1)}% on buys, fades in ${fs.left}s</b></div>` : '';
-    view.innerHTML = `<div class="page"><div class="tk">
+    const html = `<div class="page"><div class="tk">
       <div class="tk-top">
         <div class="tband">${ribbon(t.symbol)}
           <div class="hd"><span class="av badge">${APP.img(t)}</span><div class="tkwho"><span class="eyebrow">$${esc(t.symbol)} / ${esc(PQ)} · ${esc(t.age)} ${APP.ofc(t)}</span><h1>${esc(t.name)}</h1>${t.desc ? `<p>${esc(t.desc)}</p>` : ''}${links}</div><div class="mcap"><span>Market cap</span><b>${fmtUsd(t.mcapUsd)}</b><small class="${t.c24 >= 0 ? 'up' : 'dn'}">${fmtPct(t.c24)} <i>24h</i></small></div></div>
@@ -167,15 +179,26 @@
         <div class="ttabs">${[['trades', 'Trades'], ['holders', `Holders · ${t.holders}`], ['pool', 'Pool']].map(([k, l]) => `<button data-tt="${k}" class="${state.ttab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div id="tbody">${tokenTab(t, trades, holders, pos)}</div>
       </div></div></div>`;
+    if (live && state.tokOn === t.addr && $('.tk')) return patchToken(html, t);
+    view.innerHTML = html; state.tokOn = t.addr;
     drawChart($('#chart'), t);
     $$('[data-tf]').forEach((b) => b.onclick = () => { state.tf = Number(b.dataset.tf); token(addr); }); $$('[data-cm]').forEach((b) => b.onclick = () => { state.cmode = b.dataset.cm; token(addr); });
     $$('[data-ck]').forEach((b) => b.onclick = () => { state.ckind = b.dataset.ck; token(addr); }); $$('.slipchips [data-s]').forEach((b) => b.onclick = () => { state.slip = Number(b.dataset.s); try { localStorage.setItem('slip', state.slip); } catch {} token(addr); });
-    $$('[data-tt]').forEach((b) => b.onclick = () => { state.ttab = b.dataset.tt; $$('[data-tt]').forEach((x) => x.classList.toggle('on', x === b)); $('#tbody').innerHTML = tokenTab(t, trades, holders, pos); bindGo(); });
+    bindTabs(t);
     $$('[data-side]').forEach((b) => b.onclick = () => { state.side = b.dataset.side; token(addr); });
     $('#t-slip').onclick = () => slipDialog(() => token(addr));
     tradePanel(t);
     if (isCreator) { const cr = DATA.creator(me); $('#t-claimable').textContent = hype(cr.pending, 5) + ' (' + usd(cr.pending) + ')'; $('#t-claim').disabled = !(cr.pending > 0); $('#t-claim').onclick = () => act(async () => { const sf = cr.stockFees || [], sh = sf.reduce((s, x) => s + x.hype, 0); const got = await DATA.claim(), h = got - sh; APP.toast('Claimed ' + ([h > 1e-9 ? hype(h, 5) : '', ...sf.map((x) => fmtNum(x.amount, 6) + ' ' + x.sym)].filter(Boolean).join(' and ') || 'your fees'), 'ok'); }, () => token(addr)); }
     bindGo();
+  }
+  function bindTabs(t) { $$('[data-tt]').forEach((b) => b.onclick = () => { state.ttab = b.dataset.tt; $$('[data-tt]').forEach((x) => x.classList.toggle('on', x === b)); $('#tbody').innerHTML = tokenTab(t, DATA.trades(t.addr), DATA.holders(t.addr), DATA.positions(t.addr)); bindGo(); }); }
+  // a live update of the open token page: swap in the new figures, lists and chart data without rebuilding the page,
+  // so the trade form, the chart's zoom and the scroll position stay where they are
+  function patchToken(html, t) {
+    const tmp = document.createElement('div'); tmp.innerHTML = html;
+    for (const sel of ['.tband .hd', '.tstats', '.rules', '.ttabs', '#tbody']) { const a = $(sel), b = tmp.querySelector(sel); if (a && b && a.innerHTML !== b.innerHTML) a.innerHTML = b.innerHTML; }
+    bindTabs(t); bindGo(); chartUpdate(t);
+    const amt = $('#t-amt'); if (amt && amt.value && amt.oninput) amt.oninput();
   }
   function tokenTab(t, trades, holders, pos) {
     if (state.ttab === 'holders') return `<div class="tw"><table class="tb keep"><thead><tr><th>#</th><th>Holder</th><th class="r">Balance</th><th class="r">Share</th></tr></thead><tbody>${holders.slice(0, 50).map((h, i) => `<tr><td class="mute">${i + 1}</td><td>${h.pool ? `<span class="mute">${esc(h.wallet)}</span>` : `<a href="#/profile/${h.wallet}" class="num">${esc(shortAddr(h.wallet))}</a>${h.creator ? ' <span class="pill teal">creator</span>' : ''}`}</td><td class="r num">${fmtNum(h.bal)}</td><td class="r"><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><span class="holdbar" style="width:80px"><i style="width:${Math.min(100, h.share)}%"></i></span><span class="num">${h.share.toFixed(2)}%</span></div></td></tr>`).join('') || '<tr><td colspan="4"><div class="empty">No holders yet.</div></td></tr>'}</tbody></table></div>`;
@@ -474,7 +497,7 @@
     const E = C.econ, S = sym(), K = C.chain.contracts, bands = E.bands.map((b) => `${b[2]}% from ${fmtNum(b[0])} ${b[1] === Infinity ? Q + ' up' : 'to ' + fmtNum(b[1]) + ' ' + Q}`).join(', ');
     const addr = (a) => (a ? `<a class="num" href="${APP.explorer('address', a)}" target="_blank" rel="noopener">${esc(a)}</a>` : '<span class="mute">not deployed yet</span>');
     const STK = (C.chain.pairs || []).filter((p) => p.kind === 'stock');
-    const toc = [['How it works', [['uniswap', 'Built on Uniswap'], ['launch', 'Launching a token'], ...(STK.length ? [['stocks', 'Stock pairs']] : []), ['fees', 'Fees'], ['flywheel', 'Buybacks'], ['tide', '$' + S]]], ['Using Kinex', [['trading', 'Trading'], ['airdrop', 'Airdrop'], ['network', 'Network and RPC']]], ['Reference', [['contracts', 'Contracts']]]];
+    const toc = [['How it works', [['uniswap', 'Built on Uniswap'], ['launch', 'Launching a token'], ...(STK.length ? [['stocks', 'Stock pairs']] : []), ['fees', 'Fees'], ['flywheel', 'Buybacks'], ['tide', '$' + S]]], ['Using Kinex', [['trading', 'Trading'], ...(AD ? [['airdrop', 'Airdrop']] : []), ['network', 'Network and RPC']]], ['Reference', [['contracts', 'Contracts']]]];
     let n = 0; const adPct = AD ? AD.pools.reduce((a, p) => a + p.pct, 0) : 0, PN = BR ? BR.parent.name : 'HyperEVM';
     view.innerHTML = `<div class="page"><section class="phero" style="min-height:0;margin-bottom:10px"><div><h1 class="disp">Docs<span class="h-dot">.</span></h1><p>What happens when a token launches on Kinex, where every fee goes, and the address of every contract.</p></div><div class="pa etched" style="height:180px">${etch('library')}</div></section>
       <div class="docs"><nav class="toc">${toc.map(([g, items]) => `<span>${g}</span>${items.map(([id, l]) => `<a href="#/docs#${id}" data-doc="${id}"><i>${String(++n).padStart(2, '0')}</i>${l}</a>`).join('')}`).join('')}</nav>
@@ -486,7 +509,6 @@
         <section id="d-flywheel"><h2>Buybacks</h2><p>The protocol's share lands in one splitter contract. ${(ST.burnBps || 0) / 100}% of it buys $${S} on its own pool and burns it; the rest funds the treasury. Anyone can trigger a distribution. The keeper runs the buybacks with a minimum output, so a buy cannot be sandwiched. Every buyback and burn is listed on the Flywheel page.</p></section>
         <section id="d-tide"><h2>$${S}</h2><p>$${S} is a token launched on Kinex like any other, under the same rules. Its whole creator side belongs to the protocol and flows into buybacks too. ${AD ? `${adPct}% of the supply is set aside for the airdrop.` : ''} ${ST.token ? `Address ${addr(ST.token)}.` : 'It launches with the Elysium deployment.'}</p></section>
         <section id="d-trading"><h2>Trading</h2><p>Every token page has a trade card. It quotes the trade with Uniswap's V4Quoter, which runs it against the pool and so counts the current fee, then sends it through the UniversalRouter with your slippage limit. Selling a token for the first time takes two approvals, one for Permit2 and one for the router; after that each sale is one transaction.</p></section>
-        <section id="d-airdrop"><h2>Airdrop</h2>${AD ? `<p>${adPct}% of the $${S} supply. 1 ${Q} traded on Kinex earns ${AD.tradePts} points (from ${AD.minHype} ${Q} on); a creator earns ${AD.creatorPts} points per ${Q} others trade on their coin. Trades on other Elysium launchpads earn ${AD.otherBeforePts} points per ${Q} before Kinex launched and ${AD.otherAfterPts} after. ${(AD.holderAssets || []).join(' and ')} holders claim a share after the campaign. Full terms on the Airdrop page.</p>` : '<p>Not configured.</p>'}</section>
         <section id="d-network"><h2>Network and RPC</h2><p>When your wallet is on another network, the site's switch button moves it to Elysium and adds the network if the wallet does not know it yet. To add it by hand:</p><div class="kvs"><div class="kv"><span>Network name</span><b>${esc(C.chain.name)}</b></div><div class="kv txt"><span>RPC URL</span><b>${esc(C.chain.rpc)}</b></div><div class="kv"><span>Chain ID</span><b>${C.chain.id}</b></div><div class="kv"><span>Currency symbol</span><b>${esc(Q)}</b></div><div class="kv txt"><span>Block explorer</span><b>${esc(String(C.chain.explorer).replace(/\/#$/, ''))}</b></div></div></section>
         <section id="d-contracts"><h2>Contracts</h2><p>All on ${esc(C.chain.name)}, chain id ${C.chain.id}.</p><div class="kvs">${[['Launch factory', K.factory], ['Hook', K.hook], ['Locker', K.locker], ['Fee escrow', K.escrow], ['Buyback vault', K.vault], ['Splitter', ST.splitter], ['PoolManager (Uniswap)', K.poolManager], ['UniversalRouter (Uniswap)', K.router], ['V4Quoter (Uniswap)', K.quoter], ...(BR ? [['Rollup Inbox (' + PN + ')', BR.inbox], ['Rollup Outbox (' + PN + ')', BR.outbox]] : [])].map(([k, v]) => `<div class="kv txt"><span>${k}</span><b>${addr(v)}</b></div>`).join('')}</div></section>
       </article></div></div>`;
@@ -499,11 +521,11 @@
     const h = location.hash.replace(/^#/, '') || '/', parts = h.split('#')[0].split('/').filter(Boolean), r = parts[0] || 'home';
     $$('#tabs a').forEach((a) => a.classList.toggle('on', a.dataset.r === (r === 'token' ? 'home' : r === 'create' ? 'launch' : r)));
     state.route = r; window.scrollTo(0, 0); ticker();
-    if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'launch' || r === 'create') create(); else if (r === 'bridge') { location.hash = '#/'; } // the Bridge page is off for now; bridge() is kept for later else if (r === 'airdrop') airdrop(); else if (r === 'flywheel') flywheel(); else if (r === 'fees') fees(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else if (['swap', 'pools', 'pool', 'stake'].includes(r)) { location.hash = '#/'; } else home();
+    if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'launch' || r === 'create') create(); else if (r === 'bridge') { location.hash = '#/'; /* the Bridge page is off for now; bridge() is kept for later */ } else if (r === 'airdrop') { if (AD) airdrop(); else location.hash = '#/'; } else if (r === 'flywheel') flywheel(); else if (r === 'fees') fees(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else if (['swap', 'pools', 'pool', 'stake'].includes(r)) { location.hash = '#/'; } else home();
   }
   function menuSheet() {
     const W = APP.W;
-    const links = [['#/', 'Explore', MI.home], ['#/launch', 'Launch a token', MI.create], ['#/airdrop', 'Airdrop', MI.gift], ['#/flywheel', 'Flywheel', MI.fly], ['#/fees', 'Your fees', MI.fees], ['#/profile', 'Profile', MI.profile], ['#/docs', 'Docs', MI.docs], ...(C.x ? [[C.x, 'X', ICON.x]] : [])];
+    const links = [['#/', 'Explore', MI.home], ['#/launch', 'Launch a token', MI.create], ...(AD ? [['#/airdrop', 'Airdrop', MI.gift]] : []), ['#/flywheel', 'Flywheel', MI.fly], ['#/fees', 'Your fees', MI.fees], ['#/profile', 'Profile', MI.profile], ['#/docs', 'Docs', MI.docs], ...(C.x ? [[C.x, 'X', ICON.x]] : [])];
     const ov = document.createElement('div'); ov.className = 'ov sheetov';
     ov.innerHTML = `<div class="sheet"><div class="grip"></div>
       <div class="mlist">${links.map(([h, l, i]) => `<a href="${h}" ${/^https?:/.test(h) ? 'target="_blank" rel="noopener"' : ''}>${i}<span>${l}</span>${ICON.chev}</a>`).join('')}</div>
@@ -524,7 +546,7 @@
     try { await DATA.ready(); } catch (e) { APP.toast('Could not load the chain state: ' + APP.errMsg(e), 'err', 6000); }
     route(); addEventListener('hashchange', route);
     APP.onWallet(() => { if (['home', 'token', 'launch', 'create', 'bridge', 'profile', 'airdrop', 'fees', 'flywheel'].includes(state.route) && !state.busy) route(); });
-    let priced = false; (APP.priceHooks || (APP.priceHooks = [])).push(() => { if (priced) return; priced = true; if (['home', 'token'].includes(state.route) && !state.busy && !(document.activeElement && /input|textarea/i.test(document.activeElement.tagName))) route(); }); // stock coins need prices: redraw once when they first arrive
-    let last = 0; if (APP.onUpdate) APP.onUpdate(() => { if (state.busy || Date.now() - last < 8000) return; if (!['home', 'token'].includes(state.route)) return; if (document.activeElement && /input|textarea/i.test(document.activeElement.tagName)) return; last = Date.now(); route(); });
+    let priced = false; (APP.priceHooks || (APP.priceHooks = [])).push(() => { if (priced) return; priced = true; if (state.route === 'token') { const a = (location.hash.split('/')[2] || ''); if (a) token(a, true); return; } if (state.route === 'home') home(true); }); // stock coins need prices: redraw once when they first arrive
+    let last = 0; if (APP.onUpdate) APP.onUpdate(() => { if (state.route === 'token' && !state.busy) { const a = (location.hash.split('/')[2] || ''); if (a) token(a, true); return; } if (state.route === 'home' && !state.busy) home(true); void last; });
   });
 })();
