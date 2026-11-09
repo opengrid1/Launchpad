@@ -32,39 +32,33 @@
     g.strokeStyle = col; g.lineWidth = 1.6; g.lineJoin = 'round'; g.beginPath(); v.forEach((y, i) => { const x = i / (v.length - 1) * (w - 2) + 1, yy = h - 3 - (y - lo) / rg * (h - 6); i ? g.lineTo(x, yy) : g.moveTo(x, yy); }); g.stroke();
     g.lineTo(w - 1, h); g.lineTo(1, h); g.closePath(); g.fillStyle = col + '1a'; g.fill();
   }
-  function drawChart(cv, t) {
-    const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1; cv.width = r.width * dpr; cv.height = r.height * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr); const W = r.width, H = r.height;
+  // the price chart: TradingView Lightweight Charts (Apache 2.0), loaded once from unpkg
+  let lwLoad = null; const lw = () => lwLoad || (lwLoad = window.LightweightCharts ? Promise.resolve(window.LightweightCharts) : new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js'; sc.onload = () => ok(window.LightweightCharts); sc.onerror = () => { lwLoad = null; no(new Error('chart library')); }; document.head.appendChild(sc); }));
+  async function drawChart(el, t) {
+    if (!el) return; if (state.lw) { try { state.lw.remove(); } catch {} state.lw = null; }
     const all = DATA.candles(t.addr, state.tf), oh = $('#ohlc'); if (!all.length) { if (oh) oh.innerHTML = '<span class="mute">No trades yet.</span>'; return; }
-    const mul = (state.cmode === 'mcap' ? C.econ.supply : 1) * APP.hypeUsd, lab = (v) => (state.cmode === 'mcap' ? fmtUsd(v) : '$' + fmtPrice(v).replace(/<[^>]+>/g, ''));
-    const K = all.slice(-140).map((b) => ({ ...b, o: b.o * mul, h: b.h * mul, l: b.l * mul, c: b.c * mul })), last = K[K.length - 1], prev = K.length > 1 ? K[K.length - 2].c : last.o, athV = Math.max(...all.map((b) => b.h)) * mul;
-    const line = state.ckind === 'line', trades = DATA.trades(t.addr).filter((x) => x.ts >= last.t && x.ts < last.t + state.tf).length;
-    if (oh) oh.innerHTML = `<b>${lab(last.c)}</b><span class="${last.c >= prev ? 'up' : 'dn'}">${fmtPct(prev ? (last.c / prev - 1) * 100 : 0)}</span><span><i>H</i>${lab(last.h)}</span><span><i>L</i>${lab(last.l)}</span><span><i>Vol</i>${fmtUsd(last.v * APP.hypeUsd)}</span><span><i>Trades</i>${trades}</span><span><i>ATH</i>${lab(athV)}</span>`;
-    const padR = 78, x0 = 14, cw = W - padR, top = 16, volH = Math.round(H * .09), base = H - 24, plotB = base - volH - 14;
-    const vals = line ? K.map((b) => b.c) : K.flatMap((b) => [b.h, b.l]); let mn = Math.min(...vals), mx = Math.max(...vals, athV); const span = (mx - mn) || mx || 1; mn -= span * .06; mx += span * .06;
-    const Y = (v) => top + (1 - (v - mn) / (mx - mn)) * (plotB - top), X = (i) => x0 + (i + .5) / K.length * (cw - x0), bw = (cw - x0) / K.length, maxV = Math.max(1e-9, ...K.map((b) => b.v));
-    const mono = '"Geist Mono",monospace', up = '#128a5e', dn = '#c73a47', ink = '#0b2b2a';
-    g.font = '500 11px ' + mono; g.fillStyle = '#95a8a3'; g.strokeStyle = 'rgba(13,37,34,.07)'; g.lineWidth = 1;
-    const labelYs = []; for (let i = 0; i <= 4; i++) { const v = mn + (mx - mn) * i / 4, y = Y(v); g.beginPath(); g.moveTo(x0, y); g.lineTo(cw, y); g.stroke(); if (Math.abs(y - Y(last.c)) > 12 && Math.abs(y - Y(athV)) > 12) { g.fillText(lab(v), cw + 8, y + 4); labelYs.push(y); } }
-    // volume
-    K.forEach((b, i) => { if (!(b.v > 0)) return; const h = Math.max(2, (b.v / maxV) * volH); g.fillStyle = b.c >= b.o ? up : dn; g.globalAlpha = .16; g.fillRect(x0 + i * bw + bw * .28, base - h, Math.max(1, bw * .44), h); g.globalAlpha = 1; });
-    g.fillStyle = '#b5c3bf'; g.font = '500 10px ' + mono; const vy = base - volH + 3; if (labelYs.every((y) => Math.abs(y - vy) > 11)) g.fillText('Vol ' + fmtUsd(maxV * APP.hypeUsd), cw + 8, vy); g.font = '500 11px ' + mono;
-    if (line) {
-      const pts = K.map((b, i) => [X(i), Y(b.c)]); const path = () => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); };
-      path(); g.lineTo(pts[pts.length - 1][0], plotB); g.lineTo(pts[0][0], plotB); g.closePath(); const gr = g.createLinearGradient(0, top, 0, plotB); gr.addColorStop(0, 'rgba(23,181,149,.28)'); gr.addColorStop(1, 'rgba(23,181,149,0)'); g.fillStyle = gr; g.fill();
-      path(); g.strokeStyle = '#17b595'; g.lineWidth = 1.8; g.lineJoin = 'round'; g.stroke();
-      const [lx, ly] = pts[pts.length - 1]; g.fillStyle = '#fff'; g.beginPath(); g.arc(lx, ly, 4.5, 0, 7); g.fill(); g.strokeStyle = '#17b595'; g.lineWidth = 2; g.stroke();
-    } else {
-      K.forEach((b, i) => { const col = b.c >= b.o ? up : dn, x = X(i); g.strokeStyle = col; g.lineWidth = 1; g.beginPath(); g.moveTo(x, Y(b.h)); g.lineTo(x, Y(b.l)); g.stroke(); g.fillStyle = col; const y1 = Y(Math.max(b.o, b.c)), y2 = Y(Math.min(b.o, b.c)); g.fillRect(x0 + i * bw + bw * .22, y1, Math.max(1, bw * .56), Math.max(1, y2 - y1)); });
-    }
-    // all-time high
-    const ay = Y(athV); g.setLineDash([2, 4]); g.strokeStyle = 'rgba(13,37,34,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, ay); g.lineTo(cw, ay); g.stroke(); g.setLineDash([]);
-    g.fillStyle = '#5b6b68'; g.beginPath(); g.roundRect(cw + 4, ay - 9, padR - 8, 18, 3); g.fill(); g.fillStyle = '#fff'; g.font = '600 10.5px ' + mono; g.fillText('ATH ' + lab(athV), cw + 8, ay + 4);
-    // last value
-    const ly = Y(last.c); g.setLineDash([3, 3]); g.strokeStyle = last.c >= prev ? up : dn; g.beginPath(); g.moveTo(x0, ly); g.lineTo(cw, ly); g.stroke(); g.setLineDash([]);
-    g.fillStyle = last.c >= prev ? up : dn; g.beginPath(); g.roundRect(cw + 4, ly - 9, padR - 8, 18, 3); g.fill(); g.fillStyle = '#fff'; g.font = '600 11px ' + mono; g.fillText(lab(last.c), cw + 8, ly + 4);
-    // time axis
-    g.fillStyle = '#95a8a3'; g.font = '500 11px ' + mono; const n = Math.max(2, Math.min(7, Math.floor(W / 150))); let prevS = ''; for (let i = 0; i < n; i++) { const b = K[Math.round(i * (K.length - 1) / (n - 1))], d = new Date(b.t * 1000), s_ = state.tf >= 86400 ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); if (s_ === prevS) continue; prevS = s_; g.fillText(s_, x0 + (i + .5) / n * (cw - x0) - g.measureText(s_).width / 2, H - 7); }
-    void ink;
+    const mul = (state.cmode === 'mcap' ? C.econ.supply : 1) * APP.hypeUsd, lab = (v) => (state.cmode === 'mcap' ? (v >= 1000 ? fmtUsd(v).replace(/\.\d\d$/, '') : fmtUsd(v)) : '$' + fmtPrice(v).replace(/<[^>]+>/g, ''));
+    const K = all.slice(-500).map((b) => ({ ...b, o: b.o * mul, h: b.h * mul, l: b.l * mul, c: b.c * mul })), athV = Math.max(...all.map((b) => b.h)) * mul, line = state.ckind === 'line';
+    const strip = (b, i) => { const prev = i > 0 ? K[i - 1].c : b.o, trades = DATA.trades(t.addr).filter((x) => x.ts >= b.t && x.ts < b.t + state.tf).length; if (oh) oh.innerHTML = `<b>${lab(b.c)}</b><span class="${b.c >= prev ? 'up' : 'dn'}">${fmtPct(prev ? (b.c / prev - 1) * 100 : 0)}</span><span><i>H</i>${lab(b.h)}</span><span><i>L</i>${lab(b.l)}</span><span><i>Vol</i>${fmtUsd(b.v * APP.hypeUsd)}</span><span><i>Trades</i>${trades}</span><span><i>ATH</i>${lab(athV)}</span>`; };
+    strip(K[K.length - 1], K.length - 1);
+    let LW; try { LW = await lw(); } catch { el.innerHTML = '<div class="empty">The chart could not load.</div>'; return; }
+    if (!document.body.contains(el)) return;
+    const css = getComputedStyle(document.documentElement), mono = '"Geist Mono", ui-monospace, monospace', mute = '#95a8a3', up = '#128a5e', dn = '#c73a47', acc = '#17b595';
+    const chart = LW.createChart(el, { width: el.clientWidth, height: el.clientHeight, localization: { locale: 'en-US', priceFormatter: lab }, layout: { background: { type: 'solid', color: 'transparent' }, textColor: mute, fontFamily: mono, fontSize: 11, attributionLogo: true }, grid: { vertLines: { color: 'rgba(13,37,34,.05)' }, horzLines: { color: 'rgba(13,37,34,.07)' } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: .08, bottom: .22 } }, timeScale: { borderVisible: false, timeVisible: state.tf < 86400, secondsVisible: false, rightOffset: 3 }, crosshair: { mode: LW.CrosshairMode.Normal, vertLine: { color: 'rgba(13,37,34,.25)', labelBackgroundColor: '#0b2b2a' }, horzLine: { color: 'rgba(13,37,34,.25)', labelBackgroundColor: '#0b2b2a' } }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true } });
+    void css;
+    const priceFormat = { type: 'custom', formatter: lab, minMove: state.cmode === 'mcap' ? 0.01 : 1e-12 };
+    const series = line
+      ? chart.addAreaSeries({ lineColor: acc, lineWidth: 2, topColor: 'rgba(23,181,149,.28)', bottomColor: 'rgba(23,181,149,0)', priceFormat, lastValueVisible: true, priceLineVisible: true, priceLineStyle: LW.LineStyle.Dotted, priceLineColor: acc, crosshairMarkerRadius: 4 })
+      : chart.addCandlestickSeries({ upColor: up, downColor: dn, borderUpColor: up, borderDownColor: dn, wickUpColor: up, wickDownColor: dn, priceFormat, priceLineStyle: LW.LineStyle.Dotted });
+    series.setData(line ? K.map((b) => ({ time: b.t, value: b.c })) : K.map((b) => ({ time: b.t, open: b.o, high: b.h, low: b.l, close: b.c })));
+    series.createPriceLine({ price: athV, color: 'rgba(13,37,34,.45)', lineWidth: 1, lineStyle: LW.LineStyle.Dashed, axisLabelVisible: true, title: 'ATH' });
+    const vol = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol', lastValueVisible: false, priceLineVisible: false });
+    chart.priceScale('vol').applyOptions({ scaleMargins: { top: .9, bottom: 0 }, borderVisible: false, visible: false });
+    vol.setData(K.map((b) => ({ time: b.t, value: b.v * APP.hypeUsd, color: b.c >= b.o ? 'rgba(18,138,94,.22)' : 'rgba(199,58,71,.22)' })));
+    chart.timeScale().fitContent();
+    chart.subscribeCrosshairMove((pt) => { if (!pt || !pt.time) { strip(K[K.length - 1], K.length - 1); return; } const i = K.findIndex((b) => b.t === pt.time); if (i >= 0) strip(K[i], i); });
+    const ro = new ResizeObserver(() => { if (document.body.contains(el)) chart.applyOptions({ width: el.clientWidth, height: el.clientHeight }); else { ro.disconnect(); } }); ro.observe(el);
+    state.lw = chart;
   }
   function area(cv, s, color, { bars = false } = {}) {
     const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1, W = r.width || 300, H = r.height || 160; cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr); if (!s.length) return;
@@ -141,7 +135,7 @@
         <div class="chartcard">
           <div class="cbar"><div class="seg sm"><button data-cm="mcap" class="${state.cmode === 'mcap' ? 'on' : ''}">Market cap</button><button data-cm="price" class="${state.cmode === 'price' ? 'on' : ''}">Price</button></div><div class="cright"><div class="seg sm"><button data-ck="line" class="${state.ckind === 'line' ? 'on' : ''}">Line</button><button data-ck="candles" class="${state.ckind === 'candles' ? 'on' : ''}">Candles</button></div><div class="seg sm">${[[60, '1m'], [300, '5m'], [900, '15m'], [3600, '1h'], [14400, '4h'], [86400, '1d']].map(([s_, l]) => `<button data-tf="${s_}" class="${state.tf === s_ ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
           <div class="ohlc" id="ohlc"></div>
-          <canvas class="chart" id="chart"></canvas>
+          <div class="chart" id="chart"></div>
         </div>
       </div>
       <aside class="tk-side">
@@ -172,7 +166,7 @@
         <div class="ttabs">${[['trades', 'Trades'], ['holders', `Holders · ${t.holders}`], ['pool', 'Pool']].map(([k, l]) => `<button data-tt="${k}" class="${state.ttab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div id="tbody">${tokenTab(t, trades, holders, pos)}</div>
       </div></div></div>`;
-    const cv = $('#chart'); drawChart(cv, t);
+    drawChart($('#chart'), t);
     $$('[data-tf]').forEach((b) => b.onclick = () => { state.tf = Number(b.dataset.tf); token(addr); }); $$('[data-cm]').forEach((b) => b.onclick = () => { state.cmode = b.dataset.cm; token(addr); });
     $$('[data-ck]').forEach((b) => b.onclick = () => { state.ckind = b.dataset.ck; token(addr); }); $$('.slipchips [data-s]').forEach((b) => b.onclick = () => { state.slip = Number(b.dataset.s); try { localStorage.setItem('slip', state.slip); } catch {} token(addr); });
     $$('[data-tt]').forEach((b) => b.onclick = () => { state.ttab = b.dataset.tt; $$('[data-tt]').forEach((x) => x.classList.toggle('on', x === b)); $('#tbody').innerHTML = tokenTab(t, trades, holders, pos); bindGo(); });
