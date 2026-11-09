@@ -3,6 +3,7 @@
    site shows its empty states. `stake` points at the fee flywheel: the splitter that turns protocol fees into rewards
    and the staking contract that pays them to $TIDE stakers. Built into a deployable copy by build/brand-site.cjs tidepool. */
 window.CFG = {
+  demo: true, // preview: sample coins from /demo-state.json until the contracts are live on Elysium
   brand: 'Tidepool', tagline: 'Launch on Elysium. HYPE pair on Uniswap v4, a fixed 2.5% fee, 1% of every trade to the creator, and the protocol share buys $TIDE back.',
   x: 'https://x.com/tidepool_fun', site: 'https://tidepool.fun',
   mode: 'live',

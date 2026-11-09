@@ -212,6 +212,7 @@ details.terms{color:var(--mute);font-size:13px;margin-top:16px}details.terms sum
 html,body{overflow-x:clip;max-width:100%}
 .grid4>*,.grid3>*,.grid2>*,.tk>*,.mk>*,.lform>*,.docs>*,.bflow>*,.fwgrid>*,.lists>*,.charts>*,.row2>*,.card,.tw,.form>*,.form .fld,.card>*,.adhero>*,.bcards>*,.lead>*,.roads>*{min-width:0}.kv b,.kv span,.prof .head .mute,.meta{overflow-wrap:anywhere}.kv b{text-align:right}
 
+#demo-bar{max-width:var(--wrap);margin:14px auto -10px;padding:9px 14px;border:1px solid var(--line);border-radius:var(--r2);background:var(--acc-dim);color:var(--ink2);font:500 12.5px var(--sans);text-align:center}
 /* phone */
 @media(max-width:900px){
   :root{--nav:64px}

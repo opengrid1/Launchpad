@@ -259,7 +259,7 @@
   const DATA = window.DATA = {
     mode: 'live',
     async ready() {
-      if (DEMO && !document.getElementById('demo-bar')) { const b = document.createElement('div'); b.id = 'demo-bar'; b.textContent = 'Preview with sample coins. The contracts go live on Robinhood Chain soon.'; (document.querySelector('main') || document.body).prepend(b); }
+      if (DEMO && !document.getElementById('demo-bar')) { const b = document.createElement('div'); b.id = 'demo-bar'; b.textContent = 'Preview with sample coins. Nothing here is a real market; the contracts go live on ' + C.chain.name + ' soon.'; (document.querySelector('main') || document.body).prepend(b); }
       await load(); if (!ALL.length && !Object.keys(SS).length) setTimeout(() => load(), 3000);
       if (!listeners++) { setInterval(() => { if (!document.hidden) load(); }, 6000); setInterval(() => { if (!document.hidden) refreshMine(); }, 20000); APP.onWallet(() => { myBal.clear(); refreshMine(); }); refreshMine(); }
       return true;
