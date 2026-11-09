@@ -19,7 +19,7 @@ h1{font:600 20px/1.2 var(--disp);letter-spacing:-.01em}h2{font:600 15px/1.3 var(
 ::selection{background:rgba(34,227,161,.35)}
 
 /* nav */
-.nav{position:sticky;top:0;z-index:40;height:var(--nav);display:flex;align-items:center;gap:16px;padding:0 20px;background:linear-gradient(var(--bg) 60%,rgba(246,245,241,0))}
+.nav{position:sticky;top:0;z-index:40;height:var(--nav);display:flex;align-items:center;gap:16px;padding:0 20px;background:var(--bg)}
 .navpill{display:flex;align-items:center;gap:2px;height:48px;padding:0 10px;background:var(--s1);border:1px solid var(--line);border-radius:15px;box-shadow:var(--sh)}
 .brand{display:flex;align-items:center;gap:9px;font:600 15px var(--disp);padding-right:12px;margin-right:4px;border-right:1px solid var(--line)}.brand img{width:28px;height:28px;border-radius:8px}
 .tabs{display:flex;gap:2px;align-items:center}
@@ -32,7 +32,7 @@ h1{font:600 20px/1.2 var(--disp);letter-spacing:-.01em}h2{font:600 15px/1.3 var(
 
 /* layout */
 main{min-height:calc(100vh - var(--nav) - 60px)}
-.page{max-width:var(--wrap);margin:0 auto;padding:12px 20px 100px}
+.page{max-width:var(--wrap);margin:0 auto;padding:12px 20px 120px}
 .loading,.empty{padding:56px 20px;text-align:center;color:var(--mute);font-size:13px}
 .card{background:var(--s1);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh)}.card.pad{padding:20px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:15px;font-weight:600;border:1px solid var(--line);color:var(--ink);white-space:nowrap;background:var(--s1)}.btn:hover:not(:disabled){background:var(--s2)}
@@ -112,7 +112,7 @@ canvas.chart{width:100%;height:340px;display:block;border-radius:var(--r2);backg
 
 /* create */
 .create{max-width:640px;margin:0 auto}.create p.lead{color:var(--mute);margin-top:6px;font-size:13px}
-.form{margin-top:16px;display:grid;gap:14px}.fld label{display:block;font-size:12.5px;font-weight:500;color:var(--mute);margin-bottom:6px}.fld .hint{font-size:12px;color:var(--dim);margin-top:6px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form{margin-top:16px;display:grid;gap:14px}.fld label{display:block;font-size:12.5px;font-weight:500;color:var(--mute);margin-bottom:6px}.fld .hint{font-size:12px;color:var(--dim);margin-top:6px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}.row2 .fld label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fld .seg{height:48px;align-items:center}.fld .seg button{height:40px}
 .logo-pick{width:104px;height:104px;border-radius:var(--r2);background:var(--s2);border:1px dashed var(--line2);display:grid;place-items:center;color:var(--mute);cursor:pointer;overflow:hidden;font-size:12px;text-align:center}.logo-pick:hover{border-color:var(--ink)}.logo-pick img{width:100%;height:100%;object-fit:cover}
 textarea.inp{height:auto;min-height:88px;padding:12px 14px;resize:vertical}
 .preview{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:var(--s2)}.preview .av{width:44px;height:44px}.preview b{display:block;font-weight:600}.preview small{color:var(--mute);font-size:12.5px}
@@ -176,7 +176,7 @@ body::after{content:"";position:fixed;left:50%;top:-240px;width:900px;height:520
   .nav{gap:8px;padding:0 12px}.navpill{height:44px;padding:0 10px}.brand{border-right:0;padding-right:0;margin-right:0}.brand span{display:none}.brand img{width:24px;height:24px}
   .tabs{position:fixed;left:12px;right:12px;bottom:12px;height:64px;margin:0;z-index:40;background:var(--s1);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh2);justify-content:space-around;padding:4px}.tabs a{flex:1;flex-direction:column;justify-content:center;gap:3px;padding:0;font-size:11px;height:100%;border-radius:14px}.tabs a svg{display:block}.tabs a.on{background:transparent;color:var(--ink)}.tabs a.on svg{color:var(--teal)}.tabs a.create{color:var(--mute)}.tabs a.create.on{color:var(--ink)}
   .ib,.px,.wallet{height:44px}.ib{width:44px;border-radius:12px}.px{display:none}.wallet{border-radius:12px;padding:0 14px}.ib.menu{display:grid}
-  .page{padding:8px 12px 100px}
+  .page{padding:8px 12px 130px}
   .cards3{grid-template-columns:1fr;gap:10px}.scard{height:150px;padding:16px 18px 0}.scard b{font-size:22px}.scard canvas{height:64px}
   .bar .inp.search{min-width:100%}.filters{height:44px}.filters button{height:36px;padding:0 12px}.bar .btn.pri{height:44px;flex:1}
   .grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}
