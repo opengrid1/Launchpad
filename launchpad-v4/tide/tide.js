@@ -39,15 +39,15 @@
     const K = all.slice(-140).map((b) => ({ ...b, o: b.o * mul, h: b.h * mul, l: b.l * mul, c: b.c * mul })), last = K[K.length - 1], prev = K.length > 1 ? K[K.length - 2].c : last.o, athV = Math.max(...all.map((b) => b.h)) * mul;
     const line = state.ckind === 'line', trades = DATA.trades(t.addr).filter((x) => x.ts >= last.t && x.ts < last.t + state.tf).length;
     if (oh) oh.innerHTML = `<b>${lab(last.c)}</b><span class="${last.c >= prev ? 'up' : 'dn'}">${fmtPct(prev ? (last.c / prev - 1) * 100 : 0)}</span><span><i>H</i>${lab(last.h)}</span><span><i>L</i>${lab(last.l)}</span><span><i>Vol</i>${fmtUsd(last.v * APP.hypeUsd)}</span><span><i>Trades</i>${trades}</span><span><i>ATH</i>${lab(athV)}</span>`;
-    const padR = 78, x0 = 14, cw = W - padR, top = 16, volH = Math.round(H * .16), base = H - 24, plotB = base - volH - 10;
+    const padR = 78, x0 = 14, cw = W - padR, top = 16, volH = Math.round(H * .09), base = H - 24, plotB = base - volH - 14;
     const vals = line ? K.map((b) => b.c) : K.flatMap((b) => [b.h, b.l]); let mn = Math.min(...vals), mx = Math.max(...vals, athV); const span = (mx - mn) || mx || 1; mn -= span * .06; mx += span * .06;
     const Y = (v) => top + (1 - (v - mn) / (mx - mn)) * (plotB - top), X = (i) => x0 + (i + .5) / K.length * (cw - x0), bw = (cw - x0) / K.length, maxV = Math.max(1e-9, ...K.map((b) => b.v));
     const mono = '"Geist Mono",monospace', up = '#128a5e', dn = '#c73a47', ink = '#0b2b2a';
     g.font = '500 11px ' + mono; g.fillStyle = '#95a8a3'; g.strokeStyle = 'rgba(13,37,34,.07)'; g.lineWidth = 1;
-    for (let i = 0; i <= 4; i++) { const v = mn + (mx - mn) * i / 4, y = Y(v); g.beginPath(); g.moveTo(x0, y); g.lineTo(cw, y); g.stroke(); if (Math.abs(y - Y(last.c)) > 12 && Math.abs(y - Y(athV)) > 12) g.fillText(lab(v), cw + 8, y + 4); }
+    const labelYs = []; for (let i = 0; i <= 4; i++) { const v = mn + (mx - mn) * i / 4, y = Y(v); g.beginPath(); g.moveTo(x0, y); g.lineTo(cw, y); g.stroke(); if (Math.abs(y - Y(last.c)) > 12 && Math.abs(y - Y(athV)) > 12) { g.fillText(lab(v), cw + 8, y + 4); labelYs.push(y); } }
     // volume
-    K.forEach((b, i) => { if (!(b.v > 0)) return; const h = (b.v / maxV) * volH; g.fillStyle = b.c >= b.o ? up : dn; g.globalAlpha = .28; g.fillRect(x0 + i * bw + bw * .2, base - h, Math.max(1, bw * .6), h); g.globalAlpha = 1; });
-    g.fillStyle = '#95a8a3'; g.fillText(fmtUsd(maxV * APP.hypeUsd), cw + 8, base - volH + 4); g.fillText('$0', cw + 8, base + 2);
+    K.forEach((b, i) => { if (!(b.v > 0)) return; const h = Math.max(2, (b.v / maxV) * volH); g.fillStyle = b.c >= b.o ? up : dn; g.globalAlpha = .16; g.fillRect(x0 + i * bw + bw * .28, base - h, Math.max(1, bw * .44), h); g.globalAlpha = 1; });
+    g.fillStyle = '#b5c3bf'; g.font = '500 10px ' + mono; const vy = base - volH + 3; if (labelYs.every((y) => Math.abs(y - vy) > 11)) g.fillText('Vol ' + fmtUsd(maxV * APP.hypeUsd), cw + 8, vy); g.font = '500 11px ' + mono;
     if (line) {
       const pts = K.map((b, i) => [X(i), Y(b.c)]); const path = () => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); };
       path(); g.lineTo(pts[pts.length - 1][0], plotB); g.lineTo(pts[0][0], plotB); g.closePath(); const gr = g.createLinearGradient(0, top, 0, plotB); gr.addColorStop(0, 'rgba(23,181,149,.28)'); gr.addColorStop(1, 'rgba(23,181,149,0)'); g.fillStyle = gr; g.fill();
@@ -77,9 +77,9 @@
   }
   const drawSparks = (ts) => $$('[data-spark]').forEach((cv) => { const t = ts.find((x) => x.addr === cv.dataset.spark); if (t) spark(cv, t, cv.clientWidth || 90, cv.clientHeight || 30); });
   function ticker() {
-    const el = $('#ticker'); if (!el) return; const ts = [...DATA.tokens()].sort((a, b) => b.vol24 - a.vol24).slice(0, 14); if (!ts.length) { el.innerHTML = ''; el.style.display = 'none'; return; } el.style.display = '';
+    const el = $('#ticker'); if (!el) return; const preview = C.demo && !C.liveChains().length; const ts = [...DATA.tokens()].sort((a, b) => b.vol24 - a.vol24).slice(0, 14); if (!ts.length) { el.innerHTML = ''; el.style.display = 'none'; return; } el.style.display = '';
     const items = ts.map((t) => `<a class="it" href="${link(t)}"><span class="av">${APP.img(t)}</span><b>${esc(t.symbol)}</b><span class="num">${fmtUsd(t.mcapUsd)}</span>${chip(t.c24)}</a>`).join('');
-    el.innerHTML = `<div class="run">${items}${items}</div>`;
+    el.innerHTML = `${preview ? '<span class="pv">Preview · sample coins</span>' : ''}<div class="run">${items}${items}</div>`;
   }
   const allTrades = () => DATA.tokens().flatMap((t) => DATA.trades(t.addr).map((x) => ({ ...x, token: t })));
 
@@ -136,7 +136,7 @@
     view.innerHTML = `<div class="page"><div class="tk">
       <div class="tk-top">
         <div class="tband">${ribbon(t.symbol)}
-          <div class="hd"><span class="av badge">${APP.img(t)}</span><div class="who"><span class="eyebrow">$${esc(t.symbol)} / ${esc(Q)} · ${esc(t.age)} ${APP.ofc(t)}</span><h1>${esc(t.name)}</h1>${t.desc ? `<p>${esc(t.desc)}</p>` : ''}${links}</div><div class="mcap"><span>Market cap</span><b>${fmtUsd(t.mcapUsd)}</b><small class="${t.c24 >= 0 ? 'up' : 'dn'}">${fmtPct(t.c24)} <i>24h</i></small></div></div>
+          <div class="hd"><span class="av badge">${APP.img(t)}</span><div class="tkwho"><span class="eyebrow">$${esc(t.symbol)} / ${esc(Q)} · ${esc(t.age)} ${APP.ofc(t)}</span><h1>${esc(t.name)}</h1>${t.desc ? `<p>${esc(t.desc)}</p>` : ''}${links}</div><div class="mcap"><span>Market cap</span><b>${fmtUsd(t.mcapUsd)}</b><small class="${t.c24 >= 0 ? 'up' : 'dn'}">${fmtPct(t.c24)} <i>24h</i></small></div></div>
           <div class="tstats"><div class="stat"><span>Price</span><b>$${fmtPrice(t.pxUsd)}</b><small>${fmtPrice(t.px)} ${esc(Q)}</small></div><div class="stat"><span>Liquidity</span><b>${fmtUsd(t.liqHype * APP.hypeUsd)}</b><small>${hype(t.liqHype, 2)}</small></div><div class="stat"><span>Volume 24h</span><b>${fmtUsd(t.vol24 * APP.hypeUsd)}</b><small>${fmtUsd(t.volAll * APP.hypeUsd)} all time</small></div><div class="stat"><span>Holders</span><b>${t.holders}</b><small>${fmtNum(C.econ.supply)} supply</small></div><div class="stat"><span>Buys, 24h</span><div class="ratio"><i style="width:${bshare.toFixed(1)}%"></i></div><small><em class="up">${buys} buys</em><em class="dn">${sells} sells</em></small></div><div class="stat"><span>Creator</span><b class="num" style="font-size:14px;margin-top:6px"><a href="#/profile/${t.creator}">${esc(shortAddr(t.creator))}</a></b><small>${isCreator ? 'you' : 'earns ' + pct(t.creatorShareBps) + '% of volume'}</small></div></div></div>
         <div class="chartcard">
           <div class="cbar"><div class="seg sm"><button data-cm="mcap" class="${state.cmode === 'mcap' ? 'on' : ''}">Market cap</button><button data-cm="price" class="${state.cmode === 'price' ? 'on' : ''}">Price</button></div><div class="cright"><div class="seg sm"><button data-ck="line" class="${state.ckind === 'line' ? 'on' : ''}">Line</button><button data-ck="candles" class="${state.ckind === 'candles' ? 'on' : ''}">Candles</button></div><div class="seg sm">${[[60, '1m'], [300, '5m'], [900, '15m'], [3600, '1h'], [14400, '4h'], [86400, '1d']].map(([s_, l]) => `<button data-tf="${s_}" class="${state.tf === s_ ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
