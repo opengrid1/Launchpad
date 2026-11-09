@@ -204,8 +204,8 @@ details.terms{color:var(--mute);font-size:13px;margin-top:16px}details.terms sum
   .tabs{position:fixed;left:12px;right:12px;bottom:12px;height:60px;margin:0;z-index:40;background:var(--s1);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px -16px rgba(13,37,34,.35);justify-content:space-around;padding:4px}.tabs a{flex:1;flex-direction:column;justify-content:center;gap:3px;padding:0;font-size:11px;height:100%;border-radius:12px}.tabs a svg{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.tabs a.on{background:transparent;color:var(--ink)}.tabs a.on svg{color:var(--acc2)}.tabs a.phone{display:inline-flex}.tabs a.desk{display:none}
   .px{display:none}.ib.menu{display:grid}
   .page{padding:16px 14px 110px}
-  .hero{grid-template-columns:1fr;min-height:0;gap:18px;margin-bottom:26px}.hero h1{font-size:42px}.hero .hstats{width:100%;grid-template-columns:repeat(3,1fr)}.hero .hstats .stat{padding-right:10px}.hero .hstats .stat b{font-size:20px}.heroart{height:220px;order:-1}
-  .lead{display:grid;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scrollbar-width:none;gap:10px;padding-bottom:4px}.lead::-webkit-scrollbar{display:none}
+  .hero{grid-template-columns:1fr;min-height:0;gap:18px;margin-bottom:26px}.hero h1{font-size:42px}.hero .hstats{width:100%;grid-template-columns:repeat(3,1fr)}.hero .hstats .stat{padding-right:10px}.hero .hstats .stat b{font-size:20px}.heroart{height:200px;order:-1}.fly{display:none}
+  .lead{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scrollbar-width:none;gap:10px;padding-bottom:4px}.lead::-webkit-scrollbar{display:none}
   .mk{grid-template-columns:1fr}.mkbar .inp{width:100%;margin-left:0}.roads{grid-template-columns:1fr}.sec h2{font-size:26px}.road .amt{font-size:36px}
   .banner{flex-wrap:wrap;padding:18px}.banner .btn{margin-left:0;width:100%}
   .phero{grid-template-columns:1fr;min-height:0}.phero h1{font-size:52px}.phero .pa{height:160px;order:-1}
