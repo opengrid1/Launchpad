@@ -161,7 +161,7 @@ details.terms{color:var(--mute);font-size:13px;margin-top:16px}details.terms sum
 .fcard{padding:20px;background:var(--s1);border:1px solid var(--line);border-radius:var(--r2)}.fcard+.fcard{margin-top:12px}.fcard .lab{display:flex;justify-content:space-between;align-items:center;font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}.fcard .lab .pill{text-transform:none;letter-spacing:0}.fcard .v{display:flex;align-items:baseline;gap:10px;margin-top:10px}.fcard .v b{font:400 36px/1 var(--serif)}.fcard .v span{font:400 13px var(--mono);color:var(--mute)}.fcard small{display:block;margin-top:8px;color:var(--mute);font-size:12.5px}
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.chartc{padding:18px;background:var(--s1);border:1px solid var(--line);border-radius:var(--r2)}.chartc h3{font:400 20px var(--serif)}.chartc small{display:block;color:var(--mute);font-size:12.5px;margin-top:2px}.chartc .v{margin-top:10px;font:500 13px var(--mono)}.chartc canvas{display:block;width:100%;height:180px;margin-top:10px}
 .lists{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-top:16px}
-.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}.tile{padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}.tile b{display:block;font-weight:600}.tile small{display:block;color:var(--mute);font-size:12.5px;margin-top:4px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}.tiles.two{grid-template-columns:1fr 1fr}.adsplit.two{grid-template-columns:1fr 1fr;gap:20px}.adsplit.coins{grid-template-columns:repeat(4,1fr);margin-top:16px}.tile{padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}.tile b{display:block;font-weight:600}.tile small{display:block;color:var(--mute);font-size:12.5px;margin-top:4px}
 .calc{margin-top:16px;padding:22px}.calc h3{font:400 24px var(--serif)}.calc .row{display:flex;justify-content:space-between;align-items:center;margin-top:14px}.calc .row b{font:400 26px var(--serif)}.range{width:100%;accent-color:var(--acc2);margin:8px 0 14px}.calc .out{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;padding-top:14px;border-top:3px solid var(--acc)}.calc .out span{display:block;font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}.calc .out b{display:block;font:400 22px var(--serif);margin-top:4px}
 
 /* docs */
@@ -219,5 +219,12 @@ details.terms{color:var(--mute);font-size:13px;margin-top:16px}details.terms sum
   .foot .in{grid-template-columns:1fr 1fr;gap:20px;padding:28px 14px 16px}.foot .in>div:first-child{grid-column:1/-1}.foot .legal{flex-direction:column;padding:14px 14px 130px}
   .inp,textarea.inp{font-size:16px}
   .tb th:nth-child(n+5),.tb td:nth-child(n+5){display:none}.tb.keep th,.tb.keep td{display:table-cell}.tb.mkt td.idx,.tb.mkt th:first-child{display:none}
+  .kv{gap:14px;align-items:flex-start}.kv span{flex:0 0 auto;max-width:48%}.kv b{flex:1 1 auto;min-width:0}
+  .kv.txt{flex-direction:column;align-items:stretch;gap:3px}.kv.txt span{max-width:none;font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase}.kv.txt b{text-align:left;line-height:1.45}
+  .adsplit.coins{grid-template-columns:1fr 1fr}.adsplit.two{grid-template-columns:1fr;gap:16px}.tiles.two{grid-template-columns:1fr}
+  .facts{gap:8px}.facts span{font-size:10px;letter-spacing:.08em}.facts b{font-size:13px}
+  .adhero .cd{flex-wrap:wrap;gap:6px 14px}.adhero .cd b{font-size:22px}
+  .bbox .lab,.lab{gap:8px}.bbox .lab>*,.lab>*{min-width:0}.bbox .sub{gap:10px}.bbox .sub>*{min-width:0;overflow-wrap:anywhere}
+  .adpool .amt{font-size:22px}.lists .card .kv b{font-size:12px}
   #toasts{bottom:88px}
 }
