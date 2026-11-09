@@ -76,7 +76,7 @@
 
   // ---- prices
   async function loadPrices() {
-    try { const r = await fetch('https://api.hyperliquid.xyz/info', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'allMids' }), signal: AbortSignal.timeout(6000) }); const j = await r.json(); if (j && j[C.chain.quote]) APP.hypeUsd = Number(j[C.chain.quote]); } catch {}
+    try { const r = await fetch('https://api.hyperliquid.xyz/info', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'allMids' }), signal: AbortSignal.timeout(6000) }); const j = await r.json(); if (j && j[C.chain.quote]) APP.hypeUsd = Number(j[C.chain.quote]); if (j) APP.mids = j; (APP.priceHooks || []).forEach((f) => { try { f(); } catch {} }); } catch {}
     const px = $('#n-px span'); if (px) px.textContent = fmtUsd(APP.hypeUsd);
     APP.emit();
   }

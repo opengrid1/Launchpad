@@ -192,6 +192,14 @@ contract PadSplitter is Ownable2Step, ReentrancyGuard, IUnlockCallback {
 
     // ---- flow -------------------------------------------------------------------------------------------------
 
+    /// @notice Pulls an ERC-20 the escrow holds for this contract (fees from pools paired with that token), so the
+    /// keeper can convert it or the owner recover it. Anyone may call it.
+    function pullToken(address token) external nonReentrant returns (uint256 amount) {
+        if (token == address(0)) revert ZeroAddress();
+        if (feeEscrow.balanceOfToken(address(this), token) == 0) revert NothingToDo();
+        amount = feeEscrow.claimToken(token);
+    }
+
     /// @notice Pulls what the escrow holds for this contract and splits the free balance. Anyone may call it.
     function distribute() external nonReentrant {
         if (feeEscrow.balanceOf(address(this)) != 0) feeEscrow.claim();

@@ -11,7 +11,7 @@ const { ethers } = require("ethers");
 const E18 = 10n ** 18n;
 // launch economics per network, in the native currency: the opening market cap and the two band edges (x4, x20)
 const ECON = { HYPE: { start: "50", band1: "200", band2: "1000", fee: "0.005" }, ETH: { start: "1.75", band1: "7", band2: "35", fee: "0.0002" } };
-const configFor = (e) => ({ supply: 1_000_000_000n * E18, startMcap: ethers.parseEther(e.start), band1Mcap: ethers.parseEther(e.band1), band2Mcap: ethers.parseEther(e.band2), band0Bps: 2000, band1Bps: 3000, tickSpacing: 200, enabled: true });
+const configFor = (e) => ({ pairToken: ethers.ZeroAddress, supply: 1_000_000_000n * E18, startMcap: ethers.parseEther(e.start), band1Mcap: ethers.parseEther(e.band1), band2Mcap: ethers.parseEther(e.band2), band0Bps: 2000, band1Bps: 3000, tickSpacing: 200, enabled: true });
 const NET = {
   elysium: {
     chainId: 99901, rpc: process.env.ELYSIUM_RPC || "https://rpc-live.elysp.com", native: "HYPE",
@@ -144,7 +144,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
     throw new Error(`${name}: no receipt for ${rec.hash} after many tries; rerun to keep re-sending it`);
   }
   const deploy = async (name, args) => { const a = art(name); const data = new ethers.ContractFactory(a.abi, a.bytecode).interface.encodeDeploy(args); return (await tx(name, { data: a.bytecode + data.slice(2) }, MEASURED[name])).address; };
-  const call = (label, addr, abiName, fn, args) => tx(label, { to: addr, data: new ethers.Interface(art(abiName).abi).encodeFunctionData(fn, args) }, label === "factory.addLaunchConfig" ? MEASURED.addLaunchConfig : MEASURED.call);
+  const call = (label, addr, abiName, fn, args) => tx(label, { to: addr, data: new ethers.Interface(art(abiName).abi).encodeFunctionData(fn, args) }, label.startsWith("factory.addLaunchConfig") ? MEASURED.addLaunchConfig : MEASURED.call);
 
   if (process.argv.includes("--staking")) {
     const token = ethers.getAddress(process.argv[process.argv.indexOf("--staking") + 1]);
@@ -193,6 +193,26 @@ class RetryProvider extends ethers.JsonRpcProvider {
   await call("vault.setFactory", vault, "PadBuybackVault", "setFactory", [factory]);
   await call("locker.setFactory", locker, "PadLocker", "setFactory", [factory]);
   await call("factory.addLaunchConfig", factory, "PadFactory", "addLaunchConfig", [CONFIG]);
+  // stock pairs (Elysium): each EQX tokenized stock is approved as a pair and gets its own launch config, opening at the
+  // same dollar market cap as the HYPE config, with the bands at the same multiples; prices from Hyperliquid's spot book
+  const pairCfgs = [];
+  if ((netName === "elysium" || process.env.FORK_OF === "elysium") && process.env.STOCK_PAIRS !== "0") {
+    const list = JSON.parse(fs.readFileSync(path.join(__dirname, "brands/tidepool/eqx-pairs.json"), "utf8")).pairs;
+    const info = (b) => fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }).then((r) => r.json());
+    const [meta, ctxs] = await info({ type: "spotMetaAndAssetCtxs" }), mids = await info({ type: "allMids" });
+    const mid = (coin) => Number((ctxs.find((c) => c.coin === coin) || {}).midPx || 0), hypeUsd = Number(mids.HYPE || 0);
+    if (!(hypeUsd > 0)) throw new Error("no HYPE price from Hyperliquid");
+    const usdOpen = Number(E_.start) * hypeUsd, m1 = Number(E_.band1) / Number(E_.start), m2 = Number(E_.band2) / Number(E_.start); void meta;
+    let id = 1;
+    for (const p of list) {
+      const px = mid(p.spot); if (!(px > 0)) throw new Error(`no Hyperliquid price for ${p.sym}: the config ids must stay in the list order`);
+      const open = usdOpen / px, units = (x) => ethers.parseUnits(x.toFixed(p.decimals), p.decimals);
+      const cfg = { ...CONFIG, pairToken: p.elysium, startMcap: units(open), band1Mcap: units(open * m1), band2Mcap: units(open * m2) };
+      await call(`factory.approve ${p.sym}`, factory, "PadFactory", "setPairTokenApproved", [p.elysium, true]);
+      await call(`factory.addLaunchConfig ${p.sym}`, factory, "PadFactory", "addLaunchConfig", [cfg]);
+      pairCfgs.push({ key: p.key, sym: p.sym, name: p.name, ticker: p.ticker, addr: p.elysium.toLowerCase(), decimals: p.decimals, spot: p.spot, cfg: id++, open: Number(open.toFixed(4)), usdAtDeploy: Number(px.toFixed(2)) });
+    }
+  }
   if (SNIPE_SECONDS !== 10) await call("factory.setSnipeTaxSeconds", factory, "PadFactory", "setSnipeTaxSeconds", [SNIPE_SECONDS]);
   if (MAX_CREATOR_TAX_BPS !== 1000) await call("factory.setMaxCreatorTaxBps", factory, "PadFactory", "setMaxCreatorTaxBps", [MAX_CREATOR_TAX_BPS]);
   // 4. offer ownership to the protocol owner (two-step)
@@ -203,7 +223,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   for (const [l, g] of steps) console.log(`  ${l.padEnd(28)} ${g.toString().padStart(9)} gas`);
   console.log(`  total ${total} gas = ${ethers.formatEther(total * gasPrice)} ${N.native} at ${ethers.formatUnits(gasPrice, "gwei")} gwei`);
   if (send) {
-    const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookFeeBps: HOOK_FEE_BPS, protocolShareBps: PROTOCOL_SHARE_BPS, maxCreatorTaxBps: MAX_CREATOR_TAX_BPS, volExtraBps: VOL_EXTRA_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, splitFarmBps: SPLIT_FARM_BPS, ammFactory, ammRouter, farm, wnative: N.weth9, ammLpFeeBps: AMM_LP_FEE_BPS, ammProtocolFeeBps: AMM_PROTOCOL_FEE_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
+    const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookFeeBps: HOOK_FEE_BPS, pairs: pairCfgs, protocolShareBps: PROTOCOL_SHARE_BPS, maxCreatorTaxBps: MAX_CREATOR_TAX_BPS, volExtraBps: VOL_EXTRA_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, splitFarmBps: SPLIT_FARM_BPS, ammFactory, ammRouter, farm, wnative: N.weth9, ammLpFeeBps: AMM_LP_FEE_BPS, ammProtocolFeeBps: AMM_PROTOCOL_FEE_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
     const file = path.join(__dirname, "deployments", `pad-${netName}.json`);
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
     console.log("written " + path.relative(__dirname, file));

@@ -25,7 +25,7 @@ for (const f of [".vercelignore"]) if (fs.existsSync(path.join(SITE, f))) fs.cop
 
 if (keep) fs.cpSync(keep, LINK, { recursive: true });
 fs.copyFileSync(path.join(B, "config.js"), path.join(OUT, "config.js"));
-const IMG = path.join(B, "img"); if (fs.existsSync(IMG)) for (const f of fs.readdirSync(IMG)) fs.copyFileSync(path.join(IMG, f), path.join(OUT, "img", f));
+const IMG = path.join(B, "img"); if (fs.existsSync(IMG)) fs.cpSync(IMG, path.join(OUT, "img"), { recursive: true }); // subfolders too (img/stocks)
 const BPUB = path.join(B, "public"); if (fs.existsSync(BPUB)) for (const f of fs.readdirSync(BPUB)) fs.copyFileSync(path.join(BPUB, f), path.join(OUT, f)); // brand files served at the site root (e.g. demo-state.json)
 const BAPI = path.join(B, "api"); if (fs.existsSync(BAPI)) for (const f of fs.readdirSync(BAPI)) fs.copyFileSync(path.join(BAPI, f), path.join(OUT, "api", f)); // brand data the API reads (e.g. _pairs.json)
 if (spec.crons) { const vj = JSON.parse(fs.readFileSync(path.join(OUT, "vercel.json"), "utf8")); vj.crons = [...(vj.crons || []), ...spec.crons]; fs.writeFileSync(path.join(OUT, "vercel.json"), JSON.stringify(vj, null, 2) + "\n"); } // brand-only jobs

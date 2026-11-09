@@ -10,6 +10,7 @@ const ev = (s) => ethers.id(s);
 const T = {
   launched: ev('TokenLaunched(address,address,bytes32,uint256,address,uint16,bool,uint256[3])'),
   launched2: ev('TokenLaunched(address,address,bytes32,uint256,address,address,uint16,uint256[3])'), // v2: adds the pair
+  launched3: ev('TokenLaunched(address,address,bytes32,uint256,address,address,uint16,bool,uint256[3])'), // pad with a pair: config, pair, recipient, tax, buyback, positions
   feesPaid: ev('FeesPaid(bytes32,address,uint256,address,uint256)'),
   metadata: ev('TokenMetadata(address,string,string,string,string,(string,string,string,string,string))'),
   recipient: ev('CreatorFeeRecipientUpdated(address,address,address)'),
@@ -54,6 +55,9 @@ const Q96 = 2 ** 96, f18 = (v) => Number(ethers.formatEther(v));
 
 function makeIndexer(NET) {
 const rpc = (m, p) => L.rpc(NET, m, p), multicall = (c) => L.multicall(NET, c);
+// a stock pair's decimals, read once (EQX tokenized stocks: 8); amounts in that pair are reported in its own units
+const DEC = {}; const DEC_I = new ethers.Interface(['function decimals() view returns (uint8)']);
+async function pairDecimals(addrs) { const need = [...new Set(addrs)].filter((a) => DEC[a] == null); if (!need.length) return; const r = await multicall(need.map((a) => [a, DEC_I, 'decimals'])); need.forEach((a, i) => { if (r[i] != null) DEC[a] = Number(r[i][0] ?? r[i]); }); }
 const LOGNET = NET.logRpc ? { ...NET, rpc: NET.logRpc, name: NET.name + ' logs' } : null;
 let logFails = 0; // after repeated failures of the log RPC, read the main RPC in its capped pages
 async function getLogs(f) {
@@ -172,10 +176,10 @@ async function syncRange(from, head) {
   const of = (a) => (a ? core.filter((l) => l.address.toLowerCase() === a.toLowerCase()) : []);
   const fac = [...of(NET.factory), ...(V2 ? of(V2.factory) : [])].sort(byOrder), hook = [...of(NET.hook), ...(V2 ? of(V2.hook) : [])], esc = of(NET.escrow), vault = of(NET.vault);
   for (const l of fac) {
-    if (l.topics[0] === T.launched || l.topics[0] === T.launched2) {
-      const v2 = l.topics[0] === T.launched2;
-      const [cfgId, pair, rec, tax, bb, ids] = v2 ? (([a, b, c, d, e]) => [a, b, c, d, false, e])(dec(['uint256', 'address', 'address', 'uint16', 'uint256[3]'], l.data)) : (([a, c, d, e, f]) => [a, ethers.ZeroAddress, c, d, e, f])(dec(['uint256', 'address', 'uint16', 'bool', 'uint256[3]'], l.data));
-      const t = { addr: addrOf(l.topics[1]), creator: addrOf(l.topics[2]), poolId: l.topics[3], configId: Number(cfgId), feeRecipient: rec, taxBps: Number(tax), buyback: bb, posIds: ids.map(String), createdAt: parseInt(l.blockTimestamp, 16), block: parseInt(l.blockNumber, 16), tx: l.transactionHash, v: v2 ? 2 : 1, pair: pair.toLowerCase() };
+    if (l.topics[0] === T.launched || l.topics[0] === T.launched2 || l.topics[0] === T.launched3) {
+      const v2 = l.topics[0] === T.launched2, v3 = l.topics[0] === T.launched3;
+      const [cfgId, pair, rec, tax, bb, ids] = v3 ? dec(['uint256', 'address', 'address', 'uint16', 'bool', 'uint256[3]'], l.data) : v2 ? (([a, b, c, d, e]) => [a, b, c, d, false, e])(dec(['uint256', 'address', 'address', 'uint16', 'uint256[3]'], l.data)) : (([a, c, d, e, f]) => [a, ethers.ZeroAddress, c, d, e, f])(dec(['uint256', 'address', 'uint16', 'bool', 'uint256[3]'], l.data));
+      const t = { addr: addrOf(l.topics[1]), creator: addrOf(l.topics[2]), poolId: l.topics[3], configId: Number(cfgId), feeRecipient: rec, taxBps: Number(tax), buyback: bb, posIds: ids.map(String), createdAt: parseInt(l.blockTimestamp, 16), block: parseInt(l.blockNumber, 16), tx: l.transactionHash, v: v3 ? 3 : v2 ? 2 : 1, pair: pair.toLowerCase() };
       S.tokens.set(t.addr.toLowerCase(), t); S.byPool.set(t.poolId, t);
     } else if (l.topics[0] === T.metadata) {
       const t = S.tokens.get(addrOf(l.topics[1]).toLowerCase()); if (!t) continue;
@@ -200,6 +204,7 @@ async function syncRange(from, head) {
     const fresh = pools.filter((p) => !S.terms.has(p));
     if (fresh.length) {
       const isV2 = (p) => (S.byPool.get(p) || {}).v === 2;
+      await pairDecimals([...S.tokens.values()].filter((x) => x.v === 3 && x.pair).map((x) => x.pair)).catch(() => {});
       const r = await multicall(fresh.flatMap((p) => (isV2(p) ? [[V2.hook, HOOK2_I, 'poolTerms', [p]], [V2.hook, HOOK2_I, 'launches', [p]]] : [[NET.hook, HOOK_I, 'poolTerms', [p]], [NET.hook, HOOK_I, 'launches', [p]]])));
       fresh.forEach((p, i) => {
         const pt = r[2 * i], li = r[2 * i + 1]; if (!pt) return;
@@ -239,8 +244,11 @@ function build() {
       const fe = hk.find((h) => h.topics[0] === T.hookFee), su = hk.find((h) => h.topics[0] === T.surcharge);
       const [, feeAmt, taxAmt] = fe ? dec(['address', 'uint256', 'uint256'], fe.data) : [null, 0n, 0n];
       const [volBps, snipeBps] = su ? dec(['uint256', 'uint256'], su.data).map(Number) : [0, 0];
-      const hypeGross = f18(buy ? -a0 : a0), tokGross = f18(buy ? a1 : -a1), cut = f18(feeAmt + taxAmt);
-      const avg = tokGross > 0 ? hypeGross / tokGross : 0, sqf = Number(sq) / Q96, px = sqf > 0 ? 1 / (sqf * sqf) : 0;
+      // a stock pair (v3) has its own decimals: its side of the swap, its fees and the price are scaled into its units
+      const stk = t.v === 3 && t.pair && t.pair !== ethers.ZeroAddress.toLowerCase(), sc = stk ? 10 ** (18 - (DEC[t.pair] ?? 18)) : 1;
+      const feeCur = fe ? dec(['address', 'uint256', 'uint256'], fe.data)[0].toLowerCase() : '', cutSc = stk && feeCur === t.pair ? sc : 1;
+      const hypeGross = f18(buy ? -a0 : a0) * sc, tokGross = f18(buy ? a1 : -a1), cut = f18(feeAmt + taxAmt) * cutSc;
+      const avg = tokGross > 0 ? hypeGross / tokGross : 0, sqf = Number(sq) / Q96, px = sqf > 0 ? sc / (sqf * sqf) : 0;
       // the trader: who the pool's tokens went to (following one more hop), or who paid them in
       const tt = (txTransfers.get(l.transactionHash) || []).filter((x) => x.tok === t.addr.toLowerCase());
       let wallet = '';

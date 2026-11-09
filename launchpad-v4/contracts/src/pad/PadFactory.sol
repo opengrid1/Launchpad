@@ -7,6 +7,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
@@ -47,9 +48,11 @@ import {PadToken} from "./PadToken.sol";
  * pin so an owner retune can never land under an in-flight launch.
  */
 contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
+    using SafeERC20 for IERC20;
     struct LaunchConfig {
+        address pairToken; // address(0) = native HYPE, else an approved ERC-20 (a tokenized stock, USDC)
         uint256 supply;
-        // Market caps in HYPE (18 decimals) bounding the three positions.
+        // Market caps in the pair currency's smallest unit bounding the three positions.
         uint256 startMcap;
         uint256 band1Mcap;
         uint256 band2Mcap;
@@ -99,6 +102,8 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         bool buybackEnabled;
         uint40 launchedAt;
         bool exists;
+        address pairToken;
+        int24 tickSpacing;
     }
 
     struct PendingCreatorFeeRecipient {
@@ -146,12 +151,15 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     error OpeningBuyTooLarge(uint256 tokensOut, uint256 cap);
     error OpeningBuySlippage(uint256 tokensOut, uint256 minimum);
     error NotPoolManager();
+    error NoTokenAddressAbovePair();
+    error InexactPairTransfer(uint256 expected, uint256 received);
 
     event TokenLaunched(
         address indexed token,
         address indexed creator,
         PoolId indexed poolId,
         uint256 launchConfigId,
+        address pairToken,
         address creatorFeeRecipient,
         uint16 creatorTaxBps,
         bool buybackEnabled,
@@ -370,7 +378,7 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         if (!isCreator && msg.sender != owner()) revert NotBuybackController();
         if (enabled && !isCreator) revert NotBuybackController();
         rec.buybackEnabled = enabled;
-        hook.setBuybackEnabled(_poolKey(token, _launchConfigs[rec.launchConfigId].tickSpacing).toId(), enabled);
+        hook.setBuybackEnabled(_poolKeyOf(token, rec).toId(), enabled);
         emit BuybackEnabledUpdated(token, enabled, msg.sender);
     }
 
@@ -378,7 +386,7 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         if (newRecipient == address(0)) revert ZeroAddress();
         address previousRecipient = rec.creatorFeeRecipient;
         rec.creatorFeeRecipient = newRecipient;
-        hook.setCreatorFeeRecipient(_poolKey(token, _launchConfigs[rec.launchConfigId].tickSpacing).toId(), newRecipient);
+        hook.setCreatorFeeRecipient(_poolKeyOf(token, rec).toId(), newRecipient);
         buybackVault.updateCreatorRecipient(token, newRecipient);
         emit CreatorFeeRecipientUpdated(token, previousRecipient, newRecipient);
     }
@@ -407,18 +415,30 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
     function poolKeyOf(address token) external view returns (PoolKey memory) {
         LaunchedToken storage rec = _launchedTokens[token];
         if (!rec.exists) revert TokenNotFound();
-        return _poolKey(token, _launchConfigs[rec.launchConfigId].tickSpacing);
+        return _poolKeyOf(token, rec);
     }
 
     /**
      * @notice The address a launch by `creator` with `salt` gets. Front ends
      * mine the salt for a vanity suffix.
      */
-    function predictTokenAddress(address creator, bytes32 salt) external view returns (address) {
+    function predictTokenAddress(address creator, bytes32 salt, uint256 launchConfigId) external view returns (address token) {
+        if (launchConfigId >= _launchConfigs.length) revert InvalidLaunchConfigId();
+        (token,) = _tokenSalt(creator, salt, _launchConfigs[launchConfigId].pairToken);
+    }
+
+    /**
+     * @dev The clone salt for a launch, varied until the token's address sorts
+     * above the pair's, so the pair is always currency0 of the pool.
+     */
+    function _tokenSalt(address creator, bytes32 salt, address pair) private view returns (address token, bytes32 cloneSalt) {
         bytes32 bytecodeHash = keccak256(_cloneCode(tokenImplementation));
-        return address(
-            uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), _cloneSalt(creator, salt), bytecodeHash))))
-        );
+        for (uint256 i; i < 128; ++i) {
+            cloneSalt = _cloneSalt(creator, i == 0 ? salt : keccak256(abi.encodePacked(salt, i)));
+            token = address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), cloneSalt, bytecodeHash)))));
+            if (token > pair && token.code.length == 0) return (token, cloneSalt);
+        }
+        revert NoTokenAddressAbovePair();
     }
 
     /**
@@ -466,7 +486,8 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         if (launchConfigId >= _launchConfigs.length) revert InvalidLaunchConfigId();
         LaunchConfig memory config = _launchConfigs[launchConfigId];
         if (!config.enabled) revert LaunchConfigDisabled();
-        if (msg.value != launchFee + params.openingBuy) revert LaunchFeeNotPaid();
+        if (config.pairToken != address(0) && !approvedPairTokens[config.pairToken]) revert PairTokenValidationFailed();
+        if (msg.value != launchFee + (config.pairToken == address(0) ? params.openingBuy : 0)) revert LaunchFeeNotPaid();
         _requireLaunchDependenciesWired();
         _validateTokenParams(params);
 
@@ -479,12 +500,13 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         address feeRecipient = params.creatorFeeRecipient == address(0) ? msg.sender : params.creatorFeeRecipient;
 
         // 1. the token, with the whole supply minted here
-        token = _clone(tokenImplementation, _cloneSalt(msg.sender, params.salt));
+        (, bytes32 cloneSalt) = _tokenSalt(msg.sender, params.salt, config.pairToken);
+        token = _clone(tokenImplementation, cloneSalt);
         PadToken(token).initialize(params.name, params.symbol, config.supply, address(this));
 
         // 2. the pool, opening at the start market cap, registered with the hook
         ConfigTicks memory ticks = _configTicks[launchConfigId];
-        PoolKey memory key = _poolKey(token, config.tickSpacing);
+        PoolKey memory key = _poolKey(token, config.pairToken, config.tickSpacing);
         poolManager.initialize(key, TickMath.getSqrtPriceAtTick(ticks.start));
         hook.registerPool(
             key,
@@ -512,7 +534,9 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
             creatorTaxBps: params.creatorTaxBps,
             buybackEnabled: params.buybackEnabled,
             launchedAt: uint40(block.timestamp),
-            exists: true
+            exists: true,
+            pairToken: config.pairToken,
+            tickSpacing: config.tickSpacing
         });
         allTokens.push(token);
 
@@ -520,12 +544,18 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         if (launchFee != 0) feeEscrow.credit{value: launchFee}(hook.protocolFeeRecipient());
 
         emit TokenLaunched(
-            token, msg.sender, key.toId(), launchConfigId, feeRecipient, params.creatorTaxBps, params.buybackEnabled, ids
+            token, msg.sender, key.toId(), launchConfigId, config.pairToken, feeRecipient, params.creatorTaxBps, params.buybackEnabled, ids
         );
         emit TokenMetadata(token, params.name, params.symbol, params.logo, params.description, params.socials);
 
         // 5. the opening buy, exempt from the snipe tax, capped at 5% of the supply
         if (params.openingBuy != 0) {
+            if (config.pairToken != address(0)) {
+                uint256 before = IERC20(config.pairToken).balanceOf(address(this));
+                IERC20(config.pairToken).safeTransferFrom(msg.sender, address(this), params.openingBuy);
+                uint256 got = IERC20(config.pairToken).balanceOf(address(this)) - before;
+                if (got != params.openingBuy) revert InexactPairTransfer(params.openingBuy, got);
+            }
             _inOpeningBuy = true;
             bytes memory res = poolManager.unlock(abi.encode(key, params.openingBuy, msg.sender));
             _inOpeningBuy = false;
@@ -543,12 +573,12 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
      */
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         if (msg.sender != address(poolManager) || !_inOpeningBuy) revert NotPoolManager();
-        (PoolKey memory key, uint256 hypeIn, address buyer) = abi.decode(data, (PoolKey, uint256, address));
+        (PoolKey memory key, uint256 pairIn, address buyer) = abi.decode(data, (PoolKey, uint256, address));
         BalanceDelta delta = poolManager.swap(
             key,
             SwapParams({
                 zeroForOne: true,
-                amountSpecified: -SafeCast.toInt256(hypeIn),
+                amountSpecified: -SafeCast.toInt256(pairIn),
                 sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
             }),
             ""
@@ -556,12 +586,21 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         uint256 owed = uint256(uint128(-delta.amount0()));
         uint256 tokensOut = uint256(uint128(delta.amount1()));
         poolManager.sync(key.currency0);
-        poolManager.settle{value: owed}();
+        if (key.currency0.isAddressZero()) {
+            poolManager.settle{value: owed}();
+        } else {
+            IERC20(Currency.unwrap(key.currency0)).safeTransfer(address(poolManager), owed);
+            poolManager.settle();
+        }
         poolManager.take(key.currency1, buyer, tokensOut);
         // An opening buy can only stop short of its input at the top of the range; return the rest.
-        if (owed < hypeIn) {
-            (bool ok,) = buyer.call{value: hypeIn - owed}("");
-            if (!ok) revert LaunchFeeNotPaid();
+        if (owed < pairIn) {
+            if (key.currency0.isAddressZero()) {
+                (bool ok,) = buyer.call{value: pairIn - owed}("");
+                if (!ok) revert LaunchFeeNotPaid();
+            } else {
+                IERC20(Currency.unwrap(key.currency0)).safeTransfer(buyer, pairIn - owed);
+            }
         }
         return abi.encode(tokensOut);
     }
@@ -603,10 +642,14 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
         return abi.encode(key, lower, upper, uint256(liquidity), uint128(0), uint128(amount1), address(locker), bytes(""));
     }
 
-    function _poolKey(address token, int24 tickSpacing) private view returns (PoolKey memory) {
-        // Native HYPE is address(0), always currency0.
+    function _poolKeyOf(address token, LaunchedToken storage rec) private view returns (PoolKey memory) {
+        return _poolKey(token, rec.pairToken, rec.tickSpacing);
+    }
+
+    function _poolKey(address token, address pair, int24 tickSpacing) private view returns (PoolKey memory) {
+        // The token is cloned above the pair's address (native HYPE is address(0)), so the pair is always currency0.
         return PoolKey({
-            currency0: Currency.wrap(address(0)),
+            currency0: Currency.wrap(pair),
             currency1: Currency.wrap(token),
             fee: 0,
             tickSpacing: tickSpacing,
@@ -624,7 +667,8 @@ contract PadFactory is Ownable2Step, ReentrancyGuard, IUnlockCallback {
      * rises. The three positions sit below the opening tick, so they hold
      * only the token until buys walk the price down into them.
      */
-    function _validateLaunchConfig(LaunchConfig calldata c) private pure returns (ConfigTicks memory t) {
+    function _validateLaunchConfig(LaunchConfig calldata c) private view returns (ConfigTicks memory t) {
+        if (c.pairToken != address(0) && !approvedPairTokens[c.pairToken]) revert PairTokenValidationFailed();
         if (c.tickSpacing <= 0 || c.tickSpacing > 16_384) revert InvalidLaunchConfig();
         if (c.supply < 1e18 || c.supply > type(uint128).max) revert InvalidLaunchConfig();
         if (c.startMcap == 0 || c.band1Mcap <= c.startMcap || c.band2Mcap <= c.band1Mcap) revert InvalidLaunchConfig();
