@@ -1,0 +1,104 @@
+{
+  "name": "Hypex",
+  "theme": "",
+  "themeColor": "#07080a",
+  "replace": [
+    [
+      "Pool fee 1.0%.",
+      "Pool fee 2.5%."
+    ],
+    [
+      "<dt>Pool fee</dt><dd>1% (hook)",
+      "<dt>Pool fee</dt><dd>2.5% (hook)"
+    ],
+    [
+      "the 1% pool fee",
+      "the 2.5% pool fee"
+    ],
+    [
+      "a 1% fee on the HYPE side",
+      "a 2.5% fee on the HYPE side"
+    ],
+    [
+      "1% fee with 70% to",
+      "2.5% fee with 70% to"
+    ],
+    [
+      "1% fee, 70% to the creator",
+      "2.5% fee, 70% to the creator"
+    ],
+    [
+      "70% of every 1% fee",
+      "70% of every 2.5% fee"
+    ],
+    [
+      "['/trends', 'Trending', 'flame', 'trends'], ",
+      ""
+    ],
+    [
+      "LiquidFi runs on two chains: HyperEVM, and Elysium, the HYPE-gas chain that settles to HyperEVM. A token lives on the chain it launched on. Tokens launch directly into Uniswap v4 and are quoted against HYPE only.",
+      "Hypex runs on Elysium, the HYPE-gas chain that settles to HyperEVM. Tokens launch directly into Uniswap v4 and are quoted against HYPE only. Every protocol fee flows into the Hypex flywheel: 35% streams to $HYPEX stakers, 35% buys $HYPEX on its own pool and burns it, 30% funds the treasury."
+    ],
+    [
+      "<dl class=\"defs\"><div><dt>Network</dt><dd>HyperEVM</dd></div><div><dt>Chain ID</dt><dd>999</dd></div><div><dt>Public RPC</dt><dd>https://rpc.hyperliquid.xyz/evm</dd></div><div><dt>Explorer</dt><dd>hyperevmscan.io</dd></div></dl>",
+      ""
+    ],
+    [
+      "Two steps on HyperEVM or Elysium.",
+      "Two steps on Elysium."
+    ],
+    [
+      "on HyperEVM and Elysium",
+      "on Elysium"
+    ],
+    [
+      "on HyperEVM or Elysium",
+      "on Elysium"
+    ],
+    [
+      "HyperEVM and Elysium",
+      "Elysium"
+    ],
+    [
+      "Launch on HyperEVM and Elysium.",
+      "Launch on Elysium."
+    ],
+    [
+      "<span class=\"dt\" id=\"pair-net\">Hyperliquid</span>",
+      "<span class=\"dt\" id=\"pair-net\">Elysium</span>"
+    ],
+    [
+      "LiquidFi Coin",
+      "Hypex Coin"
+    ],
+    [
+      "placeholder=\"LIQ\"",
+      "placeholder=\"HYPEX\""
+    ],
+    [
+      "liquidfi.fun",
+      "hypex.fun"
+    ],
+    [
+      "liquidfi_fun",
+      "hypex_fun"
+    ],
+    [
+      "LiquidFi",
+      "Hypex"
+    ]
+  ],
+  "files": "html,js",
+  "skipFiles": [
+    "config.js",
+    "abi.js",
+    "glyphs.js"
+  ],
+  "drop": [
+    "trends.html",
+    "pg-trends.js",
+    "api/trends.js",
+    "api/idea.js",
+    "api/_trends.js"
+  ]
+}
