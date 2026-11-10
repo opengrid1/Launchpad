@@ -328,3 +328,5 @@ html,body{overflow-x:hidden}
 @media(max-width:640px){.roads.four{grid-template-columns:1fr}}
 .adhero .cd{gap:36px}.adhero .cd>div{display:flex;flex-direction:column;gap:6px}.adhero .cd span{color:rgba(255,255,255,.6)}.adhero .cd b{font:400 34px/1 var(--serif);color:#fff}
 @media (max-width:760px){.tabs a.on{color:#fff}}
+.ticker .pv{z-index:2;box-shadow:-14px 0 0 var(--s1),6px 0 0 var(--s1)}
+@media (max-width:760px){.heroart.wb .etch,.phero .pa .etch{max-width:none}}
