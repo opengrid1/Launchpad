@@ -21,7 +21,7 @@
   const gauge = (pct, label, big, foot) => `<div class="gauge"><div class="ring" style="--p:${Math.max(0, Math.min(100, pct)) * 3.6}deg"></div><div class="t">${label}</div><div class="gv"><div class="v">${big}</div><div class="gs">${foot}</div></div></div>`;
   // page art: Japanese woodblock prints (Hokusai, Hiroshige; Art Institute of Chicago, public domain), one per page
   const WB = { press: 'launch', floor: 'floor', library: 'docs', home: 'home', airdrop: 'airdrop', profile: 'profile' };
-  const etch = (name, pos) => `<picture><source media="(max-width:900px)" srcset="/img/wb-${WB[name] || name}-sm.webp"><img class="etch" src="/img/wb-${WB[name] || name}.webp" alt="" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}></picture>`;
+  const etch = (name, pos) => `<picture><source media="(max-width:900px)" srcset="/img/pr-${WB[name] || name}-sm.webp"><img class="etch" src="/img/pr-${WB[name] || name}.webp" alt="" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}></picture>`;
   // Hypex economics: every trade pays feeBps, split in bps of volume (floor, creator, trader airdrop, platform)
   const SP = C.econ.split || { floor: 120, creator: 50, traders: 50, platform: 30 }, sp = (k) => String(+(SP[k] / 100).toFixed(2));
   // the floor of a coin: the price its floor band can buy every circulating token back at. Until the floor contracts are live
@@ -55,19 +55,19 @@
     strip(K[K.length - 1], K.length - 1);
     let LW; try { LW = await lw(); } catch { el.innerHTML = '<div class="empty">The chart could not load.</div>'; return; }
     if (!document.body.contains(el)) return;
-    const css = getComputedStyle(document.documentElement), mono = '"Geist Mono", ui-monospace, monospace', mute = '#8a91a0', up = '#139a5b', dn = '#e0394f', acc = '#111214';
-    const chart = LW.createChart(el, { width: el.clientWidth, height: el.clientHeight, localization: { locale: 'en-US', priceFormatter: lab }, layout: { background: { type: 'solid', color: 'transparent' }, textColor: mute, fontFamily: mono, fontSize: 11, attributionLogo: true }, grid: { vertLines: { color: 'rgba(17,18,20,.05)' }, horzLines: { color: 'rgba(17,18,20,.06)' } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: .08, bottom: .22 } }, timeScale: { borderVisible: false, timeVisible: state.tf < 86400, secondsVisible: false, rightOffset: 3 }, crosshair: { mode: LW.CrosshairMode.Normal, vertLine: { color: 'rgba(17,18,20,.22)', labelBackgroundColor: '#111214' }, horzLine: { color: 'rgba(17,18,20,.22)', labelBackgroundColor: '#111214' } }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true } });
+    const css = getComputedStyle(document.documentElement), mono = '"Geist Mono", ui-monospace, monospace', mute = '#8a91a0', up = '#2f8a4e', dn = '#c23b45', acc = '#3d7f1d';
+    const chart = LW.createChart(el, { width: el.clientWidth, height: el.clientHeight, localization: { locale: 'en-US', priceFormatter: lab }, layout: { background: { type: 'solid', color: 'transparent' }, textColor: mute, fontFamily: mono, fontSize: 11, attributionLogo: true }, grid: { vertLines: { color: 'rgba(17,18,20,.05)' }, horzLines: { color: 'rgba(17,18,20,.06)' } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: .08, bottom: .22 } }, timeScale: { borderVisible: false, timeVisible: state.tf < 86400, secondsVisible: false, rightOffset: 3 }, crosshair: { mode: LW.CrosshairMode.Normal, vertLine: { color: 'rgba(17,18,20,.22)', labelBackgroundColor: '#3d7f1d' }, horzLine: { color: 'rgba(17,18,20,.22)', labelBackgroundColor: '#3d7f1d' } }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true } });
     void css;
     const priceFormat = { type: 'custom', formatter: lab, minMove: state.cmode === 'mcap' ? 0.01 : 1e-12 };
     const series = line
-      ? chart.addAreaSeries({ lineColor: acc, lineWidth: 2, topColor: 'rgba(17,18,20,.10)', bottomColor: 'rgba(17,18,20,0)', priceFormat, lastValueVisible: true, priceLineVisible: true, priceLineStyle: LW.LineStyle.Dotted, priceLineColor: acc, crosshairMarkerRadius: 4 })
+      ? chart.addAreaSeries({ lineColor: acc, lineWidth: 2, topColor: 'rgba(79,154,42,.14)', bottomColor: 'rgba(79,154,42,0)', priceFormat, lastValueVisible: true, priceLineVisible: true, priceLineStyle: LW.LineStyle.Dotted, priceLineColor: acc, crosshairMarkerRadius: 4 })
       : chart.addCandlestickSeries({ upColor: up, downColor: dn, borderUpColor: up, borderDownColor: dn, wickUpColor: up, wickDownColor: dn, priceFormat, priceLineStyle: LW.LineStyle.Dotted });
     const sData = () => (line ? K.map((b) => ({ time: b.t, value: b.c })) : K.map((b) => ({ time: b.t, open: b.o, high: b.h, low: b.l, close: b.c })));
     series.setData(sData());
     const athLine = series.createPriceLine({ price: athV, color: 'rgba(17,18,20,.35)', lineWidth: 1, lineStyle: LW.LineStyle.Dashed, axisLabelVisible: true, title: 'ATH' });
     // the floor: where its HYPE band buys back every coin in circulation, drawn in the chart's own units
     const flV = (state.cmode === 'mcap' ? C.econ.supply : 1) * floorOf(t).px;
-    if (flV > 0) series.createPriceLine({ price: flV, color: '#8fc400', lineWidth: 2, lineStyle: LW.LineStyle.Solid, axisLabelVisible: true, title: 'FLOOR' });
+    if (flV > 0) series.createPriceLine({ price: flV, color: '#4f9a2a', lineWidth: 2, lineStyle: LW.LineStyle.Solid, axisLabelVisible: true, title: 'FLOOR' });
     const vol = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol', lastValueVisible: false, priceLineVisible: false });
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: .9, bottom: 0 }, borderVisible: false, visible: false });
     const vData = () => K.map((b) => ({ time: b.t, value: b.v * APP.hypeUsd, color: b.c >= b.o ? 'rgba(19,154,91,.22)' : 'rgba(224,57,79,.22)' }));
@@ -105,7 +105,7 @@
     const list = ts.filter((t) => !q || (t.name + t.symbol + t.addr).toLowerCase().includes(q)).filter((t) => pf === 'all' || (pf === 'hype' ? !DATA.pairOf(t.addr) : pf === 'stock' ? (DATA.pairOf(t.addr) || {}).kind === 'stock' : (DATA.pairOf(t.addr) || {}).key === pf)).sort((a, b) => sort === 'new' ? b.createdAt - a.createdAt : sort === 'top' ? b.mcapUsd - a.mcapUsd : b.vol24 - a.vol24);
     const tape = allTrades().sort((a, b) => b.ts - a.ts).slice(0, 12), byVol = [...ts].sort((a, b) => b.vol24 - a.vol24).slice(0, 6);
     const feesAll = ts.reduce((a, t) => a + t.feesAll, 0), creatorPaid = feesAll * SP.creator / C.econ.feeBps, fly = (DATA.raw() || {}).flywheel, adPct = AD ? AD.pools.reduce((a, p) => a + p.pct, 0) : 0;
-    const flies = tape.slice(0, 3).map((x, i) => `<a class="fly" href="${link(x.token)}" style="left:${[6, 54, 24][i]}%;top:${[18, 40, 72][i]}%"><span class="av">${APP.img(x.token)}</span><span class="${x.buy ? 'up' : 'dn'}">${x.buy ? 'Buy' : 'Sell'}</span> $${esc(x.token.symbol)} ${fmtUsd(x.hype * APP.hypeUsd)} · ${ago(x.ts)}</a>`).join('');
+    const flies = tape.slice(0, 3).map((x, i) => `<a class="fly" href="${link(x.token)}" style="left:${[58, 78, 62][i]}%;top:${[14, 38, 64][i]}%"><span class="av">${APP.img(x.token)}</span><span class="${x.buy ? 'up' : 'dn'}">${x.buy ? 'Buy' : 'Sell'}</span> $${esc(x.token.symbol)} ${fmtUsd(x.hype * APP.hypeUsd)} · ${ago(x.ts)}</a>`).join('');
     const html = `<div class="page">
       <section class="hero"><div><span class="eyebrow">The launchpad on Elysium</span>
           <h1 class="disp">Every trade<br>lifts the <em>floor.</em></h1>
@@ -418,7 +418,7 @@
       <div class="card calc"><h3>Run the numbers</h3><p class="mute" style="font-size:13px;margin-top:4px">Where 1,000 ${esc(Q)} of volume goes. The fee is fixed, so the split is the same on every token.</p><div class="out" id="fw-out"></div></div></div>`;
     const cum = []; let acc = 0; const sorted = [...burns].sort((a, b) => a.ts - b.ts); for (const e of sorted) { acc += e.tokens; cum.push(acc); }
     const buckets = 24, sp = new Array(buckets).fill(0); if (sorted.length) { const t0 = sorted[0].ts, step = Math.max(1, (now - t0) / buckets); for (const e of sorted) sp[Math.min(buckets - 1, Math.floor((e.ts - t0) / step))] += e.quote; }
-    area($('#fw-burn'), cum.length ? cum : [0, 0], '#139a5b'); area($('#fw-spend'), sp, '#111214', { bars: true });
+    area($('#fw-burn'), cum.length ? cum : [0, 0], '#2f8a4e'); area($('#fw-spend'), sp, '#3d7f1d', { bars: true });
     $$('[data-fwr]').forEach((b) => b.onclick = () => { state.fwr = b.dataset.fwr; flywheel(); });
     const calc = () => { const fee = C.econ.feeBps / 100, vol = 1000, total = vol * fee / 100, creator = total * C.econ.creatorShareBps / 10000, pro = total * C.econ.protocolShareBps / 10000; $('#fw-out').innerHTML = `<div><span>Fee</span><b>${fee.toFixed(1)}% · ${fmtNum(total, 2)} ${esc(Q)}</b></div><div><span>Creator · ${(fee * C.econ.creatorShareBps / 10000).toFixed(2)}% of volume</span><b>${fmtNum(creator, 2)} ${esc(Q)}</b></div><div><span>Buys and burns $${esc(T)} · ${SPL.burn}% of volume</span><b>${fmtNum(pro * BURN_OF_PROTO, 2)} ${esc(Q)}</b></div><div><span>Platform · ${SPL.plat}% of volume</span><b>${fmtNum(pro * (1 - BURN_OF_PROTO), 2)} ${esc(Q)}</b></div>`; }; calc();
   }
@@ -556,7 +556,7 @@
         <div class="card pad"><i>02</i><h3>The floor rises</h3><p class="mute">Once a block, before its first trade, the floor moves up as far as its money can hold every coin in circulation. Spare money buys coins back and burns them.</p></div>
         <div class="card pad"><i>03</i><h3>Sell into it, any time</h3><p class="mute">The floor is a band of ${esc(Q)} in the pool itself. However far the price falls, every holder can sell into it at the floor price or better.</p></div></div>
       <div class="card calc" style="margin-top:16px"><h3>Run the numbers</h3><p class="mute" style="font-size:13px;margin-top:4px">Where 1,000 ${esc(Q)} of trading goes. The fee is fixed, so the split is the same on every coin.</p><div class="out">${[['Fee', (C.econ.feeBps / 100).toFixed(1) + '%', C.econ.feeBps], ['Raises the floor', sp('floor') + '%', SP.floor], ['Back to traders', sp('traders') + '%', SP.traders], ['To the creator', sp('creator') + '%', SP.creator], ['Platform', sp('platform') + '%', SP.platform]].map(([l, p, b]) => `<div><span>${l} · ${p} of volume</span><b>${fmtNum(1000 * b / 1e4, 2)} ${esc(Q)}</b></div>`).join('')}</div></div></div>`;
-    area($('#fl-cum'), cum.length ? cum : [0, 0], '#111214');
+    area($('#fl-cum'), cum.length ? cum : [0, 0], '#3d7f1d');
   }
 
   // ---- the trader airdrop: ${sp('traders')}% of every trade, credited at once, claimable any time
@@ -604,7 +604,7 @@
     const o = $('#m-out', ov); if (o) o.onclick = () => { W.disconnect(); close(); };
   }
   function searchDialog() { const ov = APP.dialog('Search', `<div class="picker"><input class="inp" id="sq" placeholder="Name, ticker or address" autocomplete="off"><div class="list" id="sq-list"></div></div>`); const draw = (s) => { const ls = DATA.tokens().filter((t) => s && (t.name.toLowerCase().includes(s) || t.symbol.toLowerCase().includes(s) || t.addr.includes(s))).slice(0, 8); $('#sq-list', ov).innerHTML = ls.map((t) => `<a class="row" href="${link(t)}"><span class="av">${APP.img(t)}</span><span><b>${esc(t.name)}</b><small>$${esc(t.symbol)} · ${fmtUsd(t.mcapUsd)}</small></span></a>`).join(''); $$('a', ov).forEach((a) => a.onclick = () => ov.remove()); }; $('#sq', ov).oninput = (e) => draw(e.target.value.trim().toLowerCase()); setTimeout(() => $('#sq', ov).focus(), 30); }
-  function footer() { const f = $('#foot-art'); if (f) f.innerHTML = `<img class="pano" src="/img/wb-foot.webp" srcset="/img/wb-foot-sm.webp 900w, /img/wb-foot.webp 1800w" sizes="100vw" alt="" decoding="async">`; const y = $('#f-year'); if (y) y.textContent = new Date().getFullYear(); }
+  function footer() { const f = $('#foot-art'); if (f) f.innerHTML = `<img class="pano" src="/img/pr-foot.webp" srcset="/img/pr-foot-sm.webp 900w, /img/pr-foot.webp 1800w" sizes="100vw" alt="" decoding="async">`; const y = $('#f-year'); if (y) y.textContent = new Date().getFullYear(); }
   APP.boot(async () => {
     $('#n-search').onclick = searchDialog; const nm = $('#n-menu'); if (nm) nm.onclick = (e) => { e.preventDefault(); menuSheet(); }; footer();
     document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); searchDialog(); } });

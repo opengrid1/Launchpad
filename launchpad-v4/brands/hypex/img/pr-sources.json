@@ -1,0 +1,44 @@
+{
+ "home": {
+  "aic_id": 48215,
+  "title": "The Pyramid of Gaius Cestius, from Views",
+  "artist": "Giovanni Battista Piranesi",
+  "image": "https://www.artic.edu/iiif/2/4e7f3dab-c8e7-e9e8-e893-2894112ee207/full/1686,/0/default.jpg"
+ },
+ "floor": {
+  "aic_id": 7361,
+  "title": "The Staircase with Trophies, plate 8 fro",
+  "artist": "Giovanni Battista Piranesi",
+  "image": "https://www.artic.edu/iiif/2/7cc86985-5ad2-de10-2b65-17a8255abadd/full/1686,/0/default.jpg"
+ },
+ "launch": {
+  "aic_id": 7358,
+  "title": "The Drawbridge, plate 7 from Imaginary P",
+  "artist": "Giovanni Battista Piranesi",
+  "image": "https://www.artic.edu/iiif/2/e8ea62c9-e27c-e0da-4e5f-339d16b0bedc/full/1686,/0/default.jpg"
+ },
+ "airdrop": {
+  "aic_id": 7380,
+  "title": "The Pier with a Lamp, plate 15 from Imag",
+  "artist": "Giovanni Battista Piranesi",
+  "image": "https://www.artic.edu/iiif/2/86cb8682-2b2c-719f-1738-206aa018d988/full/1686,/0/default.jpg"
+ },
+ "docs": {
+  "aic_id": 7377,
+  "title": "The Gothic Arch, plate 14 from Imaginary",
+  "artist": "Giovanni Battista Piranesi",
+  "image": "https://www.artic.edu/iiif/2/e92b1610-c185-c9c0-f5ad-9eafe1932c34/full/1686,/0/default.jpg"
+ },
+ "profile": {
+  "aic_id": 7367,
+  "title": "Prisoners on a Projecting Platform, plat",
+  "artist": "Giovanni Battista Piranesi",
+  "image": "https://www.artic.edu/iiif/2/9179e6c7-9913-bbc9-b7dc-65c024f60ebb/full/1686,/0/default.jpg"
+ },
+ "foot": {
+  "aic_id": 19,
+  "title": "View of Ponte Lugano on the Anio, from V",
+  "artist": "Giovanni Battista Piranesi",
+  "image": "https://www.artic.edu/iiif/2/7f5429b5-a966-ccbe-1ce3-7f131e96bf87/full/1686,/0/default.jpg"
+ }
+}

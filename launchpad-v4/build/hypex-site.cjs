@@ -11,6 +11,6 @@ v.rewrites = ["/token/:addr", "/launch", "/create", "/airdrop", "/floor", "/fees
 v.rewrites.unshift({ source: "/favicon.ico", destination: "/img/favicon.ico" });
 delete v.crons; // no keeper jobs until the contracts exist
 v.headers = [...(v.headers || []), { source: "/(.*)", headers: [{ key: "X-Robots-Tag", value: "noindex" }] }]; // preview: kept out of search
-fs.writeFileSync(path.join(OUT, "site.webmanifest"), JSON.stringify({ name: "Hypex", short_name: "Hypex", icons: [{ src: "/img/icon-192.png", sizes: "192x192", type: "image/png" }, { src: "/img/icon-512.png", sizes: "512x512", type: "image/png" }], theme_color: "#f6f6f1", background_color: "#f6f6f1", display: "standalone", start_url: "/" }, null, 2) + "\n");
+fs.writeFileSync(path.join(OUT, "site.webmanifest"), JSON.stringify({ name: "Hypex", short_name: "Hypex", icons: [{ src: "/img/icon-192.png", sizes: "192x192", type: "image/png" }, { src: "/img/icon-512.png", sizes: "512x512", type: "image/png" }], theme_color: "#eef3ef", background_color: "#eef3ef", display: "standalone", start_url: "/" }, null, 2) + "\n");
 fs.writeFileSync(path.join(OUT, "vercel.json"), JSON.stringify(v, null, 2) + "\n");
 console.log("Hypex front-end built in", path.relative(ROOT, OUT));
