@@ -6,14 +6,14 @@
   const usd = (q) => APP.usd(q), hype = (n, d) => fmtNum(n, d ?? (Math.abs(n) >= 100 ? 1 : Math.abs(n) >= 1 ? 3 : 5)) + ' ' + Q, sym = () => ST.symbol || 'HYPEX';
   const ICON = { x: '<svg class="ico" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>', copy: '<svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', ext: '<svg class="ico" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>', chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' };
   const MI = {
-    home: '<svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>',
-    create: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
-    bridge: '<svg class="ico" viewBox="0 0 24 24"><path d="M3 18h18M5 18v-5M19 18v-5M3 13c3-5 6-7 9-7s6 2 9 7M9 18v-4M15 18v-4"/></svg>',
-    gift: '<svg class="ico" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9M12 8c-2-3-5-3-5-1s3 1 5 1zm0 0c2-3 5-3 5-1s-3 1-5 1z"/></svg>',
-    fly: '<svg class="ico" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>',
-    fees: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5S7 4.6 7 6.5 9.2 10 12 10s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5"/></svg>',
-    profile: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
-    docs: '<svg class="ico" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg>',
+    home: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v1.7M12 19.3V21M3 12h1.7M19.3 12H21"/><path class="a" d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/></svg>',
+    create: '<svg class="ico" viewBox="0 0 24 24"><path class="a" d="M12 2.8c2.6 2 3.9 4.9 3.9 8.3 0 2.1-.5 3.9-1.3 5.4H9.4c-.8-1.5-1.3-3.3-1.3-5.4 0-3.4 1.3-6.3 3.9-8.3z"/><circle cx="12" cy="9.6" r="1.6"/><path d="M8.6 13.4l-2.4 2.2v3.1l3.2-2.2M15.4 13.4l2.4 2.2v3.1l-3.2-2.2"/><path d="M10.6 19.3c.3 1 .8 1.7 1.4 2.2.6-.5 1.1-1.2 1.4-2.2"/></svg>',
+    bridge: '<svg class="ico" viewBox="0 0 24 24"><path class="a" stroke="none" d="M4 20v-4h4.5v-4H13V8h4.5V4H20v16z"/><path d="M4 16h4.5v-4H13V8h4.5V4H20"/><path d="M3 20h18"/></svg>',
+    gift: '<svg class="ico" viewBox="0 0 24 24"><path class="a" d="M3.5 10.5a8.5 7 0 0 1 17 0c-1.4-.9-2.8-.9-4.2 0-1.4-.9-2.9-.9-4.3 0-1.4-.9-2.9-.9-4.3 0-1.4-.9-2.8-.9-4.2 0z"/><path d="M3.5 10.5l6 6M20.5 10.5l-6 6M12 10.5v6"/><rect x="9.3" y="16.5" width="5.4" height="4.6" rx="1.2"/></svg>',
+    fly: '<svg class="ico" viewBox="0 0 24 24"><path class="a" stroke="none" d="M4 20v-4h4.5v-4H13V8h4.5V4H20v16z"/><path d="M4 16h4.5v-4H13V8h4.5V4H20"/><path d="M3 20h18"/></svg>',
+    fees: '<svg class="ico" viewBox="0 0 24 24"><ellipse class="a" cx="12" cy="6.5" rx="7" ry="2.8"/><path d="M5 6.5v5c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-5"/><path d="M5 11.5v5c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-5"/></svg>',
+    profile: '<svg class="ico" viewBox="0 0 24 24"><circle class="a" cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>',
+    docs: '<svg class="ico" viewBox="0 0 24 24"><path class="a" stroke="none" d="M12 6.6v12.9c1.7-1.5 4-2 8-2v-13c-4 0-6.3.6-8 2.1z"/><path d="M12 6.6C10.3 5.1 8 4.5 4 4.5v13c4 0 6.3.5 8 2 1.7-1.5 4-2 8-2v-13c-4 0-6.3.6-8 2.1zM12 6.6v12.9"/><path d="M6.6 8.6h3M6.6 11.6h3M14.4 8.6h3"/></svg>',
   };
   const state = { route: '', tf: 900, cmode: 'mcap', ckind: 'line', side: 'b', ttab: 'trades', busy: false, slip: Number((() => { try { return localStorage.getItem('slip'); } catch { return 0; } })() || 100) };
   const link = (t) => `#/token/${t.addr}`;
