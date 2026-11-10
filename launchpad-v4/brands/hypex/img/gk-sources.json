@@ -1,0 +1,52 @@
+{
+ "home": {
+  "met_id": 248804,
+  "title": "Marble head from a herm",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/DP107600.jpg"
+ },
+ "launch": {
+  "met_id": 252511,
+  "title": "Marble head of a god, probably Zeus",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/92345.jpg"
+ },
+ "floor": {
+  "met_id": 251841,
+  "title": "Marble relief of Hermes, three nymphs, and Achelo\u00f6s",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/216362.jpg"
+ },
+ "airdrop": {
+  "met_id": 250721,
+  "title": "Fragment of a marble relief with a Nike",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/GR793.jpg"
+ },
+ "docs": {
+  "met_id": 248642,
+  "title": "Marble head of Athena",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/DP119212.jpg"
+ },
+ "profile": {
+  "met_id": 251419,
+  "title": "Marble relief fragment with the head of Medea",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/263089.jpg"
+ },
+ "foot": {
+  "met_id": 257884,
+  "title": "Marble two-sided relief",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/DP285251.jpg"
+ },
+ "logo72": {
+  "met_id": 251419,
+  "title": "Marble relief fragment with the head of Medea",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/263089.jpg"
+ },
+ "logo81": {
+  "met_id": 248700,
+  "title": "Marble statue head of a youth",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/15769.jpg"
+ },
+ "logo4": {
+  "met_id": 248268,
+  "title": "Marble head of a goddess",
+  "src": "https://images.metmuseum.org/CRDImages/gr/original/gr10.124.1.R.jpg"
+ }
+}
