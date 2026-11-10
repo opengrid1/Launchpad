@@ -406,3 +406,39 @@ h1,h2,.disp{font-weight:800;letter-spacing:-.04em}h2{font-size:26px}h3{font-weig
 .adhero .r{background:rgba(17,18,20,.72);backdrop-filter:blur(8px)}.pfk div{background:rgba(17,18,20,.72);backdrop-filter:blur(8px)}
 .foot .fart{display:block;aspect-ratio:4.5/1;max-height:360px}.fart .pano{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 55%}.fart::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,var(--bg) 0%,rgba(246,246,241,0) 45%)}
 @media(max-width:900px){.heroart.wb{height:300px;min-height:300px}.adimg{width:100%;border-radius:var(--r3);opacity:.35}}
+
+/* prints without frames: they run to the right edge of the screen and melt into the page on the text side and below,
+   the paper multiplied into the page colour so there is no box around them */
+.heroart.wb,.phero .pa{border-radius:0;box-shadow:none;background:transparent;overflow:visible}
+.heroart.wb .etch,.phero .pa .etch{position:absolute;top:-30px;bottom:-40px;left:-12%;right:calc(-1 * max(24px, (100vw - var(--wrap)) / 2 + 24px));width:auto;height:auto;object-fit:cover;mix-blend-mode:multiply;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 32%),linear-gradient(0deg,transparent 0%,#000 28%),linear-gradient(180deg,transparent 0%,#000 14%);-webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,transparent 0%,#000 32%),linear-gradient(0deg,transparent 0%,#000 28%),linear-gradient(180deg,transparent 0%,#000 14%);mask-composite:intersect}
+.page{overflow-x:clip}
+.heroart.wb{height:500px;min-height:500px}
+.phero .pa{min-height:260px}
+@media(max-width:900px){
+  .heroart.wb{height:300px;min-height:300px}
+  .heroart.wb .etch,.phero .pa .etch{left:-24px;right:-24px;top:-10px;bottom:-20px;-webkit-mask-image:linear-gradient(0deg,transparent 0%,#000 30%),linear-gradient(180deg,transparent 0%,#000 12%);mask-image:linear-gradient(0deg,transparent 0%,#000 30%),linear-gradient(180deg,transparent 0%,#000 12%)}
+}
+
+/* prints at the top, like a masthead: from under the ticker to the end of the hero, out to the right edge of the
+   screen, fading only toward the text and at the bottom; nothing below the hero is covered */
+html,body{overflow-x:hidden}.page{overflow-x:visible}
+.page>.hero,.page>.phero{position:relative}
+.heroart.wb,.phero .pa{position:static}
+.heroart.wb .etch,.phero .pa .etch{top:-28px;bottom:0;left:auto;width:calc(58% + max(24px, (100vw - var(--wrap)) / 2 + 24px));right:calc(-1 * max(24px, (100vw - var(--wrap)) / 2 + 24px));z-index:0;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 34%),linear-gradient(0deg,transparent 0%,#000 30%);mask-image:linear-gradient(90deg,transparent 0%,#000 34%),linear-gradient(0deg,transparent 0%,#000 30%)}
+.hero>div:first-child,.phero>div:first-child{position:relative;z-index:1}
+.hero .flchip{left:auto;right:4%;bottom:34px}
+.heroart.wb{height:auto;min-height:0}.hero{min-height:520px}
+.phero{min-height:320px}.phero .pa{min-height:0;height:auto!important}
+@media(max-width:900px){
+  .page>.hero,.page>.phero{padding-top:250px}
+  .heroart.wb .etch,.phero .pa .etch{top:-14px;bottom:auto;height:280px;left:-16px;right:-16px;width:auto;-webkit-mask-image:linear-gradient(0deg,transparent 0%,#000 40%);mask-image:linear-gradient(0deg,transparent 0%,#000 40%)}
+  .hero .flchip{right:auto;left:0;bottom:auto;top:200px}
+}
+.heroart.wb .etch,.phero .pa .etch{height:calc(100% + 28px);bottom:auto}
+.phero{min-height:360px!important;align-items:center}
+@media(max-width:900px){.heroart.wb .etch,.phero .pa .etch{height:280px}.phero{min-height:0}}
+@media(max-width:900px){.phero{min-height:0!important}}
+@media(max-width:900px){.heroart.wb .etch,.phero .pa .etch{left:calc(50% - 50vw);right:auto;width:100vw}}
