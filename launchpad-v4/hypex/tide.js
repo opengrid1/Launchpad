@@ -8,9 +8,9 @@
   const MI = {
     home: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v1.7M12 19.3V21M3 12h1.7M19.3 12H21"/><path class="a" d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/></svg>',
     create: '<svg class="ico" viewBox="0 0 24 24"><path class="a" d="M12 2.8c2.6 2 3.9 4.9 3.9 8.3 0 2.1-.5 3.9-1.3 5.4H9.4c-.8-1.5-1.3-3.3-1.3-5.4 0-3.4 1.3-6.3 3.9-8.3z"/><circle cx="12" cy="9.6" r="1.6"/><path d="M8.6 13.4l-2.4 2.2v3.1l3.2-2.2M15.4 13.4l2.4 2.2v3.1l-3.2-2.2"/><path d="M10.6 19.3c.3 1 .8 1.7 1.4 2.2.6-.5 1.1-1.2 1.4-2.2"/></svg>',
-    bridge: '<svg class="ico" viewBox="0 0 24 24"><path class="a" stroke="none" d="M4 20v-4h4.5v-4H13V8h4.5V4H20v16z"/><path d="M4 16h4.5v-4H13V8h4.5V4H20"/><path d="M3 20h18"/></svg>',
+    bridge: '<svg class="ico" viewBox="0 0 24 24"><path class="a" d="M12 3.6l8.2 4.3-8.2 4.3-8.2-4.3z"/><path d="M3.8 12.1l8.2 4.3 8.2-4.3"/><path d="M3.8 16.3l8.2 4.3 8.2-4.3"/></svg>',
     gift: '<svg class="ico" viewBox="0 0 24 24"><path class="a" d="M3.5 10.5a8.5 7 0 0 1 17 0c-1.4-.9-2.8-.9-4.2 0-1.4-.9-2.9-.9-4.3 0-1.4-.9-2.9-.9-4.3 0-1.4-.9-2.8-.9-4.2 0z"/><path d="M3.5 10.5l6 6M20.5 10.5l-6 6M12 10.5v6"/><rect x="9.3" y="16.5" width="5.4" height="4.6" rx="1.2"/></svg>',
-    fly: '<svg class="ico" viewBox="0 0 24 24"><path class="a" stroke="none" d="M4 20v-4h4.5v-4H13V8h4.5V4H20v16z"/><path d="M4 16h4.5v-4H13V8h4.5V4H20"/><path d="M3 20h18"/></svg>',
+    fly: '<svg class="ico" viewBox="0 0 24 24"><path class="a" d="M12 3.6l8.2 4.3-8.2 4.3-8.2-4.3z"/><path d="M3.8 12.1l8.2 4.3 8.2-4.3"/><path d="M3.8 16.3l8.2 4.3 8.2-4.3"/></svg>',
     fees: '<svg class="ico" viewBox="0 0 24 24"><ellipse class="a" cx="12" cy="6.5" rx="7" ry="2.8"/><path d="M5 6.5v5c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-5"/><path d="M5 11.5v5c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-5"/></svg>',
     profile: '<svg class="ico" viewBox="0 0 24 24"><circle class="a" cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>',
     docs: '<svg class="ico" viewBox="0 0 24 24"><path class="a" stroke="none" d="M12 6.6v12.9c1.7-1.5 4-2 8-2v-13c-4 0-6.3.6-8 2.1z"/><path d="M12 6.6C10.3 5.1 8 4.5 4 4.5v13c4 0 6.3.5 8 2 1.7-1.5 4-2 8-2v-13c-4 0-6.3.6-8 2.1zM12 6.6v12.9"/><path d="M6.6 8.6h3M6.6 11.6h3M14.4 8.6h3"/></svg>',
