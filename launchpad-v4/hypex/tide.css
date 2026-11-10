@@ -357,3 +357,19 @@ html,body{overflow-x:hidden}
 .lead,.roads.four{padding:14px 10px 34px}
 @media (max-width:999px){.lcard,.road{--bx:3deg}}
 @media (max-width:999px){.lead{perspective:700px;padding:14px 6px 34px}.lead>.lcard{transition:transform .25s ease-out,box-shadow .7s}}
+/* 3D on every page: Floor stats and steps, Airdrop podium and cards, Profile tiles */
+.fl4,.steps3,.adg,.podium,.pfk{perspective:950px;perspective-origin:50% 40%}
+.fl4>.fcard,.steps3>.card,.adg>.card,.podium>.pod,.pfk>div{position:relative;transform-style:preserve-3d;backface-visibility:hidden;--bx:5deg;
+  transform:rotateX(calc(var(--bx) + var(--rx,0deg))) rotateY(calc(var(--by,0deg) + var(--ry,0deg))) translateZ(var(--tz,0px));transition:transform .7s cubic-bezier(.2,.8,.2,1),box-shadow .7s cubic-bezier(.2,.8,.2,1)}
+.fl4>.fcard,.steps3>.card,.adg>.card{box-shadow:inset 0 0 0 1px var(--s1),inset 0 0 0 2px var(--line),inset 0 0 0 5px var(--s1),inset 0 0 0 6px rgba(13,37,34,.08),0 1px 0 #d3ddd5,0 2px 0 #c9d5cc,0 3px 0 #bfccc2,0 4px 0 #b5c3b8,0 26px 34px -20px rgba(13,37,34,.45),0 50px 60px -40px rgba(13,37,34,.35)}
+.fl4>.fcard.hot{box-shadow:inset 0 0 0 1px var(--acc),0 1px 0 #b9d8a4,0 2px 0 #a9cd91,0 3px 0 #99c27e,0 4px 0 #89b76b,0 26px 34px -20px rgba(13,37,34,.45),0 50px 60px -40px rgba(13,37,34,.35)}
+.podium>.pod,.pfk>div{box-shadow:0 1px 0 rgba(0,0,0,.25),0 2px 0 rgba(0,0,0,.22),0 3px 0 rgba(0,0,0,.2),0 4px 0 rgba(0,0,0,.18),0 24px 30px -18px rgba(0,0,0,.6)}
+.fl4>.fcard.tilt,.steps3>.card.tilt,.adg>.card.tilt,.podium>.pod.tilt,.pfk>div.tilt{--bx:0deg;--tz:40px;transition:transform .12s linear,box-shadow .3s}
+.adg>.card.tilt{--tz:18px}
+.fl4>.fcard::after,.steps3>.card::after,.adg>.card::after,.podium>.pod::after,.pfk>div::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;mix-blend-mode:soft-light;opacity:.9;transition:opacity .4s;
+  background:radial-gradient(120% 90% at var(--mx,22%) var(--my,0%),rgba(255,255,255,.75),rgba(255,255,255,0) 48%),linear-gradient(90deg,rgba(13,37,34,.22),rgba(13,37,34,0) 24%,rgba(255,255,255,.18) 50%,rgba(13,37,34,0) 76%,rgba(13,37,34,.22))}
+.podium>.pod::after,.pfk>div::after{background:radial-gradient(120% 90% at var(--mx,22%) var(--my,0%),rgba(255,255,255,.35),rgba(255,255,255,0) 50%),linear-gradient(90deg,rgba(0,0,0,.35),rgba(0,0,0,0) 26%,rgba(255,255,255,.08) 50%,rgba(0,0,0,0) 74%,rgba(0,0,0,.35))}
+.adg>.card{--bx:3deg}
+.fl4,.steps3{padding:10px 8px 30px}.adg{padding:8px 6px 26px}
+@media (max-width:999px){.fl4>.fcard,.steps3>.card,.adg>.card,.podium>.pod,.pfk>div{--bx:3deg}}
+@media (prefers-reduced-motion:reduce){.fl4>.fcard,.steps3>.card,.adg>.card,.podium>.pod,.pfk>div{transition:none}}
