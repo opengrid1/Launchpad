@@ -1,0 +1,30 @@
+{
+ "home": {
+  "nasa_id": "6901000",
+  "src": "https://images-assets.nasa.gov/image/6901000/6901000~large.jpg"
+ },
+ "launch": {
+  "nasa_id": "KSC-2009-5856",
+  "src": "https://images-assets.nasa.gov/image/KSC-2009-5856/KSC-2009-5856~large.jpg"
+ },
+ "floor": {
+  "nasa_id": "KSC-20180620-PH_GEB01_0004",
+  "src": "https://images-assets.nasa.gov/image/KSC-20180620-PH_GEB01_0004/KSC-20180620-PH_GEB01_0004~large.jpg"
+ },
+ "airdrop": {
+  "nasa_id": "S71-43541",
+  "src": "https://images-assets.nasa.gov/image/S71-43541/S71-43541~large.jpg"
+ },
+ "docs": {
+  "nasa_id": "KSC-20190627-PH_JBS01_0420",
+  "src": "https://images-assets.nasa.gov/image/KSC-20190627-PH_JBS01_0420/KSC-20190627-PH_JBS01_0420~large.jpg"
+ },
+ "profile": {
+  "nasa_id": "STS047-20-015",
+  "src": "https://images-assets.nasa.gov/image/STS047-20-015/STS047-20-015~large.jpg"
+ },
+ "foot": {
+  "nasa_id": "KSC-20250115-PH-CSH01_0001",
+  "src": "https://images-assets.nasa.gov/image/KSC-20250115-PH-CSH01_0001/KSC-20250115-PH-CSH01_0001~large.jpg"
+ }
+}

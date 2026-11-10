@@ -375,3 +375,14 @@ h1,h2,.disp{font-weight:600;letter-spacing:-.025em}h2{font-size:24px}
 .pfempty>.art{position:absolute;inset:0}
 .adhero .cd{gap:28px}.adhero .cd>div{display:flex;flex-direction:column;gap:6px}
 .fl4 .fcard .v b{font-size:26px}
+
+/* page banners: duotone launch photography, faded into the page on the text side and at the bottom */
+.heroart .etch,.phero .pa .etch{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.heroart.etched::after,.phero .pa.etched::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 0%,rgba(7,8,10,0) 30%),linear-gradient(0deg,var(--bg) 0%,rgba(7,8,10,0) 30%),linear-gradient(180deg,var(--bg) 0%,rgba(7,8,10,0) 18%),radial-gradient(120% 90% at 70% 40%,transparent 55%,rgba(7,8,10,.55) 100%)}
+.heroart{height:480px}
+.phero .pa{border-radius:var(--r3)}
+.adimg{position:absolute;inset:0;overflow:hidden;border-radius:inherit}.adimg .etch{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
+.adimg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,16,20,.96) 0%,rgba(14,16,20,.75) 40%,rgba(14,16,20,.35) 100%),linear-gradient(0deg,rgba(14,16,20,.8),transparent 50%)}
+.adhero>.in,.adhero>.r,.pfempty>.in,.pfempty>.pfk{position:relative;z-index:1}
+.foot .fart{aspect-ratio:4.2/1;max-height:380px}.fart .pano{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 60%;opacity:.9}
+@media(max-width:900px){.heroart{height:300px}}
