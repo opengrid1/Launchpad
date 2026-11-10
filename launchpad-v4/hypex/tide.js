@@ -17,12 +17,15 @@
   };
   const state = { route: '', tf: 900, cmode: 'mcap', ckind: 'line', side: 'b', ttab: 'trades', busy: false, slip: Number((() => { try { return localStorage.getItem('slip'); } catch { return 0; } })() || 100) };
   const link = (t) => `#/token/${t.addr}`;
-  // page banners: launch photography (NASA, public domain) in black-and-lime duotone, a phone-sized copy for small screens
-  const HX = { press: 'launch', floor: 'floor', library: 'docs', wheel: 'floor', bridge: 'launch', home: 'home', airdrop: 'airdrop', profile: 'profile' };
-  // preview switch for the banner theme: ?art=rocket (default), greek or terraces
-  const ARTSET = (() => { const q = new URLSearchParams(location.search).get('art'); return ['greek', 'terraces'].includes(q) ? q : 'rocket'; })();
-  const PFX = ARTSET === 'greek' ? 'gk' : 'hx';
-  const etch = (name, pos) => ARTSET === 'terraces' ? (window.ART ? ART.terraces({ seed: [...name].reduce((a, c) => a * 31 + c.charCodeAt(0), 7), cols: 6, rows: 3 }) : '') : `<picture><source media="(max-width:900px)" srcset="/img/${PFX}-${HX[name] || name}-sm.webp"><img class="etch" src="/img/${PFX}-${HX[name] || name}.webp" alt="" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}></picture>`;
+  // page visuals: an ink panel with a lime ring gauge and the figure that page is about (no photographs)
+  const gauge = (pct, label, big, foot) => `<div class="gauge"><div class="ring" style="--p:${Math.max(0, Math.min(100, pct)) * 3.6}deg"></div><div class="t">${label}</div><div class="gv"><div class="v">${big}</div><div class="gs">${foot}</div></div></div>`;
+  const etch = (name) => {
+    const ts = DATA.tokens(), avg = ts.length ? ts.reduce((a, t) => a + floorOf(t).cover, 0) / ts.length : 0, fees = ts.reduce((a, t) => a + t.feesAll, 0);
+    if (name === 'press') return gauge(100, 'ONE TRANSACTION', '1 tx', 'creates the coin, its pool and its floor');
+    if (name === 'library') return gauge(SP.floor / C.econ.feeBps * 100, 'EVERY TRADE · ' + (C.econ.feeBps / 100).toFixed(1) + '%', sp('floor') + '<span>%</span>', 'of every trade raises the floor');
+    if (name === 'floor') return gauge(avg * 100, 'AVERAGE FLOOR', Math.round(avg * 100) + '<span>%</span>', 'of the price is backed by ' + esc(Q) + ' in the pool');
+    return gauge(avg * 100, 'FLOOR COVERS', Math.round(avg * 100) + '<span>%</span>', 'of the price, on average');
+  };
   // Hypex economics: every trade pays feeBps, split in bps of volume (floor, creator, trader airdrop, platform)
   const SP = C.econ.split || { floor: 120, creator: 50, traders: 50, platform: 30 }, sp = (k) => String(+(SP[k] / 100).toFixed(2));
   // the floor of a coin: the price its floor band can buy every circulating token back at. Until the floor contracts are live
@@ -56,22 +59,22 @@
     strip(K[K.length - 1], K.length - 1);
     let LW; try { LW = await lw(); } catch { el.innerHTML = '<div class="empty">The chart could not load.</div>'; return; }
     if (!document.body.contains(el)) return;
-    const css = getComputedStyle(document.documentElement), mono = '"Geist Mono", ui-monospace, monospace', mute = '#8a91a0', up = '#3ddc84', dn = '#ff5c6c', acc = '#d4ff3a';
-    const chart = LW.createChart(el, { width: el.clientWidth, height: el.clientHeight, localization: { locale: 'en-US', priceFormatter: lab }, layout: { background: { type: 'solid', color: 'transparent' }, textColor: mute, fontFamily: mono, fontSize: 11, attributionLogo: true }, grid: { vertLines: { color: 'rgba(255,255,255,.05)' }, horzLines: { color: 'rgba(255,255,255,.06)' } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: .08, bottom: .22 } }, timeScale: { borderVisible: false, timeVisible: state.tf < 86400, secondsVisible: false, rightOffset: 3 }, crosshair: { mode: LW.CrosshairMode.Normal, vertLine: { color: 'rgba(255,255,255,.22)', labelBackgroundColor: '#1c2028' }, horzLine: { color: 'rgba(255,255,255,.22)', labelBackgroundColor: '#1c2028' } }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true } });
+    const css = getComputedStyle(document.documentElement), mono = '"Geist Mono", ui-monospace, monospace', mute = '#8a91a0', up = '#139a5b', dn = '#e0394f', acc = '#111214';
+    const chart = LW.createChart(el, { width: el.clientWidth, height: el.clientHeight, localization: { locale: 'en-US', priceFormatter: lab }, layout: { background: { type: 'solid', color: 'transparent' }, textColor: mute, fontFamily: mono, fontSize: 11, attributionLogo: true }, grid: { vertLines: { color: 'rgba(17,18,20,.05)' }, horzLines: { color: 'rgba(17,18,20,.06)' } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: .08, bottom: .22 } }, timeScale: { borderVisible: false, timeVisible: state.tf < 86400, secondsVisible: false, rightOffset: 3 }, crosshair: { mode: LW.CrosshairMode.Normal, vertLine: { color: 'rgba(17,18,20,.22)', labelBackgroundColor: '#111214' }, horzLine: { color: 'rgba(17,18,20,.22)', labelBackgroundColor: '#111214' } }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true } });
     void css;
     const priceFormat = { type: 'custom', formatter: lab, minMove: state.cmode === 'mcap' ? 0.01 : 1e-12 };
     const series = line
-      ? chart.addAreaSeries({ lineColor: acc, lineWidth: 2, topColor: 'rgba(212,255,58,.28)', bottomColor: 'rgba(212,255,58,0)', priceFormat, lastValueVisible: true, priceLineVisible: true, priceLineStyle: LW.LineStyle.Dotted, priceLineColor: acc, crosshairMarkerRadius: 4 })
+      ? chart.addAreaSeries({ lineColor: acc, lineWidth: 2, topColor: 'rgba(17,18,20,.10)', bottomColor: 'rgba(17,18,20,0)', priceFormat, lastValueVisible: true, priceLineVisible: true, priceLineStyle: LW.LineStyle.Dotted, priceLineColor: acc, crosshairMarkerRadius: 4 })
       : chart.addCandlestickSeries({ upColor: up, downColor: dn, borderUpColor: up, borderDownColor: dn, wickUpColor: up, wickDownColor: dn, priceFormat, priceLineStyle: LW.LineStyle.Dotted });
     const sData = () => (line ? K.map((b) => ({ time: b.t, value: b.c })) : K.map((b) => ({ time: b.t, open: b.o, high: b.h, low: b.l, close: b.c })));
     series.setData(sData());
-    const athLine = series.createPriceLine({ price: athV, color: 'rgba(255,255,255,.4)', lineWidth: 1, lineStyle: LW.LineStyle.Dashed, axisLabelVisible: true, title: 'ATH' });
+    const athLine = series.createPriceLine({ price: athV, color: 'rgba(17,18,20,.35)', lineWidth: 1, lineStyle: LW.LineStyle.Dashed, axisLabelVisible: true, title: 'ATH' });
     // the floor: where its HYPE band buys back every coin in circulation, drawn in the chart's own units
     const flV = (state.cmode === 'mcap' ? C.econ.supply : 1) * floorOf(t).px;
-    if (flV > 0) series.createPriceLine({ price: flV, color: '#d4ff3a', lineWidth: 2, lineStyle: LW.LineStyle.Solid, axisLabelVisible: true, title: 'FLOOR' });
+    if (flV > 0) series.createPriceLine({ price: flV, color: '#8fc400', lineWidth: 2, lineStyle: LW.LineStyle.Solid, axisLabelVisible: true, title: 'FLOOR' });
     const vol = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol', lastValueVisible: false, priceLineVisible: false });
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: .9, bottom: 0 }, borderVisible: false, visible: false });
-    const vData = () => K.map((b) => ({ time: b.t, value: b.v * APP.hypeUsd, color: b.c >= b.o ? 'rgba(61,220,132,.22)' : 'rgba(255,92,108,.22)' }));
+    const vData = () => K.map((b) => ({ time: b.t, value: b.v * APP.hypeUsd, color: b.c >= b.o ? 'rgba(19,154,91,.22)' : 'rgba(224,57,79,.22)' }));
     vol.setData(vData());
     chart.timeScale().fitContent();
     chart.subscribeCrosshairMove((pt) => { if (!pt || !pt.time) { strip(K[K.length - 1], K.length - 1); return; } const i = K.findIndex((b) => b.t === pt.time); if (i >= 0) strip(K[i], i); });
@@ -114,7 +117,7 @@
           <div class="acts"><a class="btn pri arrow" href="#/launch">Launch a coin</a><a class="btn" href="#/docs">How the floor works</a></div>
           ${tide ? `<a class="note" href="${link(tide)}"><span class="av">${APP.img(tide)}</span><span><b>$${esc(sym())}</b> The Hypex token, on the same floor rules.</span><span class="arrow">Trade $${esc(sym())}</span></a>` : ''}
           <div class="hstats"><div class="stat"><span>Volume</span><b>${fmtUsd(volAll * APP.hypeUsd)}</b><small>${fmtUsd(vol * APP.hypeUsd)} in 24h</small></div><div class="stat"><span>Tokens</span><b>${ts.length}</b><small>${trades24} trades, 24h</small></div><div class="stat"><span>Traders</span><b>${traders}</b><small>all time</small></div></div></div>
-        <div class="heroart etched">${etch('home', '50% 30%')}${flies}</div></section>
+        <div class="heroart">${(() => { const t0 = tide || lead[0]; if (!t0) return gauge(0, 'FLOOR COVERS', '—', 'no coins yet'); const f = floorOf(t0); return `<div class="gauge big"><div class="ring" style="--p:${f.cover * 360}deg"></div><div class="t">$${esc(t0.symbol)} · FLOOR COVERS</div><div class="gv"><div class="v">${Math.round(f.cover * 100)}<span>%</span></div><div class="gs">of the price is backed by ${esc(Q)} in the pool</div></div><div class="rows"><div><small>Price</small><b>$${fmtPrice(t0.pxUsd)}</b></div><div><small>Floor</small><b class="lime">$${fmtPrice(f.px)}</b></div></div></div>`; })()}${flies}</div></section>
       ${lead.length ? `<div class="sec"><h2>Leading</h2><span class="ln"></span></div><div class="lead">${lead.map((t, i) => `<a class="lcard" href="${link(t)}">${ribbon(t.symbol)}<div class="body"><span class="av ring">${APP.img(t)}</span><div class="meta"><small><span>$${esc(t.symbol)}</span><i>№ ${i + 1}</i></small><b>${esc(t.name)}</b><div class="cap"><b>${fmtUsd(t.mcapUsd)}</b>${chip(t.c24)}</div><div class="sub"><span>${t.buys24 + t.sells24} trades, 24h</span><span>/${esc(t.pairSym || Q)}</span></div></div></div><div class="fee"><span>Floor</span><i style="--w:${Math.round(floorOf(t).cover * 100)}%"></i><span>${Math.round(floorOf(t).cover * 100)}%</span></div>${ribbon(t.symbol)}</a>`).join('')}</div>` : ''}
       <div class="sec"><h2>Markets</h2><span class="ln"></span></div>
       <div class="mk"><div>
@@ -181,7 +184,7 @@
             <div class="trow"><span>Slippage</span><b class="slipchips">${[100, 300, 500].map((v) => `<button data-s="${v}" class="${state.slip === v ? 'on' : ''}">${v / 100}%</button>`).join('')}<button id="t-slip" class="${[100, 300, 500].includes(state.slip) ? '' : 'on'}">${[100, 300, 500].includes(state.slip) ? 'Custom' : slipPct + '%'}</button></b></div>
           </div>
           <button class="btn lg full ${state.side === 'b' ? 'pri' : 'sell'}" id="t-go">${!APP.W.connected ? 'Connect' : state.side === 'b' ? 'Buy $' + esc(t.symbol) : 'Sell $' + esc(t.symbol)}</button>
-          ${AD ? `<div class="adpts"><span class="av"><img src="/img/mark.svg?v=2" alt=""></span><span>Airdrop points</span><b>${AD.tradePts} per ${esc(Q)} traded</b></div>` : ''}
+          ${AD ? `<div class="adpts"><span class="av"><img src="/img/mark.svg?v=4" alt=""></span><span>Airdrop points</span><b>${AD.tradePts} per ${esc(Q)} traded</b></div>` : ''}
           ${isCreator ? `<div class="card pad" style="margin-top:12px;padding:14px"><h3 style="font:400 18px var(--serif)">Your creator fees</h3><div class="kv"><span>Claimable</span><b id="t-claimable">…</b></div><button class="btn sm full" id="t-claim" style="margin-top:8px">Claim</button></div>` : ''}
         </div>
         <div class="card rules"><h3>Rules of this market</h3><div class="big"><b>${feeOf(t)}</b><span>fee on every trade, fixed for life</span></div>
@@ -419,7 +422,7 @@
       <div class="card calc"><h3>Run the numbers</h3><p class="mute" style="font-size:13px;margin-top:4px">Where 1,000 ${esc(Q)} of volume goes. The fee is fixed, so the split is the same on every token.</p><div class="out" id="fw-out"></div></div></div>`;
     const cum = []; let acc = 0; const sorted = [...burns].sort((a, b) => a.ts - b.ts); for (const e of sorted) { acc += e.tokens; cum.push(acc); }
     const buckets = 24, sp = new Array(buckets).fill(0); if (sorted.length) { const t0 = sorted[0].ts, step = Math.max(1, (now - t0) / buckets); for (const e of sorted) sp[Math.min(buckets - 1, Math.floor((e.ts - t0) / step))] += e.quote; }
-    area($('#fw-burn'), cum.length ? cum : [0, 0], '#3ddc84'); area($('#fw-spend'), sp, '#d4ff3a', { bars: true });
+    area($('#fw-burn'), cum.length ? cum : [0, 0], '#139a5b'); area($('#fw-spend'), sp, '#111214', { bars: true });
     $$('[data-fwr]').forEach((b) => b.onclick = () => { state.fwr = b.dataset.fwr; flywheel(); });
     const calc = () => { const fee = C.econ.feeBps / 100, vol = 1000, total = vol * fee / 100, creator = total * C.econ.creatorShareBps / 10000, pro = total * C.econ.protocolShareBps / 10000; $('#fw-out').innerHTML = `<div><span>Fee</span><b>${fee.toFixed(1)}% · ${fmtNum(total, 2)} ${esc(Q)}</b></div><div><span>Creator · ${(fee * C.econ.creatorShareBps / 10000).toFixed(2)}% of volume</span><b>${fmtNum(creator, 2)} ${esc(Q)}</b></div><div><span>Buys and burns $${esc(T)} · ${SPL.burn}% of volume</span><b>${fmtNum(pro * BURN_OF_PROTO, 2)} ${esc(Q)}</b></div><div><span>Platform · ${SPL.plat}% of volume</span><b>${fmtNum(pro * (1 - BURN_OF_PROTO), 2)} ${esc(Q)}</b></div>`; }; calc();
   }
@@ -441,7 +444,7 @@
 
   // ---- profile
   function profile(addr) {
-    const w = low(addr || (APP.W.connected ? APP.W.address : '')); if (!w) { view.innerHTML = `<div class="page prof"><section class="dark pfempty"><div class="adimg">${etch('profile', '50% 60%')}</div><div class="in"><span class="eyebrow">Your profile</span><h1 class="disp">Your coins, your fees,<br>your <em>airdrop.</em></h1><p>Connect a wallet to see the ${esc(Q)} you have earned back from trading, the fees from coins you launched, and everything you hold on Hypex.</p><div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap"><button class="btn pri arrow" id="pf-conn">Connect a wallet</button><a class="btn" href="#/airdrop">Check any address</a></div></div><div class="pfk">${[['Back on every trade', sp('traders') + '%'], ['Creator fee', sp('creator') + '%'], ['Paid in', esc(Q)], ['Claim', 'any time']].map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div></section></div>`; $('#pf-conn').onclick = APP.W.connect; return; }
+    const w = low(addr || (APP.W.connected ? APP.W.address : '')); if (!w) { view.innerHTML = `<div class="page prof"><section class="dark pfempty"><div class="in"><span class="eyebrow">Your profile</span><h1 class="disp">Your coins, your fees,<br>your <em>airdrop.</em></h1><p>Connect a wallet to see the ${esc(Q)} you have earned back from trading, the fees from coins you launched, and everything you hold on Hypex.</p><div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap"><button class="btn pri arrow" id="pf-conn">Connect a wallet</button><a class="btn" href="#/airdrop">Check any address</a></div></div><div class="pfk">${[['Back on every trade', sp('traders') + '%'], ['Creator fee', sp('creator') + '%'], ['Paid in', esc(Q)], ['Claim', 'any time']].map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div></section></div>`; $('#pf-conn').onclick = APP.W.connect; return; }
     const wv = DATA.wallet(w), cr = DATA.creator(w), me = APP.W.connected && low(APP.W.address) === w, tab = state.ptab || ((cr.tokens || []).length ? 'fees' : 'holdings');
     const val = wv.holdings.reduce((s, h) => s + h.usd, 0);
     view.innerHTML = `<div class="page prof"><div class="head"><div><h1 title="${esc(w)}">${esc(shortAddr(w))}</h1><div class="mute" style="font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="num">${esc(w)}</span><button class="ib" style="width:26px;height:26px;border-radius:5px" data-copy="${w}">${ICON.copy}</button><a href="${APP.explorer('address', w)}" target="_blank" rel="noopener">${ICON.ext}</a>${wv.joined ? `<span>since ${new Date(wv.joined * 1000).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>` : ''}</div></div></div>
@@ -557,7 +560,7 @@
         <div class="card pad"><i>02</i><h3>The floor rises</h3><p class="mute">Once a block, before its first trade, the floor moves up as far as its money can hold every coin in circulation. Spare money buys coins back and burns them.</p></div>
         <div class="card pad"><i>03</i><h3>Sell into it, any time</h3><p class="mute">The floor is a band of ${esc(Q)} in the pool itself. However far the price falls, every holder can sell into it at the floor price or better.</p></div></div>
       <div class="card calc" style="margin-top:16px"><h3>Run the numbers</h3><p class="mute" style="font-size:13px;margin-top:4px">Where 1,000 ${esc(Q)} of trading goes. The fee is fixed, so the split is the same on every coin.</p><div class="out">${[['Fee', (C.econ.feeBps / 100).toFixed(1) + '%', C.econ.feeBps], ['Raises the floor', sp('floor') + '%', SP.floor], ['Back to traders', sp('traders') + '%', SP.traders], ['To the creator', sp('creator') + '%', SP.creator], ['Platform', sp('platform') + '%', SP.platform]].map(([l, p, b]) => `<div><span>${l} · ${p} of volume</span><b>${fmtNum(1000 * b / 1e4, 2)} ${esc(Q)}</b></div>`).join('')}</div></div></div>`;
-    area($('#fl-cum'), cum.length ? cum : [0, 0], '#d4ff3a');
+    area($('#fl-cum'), cum.length ? cum : [0, 0], '#111214');
   }
 
   // ---- the trader airdrop: ${sp('traders')}% of every trade, credited at once, claimable any time
@@ -567,7 +570,7 @@
     const rank = (i) => `<div class="pod r${i + 1}"><span class="n">${i + 1}</span>${rows[i] ? `<b>${fmtUsd(rows[i].earned * APP.hypeUsd)}</b><small>${fmtNum(rows[i].earned, 3)} ${esc(Q)}</small><a class="num" href="#/profile/${rows[i].w}">${esc(shortAddr(rows[i].w))}</a>` : '<small>open</small>'}</div>`;
     const share = (w) => { const r = by.get(low(w)); return r ? `<div class="adres"><b>${fmtNum(r.earned, 4)} ${esc(Q)}</b><small>${fmtUsd(r.earned * APP.hypeUsd)} · from ${hype(r.vol, 2)} traded over ${r.n} trades · rank ${rows.indexOf(r) + 1} of ${rows.length}</small></div>` : `<div class="adres"><b class="dim">0 ${esc(Q)}</b><small>No trades on Hypex yet for this address. Every trade from now on earns ${sp('traders')}% back.</small></div>`; };
     view.innerHTML = `<div class="page ad">
-      <section class="dark adhero"><div class="adimg">${etch('airdrop', '60% 40%')}</div>
+      <section class="dark adhero">
         <div class="in" style="position:relative"><span class="eyebrow">Trader airdrop</span><h1>${fmtUsd(total * APP.hypeUsd)}</h1><p>Paid back to traders so far, in ${esc(Q)}. ${sp('traders')}% of every trade on Hypex is credited to the trader the moment it settles. No snapshot, no campaign, no vesting.</p>
           <div class="cd"><div><span>Back on every trade</span><b>${sp('traders')}%</b></div><div><span>Traders paid</span><b>${rows.length}</b></div></div>${me ? `<button class="btn cta arrow" id="ad-claim">Claim ${fmtNum((by.get(me) || { earned: 0 }).earned, 4)} ${esc(Q)}</button>` : `<button class="btn cta arrow" id="ad-conn">Connect to claim</button>`}</div>
         <div class="r" style="position:relative"><h2>Top earners</h2><small>${esc(Q)} credited back from their own trades.</small><div class="podium">${rank(1)}${rank(0)}${rank(2)}</div></div></section>
@@ -605,7 +608,7 @@
     const o = $('#m-out', ov); if (o) o.onclick = () => { W.disconnect(); close(); };
   }
   function searchDialog() { const ov = APP.dialog('Search', `<div class="picker"><input class="inp" id="sq" placeholder="Name, ticker or address" autocomplete="off"><div class="list" id="sq-list"></div></div>`); const draw = (s) => { const ls = DATA.tokens().filter((t) => s && (t.name.toLowerCase().includes(s) || t.symbol.toLowerCase().includes(s) || t.addr.includes(s))).slice(0, 8); $('#sq-list', ov).innerHTML = ls.map((t) => `<a class="row" href="${link(t)}"><span class="av">${APP.img(t)}</span><span><b>${esc(t.name)}</b><small>$${esc(t.symbol)} · ${fmtUsd(t.mcapUsd)}</small></span></a>`).join(''); $$('a', ov).forEach((a) => a.onclick = () => ov.remove()); }; $('#sq', ov).oninput = (e) => draw(e.target.value.trim().toLowerCase()); setTimeout(() => $('#sq', ov).focus(), 30); }
-  function footer() { const f = $('#foot-art'); if (f) f.innerHTML = ARTSET === 'terraces' ? (window.ART ? ART.steps({ w: 1600, h: 260, seed: 5, lines: 12 }) : '') : `<img class="pano" src="/img/${PFX}-foot.webp" srcset="/img/${PFX}-foot-sm.webp 900w, /img/${PFX}-foot.webp 1800w" sizes="100vw" alt="" decoding="async">`; const y = $('#f-year'); if (y) y.textContent = new Date().getFullYear(); }
+  function footer() { const f = $('#foot-art'); if (f) f.innerHTML = ''; const y = $('#f-year'); if (y) y.textContent = new Date().getFullYear(); }
   APP.boot(async () => {
     $('#n-search').onclick = searchDialog; const nm = $('#n-menu'); if (nm) nm.onclick = (e) => { e.preventDefault(); menuSheet(); }; footer();
     document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); searchDialog(); } });
