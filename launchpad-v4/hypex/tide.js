@@ -23,7 +23,7 @@
   const WB = { press: 'launch', floor: 'floor', library: 'docs', home: 'home', airdrop: 'airdrop', profile: 'profile' };
   const etch = (name, pos) => `<picture><source media="(max-width:900px)" srcset="/img/pr-${WB[name] || name}-sm.webp"><img class="etch" src="/img/pr-${WB[name] || name}.webp" alt="" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}></picture>`;
   // Hypex economics: every trade pays feeBps, split in bps of volume (floor, creator, trader airdrop, platform)
-  const SP = C.econ.split || { floor: 120, creator: 50, traders: 50, platform: 30 }, sp = (k) => String(+(SP[k] / 100).toFixed(2));
+  const SP = C.econ.split || { floor: 50, creator: 70, traders: 70, platform: 60 }, sp = (k) => String(+(SP[k] / 100).toFixed(2));
   // the floor of a coin: the price its floor band can buy every circulating token back at. Until the floor contracts are live
   // the preview derives a sample one from the address, so the layout shows real-looking numbers
   const floorOf = (t) => { if (t.floor) return t.floor; let h = 0; for (const c of String(t.addr)) h = (h * 33 + c.charCodeAt(0)) >>> 0; const cover = 0.3 + (h % 470) / 1000; return { px: (t.pxUsd || 0) * cover, cover }; };

@@ -47,7 +47,7 @@ window.CFG = {
   /* the launch economics, in HYPE (the *Hype names are the quote coin's amounts) */
   econ: {
     supply: 1e9, launchFeeHype: 0.005, maxDevBuyBps: 500,
-    feeBps: 250, split: { floor: 120, traders: 50, creator: 50, platform: 30 }, creatorShareBps: 2000, protocolShareBps: 8000, creatorTaxMaxBps: 0,
+    feeBps: 250, split: { floor: 50, traders: 70, creator: 70, platform: 60 }, creatorShareBps: 2800, protocolShareBps: 7200, creatorTaxMaxBps: 0,
     buybackShareBps: 5000, buybackVestYears: 5,
     snipeSeconds: 10, snipeStartBps: 9900, snipeHalvings: 14,
     volThresholdBps: 0, volPeakBps: 250, volWindowSec: 60, volDecaySec: 120, // the fee never moves on a pump or a dump
