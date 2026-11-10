@@ -330,3 +330,30 @@ html,body{overflow-x:hidden}
 @media (max-width:760px){.tabs a.on{color:#fff}}
 .ticker .pv{z-index:2;box-shadow:-14px 0 0 var(--s1),6px 0 0 var(--s1)}
 @media (max-width:760px){.heroart.wb .etch,.phero .pa .etch{max-width:none}}
+/* 3D cards: each row curves toward you like a bent sheet, every card tilts under the pointer and catches the light */
+.lead,.roads.four{perspective:1300px;perspective-origin:50% 40%}
+.lcard,.road{transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(calc(var(--by,0deg) + var(--ry,0deg))) translateZ(var(--tz,0px));transition:transform .7s cubic-bezier(.2,.8,.2,1),box-shadow .7s cubic-bezier(.2,.8,.2,1);backface-visibility:hidden;
+  box-shadow:inset 0 0 0 1px var(--s1),inset 0 0 0 2px var(--line),inset 0 0 0 5px var(--s1),inset 0 0 0 6px rgba(13,37,34,.08),0 1px 0 #d3ddd5,0 2px 0 #c9d5cc,0 3px 0 #bfccc2,0 4px 0 #b5c3b8,0 26px 34px -20px rgba(13,37,34,.45),0 50px 60px -40px rgba(13,37,34,.35)}
+.road.hot{box-shadow:inset 0 0 0 1px var(--acc),0 1px 0 #b9d8a4,0 2px 0 #a9cd91,0 3px 0 #99c27e,0 4px 0 #89b76b,0 26px 34px -20px rgba(13,37,34,.45),0 50px 60px -40px rgba(13,37,34,.35)}
+.lcard:hover{transform:rotateX(var(--rx,0deg)) rotateY(calc(var(--by,0deg) + var(--ry,0deg))) translateZ(var(--tz,0px))}
+.lcard.tilt,.road.tilt{--tz:26px;transition:transform .12s linear,box-shadow .3s;box-shadow:inset 0 0 0 1px var(--s1),inset 0 0 0 2px var(--line2),inset 0 0 0 5px var(--s1),inset 0 0 0 6px rgba(13,37,34,.08),0 1px 0 #d3ddd5,0 2px 0 #c9d5cc,0 3px 0 #bfccc2,0 4px 0 #b5c3b8,0 5px 0 #adbcb0,0 40px 50px -24px rgba(13,37,34,.5),0 70px 80px -50px rgba(13,37,34,.4)}
+.road.hot.tilt{box-shadow:inset 0 0 0 1px var(--acc),0 1px 0 #b9d8a4,0 2px 0 #a9cd91,0 3px 0 #99c27e,0 4px 0 #89b76b,0 5px 0 #7fae60,0 40px 50px -24px rgba(13,37,34,.5),0 70px 80px -50px rgba(13,37,34,.4)}
+.lcard::after,.road::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;
+  background:radial-gradient(120% 90% at var(--mx,22%) var(--my,0%),rgba(255,255,255,.62),rgba(255,255,255,0) 46%),linear-gradient(90deg,rgba(13,37,34,.09),rgba(13,37,34,0) 20%,rgba(255,255,255,.12) 50%,rgba(13,37,34,0) 80%,rgba(13,37,34,.09));mix-blend-mode:soft-light;opacity:.9;transition:opacity .4s}
+.lcard.tilt::after,.road.tilt::after{opacity:1}
+.lead>.lcard:nth-child(1),.roads.four>.road:nth-child(1){--by:9deg}.lead>.lcard:nth-child(2),.roads.four>.road:nth-child(2){--by:3deg}
+.lead>.lcard:nth-child(3),.roads.four>.road:nth-child(3){--by:-3deg}.lead>.lcard:nth-child(4),.roads.four>.road:nth-child(4){--by:-9deg}
+.lead,.roads.four{padding:6px 4px 26px}
+@media (max-width:999px){.lead>.lcard,.roads.four>.road{--by:0deg}.lead{perspective:900px}.lcard,.road{--rx:2deg}}
+@media (prefers-reduced-motion:reduce){.lcard,.road{transition:none}}
+/* stronger bend: the row wraps around you, cards lean back a little, deeper edge */
+.lead,.roads.four{perspective:950px}
+.lcard,.road{--bx:5deg;transform:rotateX(calc(var(--bx) + var(--rx,0deg))) rotateY(calc(var(--by,0deg) + var(--ry,0deg))) translateZ(var(--tz,0px))}
+.lcard:hover{transform:rotateX(calc(var(--bx) + var(--rx,0deg))) rotateY(calc(var(--by,0deg) + var(--ry,0deg))) translateZ(var(--tz,0px))}
+.lcard.tilt,.road.tilt{--bx:0deg;--tz:40px}
+.lead>.lcard:nth-child(1),.roads.four>.road:nth-child(1){--by:18deg}.lead>.lcard:nth-child(2),.roads.four>.road:nth-child(2){--by:6deg}
+.lead>.lcard:nth-child(3),.roads.four>.road:nth-child(3){--by:-6deg}.lead>.lcard:nth-child(4),.roads.four>.road:nth-child(4){--by:-18deg}
+.lcard::after,.road::after{background:radial-gradient(120% 90% at var(--mx,22%) var(--my,0%),rgba(255,255,255,.75),rgba(255,255,255,0) 48%),linear-gradient(90deg,rgba(13,37,34,.22),rgba(13,37,34,0) 24%,rgba(255,255,255,.18) 50%,rgba(13,37,34,0) 76%,rgba(13,37,34,.22))}
+.lead,.roads.four{padding:14px 10px 34px}
+@media (max-width:999px){.lcard,.road{--bx:3deg}}
+@media (max-width:999px){.lead{perspective:700px;padding:14px 6px 34px}.lead>.lcard{transition:transform .25s ease-out,box-shadow .7s}}

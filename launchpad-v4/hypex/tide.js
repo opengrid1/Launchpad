@@ -23,6 +23,21 @@
   const WB = { press: 'launch', floor: 'floor', library: 'docs', home: 'home', airdrop: 'airdrop', profile: 'profile' };
   const etch = (name, pos) => `<picture><source media="(max-width:900px)" srcset="/img/pr-${WB[name] || name}-sm.webp"><img class="etch" src="/img/pr-${WB[name] || name}.webp" alt="" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}></picture>`;
   // Hypex economics: every trade pays feeBps, split in bps of volume (floor, creator, trader airdrop, platform)
+  // 3D cards: the card under the pointer (or finger) leans toward it and the light follows
+  (function tilt() { if (window.__hxTilt) return; window.__hxTilt = 1; if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const SEL = '.lcard,.road', props = ['--rx', '--ry', '--mx', '--my'];
+    const move = (e) => { const c = e.target.closest && e.target.closest(SEL); if (!c) return; const r = c.getBoundingClientRect(), x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+      c.style.setProperty('--ry', ((x - 0.5) * 26).toFixed(2) + 'deg'); c.style.setProperty('--rx', ((0.5 - y) * 20).toFixed(2) + 'deg'); c.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); c.style.setProperty('--my', (y * 100).toFixed(1) + '%'); c.classList.add('tilt'); };
+    const out = (c) => { c.classList.remove('tilt'); props.forEach((p) => c.style.removeProperty(p)); };
+    document.addEventListener('pointermove', move, { passive: true });
+    document.addEventListener('pointerout', (e) => { const c = e.target.closest && e.target.closest(SEL); if (c && !c.contains(e.relatedTarget)) out(c); });
+    document.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') document.querySelectorAll('.tilt').forEach(out); });
+    // phones: the Leading row scrolls sideways, so each card bends by where it sits, like pages of a curved book
+    const bend = (row) => { const r = row.getBoundingClientRect(), mid = r.left + r.width / 2; row.querySelectorAll('.lcard').forEach((c) => { const b = c.getBoundingClientRect(), d = Math.max(-1, Math.min(1, (b.left + b.width / 2 - mid) / r.width)); c.style.setProperty('--by', (-d * 34).toFixed(2) + 'deg'); }); };
+    const bendAll = () => document.querySelectorAll('.lead').forEach((row) => { if (row.scrollWidth > row.clientWidth + 4) bend(row); else row.querySelectorAll('.lcard').forEach((c) => c.style.removeProperty('--by')); });
+    document.addEventListener('scroll', (e) => { if (e.target.classList && e.target.classList.contains('lead')) bend(e.target); }, { capture: true, passive: true });
+    addEventListener('resize', bendAll); new MutationObserver(() => requestAnimationFrame(bendAll)).observe(document.body, { childList: true, subtree: true });
+    document.addEventListener('pointercancel', () => document.querySelectorAll('.tilt').forEach(out)); })();
   const SP = C.econ.split || { floor: 50, creator: 70, traders: 70, platform: 60 }, sp = (k) => String(+(SP[k] / 100).toFixed(2));
   // the floor of a coin: the price its floor band can buy every circulating token back at. Until the floor contracts are live
   // the preview derives a sample one from the address, so the layout shows real-looking numbers
