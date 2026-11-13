@@ -591,12 +591,13 @@
   function airdropPage() {
     const tr = allTrades(), by = new Map(); for (const x of tr) { const w = low(x.wallet), r = by.get(w) || { w, earned: 0, vol: 0, n: 0 }; r.earned += x.hype * SP.traders / 1e4; r.vol += x.hype; r.n++; by.set(w, r); }
     const rows = [...by.values()].sort((a, b) => b.earned - a.earned), total = rows.reduce((a, r) => a + r.earned, 0), me = APP.W.connected ? low(APP.W.address) : '';
+    const owedNow = me ? (DATA.airdrop ? DATA.airdrop(me).owed : (by.get(me) || { earned: 0 }).earned) : 0; // live: what the contracts owe on both chains
     const rank = (i) => `<div class="pod r${i + 1}"><span class="n">${i + 1}</span>${rows[i] ? `<b>${fmtUsd(rows[i].earned * APP.hypeUsd)}</b><small>${fmtNum(rows[i].earned, 3)} ${esc(Q)}</small><a class="num" href="#/profile/${rows[i].w}">${esc(shortAddr(rows[i].w))}</a>` : '<small>open</small>'}</div>`;
     const share = (w) => { const r = by.get(low(w)); return r ? `<div class="adres"><b>${fmtNum(r.earned, 4)} ${esc(Q)}</b><small>${fmtUsd(r.earned * APP.hypeUsd)} · from ${hype(r.vol, 2)} traded over ${r.n} trades · rank ${rows.indexOf(r) + 1} of ${rows.length}</small></div>` : `<div class="adres"><b class="dim">0 ${esc(Q)}</b><small>No trades on Hypex yet for this address. Every trade from now on earns ${sp('traders')}% back.</small></div>`; };
     view.innerHTML = `<div class="page ad">
       <section class="dark adhero"><div class="adimg">${etch('airdrop', '50% 45%')}</div>
         <div class="in" style="position:relative"><span class="eyebrow">Trader airdrop</span><h1>${fmtUsd(total * APP.hypeUsd)}</h1><p>Paid back to traders so far, in ${esc(Q)}. ${sp('traders')}% of every trade on Hypex is credited to the trader the moment it settles. No snapshot, no campaign, no vesting.</p>
-          <div class="cd"><div><span>Back on every trade</span><b>${sp('traders')}%</b></div><div><span>Traders paid</span><b>${rows.length}</b></div></div>${me ? `<button class="btn cta arrow" id="ad-claim">Claim ${fmtNum((by.get(me) || { earned: 0 }).earned, 4)} ${esc(Q)}</button>` : `<button class="btn cta arrow" id="ad-conn">Connect to claim</button>`}</div>
+          <div class="cd"><div><span>Back on every trade</span><b>${sp('traders')}%</b></div><div><span>Traders paid</span><b>${rows.length}</b></div></div>${me ? `<button class="btn cta arrow" id="ad-claim">Claim ${fmtNum(owedNow, 4)} ${esc(Q)}</button>` : `<button class="btn cta arrow" id="ad-conn">Connect to claim</button>`}</div>
         <div class="r" style="position:relative"><h2>Top earners</h2><small>${esc(Q)} credited back from their own trades.</small><div class="podium">${rank(1)}${rank(0)}${rank(2)}</div></div></section>
       <div class="grid2 adg"><section class="card"><h2>What's yours?</h2><p class="mute">Paste any address to see what it has earned. Nothing to connect, nothing to sign.</p><div class="adin"><input class="inp" id="ad-q" placeholder="0x…" value="${esc(me)}"><button class="btn" id="ad-go">Check</button></div><div id="ad-res">${me ? share(me) : ''}</div></section>
         <section class="card"><h2>How it pays</h2><div class="kv"><span>Every buy and every sell</span><b>${sp('traders')}% back</b></div><div class="kv"><span>Paid in</span><b>${esc(Q)}</b></div><div class="kv"><span>Credited</span><b>when the trade settles</b></div><div class="kv"><span>Claim</span><b>any time, in one transaction</b></div><div class="kv"><span>1 ${esc(Q)} traded earns</span><b>${fmtNum(SP.traders / 1e4, 4)} ${esc(Q)}</b></div></section></div>
@@ -606,7 +607,11 @@
     const go = () => { const v = ($('#ad-q').value || '').trim(); $('#ad-res').innerHTML = /^0x[0-9a-fA-F]{40}$/.test(v) ? share(v) : '<div class="adres"><small>Paste a full 0x address.</small></div>'; };
     $('#ad-go').onclick = go; $('#ad-q').onkeydown = (e) => { if (e.key === 'Enter') go(); };
     const c = $('#ad-conn'); if (c) c.onclick = () => APP.W.connect();
-    const cl = $('#ad-claim'); if (cl) cl.onclick = () => APP.toast('Preview: claims open when the contracts go live.', 'info');
+    const cl = $('#ad-claim'); if (cl) cl.onclick = async () => {
+      if (!DATA.claimAirdrop) return APP.toast('Claims open when the contracts go live.', 'info');
+      if (!(owedNow > 0)) return APP.toast('Nothing to claim yet. Every trade earns ' + sp('traders') + '% back.', 'info');
+      cl.disabled = true; try { const got = await DATA.claimAirdrop(); APP.toast('Claimed ' + fmtNum(got, 5) + ' ' + Q, 'ok'); airdropPage(); } catch (e) { APP.toast(APP.errMsg(e), 'err', 6000); } finally { cl.disabled = false; }
+    };
   }
 
   // ---- router

@@ -242,6 +242,15 @@
       for (const m of ALL.filter((x) => x.creator === low(me) && x.legs[net])) { try { await send({ to: K(net).hook, data: I.hook.encodeFunctionData('claimCreator', [keyOf(net, m.legs[net].addr), me]) }, 'claim', net); } catch {} }
       await after(0, net); return got;
     },
+    // the trader airdrop only, on every chain where the connected wallet is owed some: one claim per chain
+    async claimAirdrop() {
+      const me = X.getAddress(APP.W.address); let got = 0;
+      for (const net of NETS()) {
+        const [owed] = await call(K(net).revenue, I.revenue, 'owed', [me, ZERO], net);
+        if (owed > 0n) { await send({ to: K(net).revenue, data: I.revenue.encodeFunctionData('claim', [me, ZERO, me]) }, 'claim', net); got += Number(X.formatEther(owed)); }
+      }
+      await after(0, C.chain.key); return got;
+    },
     // moves `amount` of a coin from chain `from` to the other chain (its floor HYPE goes with it); the keeper delivers it
     async bridge(a, from, amount) {
       const to = C.liveChains().find((c) => c.key !== from); if (!to) throw new Error('No other chain');
