@@ -5,7 +5,8 @@ const fs = require("fs"), path = require("path"), { execSync } = require("child_
 const ROOT = path.join(__dirname, ".."), OUT = path.resolve(process.argv[2] || path.join(ROOT, "dist", "hypex"));
 execSync(`node ${path.join(__dirname, "brand-site.cjs")} hypex ${OUT}`, { stdio: "inherit" });
 for (const f of ["index.html", "launch.html", "token.html", "creator.html", "docs.html", "swap.html", "stake.html", "trends.html", "admin.html", "pg-admin.js", "pg-home.js", "pg-launch.js", "pg-token.js", "pg-creator.js", "pg-swap.js", "pg-stake.js", "pg-trends.js", "chart.js", "README.md", "amm.js"]) { const p = path.join(OUT, f); if (fs.existsSync(p)) fs.rmSync(p); }
-fs.cpSync(path.join(ROOT, "hypex"), OUT, { recursive: true }); // the front-end, including the wallet modal chunks in wc/
+for (const f of ["keeper.js", "sweep.js", "_lib.js"]) { const p = path.join(OUT, "api", f); if (fs.existsSync(p)) fs.rmSync(p); } // the shared pad's keeper jobs: not Hypex's
+fs.cpSync(path.join(ROOT, "hypex"), OUT, { recursive: true }); // the front-end, its API (state, sign, leg, relay) and the wallet modal chunks in wc/
 const v = JSON.parse(fs.readFileSync(path.join(OUT, "vercel.json"), "utf8"));
 v.rewrites = ["/token/:addr", "/launch", "/create", "/airdrop", "/floor", "/fees", "/profile", "/profile/:addr", "/docs"].map((source) => ({ source, destination: "/" }));
 v.rewrites.unshift({ source: "/favicon.ico", destination: "/img/favicon.ico" });

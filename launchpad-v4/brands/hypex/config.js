@@ -13,7 +13,14 @@ window.CFG = {
     { key: 'elysium', evm: true, id: 99901, hex: '0x1863d', name: 'Elysium', short: 'Elysium', quote: 'HYPE', quoteName: 'HYPE', native: 'HYPE', usd: 40, rpc: 'https://rpc.elysium.kinetiq.xyz', rpcs: ['https://rpc.elysium.kinetiq.xyz', 'https://rpc-live.elysp.com', 'https://rpc.stockium.fun', 'https://rpc.volta.family'], explorer: 'https://scan.elysp.com/#', logo: '/img/hyper.png', color: '#2fd4c2', blockSec: 1, main: true, hopLayout: true,
       // what a coin can pair with: HYPE, or an EQX tokenized stock (launch config id per pair, Hyperliquid spot id for its price)
       pairs: [{"key":"hype","sym":"HYPE","name":"HYPE","addr":"0x0000000000000000000000000000000000000000","cfg":0,"decimals":18,"logo":"/img/hyper.png","kind":"crypto"}],
-      contracts: { factory: '', hook: '', locker: '', escrow: '', vault: '', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1' } },
+      // Hypex floor stack (hypex-eth/deployments/elysium.json once deployed; until then the preview's sample coins)
+      whChain: 74,
+      contracts: { factory: '', hook: '', revenue: '', bridge: '', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', router: '0xA13f7611115752DEB2B13813BDDE16A5073e4b45', quoter: '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
+    // HyperEVM: every Hypex coin has its own pool and floor here too, at the same address (HypexBridge moves coins
+    // and their floor HYPE between the two over Wormhole)
+    { key: 'hyperevm', evm: true, id: 999, hex: '0x3e7', name: 'HyperEVM', short: 'HyperEVM', quote: 'HYPE', quoteName: 'HYPE', native: 'HYPE', rpc: 'https://rpc.hyperliquid.xyz/evm', rpcs: ['https://rpc.hyperliquid.xyz/evm', 'https://hyperliquid.drpc.org'], explorer: 'https://hyperevmscan.io', logo: '/img/hyper.png', color: '#4f9a2a', blockSec: 1, whChain: 47,
+      pairs: [{"key":"hype","sym":"HYPE","name":"HYPE","addr":"0x0000000000000000000000000000000000000000","cfg":0,"decimals":18,"logo":"/img/hyper.png","kind":"crypto"}],
+      contracts: { factory: '', hook: '', revenue: '', bridge: '', poolManager: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', router: '0x9aFe3C497e19501DB228F28CdBdD29bC98F65DBa', quoter: '0x108Bfe38532C98f8Cd8D7Ab49c9dDAa3675a1c5e', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
   official: [], // $HYPEX once launched
