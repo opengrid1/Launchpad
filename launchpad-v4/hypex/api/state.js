@@ -37,9 +37,39 @@ const pxOf = (sqrt) => { const s = Number(sqrt) / Q96; return s > 0 ? 1 / (s * s
 const SS = {};
 const stateOf = (N) => SS[N.key] || (SS[N.key] = { last: (N.fromBlock || 1) - 1, skew: 0, fac: [], hook: [], pm: [], transfers: [], rev: [], br: [], tokens: new Map(), byPool: new Map(), live: {}, pending: null, at: 0, blockTs: new Map() });
 
+// one chunk at a time, never wider than the chain's RPC allows (N.logRange); a chunk that still fails is retried as
+// two halves at once instead of the same request again and again
 async function logsRange(N, filter, from, to) {
-  try { return await rpc(N, 'eth_getLogs', [{ ...filter, fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) }]); }
+  const span = N.logRange || 10000;
+  if (to - from + 1 > span) { const out = []; for (let a = from; a <= to; a += span) out.push(...await logsRange(N, filter, a, Math.min(to, a + span - 1))); return out; }
+  try { return await rpc(N, 'eth_getLogs', [{ ...filter, fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) }], to - from < 200 ? 8 : 3); }
   catch (e) { if (to - from < 200) throw e; const mid = Math.floor((from + to) / 2); return [...(await logsRange(N, filter, from, mid)), ...(await logsRange(N, filter, mid + 1, to))]; }
+}
+
+// the index survives cold starts: a snapshot per chain in the site's public Blob store (the same data the API serves),
+// read once by a fresh instance and written after a sync moves it forward, so no instance rescans from the deploy block
+const SNAP = (N) => `hypex/state/${N.key}-${low(N.factory).slice(2, 10)}.json`;
+async function loadSnap(N, S) {
+  if (S.loaded || !process.env.BLOB_READ_WRITE_TOKEN) { S.loaded = true; return; }
+  S.loaded = true;
+  try {
+    const { head } = require('@vercel/blob'); const h = await head(SNAP(N));
+    const j = await (await fetch(h.url + '?t=' + Date.now(), { signal: AbortSignal.timeout(8000) })).json();
+    if (!j || !(j.last > S.last)) return;
+    for (const k of ['fac', 'hook', 'pm', 'transfers', 'rev', 'br']) S[k] = j[k] || [];
+    S.remotes = j.remotes || {}; S.blockTs = new Map(j.blockTs || []); S.tokens = new Map((j.tokens || []).map((t) => [t.addr, t])); S.byPool = new Map([...S.tokens.values()].map((t) => [t.poolId, t]));
+    S.last = j.last; S.saved = j.last;
+  } catch {} // none yet (or unreadable): index from the deploy block
+}
+async function saveSnap(N, S) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN || S.last <= (S.saved || 0) || Date.now() - (S.savedAt || 0) < 20000) return;
+  S.savedAt = Date.now();
+  try {
+    const { put } = require('@vercel/blob'), last = S.last;
+    const body = JSON.stringify({ last, fac: S.fac, hook: S.hook, pm: S.pm, transfers: S.transfers, rev: S.rev, br: S.br, remotes: S.remotes || {}, blockTs: [...S.blockTs].slice(-5000), tokens: [...S.tokens.values()] });
+    await put(SNAP(N), body, { access: 'public', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 60 });
+    S.saved = last;
+  } catch {}
 }
 async function stamp(N, S, logs) {
   const need = [...new Set(logs.filter((l) => !l.blockTimestamp).map((l) => l.blockNumber))].filter((n) => !S.blockTs.has(n));
@@ -48,15 +78,19 @@ async function stamp(N, S, logs) {
   return logs;
 }
 
-async function sync(N, S, deadline = Date.now() + 40000) {
+async function sync(N, S, deadline = Date.now() + 20000) {
+  await loadSnap(N, S);
   const hb = await rpc(N, 'eth_getBlockByNumber', ['latest', false]);
   const head = parseInt(hb.number, 16); S.skew = parseInt(hb.timestamp, 16) - Math.floor(Date.now() / 1000);
   if (S.last < 0) S.last = Math.max(0, head - 1); // no deploy block configured: from now on
-  for (let n = 0; n < 12 && S.last < head && Date.now() < deadline; n++) {
-    const from = S.last + 1, to = Math.min(head, from + 20000 - 1);
+  // a catch-up runs in steps until the deadline; the next request (the site polls every few seconds) carries on
+  const step = (N.logRange || 10000) * 4;
+  for (let n = 0; n < 40 && S.last < head && Date.now() < deadline; n++) {
+    const from = S.last + 1, to = Math.min(head, from + step - 1);
     await syncRange(N, S, from, to); S.last = to;
   }
   await refreshLive(N, S);
+  await saveSnap(N, S);
 }
 async function syncRange(N, S, from, to) {
   const core = await stamp(N, S, await logsRange(N, { address: [N.factory, N.hook, N.revenue, N.bridge] }, from, to));
@@ -171,8 +205,10 @@ module.exports = async (req, res) => {
   if (!N.live) return X.json(res, 200, { chain: N.key, chainId: N.chainId, live: false, tokens: [], trades: [], airdrops: {}, bridges: [] }, 'public, max-age=0, s-maxage=30');
   try {
     const S = stateOf(N);
-    if (!S.pending && Date.now() - S.at > 2500) S.pending = sync(N, S).then(() => { S.at = Date.now(); }).finally(() => { S.pending = null; });
-    if (S.pending) await S.pending;
+    if (!S.pending && Date.now() - S.at > 2500) S.pending = sync(N, S).then(() => { S.at = Date.now(); S.err = ''; }).finally(() => { S.pending = null; saveSnap(N, S); });
+    // a sync that fails part way (a public RPC rate-limiting) keeps what it indexed: serve that, and the next request carries on
+    if (S.pending) await S.pending.catch((e) => { S.err = e.message; });
+    if (S.last < (N.fromBlock || 1) && S.err) return X.json(res, 503, { error: S.err });
     X.json(res, 200, build(N, S), 'public, max-age=0, s-maxage=3, stale-while-revalidate=30');
   } catch (e) { X.json(res, 503, { error: e.message }); }
 };

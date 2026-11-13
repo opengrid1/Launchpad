@@ -80,7 +80,7 @@
   const myBal = new Map(), hypeBal = {};
   async function load(fresh) {
     if (!fresh && Date.now() - lastLoad < 2500) return; lastLoad = Date.now();
-    await Promise.all(NETS().map(async (net) => { try { const r = await fetch('/api/state?chain=' + net + (fresh ? '&t=' + Date.now() : ''), { cache: fresh ? 'no-store' : 'default' }); if (r.ok) SS[net] = await r.json(); } catch {} }));
+    await Promise.all(NETS().map(async (net) => { try { const r = await fetch('/api/state?chain=' + net + (fresh ? '&t=' + Date.now() : ''), { cache: fresh ? 'no-store' : 'default', signal: AbortSignal.timeout(25000) }); if (r.ok) SS[net] = await r.json(); } catch {} }));
     index();
   }
   // every chain has its own address for a coin (like Pangea); the launch service pairs them (RemoteRecorded), and the

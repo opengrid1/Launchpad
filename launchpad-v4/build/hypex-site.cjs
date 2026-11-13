@@ -14,4 +14,8 @@ delete v.crons; // no keeper jobs until the contracts exist
 v.headers = [...(v.headers || []), { source: "/(.*)", headers: [{ key: "X-Robots-Tag", value: "noindex" }] }]; // preview: kept out of search
 fs.writeFileSync(path.join(OUT, "site.webmanifest"), JSON.stringify({ name: "Hypex", short_name: "Hypex", icons: [{ src: "/img/icon-192.png", sizes: "192x192", type: "image/png" }, { src: "/img/icon-512.png", sizes: "512x512", type: "image/png" }], theme_color: "#eef3ef", background_color: "#eef3ef", display: "standalone", start_url: "/" }, null, 2) + "\n");
 fs.writeFileSync(path.join(OUT, "vercel.json"), JSON.stringify(v, null, 2) + "\n");
+// every page script must parse: one syntax error leaves the whole site on "Loading…"
+const vm = require("vm"), bad = [];
+for (const f of fs.readdirSync(OUT).filter((f) => f.endsWith(".js"))) { try { new vm.Script(fs.readFileSync(path.join(OUT, f), "utf8"), { filename: f }); } catch (e) { bad.push(f + ": " + e.message); } }
+if (bad.length) { console.error("Syntax errors, not built:\n  " + bad.join("\n  ")); process.exit(1); }
 console.log("Hypex front-end built in", path.relative(ROOT, OUT));

@@ -9,15 +9,16 @@ const E = process.env;
 const parse = (s) => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
 const NETS = {
   elysium: {
-    key: 'elysium', name: 'Elysium', chainId: 99901, whChain: 74, arbitrum: true,
+    key: 'elysium', name: 'Elysium', chainId: 99901, whChain: 74, arbitrum: true, logRange: 10000,
     rpcs: [...(E.ELYSIUM_RPC ? [E.ELYSIUM_RPC] : []), 'https://rpc.elysium.kinetiq.xyz', 'https://rpc-live.elysp.com'],
     poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', router: '0xA13f7611115752DEB2B13813BDDE16A5073e4b45',
     quoter: '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5', wormhole: '0xC8aD24fC6063c41cB5C12a8e3851AafC3b3CF027',
     ...parse(E.HYPEX_CONTRACTS_ELYSIUM),
   },
   hyperevm: {
-    key: 'hyperevm', name: 'HyperEVM', chainId: 999, whChain: 47, arbitrum: false,
-    rpcs: [...(E.HYPEREVM_RPC ? [E.HYPEREVM_RPC] : []), 'https://rpc.hyperliquid.xyz/evm', 'https://hyperliquid.drpc.org'],
+    key: 'hyperevm', name: 'HyperEVM', chainId: 999, whChain: 47, arbitrum: false, logRange: 1000, // its public RPC answers eth_getLogs over at most 1,000 blocks
+    // drpc's free tier refuses eth_getLogs, so it is not here; these all answer it over 1,000 blocks
+    rpcs: [...(E.HYPEREVM_RPC ? [E.HYPEREVM_RPC] : []), 'https://rpc.hyperliquid.xyz/evm', 'https://rpc.hypurrscan.io', 'https://hyperliquid-json-rpc.stakely.io', 'https://rpc.hyperlend.finance', 'https://rpc.purroofgroup.com'],
     poolManager: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', router: '0x9aFe3C497e19501DB228F28CdBdD29bC98F65DBa',
     quoter: '0x108Bfe38532C98f8Cd8D7Ab49c9dDAa3675a1c5e', wormhole: '0x7C0faFc4384551f063e05aee704ab943b8B53aB3',
     ...parse(E.HYPEX_CONTRACTS_HYPEREVM),
