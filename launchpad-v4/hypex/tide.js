@@ -261,7 +261,8 @@
   // the coin's contract on each chain (every chain has its own address, like Pangea): one chip per chain, copy and
   // explorer link; a coin on one chain only shows the plain copy button
   function caPicker(t) {
-    const cas = t.cas || {}, nets = Object.keys(cas);
+    // the preview's sample coins get a sample address on HyperEVM too, to show how a coin reads on both chains
+    const cas = t.cas || (DATA.demo ? { elysium: t.addr, hyperevm: '0x' + Array.from(t.addr.slice(2)).reverse().join('') } : {}), nets = Object.keys(cas);
     if (nets.length < 2) return `<button class="lnk num" data-copy="${t.addr}">${esc(shortAddr(t.addr))} ${ICON.copy}</button>`;
     return `<span class="cas"><span class="mute">Contract on</span>${nets.map((n) => { const c = C.chainOf(n), a = cas[n]; return `<span class="ca"><b>${esc(c.short || c.name)}</b><button class="num" data-copy="${a}" title="Copy">${esc(shortAddr(a))} ${ICON.copy}</button><a href="${esc(String(c.explorer || '').replace(/\/#$/, ''))}/token/${a}" target="_blank" rel="noopener" aria-label="Explorer">↗</a></span>`; }).join('')}</span>`;
   }
