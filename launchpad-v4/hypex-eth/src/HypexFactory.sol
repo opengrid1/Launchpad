@@ -78,6 +78,9 @@ contract HypexFactory is IHypexFactory, IUnlockCallback, EIP712, ReentrancyGuard
     /// @notice May launch a coin's leg here for its creator (the launch service): the same coin, at the same address, as
     ///         on the chain it was first launched on (launchLeg). Owner-set; address(0) disables it.
     address public legLauncher;
+    /// @notice The same coin's address on another chain, by Wormhole chain id: what HypexBridge burns here and mints
+    ///         there. Recorded once per coin and chain by the launch service (launchLeg, setRemote); never changed.
+    mapping(address => mapping(uint16 => address)) public remoteOf;
 
     struct DevBuy {
         PoolKey key;
@@ -117,11 +120,12 @@ contract HypexFactory is IHypexFactory, IUnlockCallback, EIP712, ReentrancyGuard
         return _launch(lp, msg.sender);
     }
 
-    /// @notice The launch service puts a coin launched on another chain on this one too, for the same creator: same name,
-    ///         ticker and salt, so the same address (HypexToken's init code doesn't depend on the chain), with its own
-    ///         pool and floor here. Its start is signed for this chain like any launch; no dev buy; the launch fee is the
-    ///         service's.
-    function launchLeg(LaunchParams calldata lp, address creator)
+    /// @notice The launch service puts a coin launched on another chain (Wormhole chain id `homeChain`, address
+    ///         `homeToken` there) on this one too, for the same creator: same name, ticker and salt, its own address
+    ///         here (the chain is part of the salt), its own pool and floor. Records the pair both ways round here
+    ///         (remoteOf); setRemote records it on the home chain. Its start is signed for this chain like any launch;
+    ///         no dev buy; the launch fee is the service's.
+    function launchLeg(LaunchParams calldata lp, address creator, uint16 homeChain, address homeToken)
         external
         payable
         nonReentrant
@@ -129,7 +133,21 @@ contract HypexFactory is IHypexFactory, IUnlockCallback, EIP712, ReentrancyGuard
     {
         if (msg.sender != legLauncher || msg.sender == address(0)) revert NotLegLauncher();
         if (lp.devBuyTokens != 0) revert DevBuyTooBig();
-        return _launch(lp, creator);
+        (token, poolId) = _launch(lp, creator);
+        _setRemote(token, homeChain, homeToken);
+    }
+
+    /// @notice The launch service records `token`'s address on another chain (after launching its leg there).
+    function setRemote(address token, uint16 chain, address remote) external {
+        if (msg.sender != legLauncher || msg.sender == address(0)) revert NotLegLauncher();
+        _setRemote(token, chain, remote);
+    }
+
+    function _setRemote(address token, uint16 chain, address remote) internal {
+        if (remote == address(0) || chain == 0) revert ZeroAddress();
+        if (remoteOf[token][chain] != address(0)) revert RemoteSet();
+        remoteOf[token][chain] = remote;
+        emit RemoteRecorded(token, chain, remote);
     }
 
     function _launch(LaunchParams calldata lp, address creator) internal returns (address token, PoolId poolId) {
@@ -150,7 +168,8 @@ contract HypexFactory is IHypexFactory, IUnlockCallback, EIP712, ReentrancyGuard
         }
         int24 tickStart = lp.tickStart;
 
-        token = address(new HypexToken{salt: keccak256(abi.encode(creator, lp.salt))}(lp.name, lp.ticker));
+        // Hypex: the chain is part of the salt, so a coin has its own address on every chain it launches on
+        token = address(new HypexToken{salt: keccak256(abi.encode(creator, lp.salt, block.chainid))}(lp.name, lp.ticker));
         if (token <= quote) revert BadSalt();
         if (first) {
             hypex = token;
@@ -445,7 +464,7 @@ contract HypexFactory is IHypexFactory, IUnlockCallback, EIP712, ReentrancyGuard
             uint160(
                 uint256(
                     keccak256(
-                        abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encode(creator, salt)), initHash)
+                        abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encode(creator, salt, block.chainid)), initHash)
                     )
                 )
             )

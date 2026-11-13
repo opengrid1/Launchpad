@@ -47,7 +47,9 @@ srv.listen(8795, async () => {
     try { localStorage.setItem('wallet-ui', 'basic'); } catch {} // the plain wallet picker instead of the Reown modal
     let id = 0, cur = 'elysium'; const ls = {};
     const fw = async (method, params) => { const r = await fetch(NODES[cur], { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: ++id, method, params }) }); const j = await r.json(); if (j.error) { const e = new Error(j.error.message); e.code = j.error.code; e.data = j.error.data; throw e; } return j.result; };
+    window.__wlog = [];
     window.ethereum = { isMetaMask: true, on(ev, f) { (ls[ev] || (ls[ev] = [])).push(f); }, removeListener() {}, request: async ({ method, params }) => {
+      if (/^wallet_|eth_sendTransaction|eth_chainId/.test(method)) window.__wlog.push(method + ':' + cur + (method.startsWith('wallet_') ? ':' + JSON.stringify(params) : ''));
       if (method === 'eth_requestAccounts' || method === 'eth_accounts') return [USER]; if (method === 'eth_chainId') return HEX[cur]; if (method === 'net_version') return String(parseInt(HEX[cur], 16));
       if (method === 'wallet_switchEthereumChain' || method === 'wallet_addEthereumChain') { const want = String(params[0].chainId).toLowerCase(); cur = want === HEX.hyperevm ? 'hyperevm' : 'elysium'; (ls.chainChanged || []).forEach((f) => f(HEX[cur])); return null; }
       if (method === 'eth_sendTransaction') { const tx = { ...params[0], from: USER }; return fw('eth_sendTransaction', [tx]); }
@@ -72,8 +74,13 @@ srv.listen(8795, async () => {
     const r = await ev(async (img) => DATA.launch({ name: 'Twin Peak', symbol: 'TWIN', image: img, description: 'Two chains, one coin.', x: '', telegram: '', website: '' }), img);
     ok(r && r.addr, 'launched on Elysium ' + JSON.stringify(r));
     const addr = r && r.addr;
-    ok(await waitFor(async () => (await P.hyperevm.getCode(addr)) !== '0x', 90000), 'the launch service put it on HyperEVM at the same address');
-    ok(await waitFor(() => pg.evaluate((a) => { const t = DATA.token(a); return t && t.chains.length === 2; }, addr), 60000), 'the site shows one coin on both chains');
+    ok(await waitFor(() => pg.evaluate((a) => { const t = DATA.token(a); return t && t.chains.length === 2; }, addr), 120000), 'the launch service put it on HyperEVM; the site shows one coin on both chains');
+    const cas = await pg.evaluate((a) => DATA.token(a).cas, addr);
+    ok(cas.elysium === addr && cas.hyperevm && cas.hyperevm !== addr, 'its own contract address on each chain ' + JSON.stringify(cas));
+    ok((await P.hyperevm.getCode(cas.hyperevm)) !== '0x', 'the HyperEVM contract exists');
+    await pg.goto(B + '/#/token/' + addr); await pg.waitForTimeout(3500);
+    ok(await pg.evaluate(() => document.querySelectorAll('.cas .ca').length === 2), 'the token page shows the contract on each chain');
+    await pg.screenshot({ path: OUT + '/e2e-ca.png', clip: { x: 0, y: 0, width: 1360, height: 520 } });
     // past the snipe window (its first minute pays no airdrop, by design) on both chains
     for (const n of Object.keys(NODES)) { await P[n].send('evm_increaseTime', [120]); await P[n].send('evm_mine', []); }
     // buys and sells
@@ -82,6 +89,8 @@ srv.listen(8795, async () => {
     const balE = Number(ethers.formatEther(await erc('elysium').balanceOf(USER))); ok(balE > 0, 'holds ' + balE.toFixed(0) + ' on Elysium');
     const s1 = await ev(async ([a, k]) => DATA.sell(a, 'elysium', k, 0), [addr, balE / 2]); ok(s1 && s1.hype > 0, 'sold half on Elysium ' + JSON.stringify(s1));
     const b2 = await ev(async (a) => DATA.buy(a, 'hyperevm', 1, 0), addr); ok(b2 && b2.tokens > 0, 'bought on HyperEVM ' + JSON.stringify(b2));
+    if (!(b2 && b2.tokens > 0)) console.log('wallet log', (await pg.evaluate(() => window.__wlog.slice(-12))).join(' | '), 'C.chain', await pg.evaluate(() => CFG.chain.key));
+    const hyp = new ethers.Contract(cas.hyperevm, ['function balanceOf(address) view returns (uint256)'], P.hyperevm); ok((await hyp.balanceOf(USER)) > 0n, 'holds the HyperEVM coin');
     // the trader airdrop: owed on both chains, claimed on HyperEVM (the current chain)
     await pg.waitForTimeout(4000);
     const air = await pg.evaluate((w) => DATA.airdrop(w), USER); ok(air.byChain.elysium.owed > 0 && air.byChain.hyperevm.owed > 0, 'airdrop owed on both chains ' + JSON.stringify(air.byChain));

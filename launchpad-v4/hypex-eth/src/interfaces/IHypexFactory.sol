@@ -53,6 +53,8 @@ interface IHypexFactory {
     );
     event ConfigChanged(bytes32 indexed what, uint256 value);
     event QuoteAllowed(address indexed quote, bool allowed);
+    /// @notice The same coin on another chain (Wormhole chain id): HypexBridge moves it between the two
+    event RemoteRecorded(address indexed token, uint16 indexed chain, address remote);
     event QuoteBandSet(address indexed quote, int24 low, int24 high);
 
     error NotPoolManager();
@@ -77,14 +79,17 @@ interface IHypexFactory {
     error VestWithoutDevBuy();
     error NotLegLauncher();
     error BridgeSet();
+    error RemoteSet();
 
     /// @notice Launch a token. Send the launch fee plus enough ETH for the dev buy; the rest is refunded. On a pair other
     ///         than ETH or $HYPEX the dev buy is paid in the quote itself: approve this factory for it first.
     function launch(LaunchParams calldata lp) external payable returns (address token, PoolId poolId);
-    function launchLeg(LaunchParams calldata lp, address creator)
+    function launchLeg(LaunchParams calldata lp, address creator, uint16 homeChain, address homeToken)
         external
         payable
         returns (address token, PoolId poolId);
+    function setRemote(address token, uint16 chain, address remote) external;
+    function remoteOf(address token, uint16 chain) external view returns (address);
     function bridge() external view returns (address);
     function legLauncher() external view returns (address);
     function setBridge(address bridge) external;

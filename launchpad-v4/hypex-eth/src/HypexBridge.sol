@@ -13,13 +13,14 @@ interface IHypexHookBridge {
 
 /// @title HypexBridge
 /// @notice Moves a Hypex coin between the chains it is launched on (Elysium and HyperEVM), over Wormhole, and keeps every
-///         chain's floor covering that chain's holders. Every coin has the same address on every chain (same factory
-///         address, same salt, same init code), and so does this bridge (the same deployer nonce on both chains).
+///         chain's floor covering that chain's holders. This bridge has the same address on every chain (the same
+///         deployer nonce on both), so each one's peer is itself.
 ///
 ///         Sending `amount` from chain A to chain B: the coins are burned on A, and A's floor lets go of the HYPE that
 ///         backed them (HypexHook.bridge: the same share of the floor money and the floor band as `amount` is of the
-///         circulating coins), which waits here (floorOut). A Wormhole message names the coin, the receiver, `amount`
-///         and that HYPE. On B, anyone can bring the signed message (receiveMessage): the coins are minted to the
+///         circulating coins), which waits here (floorOut). A Wormhole message names the coin on both chains (every
+///         chain has its own address for it, paired by the launch service: HypexFactory.remoteOf), the receiver,
+///         `amount` and that HYPE. On B, anyone can bring the signed message (receiveMessage): the coins are minted to the
 ///         receiver and B's bridge books the HYPE B's floor is owed (floorOwed). The keeper moves the HYPE from A to B
 ///         (Relay) and pays it into B's floor (fundFloor): until it lands, B's floor carries its new holders with the
 ///         money it already had and does not move up for them.
@@ -62,6 +63,7 @@ contract HypexBridge is Owned, ReentrancyGuard {
     event ConsistencySet(uint8 level);
 
     error NoPeer();
+    error NoRemote();
     error BadAmount();
     error ZeroAddress();
     error BadVaa(string reason);
@@ -99,11 +101,14 @@ contract HypexBridge is Owned, ReentrancyGuard {
         if (peers[toChain] == bytes32(0)) revert NoPeer();
         if (amount == 0) revert BadAmount();
         if (to == address(0)) revert ZeroAddress();
+        // the same coin's own address on that chain (every chain has its own), recorded by the launch service
+        address remote = IHypexFactoryHook(factory).remoteOf(token, toChain);
+        if (remote == address(0)) revert NoRemote();
         IHypexToken(token).bridgeBurn(msg.sender, amount);
         // reverts for a coin this chain's hook didn't launch
         uint256 hype = IHypexHookBridge(_hook()).bridge(token, amount);
         floorOut += hype;
-        sequence = wormhole.publishMessage{value: msg.value}(0, abi.encode(token, to, amount, hype), consistency);
+        sequence = wormhole.publishMessage{value: msg.value}(0, abi.encode(token, remote, to, amount, hype), consistency);
         emit Sent(token, msg.sender, to, toChain, amount, hype, sequence);
     }
 
@@ -119,10 +124,10 @@ contract HypexBridge is Owned, ReentrancyGuard {
         if (peer == bytes32(0) || peer != vm.emitterAddress) revert UnknownEmitter();
         if (consumed[vm.hash]) revert AlreadyDelivered();
         consumed[vm.hash] = true;
-        (address token, address to, uint256 amount, uint256 hype) =
-            abi.decode(vm.payload, (address, address, uint256, uint256));
-        // the coin has this address here too; a chain it isn't launched on yet has no code there and this reverts,
-        // so the message waits until it is
+        (address from, address token, address to, uint256 amount, uint256 hype) =
+            abi.decode(vm.payload, (address, address, address, uint256, uint256));
+        // the coin here must be the one the launch service paired with the sending chain's coin
+        if (IHypexFactoryHook(factory).remoteOf(token, vm.emitterChainId) != from) revert NoRemote();
         IHypexToken(token).bridgeMint(to, amount);
         floorOwed[token] += hype;
         emit Received(token, to, vm.emitterChainId, amount, hype, vm.hash);
@@ -185,4 +190,5 @@ contract HypexBridge is Owned, ReentrancyGuard {
 
 interface IHypexFactoryHook {
     function hook() external view returns (address);
+    function remoteOf(address token, uint16 chain) external view returns (address);
 }

@@ -173,7 +173,7 @@
     if (state.tfFor !== t.addr) { state.tfFor = t.addr; const age = Date.now() / 1000 - (t.createdAt || 0); state.tf = age < 3 * 3600 ? 60 : age < 86400 ? 300 : 900; }
     const trades = DATA.trades(t.addr), holders = DATA.holders(t.addr), pos = DATA.positions(t.addr), cs = DATA.candles(t.addr, 900), ath = cs.length ? Math.max(...cs.map((b) => b.h)) * C.econ.supply * APP.hypeUsd : t.mcapUsd;
     const slipPct = (state.slip / 100).toFixed(state.slip % 100 ? 1 : 0), buys = t.buys24 || 0, sells = t.sells24 || 0, bshare = buys + sells ? buys / (buys + sells) * 100 : 50;
-    const links = `<div class="lnks">${t.links.web ? `<a class="lnk" href="${esc(t.links.web)}" target="_blank" rel="noopener" aria-label="Website"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></a>` : ''}${t.links.x ? `<a class="lnk" href="${esc(t.links.x)}" target="_blank" rel="noopener" aria-label="X">${ICON.x}</a>` : ''}${t.links.tg ? `<a class="lnk" href="${esc(t.links.tg)}" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24"><path d="M21 4 3 11l6 2 2 6 3-4 5 3z"/><path d="m9 13 10-9"/></svg></a>` : ''}<button class="lnk num" data-copy="${t.addr}">${esc(shortAddr(t.addr))} ${ICON.copy}</button><a class="lnk" href="${APP.explorer('address', t.addr)}" target="_blank" rel="noopener">Explorer ${ICON.ext}</a></div>`;
+    const links = `<div class="lnks">${t.links.web ? `<a class="lnk" href="${esc(t.links.web)}" target="_blank" rel="noopener" aria-label="Website"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></a>` : ''}${t.links.x ? `<a class="lnk" href="${esc(t.links.x)}" target="_blank" rel="noopener" aria-label="X">${ICON.x}</a>` : ''}${t.links.tg ? `<a class="lnk" href="${esc(t.links.tg)}" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24"><path d="M21 4 3 11l6 2 2 6 3-4 5 3z"/><path d="m9 13 10-9"/></svg></a>` : ''}${caPicker(t)}<a class="lnk" href="${APP.explorer('address', t.addr)}" target="_blank" rel="noopener">Explorer ${ICON.ext}</a></div>`;
     const snipeRow = fs.kind === 'snipe' ? `<div class="trow warn"><span>Launch protection</span><b>+${(fs.snipeBps / 100).toFixed(1)}% on buys, fades in ${fs.left}s</b></div>` : '';
     const html = `<div class="page"><div class="tk">
       <div class="tk-top">
@@ -258,6 +258,13 @@
   }
   function slipDialog(after) { const ov = APP.dialog('Slippage', `<div class="slip">${[50, 100, 300, 500, 1000].map((b) => `<button data-s="${b}" class="${state.slip === b ? 'on' : ''}">${b / 100}%</button>`).join('')}</div><p class="mute" style="margin-top:12px;font-size:13px">Max price move before the trade reverts.</p>`); $$('[data-s]', ov).forEach((b) => b.onclick = () => { state.slip = Number(b.dataset.s); try { localStorage.setItem('slip', state.slip); } catch {} ov.remove(); after && after(); }); }
   async function act(fn, after) { if (state.busy) return; state.busy = true; const btns = $$('#t-go,#c-go,#t-claim,#f-claim,#b-go,.claimbtn'); btns.forEach((b) => { b.disabled = true; b.dataset.t = b.textContent; b.textContent = 'Confirm in your wallet…'; }); try { await fn(); } catch (e) { APP.toast(APP.errMsg(e), 'err', 7000); } state.busy = false; btns.forEach((b) => { b.disabled = false; b.textContent = b.dataset.t; }); if (after) after(); }
+  // the coin's contract on each chain (every chain has its own address, like Pangea): one chip per chain, copy and
+  // explorer link; a coin on one chain only shows the plain copy button
+  function caPicker(t) {
+    const cas = t.cas || {}, nets = Object.keys(cas);
+    if (nets.length < 2) return `<button class="lnk num" data-copy="${t.addr}">${esc(shortAddr(t.addr))} ${ICON.copy}</button>`;
+    return `<span class="cas"><span class="mute">Contract on</span>${nets.map((n) => { const c = C.chainOf(n), a = cas[n]; return `<span class="ca"><b>${esc(c.short || c.name)}</b><button class="num" data-copy="${a}" title="Copy">${esc(shortAddr(a))} ${ICON.copy}</button><a href="${esc(String(c.explorer || '').replace(/\/#$/, ''))}/token/${a}" target="_blank" rel="noopener" aria-label="Explorer">↗</a></span>`; }).join('')}</span>`;
+  }
   const bindGo = () => { $$('[data-go]').forEach((r) => r.onclick = () => { location.hash = r.dataset.go; }); $$('[data-copy]').forEach((b) => b.onclick = (e) => { e.preventDefault(); APP.copy(b.dataset.copy, 'Address copied'); }); };
 
   // ---- launch

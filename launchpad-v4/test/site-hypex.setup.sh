@@ -29,3 +29,12 @@ for c in "elysium 8601" "hyperevm 8602"; do set -- $c
   python3 -c "import json;p='deployments/$1-local.json';d=json.load(open(p));d['fromBlock']=$FB;json.dump(d,open(p,'w'),indent=1)"
   echo "$1: factory $(python3 -c "import json;print(json.load(open('deployments/$1-local.json'))['factory'])") bridge $(python3 -c "import json;print(json.load(open('deployments/$1-local.json')).get('bridge'))")"
 done
+
+# $HYPEX was launched on each chain on its own (its own address on each): the launch service pairs the two, as it
+# does for every coin, so the bridge can move it
+KEEPER_KEY=0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97
+HE=$(python3 -c "import json;print(json.load(open('deployments/elysium-local.json'))['hypex'])"); HH=$(python3 -c "import json;print(json.load(open('deployments/hyperevm-local.json'))['hypex'])")
+F=$(python3 -c "import json;print(json.load(open('deployments/elysium-local.json'))['factory'])")
+cast send --rpc-url http://127.0.0.1:8601 --private-key $KEEPER_KEY $F "setRemote(address,uint16,address)" $HE 47 $HH >/dev/null
+cast send --rpc-url http://127.0.0.1:8602 --private-key $KEEPER_KEY $F "setRemote(address,uint16,address)" $HH 74 $HE >/dev/null
+echo "HYPEX: elysium $HE hyperevm $HH (paired)"

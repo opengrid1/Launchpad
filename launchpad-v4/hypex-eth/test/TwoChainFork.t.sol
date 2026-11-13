@@ -193,7 +193,8 @@ contract TwoChainForkTest is Test {
         assertEq(address(E.bridge), address(H.bridge), "bridge");
     }
 
-    /// A coin launched on Elysium and put on HyperEVM by the launch service: same address, a pool and a floor on each.
+    /// A coin launched on Elysium and put on HyperEVM by the launch service: its own address on each (paired by the
+    /// factories), a pool and a floor on each.
     /// Coins bridged from Elysium to HyperEVM over Wormhole take their share of Elysium's floor; the keeper pays it
     /// into HyperEVM's floor; holders on both chains can still sell everything into their floors.
     function test_launchBothChainsBridgeAndKeepFloors() public {
@@ -228,12 +229,13 @@ contract TwoChainForkTest is Test {
         IHypexFactory.LaunchParams memory lpH = _signedStart(H, creator, salt, tick);
         uint256 g = gasleft();
         vm.prank(keeper, keeper);
-        (address tokenH,) = H.factory.launchLeg{value: 0.1 ether}(lpH, creator);
+        (address tokenH,) = H.factory.launchLeg{value: 0.1 ether}(lpH, creator, ELY_CHAIN, token);
         g -= gasleft();
         emit log_named_uint("HyperEVM leg launch gas", g);
-        assertEq(tokenH, token, "the same coin address on both chains");
+        assertTrue(tokenH != token, "its own address on each chain (like Pangea)");
+        assertEq(H.factory.remoteOf(tokenH, ELY_CHAIN), token, "paired with the Elysium coin on HyperEVM");
         assertLt(g, HYPEREVM_SMALL_BLOCK_GAS, "a leg launch fits a HyperEVM small block");
-        PoolKey memory kH = H.hook.keyFor(address(0), token);
+        PoolKey memory kH = H.hook.keyFor(address(0), tokenH);
         vm.warp(block.timestamp + 120);
         for (uint256 i; i < 4; i++) {
             vm.roll(block.number + 1);
@@ -243,8 +245,10 @@ contract TwoChainForkTest is Test {
         vm.roll(block.number + 1);
         H.hook.poke(kH);
 
-        // bob bridges half his coins from Elysium to HyperEVM
+        // the launch service pairs the Elysium coin with its HyperEVM address; bob bridges half his coins over
         vm.selectFork(ely);
+        vm.prank(keeper);
+        E.factory.setRemote(token, HYP_CHAIN, tokenH);
         uint256 half = HypexToken(token).balanceOf(bob) / 2;
         vm.recordLogs();
         vm.prank(bob, bob);
@@ -265,14 +269,14 @@ contract TwoChainForkTest is Test {
         // HyperEVM: the signed message mints bob's coins; the keeper pays the floor HYPE in (it carried it over)
         vm.selectFork(hyp);
         uint32 index = _overrideGuardians(HYP_WH);
-        uint256 supply0 = HypexToken(token).totalSupply();
+        uint256 supply0 = HypexToken(tokenH).totalSupply();
         // the keeper delivers the message with the floor HYPE it carried over (Relay)
         vm.deal(keeper, keeper.balance + floorHype);
         vm.prank(keeper);
         H.bridge.receiveMessage{value: floorHype}(_vaa(index, body));
-        assertEq(HypexToken(token).balanceOf(bob), half, "minted on HyperEVM");
-        assertEq(HypexToken(token).totalSupply(), supply0 + half);
-        assertEq(H.bridge.floorOwed(token), 0, "HyperEVM's floor got its HYPE");
+        assertEq(HypexToken(tokenH).balanceOf(bob), half, "minted on HyperEVM");
+        assertEq(HypexToken(tokenH).totalSupply(), supply0 + half);
+        assertEq(H.bridge.floorOwed(tokenH), 0, "HyperEVM's floor got its HYPE");
         vm.expectRevert(HypexBridge.AlreadyDelivered.selector);
         H.bridge.receiveMessage(_vaa(index, body));
 
@@ -282,11 +286,11 @@ contract TwoChainForkTest is Test {
         H.hook.poke(kH);
         address[2] memory us = [bob, carol];
         for (uint256 i; i < 2; i++) {
-            uint256 bal = HypexToken(token).balanceOf(us[i]);
+            uint256 bal = HypexToken(tokenH).balanceOf(us[i]);
             vm.prank(us[i]);
-            HypexToken(token).approve(address(H.router), bal);
+            HypexToken(tokenH).approve(address(H.router), bal);
             _swap(H, us[i], kH, false, -int256(bal), 0);
         }
-        assertEq(HypexToken(token).balanceOf(bob) + HypexToken(token).balanceOf(carol), 0, "all sold");
+        assertEq(HypexToken(tokenH).balanceOf(bob) + HypexToken(tokenH).balanceOf(carol), 0, "all sold");
     }
 }

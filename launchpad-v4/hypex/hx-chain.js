@@ -1,8 +1,8 @@
 /* Hypex's live data layer: the DATA interface on the Hypex floor contracts on both chains (Elysium and HyperEVM).
    Loaded after the shared chain.js, which runs the design preview (sample coins) while no chain has contracts; once
    one has, this replaces window.DATA.
-   Every coin lives on both chains at the same address, with a pool and a floor on each (Pangea style); the coin's view
-   merges both (price, floor, holders, trades), and every trade or claim goes to the chain the user picks (the coin's
+   Every coin lives on both chains, each with its own address (like Pangea), a pool and a floor on each; the launch
+   service pairs the addresses, and the coin's view merges both (price, floor, holders, trades; `cas` per chain), and every trade or claim goes to the chain the user picks (the coin's
    `net`, its home chain, by default).
    Reads: /api/state?chain=<key> per chain (an indexer over each chain's logs, cached by the CDN), every few seconds.
    Quotes: from the pool price and the fixed 2.5% tax (an estimate; the swap itself is bounded by the Quoter's answer).
@@ -52,9 +52,22 @@
     if (typeof d === 'string' && d.length >= 10) for (const f of Object.values(I)) { try { const p = f.parseError(d); if (p) return ERR[p.name] || p.name; } catch {} }
     return APP.errMsg(e);
   }
-  const onChain = async (net) => { if (C.chain.key !== net) await APP.setChain(net, false); };
+  // the wallet on `net` before anything is sent: asked for that chain by id (not through the site's current chain,
+  // which a page may move back to the coin's home chain while it renders)
+  async function onChain(net) {
+    const ch = C.chainOf(net); C.useChain(net, false);
+    const p = APP.W.provider; if (!p) return;
+    const cid = await p.request({ method: 'eth_chainId' }).catch(() => null);
+    if (cid && parseInt(cid, 16) === ch.id) { APP.W.chainOk = true; return; }
+    try { await p.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ch.hex }] }); }
+    catch (e) { if (e && (e.code === 4902 || /unrecognized|not added|4902/i.test(e.message || ''))) await p.request({ method: 'wallet_addEthereumChain', params: [{ chainId: ch.hex, chainName: ch.name, nativeCurrency: { name: 'HYPE', symbol: 'HYPE', decimals: 18 }, rpcUrls: [ch.rpc], blockExplorerUrls: ch.explorer ? [String(ch.explorer).replace(/\/#$/, '')] : [] }] }); else throw e; }
+    const now2 = await p.request({ method: 'eth_chainId' }).catch(() => null);
+    if (!now2 || parseInt(now2, 16) !== ch.id) throw new Error('Switch your wallet to ' + ch.name);
+    APP.W.chainOk = true;
+  }
   async function send(tx, label, net) {
-    await onChain(net); await APP.W.require(); if (!APP.W.provider) throw new Error('Connect a wallet to ' + label);
+    if (!APP.W.connected || !APP.W.provider) { APP.W.connect(); throw new Error('Connect a wallet to ' + label); }
+    await onChain(net);
     const signer = await new X.BrowserProvider(APP.W.provider).getSigner();
     try { await rpc('eth_call', [{ from: APP.W.address, to: tx.to, data: tx.data, value: tx.value ? '0x' + BigInt(tx.value).toString(16) : '0x0' }, 'latest'], net, 4); }
     catch (e) { if (e.data !== undefined) throw new Error(revertText(e)); }
@@ -70,22 +83,27 @@
     await Promise.all(NETS().map(async (net) => { try { const r = await fetch('/api/state?chain=' + net + (fresh ? '&t=' + Date.now() : ''), { cache: fresh ? 'no-store' : 'default' }); if (r.ok) SS[net] = await r.json(); } catch {} }));
     index();
   }
+  // every chain has its own address for a coin (like Pangea); the launch service pairs them (RemoteRecorded), and the
+  // site shows one coin per pair: its home chain's address names it, BY finds it by any of its addresses
   function index() {
-    const by = new Map();
+    const leg = new Map(); // "net:addr" -> leg
     for (const net of NETS()) {
       const st = SS[net]; if (!st || !st.tokens) continue;
-      for (const t of st.tokens) {
-        const m = by.get(t.addr) || { addr: t.addr, legs: {} };
-        m.legs[net] = { ...t, net, trades: st.trades.filter((x) => x.t === t.addr).map((x) => ({ ...x, net })) };
-        by.set(t.addr, m);
-      }
+      const wh = C.chainOf(net).whChain;
+      for (const t of st.tokens) leg.set(net + ':' + t.addr, { ...t, net, wh, trades: st.trades.filter((x) => x.t === t.addr).map((x) => ({ ...x, net })) });
     }
-    for (const m of by.values()) {
-      const legs = Object.values(m.legs).sort((a, b) => a.createdAt - b.createdAt), home = legs[0];
-      Object.assign(m, { net: home.net, name: home.name, symbol: home.ticker, creator: home.creator, createdAt: home.createdAt, tx: home.tx, meta: home.meta || {} });
-      m.trades = legs.flatMap((l) => l.trades).filter((x) => !x.bb).sort((a, b) => a.ts - b.ts);
+    const byWh = Object.fromEntries(NETS().map((n) => [C.chainOf(n).whChain, n])), seen = new Set(), by = new Map(), all = [];
+    for (const [k, l] of leg) {
+      if (seen.has(k)) continue;
+      const group = [l]; seen.add(k);
+      for (const [wh, ra] of Object.entries(l.remotes || {})) { const n = byWh[wh], o = n && leg.get(n + ':' + ra); if (o && !seen.has(n + ':' + ra)) { group.push(o); seen.add(n + ':' + ra); } }
+      const legs = group.sort((a, b) => a.createdAt - b.createdAt), home = legs[0];
+      const m = { addr: home.addr, legs: Object.fromEntries(legs.map((g) => [g.net, g])), net: home.net, name: home.name, symbol: home.ticker, creator: home.creator, createdAt: home.createdAt, tx: home.tx, meta: home.meta || {} };
+      m.trades = legs.flatMap((g) => g.trades).filter((x) => !x.bb).sort((a, b) => a.ts - b.ts);
+      for (const g of legs) by.set(g.addr, m);
+      all.push(m);
     }
-    BY = by; ALL = [...by.values()]; VIEW.clear();
+    BY = by; ALL = all; VIEW.clear();
   }
   const VIEW = new Map();
   function legView(l) {
@@ -98,7 +116,7 @@
     const byChain = {}; for (const [net, l] of Object.entries(m.legs)) byChain[net] = legView(l);
     const legs = Object.values(byChain), h = byChain[m.net], sum = (k) => legs.reduce((s, x) => s + x[k], 0), meta = m.meta || {};
     const v = { addr: m.addr, name: m.name, symbol: m.symbol, img: meta.image || APP.defaultImg(m.symbol, m.addr), desc: meta.description || '', links: { x: meta.x || '', tg: meta.telegram || '', web: meta.website || '' },
-      creator: m.creator, feeRecipient: m.creator, createdAt: m.createdAt, age: APP.ago(m.createdAt), net: m.net, chains: Object.keys(byChain), byChain, chainName: C.chainOf(m.net).name,
+      creator: m.creator, feeRecipient: m.creator, createdAt: m.createdAt, cas: Object.fromEntries(Object.values(m.legs).map((l) => [l.net, l.addr])), age: APP.ago(m.createdAt), net: m.net, chains: Object.keys(byChain), byChain, chainName: C.chainOf(m.net).name,
       px: h.px, pxUsd: h.pxUsd, mcap: sum('mcap'), mcapUsd: sum('mcap') * APP.hypeUsd, liqHype: 0, vol24: sum('vol24'), volAll: sum('volAll'), feesAll: sum('feesAll'), buys24: sum('buys24'), sells24: sum('sells24'), c24: h.c24,
       holders: new Set(Object.values(m.legs).flatMap((l) => l.holders.map(([w]) => w))).size, floor: h.floorCover, floorPx: h.floorPx, feeBps: E.feeBps, creatorShareBps: E.split.creator * 10000 / E.feeBps, tx: m.tx, v: 3, pair: ZERO, pairSym: 'HYPE', bridges: (SS[m.net] && SS[m.net].bridges || []).filter((b) => b.t === m.addr).length };
     v._usd = APP.hypeUsd; VIEW.set(m.addr, v); return v;
@@ -188,14 +206,14 @@
 
     async buy(a, net, hype, minTokens) {
       const m = BY.get(low(a)); if (!m) throw new Error('Unknown coin'); net = m.legs[net] ? net : m.net;
-      const amountIn = wei(hype), q = await quoted(net, a, true, amountIn);
+      a = m.legs[net].addr; const amountIn = wei(hype), q = await quoted(net, a, true, amountIn);
       let minOut = wei(minTokens || 0); if (q && minOut > q) minOut = (q * 97n) / 100n; // the estimate overshot: bound by the Quoter
       const r = await send({ to: K(net).router, data: v4Swap(net, a, true, amountIn, minOut), value: amountIn }, 'buy', net);
       await after(parseInt(r.receipt.blockNumber, 16), net); return { tokens: Number(X.formatEther(q || minOut)), hash: r.hash };
     },
     async sell(a, net, tokens, minHype) {
       const m = BY.get(low(a)); if (!m) throw new Error('Unknown coin'); net = m.legs[net] ? net : m.net;
-      const amountIn = wei(tokens); await allowUR(net, X.getAddress(a), amountIn);
+      a = m.legs[net].addr; const amountIn = wei(tokens); await allowUR(net, X.getAddress(a), amountIn);
       const q = await quoted(net, a, false, amountIn); let minOut = wei(minHype || 0); if (q && minOut > q) minOut = (q * 97n) / 100n;
       const r = await send({ to: K(net).router, data: v4Swap(net, a, false, amountIn, minOut) }, 'sell', net);
       await after(parseInt(r.receipt.blockNumber, 16), net); return { hype: Number(X.formatEther(q || minOut)), hash: r.hash };
@@ -221,13 +239,14 @@
       const net = C.chain.key, me = X.getAddress(APP.W.address); let got = 0;
       const [owed] = await call(K(net).revenue, I.revenue, 'owed', [me, ZERO], net);
       if (owed > 0n) { await send({ to: K(net).revenue, data: I.revenue.encodeFunctionData('claim', [me, ZERO, me]) }, 'claim', net); got += Number(X.formatEther(owed)); }
-      for (const m of ALL.filter((x) => x.creator === low(me) && x.legs[net])) { try { await send({ to: K(net).hook, data: I.hook.encodeFunctionData('claimCreator', [keyOf(net, m.addr), me]) }, 'claim', net); } catch {} }
+      for (const m of ALL.filter((x) => x.creator === low(me) && x.legs[net])) { try { await send({ to: K(net).hook, data: I.hook.encodeFunctionData('claimCreator', [keyOf(net, m.legs[net].addr), me]) }, 'claim', net); } catch {} }
       await after(0, net); return got;
     },
     // moves `amount` of a coin from chain `from` to the other chain (its floor HYPE goes with it); the keeper delivers it
     async bridge(a, from, amount) {
       const to = C.liveChains().find((c) => c.key !== from); if (!to) throw new Error('No other chain');
-      const r = await send({ to: K(from).bridge, data: I.bridge.encodeFunctionData('send', [X.getAddress(a), wei(amount), to.whChain, APP.W.address]) }, 'bridge', from);
+      const m = BY.get(low(a)); if (!m || !m.legs[from] || !m.legs[to.key]) throw new Error('This coin is not on both chains yet');
+      const r = await send({ to: K(from).bridge, data: I.bridge.encodeFunctionData('send', [X.getAddress(m.legs[from].addr), wei(amount), to.whChain, APP.W.address]) }, 'bridge', from);
       await after(parseInt(r.receipt.blockNumber, 16), from); return { hash: r.hash, to: to.key };
     },
   };

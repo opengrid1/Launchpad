@@ -373,3 +373,8 @@ html,body{overflow-x:hidden}
 .fl4,.steps3{padding:10px 8px 30px}.adg{padding:8px 6px 26px}
 @media (max-width:999px){.fl4>.fcard,.steps3>.card,.adg>.card,.podium>.pod,.pfk>div{--bx:3deg}}
 @media (prefers-reduced-motion:reduce){.fl4>.fcard,.steps3>.card,.adg>.card,.podium>.pod,.pfk>div{transition:none}}
+
+/* the coin's contract on each chain (its own address on every chain) */
+.cas{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12px}.cas>.mute{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.cas .ca{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 4px 0 10px;border:1px solid var(--line);border-radius:999px;background:var(--s1)}.cas .ca b{font:600 11px var(--mono);color:var(--acc2)}
+.cas .ca button{display:inline-flex;align-items:center;gap:4px;font:500 12px var(--mono);color:var(--ink)}.cas .ca button svg{width:13px;height:13px}.cas .ca a{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;color:var(--mute)}.cas .ca a:hover{background:var(--s2);color:var(--ink)}

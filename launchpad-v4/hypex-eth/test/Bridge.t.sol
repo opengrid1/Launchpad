@@ -100,6 +100,9 @@ contract BridgeTest is HypexBase {
         vm.prank(creator);
         (token,) = factory.launch{value: 0.01 ether}(_signedEth(creator, "Bridged", "BRDG", s, 0, HYPEX_TICK));
         k = hook.keyFor(address(0), token);
+        // its pair on the other chain (here the same coin: the peer is this very bridge)
+        factory.setLegLauncher(address(this));
+        factory.setRemote(token, HYPEREVM, token);
         bob = _user("bob");
         carol = _user("carol");
         _approve(bob, token);
@@ -130,9 +133,10 @@ contract BridgeTest is HypexBase {
         assertEq(address(bridge).balance, out, "the bridge holds it for the keeper");
         (, uint256 pot1,,, uint128 band1) = _pool(k);
         assertLt(pot1 + band1, pot0 + band0, "the floor here let go of it");
-        (address t, address to, uint256 a, uint256 hype) =
-            abi.decode(wh.lastPayload(), (address, address, uint256, uint256));
+        (address t, address dst, address to, uint256 a, uint256 hype) =
+            abi.decode(wh.lastPayload(), (address, address, address, uint256, uint256));
         assertEq(t, token);
+        assertEq(dst, token, "its pair on the other chain");
         assertEq(to, bob);
         assertEq(a, amount);
         assertEq(hype, out);
@@ -156,7 +160,7 @@ contract BridgeTest is HypexBase {
     function test_receiveMintsOnceAndBooksTheFloor() public {
         (, address token, address bob,) = _coin();
         address dave = _user("dave");
-        bytes memory payload = abi.encode(token, dave, 1_000e18, 0.3 ether);
+        bytes memory payload = abi.encode(token, token, dave, 1_000e18, 0.3 ether);
         bridge.receiveMessage(_vaa(payload, keccak256("m1")));
         assertEq(HypexToken(token).balanceOf(dave), 1_000e18, "minted to the receiver");
         assertEq(bridge.floorOwed(token), 0.3 ether, "this floor is owed the HYPE");
@@ -181,7 +185,7 @@ contract BridgeTest is HypexBase {
         vm.prank(bob);
         bridge.send(token, half, HYPEREVM, bob);
         uint256 out = bridge.floorOut();
-        (, address to, uint256 a, uint256 hype) = abi.decode(wh.lastPayload(), (address, address, uint256, uint256));
+        (,, address to, uint256 a, uint256 hype) = abi.decode(wh.lastPayload(), (address, address, address, uint256, uint256));
         uint256 held = HypexToken(token).balanceOf(to);
         bridge.receiveMessage(_vaa(wh.lastPayload(), keccak256("back")));
         assertEq(HypexToken(token).balanceOf(to) - held, a, "minted on the other side");
@@ -215,7 +219,7 @@ contract BridgeTest is HypexBase {
         uint256 half = HypexToken(token).balanceOf(bob) / 2;
         vm.prank(bob);
         bridge.send(token, half, HYPEREVM, bob);
-        (,,, uint256 hype) = abi.decode(wh.lastPayload(), (address, address, uint256, uint256));
+        (,,,, uint256 hype) = abi.decode(wh.lastPayload(), (address, address, address, uint256, uint256));
         vm.prank(keeper);
         bridge.releaseFloor(payable(keeper), hype);
         vm.prank(keeper);
@@ -240,13 +244,21 @@ contract BridgeTest is HypexBase {
         hook.bridge(token, 0);
         // a coin this hook never launched
         HypexToken stray = new HypexToken("Stray", "STRAY");
-        vm.expectRevert(HypexToken.NotBridge.selector); // its "factory" (this test) names no bridge
+        vm.expectRevert(HypexBridge.NoRemote.selector); // never paired with a coin on the other chain
         vm.prank(bob);
         bridge.send(address(stray), 1, HYPEREVM, bob);
         // no peer on that chain
         vm.prank(bob);
         vm.expectRevert(HypexBridge.NoPeer.selector);
         bridge.send(token, 1, 30, bob);
+    }
+
+    function test_unpairedCoinsCannotMove() public {
+        (, address token, address bob,) = _coin();
+        address other = makeAddr("some other coin");
+        bytes memory forged = abi.encode(other, token, bob, 1e18, 0);
+        vm.expectRevert(HypexBridge.NoRemote.selector);
+        bridge.receiveMessage(_vaa(forged, keccak256("forged pair")));
     }
 
     function test_bridgeSetOnce() public {
@@ -260,13 +272,18 @@ contract BridgeTest is HypexBase {
         bytes32 s = keccak256("Leg");
         IHypexFactory.LaunchParams memory lp = _signedEth(creator, "Leg", "LEG", s, 0, HYPEX_TICK);
         vm.expectRevert(IHypexFactory.NotLegLauncher.selector);
-        factory.launchLeg{value: 0.01 ether}(lp, creator);
+        factory.launchLeg{value: 0.01 ether}(lp, creator, ELYSIUM, address(1));
         address service = _user("service");
         factory.setLegLauncher(service);
         vm.prank(service);
-        (address token,) = factory.launchLeg{value: 0.01 ether}(lp, creator);
-        // the same address the creator's own launch would have had, and the creator's pool
-        assertEq(token, factory.predictToken(creator, s, "Leg", "LEG"), "same coin address");
+        address home = makeAddr("the coin on Elysium");
+        (address token,) = factory.launchLeg{value: 0.01 ether}(lp, creator, ELYSIUM, home);
+        // this chain's own address for it (the chain is in the salt), paired with its home chain's, the creator's pool
+        assertEq(token, factory.predictToken(creator, s, "Leg", "LEG"), "its address here");
+        assertEq(factory.remoteOf(token, ELYSIUM), home, "paired with the coin on its home chain");
+        vm.prank(service);
+        vm.expectRevert(IHypexFactory.RemoteSet.selector);
+        factory.setRemote(token, ELYSIUM, address(1));
         assertEq(_creatorOf(hook.keyFor(address(0), token)), creator, "the creator's");
     }
 }

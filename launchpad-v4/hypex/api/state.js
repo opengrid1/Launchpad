@@ -10,6 +10,7 @@ const { ethers, NETS, rpc, multicall, keyOf, I } = X;
 const ev = (s) => ethers.id(s);
 const T = {
   launched: ev('TokenLaunched(address,bytes32,address,address,int24,uint256,string,string,string)'),
+  remote: ev('RemoteRecorded(address,uint16,address)'),
   tax: ev('TaxPaid(bytes32,address,bool,uint256,uint256,uint256,uint256,uint256)'),
   raised: ev('FloorRaised(bytes32,int24,uint160,uint256,uint256)'),
   bought: ev('BoughtBack(bytes32,uint256,uint160)'),
@@ -62,6 +63,7 @@ async function syncRange(N, S, from, to) {
   const by = (a) => core.filter((l) => low(l.address) === low(a)).sort(byOrder);
   const fac = by(N.factory), hook = by(N.hook);
   for (const l of fac) {
+    if (l.topics[0] === T.remote) { (S.remotes || (S.remotes = {}))[addrOf(l.topics[1])] = { ...((S.remotes || {})[addrOf(l.topics[1])] || {}), [Number(l.topics[2])]: low(dec(['address'], l.data)[0]) }; continue; }
     if (l.topics[0] !== T.launched) continue;
     const [, tickStart, devBuy, name, ticker, uri] = dec(['address', 'int24', 'uint256', 'string', 'string', 'string'], l.data);
     const t = { addr: addrOf(l.topics[1]), poolId: l.topics[2], creator: addrOf(l.topics[3]), tickStart: Number(tickStart), devBuy: f18(devBuy), name, ticker, uri, createdAt: parseInt(l.blockTimestamp, 16), block: parseInt(l.blockNumber, 16), tx: l.transactionHash };
@@ -154,7 +156,7 @@ function build(N, S) {
     const lv = S.live[t.addr] || {}, b = bal[t.addr] || {};
     const held = Object.entries(b).filter(([w, v]) => v > 0n && !SYSTEM.has(w));
     const startSqrt = Math.pow(1.0001, t.tickStart / 2) * Q96;
-    return { addr: t.addr, poolId: t.poolId, creator: t.creator, name: t.name, ticker: t.ticker, uri: t.uri, meta: t.meta || null, createdAt: t.createdAt, tx: t.tx, devBuy: t.devBuy,
+    return { addr: t.addr, remotes: (S.remotes || {})[t.addr] || {}, poolId: t.poolId, creator: t.creator, name: t.name, ticker: t.ticker, uri: t.uri, meta: t.meta || null, createdAt: t.createdAt, tx: t.tx, devBuy: t.devBuy,
       p: lv.sqrt ? pxOf(lv.sqrt) : pxOf(startSqrt), p0: pxOf(startSqrt), tick: lv.tick, floorTick: lv.floorTick, floorP: lv.floorSqrt ? pxOf(lv.floorSqrt) : 0, circulating: lv.circulating, supply: lv.supply || 1e9,
       holders: held.map(([w, v]) => [w, f18(v)]).sort((x, y) => y[1] - x[1]).slice(0, 300), holderCount: held.length, vesting: f18(b[low(N.vesting)] || 0n), raises: raises[t.addr] || [], events: events[t.addr] || [] };
   });
