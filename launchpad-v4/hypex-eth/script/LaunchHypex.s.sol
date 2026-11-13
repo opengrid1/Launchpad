@@ -21,7 +21,8 @@ contract LaunchHypex is Script {
         HypexFactory factory = HypexFactory(vm.parseJsonAddress(json, ".factory"));
         require(factory.hypex() == address(0), "HYPEX already launched");
         uint256 ethUsd = vm.envUint("ETH_USD");
-        require(ethUsd >= 1000, "ETH_USD: whole dollars");
+        // the native coin in whole dollars: ETH, or HYPE on Hypex's chains (HyperEVM 999, Elysium 99901)
+        require(block.chainid == 999 || block.chainid == 99901 ? ethUsd >= 1 : ethUsd >= 1000, "ETH_USD: whole dollars");
         int24 tick = StartTick.forEthUsd(ethUsd);
         IHypexFactory.LaunchParams memory lp = IHypexFactory.LaunchParams({
             name: "Hypex",

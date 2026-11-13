@@ -203,13 +203,14 @@
     // a coin on the current chain; the launch service puts it on the other chain right after (same address)
     async launch(p) {
       const net = C.chain.key, me = X.getAddress(APP.W.address), name = String(p.name).trim(), ticker = String(p.symbol).trim().toUpperCase();
-      const up = await fetch('/api/upload', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ image: p.image, name, symbol: ticker, description: p.description || '', x: p.x || '', telegram: p.telegram || '', website: p.website || '' }) }).then((r) => r.json());
-      if (!up || !(up.uri || up.url)) throw new Error((up && up.error) || 'Logo upload failed');
+      const post = (u, b) => fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) }).then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || u + ' failed'); return j; });
+      const img = await post('/api/upload', { data: p.image }); // the logo, then the metadata JSON that names it (the launch's URI)
+      const meta = await post('/api/meta', { name, ticker, description: p.description || '', image: img.url, x: p.x || '', telegram: p.telegram || '', website: p.website || '' });
       const salt = X.hexlify(X.randomBytes(32));
       const s = await fetch('/api/sign', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chain: net, creator: me, salt, name, ticker }) }).then((r) => r.json());
       if (!s || !s.signature) throw new Error((s && s.error) || 'Could not sign the launch start');
       const [fee] = await call(K(net).factory, I.factory, 'launchFeeEth', [], net);
-      const lp = [name, ticker, up.uri || up.url, salt, ZERO, 0n, 0n, s.tickStart, BigInt(s.deadline), s.signature, 0];
+      const lp = [name, ticker, meta.url, salt, ZERO, 0n, 0n, s.tickStart, BigInt(s.deadline), s.signature, 0];
       const r = await send({ to: K(net).factory, data: I.factory.encodeFunctionData('launch', [lp]), value: fee }, 'launch', net);
       const log = r.receipt.logs.find((l) => low(l.address) === low(K(net).factory)); const token = log ? low(X.getAddress('0x' + log.topics[1].slice(26))) : '';
       fetch('/api/leg', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chain: net, tx: r.hash, salt }) }).catch(() => {}); // the other chain, in the background

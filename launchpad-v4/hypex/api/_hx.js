@@ -24,6 +24,7 @@ const NETS = {
   },
 };
 for (const n of Object.values(NETS)) {
+  if (E.HYPEX_RPC_ONLY) n.rpcs = n.rpcs.slice(0, 1); // tests: the local node only, never a public fallback
   n.multicall = '0xcA11bde05977b3631167028862bE2a173976CA11'; n.permit2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
   n.spacing = 60; n.fromBlock = Number(n.fromBlock || 0); n.live = !!(n.factory && n.hook && n.bridge);
 }
