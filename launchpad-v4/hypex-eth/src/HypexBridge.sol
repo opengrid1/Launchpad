@@ -7,8 +7,7 @@ import {IWormhole} from "./interfaces/IWormhole.sol";
 import {IHypexToken} from "./interfaces/IHypexToken.sol";
 
 interface IHypexHookBridge {
-    function bridgeOut(address token, uint256 amount) external returns (uint256 floorOut);
-    function addFloor(address token) external payable;
+    function bridge(address token, uint256 amountOut) external payable returns (uint256 floorOut);
     function poolManager() external view returns (address);
 }
 
@@ -18,7 +17,7 @@ interface IHypexHookBridge {
 ///         address, same salt, same init code), and so does this bridge (the same deployer nonce on both chains).
 ///
 ///         Sending `amount` from chain A to chain B: the coins are burned on A, and A's floor lets go of the HYPE that
-///         backed them (HypexHook.bridgeOut: the same share of the floor money and the floor band as `amount` is of the
+///         backed them (HypexHook.bridge: the same share of the floor money and the floor band as `amount` is of the
 ///         circulating coins), which waits here (floorOut). A Wormhole message names the coin, the receiver, `amount`
 ///         and that HYPE. On B, anyone can bring the signed message (receiveMessage): the coins are minted to the
 ///         receiver and B's bridge books the HYPE B's floor is owed (floorOwed). The keeper moves the HYPE from A to B
@@ -78,7 +77,7 @@ contract HypexBridge is Owned, ReentrancyGuard {
         factory = _factory;
     }
 
-    /// @notice Only the floor a send lets go of comes in here (HypexHook.bridgeOut pays it out of the PoolManager)
+    /// @notice Only the floor a send lets go of comes in here (HypexHook.bridge pays it out of the PoolManager)
     receive() external payable {
         address h = _hook();
         if (msg.sender != h && msg.sender != IHypexHookBridge(h).poolManager()) revert NotHook();
@@ -102,15 +101,18 @@ contract HypexBridge is Owned, ReentrancyGuard {
         if (to == address(0)) revert ZeroAddress();
         IHypexToken(token).bridgeBurn(msg.sender, amount);
         // reverts for a coin this chain's hook didn't launch
-        uint256 hype = IHypexHookBridge(_hook()).bridgeOut(token, amount);
+        uint256 hype = IHypexHookBridge(_hook()).bridge(token, amount);
         floorOut += hype;
         sequence = wormhole.publishMessage{value: msg.value}(0, abi.encode(token, to, amount, hype), consistency);
         emit Sent(token, msg.sender, to, toChain, amount, hype, sequence);
     }
 
     /// @notice Delivers a signed message from a peer: mints the coins to their receiver and books the floor HYPE this
-    ///         chain's floor is owed for them. Anyone can deliver (the keeper normally does); each message once.
-    function receiveMessage(bytes calldata vaa) external nonReentrant {
+    ///         chain's floor is owed for them; HYPE sent with it (the keeper's, once it carried it over) pays that floor
+    ///         first. This chain's floor band is then re-placed where it carries every holder here, the newcomers too
+    ///         (lower than before if their HYPE hasn't arrived; the raises lift it once it has). Anyone can deliver; each
+    ///         message once.
+    function receiveMessage(bytes calldata vaa) external payable nonReentrant {
         (IWormhole.VM memory vm, bool valid, string memory reason) = wormhole.parseAndVerifyVM(vaa);
         if (!valid) revert BadVaa(reason);
         bytes32 peer = peers[vm.emitterChainId];
@@ -124,6 +126,7 @@ contract HypexBridge is Owned, ReentrancyGuard {
         IHypexToken(token).bridgeMint(to, amount);
         floorOwed[token] += hype;
         emit Received(token, to, vm.emitterChainId, amount, hype, vm.hash);
+        _fund(token, msg.value);
     }
 
     // =====================================================================================================
@@ -145,11 +148,15 @@ contract HypexBridge is Owned, ReentrancyGuard {
     ///         is owed simply adds to the floor); the keeper pays what it carried over.
     function fundFloor(address token) external payable nonReentrant {
         if (msg.value == 0) revert BadAmount();
+        _fund(token, msg.value);
+    }
+
+    function _fund(address token, uint256 value) internal {
         uint256 owed = floorOwed[token];
-        uint256 left = msg.value >= owed ? 0 : owed - msg.value;
+        uint256 left = value >= owed ? 0 : owed - value;
         floorOwed[token] = left;
-        IHypexHookBridge(_hook()).addFloor{value: msg.value}(token);
-        emit FloorFunded(token, msg.value, left);
+        IHypexHookBridge(_hook()).bridge{value: value}(token, 0);
+        if (value != 0) emit FloorFunded(token, value, left);
     }
 
     // =====================================================================================================

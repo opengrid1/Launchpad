@@ -145,12 +145,88 @@ library HookOps {
         emit IHypexHook.FloorBridged(key.toId(), amount, out, false);
     }
 
-    /// @notice Pays `amount` of native quote the hook holds into the pool's floor money (pot), as the hook's claims.
-    function addFloor(HookStorage.Pool storage p, IPoolManager pm, PoolKey memory key, uint256 amount) external {
-        pm.mint(address(this), key.currency0.toId(), amount);
-        pm.settle{value: amount}();
-        p.pot += amount;
-        emit IHypexHook.FloorBridged(key.toId(), 0, amount, true);
+    /// @notice Pays `value` of native quote the hook holds into the pool's floor money (pot), as the hook's claims, then
+    ///         takes the whole floor band out: its quote joins the pot, its tokens (a band the price is inside) the dust
+    ///         reserve, as claims too. placeBand puts it back.
+    function pullBand(HookStorage.Pool storage p, IPoolManager pm, PoolKey memory key, uint256 value) external {
+        if (value != 0) {
+            pm.mint(address(this), key.currency0.toId(), value);
+            pm.settle{value: value}();
+            p.pot += value;
+            emit IHypexHook.FloorBridged(key.toId(), 0, value, true);
+        }
+        uint128 l = p.liqBand;
+        if (l == 0) return;
+        BalanceDelta d = _modify(pm, key, p.tickB, p.tickB + SPACING, -int256(uint256(l)), SALT_BAND);
+        p.liqBand = 0;
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint256 q = uint256(int256(d.amount0()));
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint256 t = uint256(int256(d.amount1()));
+        if (q != 0) {
+            pm.mint(address(this), key.currency0.toId(), q);
+            p.pot += q;
+        }
+        if (t != 0) {
+            pm.mint(address(this), key.currency1.toId(), t);
+            p.reserve += t;
+        }
+    }
+
+    /// @notice Puts the pot back as the floor band (after pullBand) at the highest floor, never higher than the band
+    ///         was, where tranche 0's quote over the price, the unreached tranches (`fixedAbsorb`) and the band still
+    ///         buy back every `circulating` token: coins that came in from another chain are carried right away, by a
+    ///         floor lower than before until their HYPE arrives and the raises lift it again. Never above the old band,
+    ///         so it can't be used to lift a floor (only the raises do that, on the block's starting state). A binary
+    ///         search over the ticks: a cheaper band buys more tokens with the same quote. What the band can't take
+    ///         (the per-tick cap) stays in the pot.
+    function placeBand(
+        HookStorage.Pool storage p,
+        IPoolManager pm,
+        PoolKey memory key,
+        uint256 circulating,
+        uint256 fixedAbsorb,
+        uint128 lbMax,
+        int24 cur
+    ) external {
+        uint256 keep = p.pot;
+        if (keep == 0) return;
+        int24 low = Ticks.alignDown(cur) + SPACING; // over the price
+        if (low < p.tickF) low = p.tickF;
+        if (low < p.tickB) low = p.tickB;
+        int256 lo = int256(low / SPACING);
+        int256 hi = int256(TickMath.MAX_TICK / SPACING) - 2; // the band's far edge within the usable ticks
+        while (lo < hi) {
+            int256 mid = (lo + hi) >> 1;
+            // forge-lint: disable-next-line(unsafe-typecast)
+            if (fixedAbsorb + _bandTokens(int24(mid * SPACING), keep, lbMax) >= circulating) hi = mid;
+            else lo = mid + 1;
+        }
+        // forge-lint: disable-next-line(unsafe-typecast)
+        int24 tB = int24(hi * SPACING);
+        uint160 sT = TickMath.getSqrtPriceAtTick(tB);
+        uint160 sT1 = TickMath.getSqrtPriceAtTick(tB + SPACING);
+        uint128 lb = _bandLiquidity(sT, sT1, keep, lbMax);
+        if (lb == 0) return;
+        BalanceDelta d = _modify(pm, key, tB, tB + SPACING, int256(uint256(lb)), SALT_BAND);
+        // a band over the price only takes quote, at most `keep`
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint256 used = uint256(int256(-d.amount0()));
+        pm.burn(address(this), key.currency0.toId(), used);
+        p.pot = keep - used;
+        p.tickB = tB;
+        p.liqBand = lb;
+    }
+
+    function _bandTokens(int24 t, uint256 keep, uint128 lbMax) private pure returns (uint256) {
+        uint160 sT = TickMath.getSqrtPriceAtTick(t);
+        uint160 sT1 = TickMath.getSqrtPriceAtTick(t + SPACING);
+        return FloorMath.token(sT, sT1, _bandLiquidity(sT, sT1, keep, lbMax), false);
+    }
+
+    function _bandLiquidity(uint160 sT, uint160 sT1, uint256 q, uint128 lbMax) private pure returns (uint128 lb) {
+        lb = FloorMath.liquidityForQuote(sT, sT1, q);
+        if (lb > lbMax) lb = lbMax;
     }
 
     function _topOff(uint256 i) private pure returns (int24 topOff) {

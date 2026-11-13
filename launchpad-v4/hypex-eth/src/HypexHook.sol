@@ -143,14 +143,18 @@ contract HypexHook is HookClaims, IUnlockCallback, Owned {
         } else if (action == ACTION_COLLECT_ALL) {
             (PoolKey memory key, address to) = abi.decode(args, (PoolKey, address));
             HookOps.collectAll(pools[key.toId()], poolManager, key, to);
-        } else if (action == ACTION_BRIDGE_OUT) {
-            (PoolKey memory key, uint256 amount, address to) = abi.decode(args, (PoolKey, uint256, address));
-            Pool storage p = pools[key.toId()];
-            (uint160 sCur,,,) = poolManager.getSlot0(key.toId());
-            return abi.encode(HookOps.bridgeOut(p, poolManager, key, amount, _circulating(p, sCur), to));
-        } else if (action == ACTION_ADD_FLOOR) {
-            (PoolKey memory key, uint256 amount) = abi.decode(args, (PoolKey, uint256));
-            HookOps.addFloor(pools[key.toId()], poolManager, key, amount);
+        } else if (action == ACTION_BRIDGE) {
+            (PoolKey memory key, uint256 amountOut, uint256 value, address to) =
+                abi.decode(args, (PoolKey, uint256, uint256, address));
+            PoolId id = key.toId();
+            Pool storage p = pools[id];
+            (uint160 sCur, int24 cur,,) = poolManager.getSlot0(id);
+            if (amountOut != 0) {
+                return abi.encode(HookOps.bridgeOut(p, poolManager, key, amountOut, _circulating(p, sCur), to));
+            }
+            HookOps.pullBand(p, poolManager, key, value);
+            HookOps.placeBand(p, poolManager, key, _circulating(p, sCur), _absorbNow(p, sCur), _lbMax(id), cur);
+            return abi.encode(uint256(0));
         }
         return "";
     }
@@ -173,21 +177,17 @@ contract HypexHook is HookClaims, IUnlockCallback, Owned {
     // bridge (HypexBridge: coins moving between chains take their share of the floor with them)
     // =====================================================================================================
 
-    /// @notice The factory's bridge burned `amount` of `token` leaving this chain: lets go of their share of the floor
-    ///         (HookOps.bridgeOut) and pays its quote to the bridge, which carries it to the chain they went to.
-    function bridgeOut(address token, uint256 amount) external returns (uint256) {
+    /// @notice The factory's bridge only. `amountOut` > 0: that many coins left this chain (the bridge burned them):
+    ///         lets go of their share of the floor (HookOps.bridgeOut) and pays it to the bridge, returned. 0: coins came
+    ///         in from another chain (the bridge minted them), with floor HYPE as the value: pays it into the floor money
+    ///         and re-places the floor band where it carries every circulating token here (HookOps.placeBand: never
+    ///         higher than it was; the raises lift it again).
+    function bridge(address token, uint256 amountOut) external payable returns (uint256) {
         address b = IHypexFactory(factory).bridge();
         if (msg.sender != b || b == address(0)) revert NotBridge();
         return abi.decode(
-            poolManager.unlock(abi.encode(ACTION_BRIDGE_OUT, abi.encode(_known(token), amount, b))), (uint256)
+            poolManager.unlock(abi.encode(ACTION_BRIDGE, abi.encode(_known(token), amountOut, msg.value, b))), (uint256)
         );
-    }
-
-    /// @notice Pays native quote into an ETH- or HYPE-paired pool's floor money: the bridge pays in the floor that came
-    ///         with coins from another chain. Anyone can add to a floor.
-    function addFloor(address token) external payable {
-        PoolKey memory key = _known(token);
-        if (msg.value != 0) poolManager.unlock(abi.encode(ACTION_ADD_FLOOR, abi.encode(key, msg.value)));
     }
 
     /// @dev The native-quote pool of a coin this hook launched (UnknownPool otherwise).

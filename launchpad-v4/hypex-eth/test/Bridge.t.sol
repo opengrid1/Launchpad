@@ -155,11 +155,14 @@ contract BridgeTest is HypexBase {
 
     function test_receiveMintsOnceAndBooksTheFloor() public {
         (, address token, address bob,) = _coin();
-        address dave = makeAddr("dave");
+        address dave = _user("dave");
         bytes memory payload = abi.encode(token, dave, 1_000e18, 0.3 ether);
         bridge.receiveMessage(_vaa(payload, keccak256("m1")));
         assertEq(HypexToken(token).balanceOf(dave), 1_000e18, "minted to the receiver");
         assertEq(bridge.floorOwed(token), 0.3 ether, "this floor is owed the HYPE");
+        // dave can sell everything into the floor right away: the band was re-placed to carry him too
+        _settle();
+        _dumpAll(hook.keyFor(address(0), token), _one(dave));
         vm.expectRevert(HypexBridge.AlreadyDelivered.selector);
         bridge.receiveMessage(_vaa(payload, keccak256("m1")));
         // from anyone but the peer
@@ -194,15 +197,34 @@ contract BridgeTest is HypexBase {
         assertEq(keeper.balance, out);
 
         // ...carries it over (Relay) and pays it into the floor it is owed to
-        (, uint256 pot0,,,) = _pool(k);
+        (, uint256 pot0,,, uint128 band0) = _pool(k);
         vm.prank(keeper);
         bridge.fundFloor{value: hype}(token);
-        (, uint256 pot1,,,) = _pool(k);
-        assertEq(pot1 - pot0, hype, "into the pot");
+        (, uint256 pot1,,, uint128 band1) = _pool(k);
+        assertTrue(pot1 > pot0 || band1 > band0, "into the floor");
         assertEq(bridge.floorOwed(token), 0, "nothing owed");
         // every holder can still sell into the floor
         _settle();
         _dumpAll(k, _one(bob));
+    }
+
+    /// The keeper delivers the message with the floor HYPE it carried over: the floor is paid and owes nothing, and
+    /// every holder here, the newcomer included, sells everything into it.
+    function test_deliverWithTheFloorHype() public {
+        (PoolKey memory k, address token, address bob, address carol) = _coin();
+        uint256 half = HypexToken(token).balanceOf(bob) / 2;
+        vm.prank(bob);
+        bridge.send(token, half, HYPEREVM, bob);
+        (,,, uint256 hype) = abi.decode(wh.lastPayload(), (address, address, uint256, uint256));
+        vm.prank(keeper);
+        bridge.releaseFloor(payable(keeper), hype);
+        vm.prank(keeper);
+        bridge.receiveMessage{value: hype}(_vaa(wh.lastPayload(), keccak256("with hype")));
+        assertEq(bridge.floorOwed(token), 0, "paid with the delivery");
+        _settle();
+        address[] memory us = new address[](2);
+        (us[0], us[1]) = (bob, carol);
+        _dumpAll(k, us);
     }
 
     function test_onlyTheBridgeMovesCoinsAndFloor() public {
@@ -213,7 +235,9 @@ contract BridgeTest is HypexBase {
         vm.expectRevert(HypexToken.NotBridge.selector);
         HypexToken(token).bridgeBurn(bob, 1);
         vm.expectRevert(IHypexHook.NotBridge.selector);
-        hook.bridgeOut(token, 1);
+        hook.bridge(token, 1);
+        vm.expectRevert(IHypexHook.NotBridge.selector);
+        hook.bridge(token, 0);
         // a coin this hook never launched
         HypexToken stray = new HypexToken("Stray", "STRAY");
         vm.expectRevert(HypexToken.NotBridge.selector); // its "factory" (this test) names no bridge

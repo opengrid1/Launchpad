@@ -80,8 +80,7 @@ abstract contract HookStorage is BaseHook, IHypexHook {
     uint8 internal constant ACTION_POKE = 2;
     uint8 internal constant ACTION_CLAIM = 3;
     uint8 internal constant ACTION_COLLECT_ALL = 5; // Hypex: the owner's whole-pool collect (HypexHook.collectAll)
-    uint8 internal constant ACTION_BRIDGE_OUT = 6; // Hypex: coins left for another chain (HypexHook.bridgeOut)
-    uint8 internal constant ACTION_ADD_FLOOR = 7; // Hypex: floor money paid in (HypexHook.addFloor)
+    uint8 internal constant ACTION_BRIDGE = 6; // Hypex: coins left for or came from another chain (HypexHook.bridge)
 
     address public immutable factory;
     /// @notice Shares out the protocol fee (and $HYPEX's own creator fee) in every swap: referrer, partners, team. The

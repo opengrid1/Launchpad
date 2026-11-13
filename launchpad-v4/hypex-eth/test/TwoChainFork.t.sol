@@ -266,14 +266,13 @@ contract TwoChainForkTest is Test {
         vm.selectFork(hyp);
         uint32 index = _overrideGuardians(HYP_WH);
         uint256 supply0 = HypexToken(token).totalSupply();
-        H.bridge.receiveMessage(_vaa(index, body));
-        assertEq(HypexToken(token).balanceOf(bob), half, "minted on HyperEVM");
-        assertEq(HypexToken(token).totalSupply(), supply0 + half);
-        assertEq(H.bridge.floorOwed(token), floorHype, "HyperEVM's floor is owed it");
+        // the keeper delivers the message with the floor HYPE it carried over (Relay)
         vm.deal(keeper, keeper.balance + floorHype);
         vm.prank(keeper);
-        H.bridge.fundFloor{value: floorHype}(token);
-        assertEq(H.bridge.floorOwed(token), 0);
+        H.bridge.receiveMessage{value: floorHype}(_vaa(index, body));
+        assertEq(HypexToken(token).balanceOf(bob), half, "minted on HyperEVM");
+        assertEq(HypexToken(token).totalSupply(), supply0 + half);
+        assertEq(H.bridge.floorOwed(token), 0, "HyperEVM's floor got its HYPE");
         vm.expectRevert(HypexBridge.AlreadyDelivered.selector);
         H.bridge.receiveMessage(_vaa(index, body));
 
