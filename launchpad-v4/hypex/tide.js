@@ -46,7 +46,7 @@
   const SP = C.econ.split || { floor: 50, creator: 70, traders: 70, platform: 60 }, sp = (k) => String(+(SP[k] / 100).toFixed(2));
   // the floor of a coin: the price its floor band can buy every circulating token back at. Until the floor contracts are live
   // the preview derives a sample one from the address, so the layout shows real-looking numbers
-  const floorOf = (t) => { if (t.floor) return t.floor; let h = 0; for (const c of String(t.addr)) h = (h * 33 + c.charCodeAt(0)) >>> 0; const cover = 0.3 + (h % 470) / 1000; return { px: (t.pxUsd || 0) * cover, cover }; };
+  const floorOf = (t) => { if (typeof t.floor === 'number') return { px: (t.floorPx || 0) * APP.hypeUsd, cover: t.floor || 0 }; if (t.floor) return t.floor; let h = 0; for (const c of String(t.addr)) h = (h * 33 + c.charCodeAt(0)) >>> 0; const cover = 0.3 + (h % 470) / 1000; return { px: (t.pxUsd || 0) * cover, cover }; };
   const pct = (shareBps) => String(+((C.econ.feeBps / 100) * shareBps / 10000).toFixed(2));
   const BURN_OF_PROTO = (ST.burnBps || 0) / 10000, SPL = { burn: pct(C.econ.protocolShareBps * BURN_OF_PROTO), plat: pct(C.econ.protocolShareBps * (1 - BURN_OF_PROTO)) }; // % of volume
   const chip = (v) => !Number.isFinite(v) ? '<span class="chg">—</span>' : `<span class="chg ${v > 0 ? 'up' : v < 0 ? 'dn' : ''}">${(v > 0 ? '+' : '') + v.toFixed(Math.abs(v) >= 100 ? 0 : 1)}%</span>`;
