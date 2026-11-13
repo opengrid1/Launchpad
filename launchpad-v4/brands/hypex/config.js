@@ -5,7 +5,7 @@
 window.CFG = {
   demo: true, // no contracts yet: the sample coins from /demo-state.json
   brand: 'Hypex', tagline: 'The launchpad on Elysium where every trade lifts the floor, and pays the trader back in HYPE.',
-  x: '', site: '',
+  x: 'https://x.com/hypex_fun', site: '',
   walletConnect: { projectId: 'e1bda672d5deb56579fe084dddfb9174' }, // Reown (WalletConnect) project; public by design, it ships to every browser
   mode: 'live',
   chains: [
