@@ -3,7 +3,7 @@
    site shows its empty states. `stake` points at the fee flywheel: the splitter that turns protocol fees into rewards
    and the staking contract that pays them to $KINEX stakers. Built into a deployable copy by build/brand-site.cjs tidepool. */
 window.CFG = {
-  demo: true, // no contracts yet: the sample coins from /demo-state.json
+  demo: false, // live on the contracts
   brand: 'Hypex', tagline: 'The launchpad on Elysium where every trade lifts the floor, and pays the trader back in HYPE.',
   x: 'https://x.com/hypex_fun', site: '',
   walletConnect: { projectId: 'e1bda672d5deb56579fe084dddfb9174' }, // Reown (WalletConnect) project; public by design, it ships to every browser
@@ -15,15 +15,15 @@ window.CFG = {
       pairs: [{"key":"hype","sym":"HYPE","name":"HYPE","addr":"0x0000000000000000000000000000000000000000","cfg":0,"decimals":18,"logo":"/img/hyper.png","kind":"crypto"}],
       // Hypex floor stack (hypex-eth/deployments/elysium.json once deployed; until then the preview's sample coins)
       whChain: 74,
-      contracts: { factory: '', hook: '', revenue: '', bridge: '', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', router: '0xA13f7611115752DEB2B13813BDDE16A5073e4b45', quoter: '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
+      contracts: { factory: '0x6109bAdb329eF9B37DC795D132d90c5f3aBD17d5', hook: '0xdbB823278B17c5d2C2E46357C1217848eBa4E8eC', revenue: '0x0Bf0412732063015158F221980bCA5dC054cE72b', bridge: '0x1e24C9F264c1BBF928A87d4b046EAEd8D4f6aB31', limitOrders: '0xC7278ea9cFbc41aaeee4907e4e1A94B3aA3b03e3', burner: '0xF3382D4D34BE4544F0686F8E792472B6551C3202', vesting: '0xa8e7AfB5a3D1F680D545B265517F9B491BccdbBe', fromBlock: 5997346, poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', router: '0xA13f7611115752DEB2B13813BDDE16A5073e4b45', quoter: '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
     // HyperEVM: every Hypex coin has its own pool and floor here too, at the same address (HypexBridge moves coins
     // and their floor HYPE between the two over Wormhole)
     { key: 'hyperevm', evm: true, id: 999, hex: '0x3e7', name: 'HyperEVM', short: 'HyperEVM', quote: 'HYPE', quoteName: 'HYPE', native: 'HYPE', rpc: 'https://rpc.hyperliquid.xyz/evm', rpcs: ['https://rpc.hyperliquid.xyz/evm', 'https://hyperliquid.drpc.org'], explorer: 'https://hyperevmscan.io', logo: '/img/hyper.png', color: '#4f9a2a', blockSec: 1, whChain: 47,
       pairs: [{"key":"hype","sym":"HYPE","name":"HYPE","addr":"0x0000000000000000000000000000000000000000","cfg":0,"decimals":18,"logo":"/img/hyper.png","kind":"crypto"}],
-      contracts: { factory: '', hook: '', revenue: '', bridge: '', poolManager: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', router: '0x9aFe3C497e19501DB228F28CdBdD29bC98F65DBa', quoter: '0x108Bfe38532C98f8Cd8D7Ab49c9dDAa3675a1c5e', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
+      contracts: { factory: '0xbFEE795e9FD02cdC3dbF98Ca0B22069E00a511Bc', hook: '0xEf06240a3f77175776B77622e9b039A061b9a8EC', revenue: '0x9441B11895124aF0FdB80f5CA9203386d1b9EB99', bridge: '0x2Ad575F0819Ce235F29Dff8b9d3250a0371b9022', limitOrders: '0x4cB785ee4d7fb055A318ea5573fc19Ac336115A9', burner: '0x1501E498fD85C1475AfE393CA74629273F9a3F2a', vesting: '0xAabEF78dC2Ed0AE7b662024Ca012dDB0aa0b7eb4', fromBlock: 51165379, poolManager: '0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F', router: '0x9aFe3C497e19501DB228F28CdBdD29bC98F65DBa', quoter: '0x108Bfe38532C98f8Cd8D7Ab49c9dDAa3675a1c5e', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
-  official: [], // $HYPEX once launched
+  official: ['0x8396671f72886007eba12dbc7a513a14f4bb75f2', '0x3ac60a683825b847fb9f78e574391df5a06986a5'], // $HYPEX (hypex.fun): Elysium, HyperEVM
   /* the fee flywheel: protocol fees -> splitter -> stakers / buyback and burn of $KINEX / treasury */
   // the $KINEX airdrop: 20% of the supply in three pools. Points: 1 HYPE traded on Kinex = tradePts (from minHype on),
   // a creator earns creatorPts per HYPE other wallets trade on their coin; trades on other Elysium launchpads earn

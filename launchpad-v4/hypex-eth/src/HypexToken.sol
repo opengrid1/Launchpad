@@ -8,16 +8,21 @@ import {IHypexToken} from "./interfaces/IHypexToken.sol";
 /// @title HypexToken
 /// @notice Plain ERC-20 (OpenZeppelin) with 1,000,000,000 (18 decimals) minted once on each chain it launches on, to the
 ///         deployer (the factory). No owner, no fees on transfer, no blacklist. Holders can burn their own tokens (the
-///         floor treats burned tokens as gone). The only other mint and burn are the factory's bridge's (HypexBridge):
-///         coins leaving for another chain are burned here and minted there, one for one.
+///         floor treats burned tokens as gone). Nobody can burn or move anyone else's tokens. The only other mint is the
+///         factory's bridge's (HypexBridge): coins leaving for another chain are burned there by their holder (sent to
+///         the bridge with their approval, then burned), and minted here one for one, never past MAX_SUPPLY.
 /// @dev The bridge is read from the factory at each call, so the init code (and the address, the same on every chain)
 ///      doesn't depend on it.
 contract HypexToken is ERC20, ERC20Burnable, IHypexToken {
     uint256 public constant TOTAL_SUPPLY = 1_000_000_000e18;
+    /// @notice The most this chain can ever hold: every chain's launch supply together (Elysium and HyperEVM, 1B each).
+    ///         Bridge mints only replace coins burned on the other chain, so they can never pass it.
+    uint256 public constant MAX_SUPPLY = 2 * TOTAL_SUPPLY;
     /// @notice The factory that deployed it, which names the bridge
     address public immutable factory;
 
     error NotBridge();
+    error OverMaxSupply();
 
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {
         factory = msg.sender;
@@ -26,12 +31,8 @@ contract HypexToken is ERC20, ERC20Burnable, IHypexToken {
 
     function bridgeMint(address to, uint256 amount) external {
         _onlyBridge();
+        if (totalSupply() + amount > MAX_SUPPLY) revert OverMaxSupply();
         _mint(to, amount);
-    }
-
-    function bridgeBurn(address from, uint256 amount) external {
-        _onlyBridge();
-        _burn(from, amount);
     }
 
     function _onlyBridge() internal view {

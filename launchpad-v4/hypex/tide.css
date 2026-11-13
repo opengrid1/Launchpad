@@ -378,3 +378,9 @@ html,body{overflow-x:hidden}
 .cas{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12px}.cas>.mute{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase}
 .cas .ca{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 4px 0 10px;border:1px solid var(--line);border-radius:999px;background:var(--s1)}.cas .ca b{font:600 11px var(--mono);color:var(--acc2)}
 .cas .ca button{display:inline-flex;align-items:center;gap:4px;font:500 12px var(--mono);color:var(--ink)}.cas .ca button svg{width:13px;height:13px}.cas .ca a{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;color:var(--mute)}.cas .ca a:hover{background:var(--s2);color:var(--ink)}
+/* admin (#/admin, unlinked) */
+.adm{padding:24px;margin:0 0 20px}.adm h3{margin:0 0 6px}.adm h4{margin:22px 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;opacity:.7}
+.adm .tbl{width:100%;border-collapse:collapse;font-size:14px}.adm .tbl th,.adm .tbl td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line,rgba(0,0,0,.08));vertical-align:middle}
+.adm .defs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 24px;margin:0}.adm .defs dt{font-size:12px;opacity:.65}.adm .defs dd{margin:2px 0 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.adm .adcol{display:flex;gap:10px;flex-wrap:wrap}.adm .adcol select{flex:1;min-width:200px}.adm .mono{font-family:ui-monospace,monospace}
+@media(max-width:640px){.adm{padding:16px}.adm .tbl{display:block;overflow-x:auto}}

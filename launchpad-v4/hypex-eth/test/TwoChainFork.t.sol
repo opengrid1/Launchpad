@@ -252,6 +252,8 @@ contract TwoChainForkTest is Test {
         uint256 half = HypexToken(token).balanceOf(bob) / 2;
         vm.recordLogs();
         vm.prank(bob, bob);
+        HypexToken(token).approve(address(E.bridge), half);
+        vm.prank(bob, bob);
         E.bridge.send(token, half, HYP_CHAIN, bob);
         bytes memory body = _body(vm.getRecordedLogs(), ELY_WH, ELY_CHAIN, address(E.bridge));
         uint256 floorHype = E.bridge.floorOut();

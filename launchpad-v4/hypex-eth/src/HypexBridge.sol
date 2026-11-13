@@ -89,8 +89,8 @@ contract HypexBridge is Owned, ReentrancyGuard {
     // send and receive
     // =====================================================================================================
 
-    /// @notice Sends `amount` of `token` to `to` on the chain whose Wormhole id is `toChain`. Burns the caller's coins
-    ///         (no approval needed: only this bridge can burn them) and moves their share of this chain's floor out
+    /// @notice Sends `amount` of `token` to `to` on the chain whose Wormhole id is `toChain`. Takes the caller's coins
+    ///         (approve this bridge first) and burns them, and moves their share of this chain's floor out
     ///         with them. Pay the Wormhole message fee (wormhole.messageFee(), 0 on Elysium and HyperEVM) as value.
     function send(address token, uint256 amount, uint16 toChain, address to)
         external
@@ -104,7 +104,9 @@ contract HypexBridge is Owned, ReentrancyGuard {
         // the same coin's own address on that chain (every chain has its own), recorded by the launch service
         address remote = IHypexFactoryHook(factory).remoteOf(token, toChain);
         if (remote == address(0)) revert NoRemote();
-        IHypexToken(token).bridgeBurn(msg.sender, amount);
+        // the holder's own coins, with their approval: the token lets no one burn anyone else's
+        if (!IHypexToken(token).transferFrom(msg.sender, address(this), amount)) revert BadAmount();
+        IHypexToken(token).burn(amount);
         // reverts for a coin this chain's hook didn't launch
         uint256 hype = IHypexHookBridge(_hook()).bridge(token, amount);
         floorOut += hype;

@@ -25,7 +25,7 @@ contract LaunchHypex is Script {
         require(block.chainid == 999 || block.chainid == 99901 ? ethUsd >= 1 : ethUsd >= 1000, "ETH_USD: whole dollars");
         int24 tick = StartTick.forEthUsd(ethUsd);
         IHypexFactory.LaunchParams memory lp = IHypexFactory.LaunchParams({
-            name: "Hypex",
+            name: "hypex.fun", // the official token: hypex.fun, ticker HYPEX
             ticker: "HYPEX",
             metadataURI: vm.envString("HYPEX_URI"),
             salt: bytes32(0),

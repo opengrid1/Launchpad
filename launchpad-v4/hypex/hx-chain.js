@@ -246,9 +246,41 @@
     async bridge(a, from, amount) {
       const to = C.liveChains().find((c) => c.key !== from); if (!to) throw new Error('No other chain');
       const m = BY.get(low(a)); if (!m || !m.legs[from] || !m.legs[to.key]) throw new Error('This coin is not on both chains yet');
-      const r = await send({ to: K(from).bridge, data: I.bridge.encodeFunctionData('send', [X.getAddress(m.legs[from].addr), wei(amount), to.whChain, APP.W.address]) }, 'bridge', from);
+      const coin = X.getAddress(m.legs[from].addr), amt = wei(amount), [allow] = await call(coin, I.erc20, 'allowance', [APP.W.address, K(from).bridge], from);
+      // the bridge takes only coins its holder approved (nobody can move or burn anyone else's)
+      if (allow < amt) { APP.toast('Approve the coin for the bridge (once per chain)', 'info', 6000); await send({ to: coin, data: I.erc20.encodeFunctionData('approve', [K(from).bridge, X.MaxUint256]) }, 'approve', from); }
+      const r = await send({ to: K(from).bridge, data: I.bridge.encodeFunctionData('send', [coin, amt, to.whChain, APP.W.address]) }, 'bridge', from);
       await after(parseInt(r.receipt.blockNumber, 16), from); return { hash: r.hash, to: to.key };
     },
+  };
+  // ---- the owner's page (#/admin, unlinked): every contract's owner, the pending ownership to accept, launches, team
+  // fees and the bridge, on each chain. The contracts check every call: this only reads them and sends what the
+  // connected wallet signs.
+  const OWNED = ['factory', 'hook', 'revenue', 'limitOrders', 'burner', 'bridge'];
+  const AI = new X.Interface(['function owner() view returns (address)', 'function pendingOwner() view returns (address)', 'function acceptOwnership()',
+    'function launchesPaused() view returns (bool)', 'function setLaunchesPaused(bool)', 'function launchFeeEth() view returns (uint256)', 'function setLaunchFee(uint256)',
+    'function team() view returns (address)', 'function hypex() view returns (address)', 'function startSigner() view returns (address)', 'function legLauncher() view returns (address)',
+    'function teamOwed(address) view returns (uint256)', 'function claimTeam(address)', 'function owed(address,address) view returns (uint256)', 'function claim(address account, address currency, address to) returns (uint256)',
+    'function keeper() view returns (address)', 'function peers(uint16) view returns (bytes32)', 'function setPeer(uint16,bytes32)', 'function floorOut() view returns (uint256)',
+    'function collectAll((address,address,uint24,int24,address) key, address to)']);
+  DATA.admin = {
+    owned: OWNED,
+    async read(net) {
+      const k = K(net), other = C.liveChains().find((c) => c.key !== net), q = [];
+      for (const c of OWNED) if (k[c]) { q.push([c, 'owner', k[c], []]); q.push([c, 'pendingOwner', k[c], []]); }
+      q.push(['factory', 'launchesPaused', k.factory, []], ['factory', 'launchFeeEth', k.factory, []], ['factory', 'team', k.factory, []], ['factory', 'hypex', k.factory, []], ['factory', 'startSigner', k.factory, []], ['factory', 'legLauncher', k.factory, []]);
+      q.push(['hook', 'teamOwed', k.hook, [ZERO]], ['bridge', 'keeper', k.bridge, []], ['bridge', 'floorOut', k.bridge, []]);
+      if (other) q.push(['bridge', 'peers', k.bridge, [other.whChain]]);
+      const res = await call(K(net).multicall || '0xcA11bde05977b3631167028862bE2a173976CA11', I.mc, 'aggregate3', [q.map(([, fn, to, a]) => [to, true, AI.encodeFunctionData(fn, a)])], net);
+      const out = {}; q.forEach(([c, fn], i) => { const [ok, d] = res[0][i]; let v = null; try { if (ok) v = AI.decodeFunctionResult(fn, d)[0]; } catch {} (out[c] || (out[c] = {}))[fn] = v; });
+      if (out.factory.team) { try { const [o] = await call(k.revenue, AI, 'owed', [out.factory.team, ZERO], net); out.revenue.teamOwed = o; } catch {} }
+      out.otherBridge = other ? C.chainOf(other.key).contracts.bridge : ''; out.otherWh = other ? other.whChain : 0;
+      return out;
+    },
+    coins(net) { return ALL.filter((m) => m.legs[net]).map((m) => ({ addr: m.legs[net].addr, name: m.name, symbol: m.symbol })); },
+    async tx(net, contract, fn, args, label) { return send({ to: K(net)[contract], data: AI.encodeFunctionData(fn, args || []) }, label || fn, net); },
+    async collectAll(net, coin, to) { return send({ to: K(net).hook, data: AI.encodeFunctionData('collectAll', [keyOf(net, coin), to]) }, 'collect', net); },
+    async refresh() { await load(true); APP.emit(); },
   };
   DATA.demo = false;
 })();

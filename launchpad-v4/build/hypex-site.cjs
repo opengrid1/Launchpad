@@ -8,7 +8,7 @@ for (const f of ["index.html", "launch.html", "token.html", "creator.html", "doc
 for (const f of ["keeper.js", "sweep.js", "_lib.js"]) { const p = path.join(OUT, "api", f); if (fs.existsSync(p)) fs.rmSync(p); } // the shared pad's keeper jobs: not Hypex's
 fs.cpSync(path.join(ROOT, "hypex"), OUT, { recursive: true }); // the front-end, its API (state, sign, leg, relay) and the wallet modal chunks in wc/
 const v = JSON.parse(fs.readFileSync(path.join(OUT, "vercel.json"), "utf8"));
-v.rewrites = ["/token/:addr", "/launch", "/create", "/airdrop", "/floor", "/fees", "/profile", "/profile/:addr", "/docs"].map((source) => ({ source, destination: "/" }));
+v.rewrites = ["/token/:addr", "/launch", "/create", "/airdrop", "/floor", "/fees", "/profile", "/profile/:addr", "/docs", "/admin"].map((source) => ({ source, destination: "/" }));
 v.rewrites.unshift({ source: "/favicon.ico", destination: "/img/favicon.ico" });
 delete v.crons; // no keeper jobs until the contracts exist
 v.headers = [...(v.headers || []), { source: "/(.*)", headers: [{ key: "X-Robots-Tag", value: "noindex" }] }]; // preview: kept out of search

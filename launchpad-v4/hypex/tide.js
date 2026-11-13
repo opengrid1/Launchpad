@@ -614,7 +614,7 @@
     const h = location.hash.replace(/^#/, '') || '/', parts = h.split('#')[0].split('/').filter(Boolean), r = parts[0] || 'home';
     $$('#tabs a').forEach((a) => a.classList.toggle('on', a.dataset.r === (r === 'token' ? 'home' : r === 'create' ? 'launch' : r)));
     state.route = r; window.scrollTo(0, 0); ticker();
-    if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'launch' || r === 'create') create(); else if (r === 'bridge') { location.hash = '#/'; /* the Bridge page is off for now; bridge() is kept for later */ } else if (r === 'airdrop') airdropPage(); else if (r === 'floor' || r === 'flywheel') floorPage(); else if (r === 'fees') fees(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else if (['swap', 'pools', 'pool', 'stake'].includes(r)) { location.hash = '#/'; } else home();
+    if (r === 'home') home(); else if (r === 'token') token(parts[1] || ''); else if (r === 'launch' || r === 'create') create(); else if (r === 'bridge') { location.hash = '#/'; /* the Bridge page is off for now; bridge() is kept for later */ } else if (r === 'admin') { if (APP.adminPage) APP.adminPage(view); } else if (r === 'airdrop') airdropPage(); else if (r === 'floor' || r === 'flywheel') floorPage(); else if (r === 'fees') fees(); else if (r === 'profile') profile(parts[1]); else if (r === 'docs') docs(); else if (['swap', 'pools', 'pool', 'stake'].includes(r)) { location.hash = '#/'; } else home();
   }
   function menuSheet() {
     const W = APP.W;
@@ -638,7 +638,7 @@
     document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); searchDialog(); } });
     try { await DATA.ready(); } catch (e) { APP.toast('Could not load the chain state: ' + APP.errMsg(e), 'err', 6000); }
     route(); addEventListener('hashchange', route);
-    APP.onWallet(() => { if (['home', 'token', 'launch', 'create', 'bridge', 'profile', 'airdrop', 'fees', 'flywheel', 'floor'].includes(state.route) && !state.busy) route(); });
+    APP.onWallet(() => { if (['home', 'token', 'launch', 'create', 'bridge', 'profile', 'airdrop', 'fees', 'flywheel', 'floor', 'admin'].includes(state.route) && !state.busy) route(); });
     let priced = false; (APP.priceHooks || (APP.priceHooks = [])).push(() => { if (priced) return; priced = true; if (state.route === 'token') { const a = (location.hash.split('/')[2] || ''); if (a) token(a, true); return; } if (state.route === 'home') home(true); }); // stock coins need prices: redraw once when they first arrive
     let last = 0; if (APP.onUpdate) APP.onUpdate(() => { if (state.route === 'token' && !state.busy) { const a = (location.hash.split('/')[2] || ''); if (a) token(a, true); return; } if (state.route === 'home' && !state.busy) home(true); void last; });
   });

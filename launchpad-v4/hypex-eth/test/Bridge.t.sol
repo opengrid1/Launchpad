@@ -107,6 +107,11 @@ contract BridgeTest is HypexBase {
         carol = _user("carol");
         _approve(bob, token);
         _approve(carol, token);
+        // the bridge takes a holder's coins only with their approval
+        vm.prank(bob);
+        HypexToken(token).approve(address(bridge), type(uint256).max);
+        vm.prank(carol);
+        HypexToken(token).approve(address(bridge), type(uint256).max);
         _settle();
         _swap(bob, k, true, -5 ether, 5 ether);
         for (uint256 i; i < 6; i++) {
@@ -235,9 +240,6 @@ contract BridgeTest is HypexBase {
         (, address token, address bob,) = _coin();
         vm.expectRevert(HypexToken.NotBridge.selector);
         HypexToken(token).bridgeMint(bob, 1);
-        vm.prank(bob);
-        vm.expectRevert(HypexToken.NotBridge.selector);
-        HypexToken(token).bridgeBurn(bob, 1);
         vm.expectRevert(IHypexHook.NotBridge.selector);
         hook.bridge(token, 1);
         vm.expectRevert(IHypexHook.NotBridge.selector);
@@ -251,6 +253,30 @@ contract BridgeTest is HypexBase {
         vm.prank(bob);
         vm.expectRevert(HypexBridge.NoPeer.selector);
         bridge.send(token, 1, 30, bob);
+    }
+
+    /// nobody, the bridge included, can take or burn a holder's coins without their approval
+    function test_sendNeedsTheHoldersApproval() public {
+        (, address token, address bob,) = _coin();
+        vm.prank(bob);
+        HypexToken(token).approve(address(bridge), 0);
+        uint256 bal = HypexToken(token).balanceOf(bob);
+        vm.prank(bob);
+        vm.expectRevert();
+        bridge.send(token, 1e18, HYPEREVM, bob);
+        assertEq(HypexToken(token).balanceOf(bob), bal, "untouched");
+    }
+
+    /// bridge mints can never take a chain's supply past every chain's launch supply together
+    function test_bridgeMintCapped() public {
+        (, address token, address bob,) = _coin();
+        uint256 room = HypexToken(token).MAX_SUPPLY() - HypexToken(token).totalSupply();
+        vm.prank(address(bridge));
+        HypexToken(token).bridgeMint(bob, room);
+        assertEq(HypexToken(token).totalSupply(), HypexToken(token).MAX_SUPPLY());
+        vm.prank(address(bridge));
+        vm.expectRevert(HypexToken.OverMaxSupply.selector);
+        HypexToken(token).bridgeMint(bob, 1);
     }
 
     function test_unpairedCoinsCannotMove() public {
