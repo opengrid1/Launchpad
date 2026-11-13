@@ -44,7 +44,7 @@
     if (kitP) return kitP;
     kitP = (async () => {
       await import('/wc/appkit.js?v=1');
-      const { createAppKit, EthersAdapter } = window.HypexAppKit;
+      const { createAppKit, EthersAdapter } = window.HypexAppKit || window.KinexAppKit; // the shared bundle (build/wc) names its global KinexAppKit
       const nets = C.chains.filter((c) => c.evm !== false && c.id).map((c) => ({ id: c.id, name: c.name, nativeCurrency: { name: c.native || c.quote, symbol: c.native || c.quote, decimals: 18 }, rpcUrls: { default: { http: [c.rpc] } }, blockExplorers: { default: { name: c.name + ' explorer', url: String(c.explorer || '').replace(/\/#$/, '') } } }));
       const def = nets.find((n) => n.id === C.chain.id) || nets[0];
       kit = createAppKit({ adapters: [new EthersAdapter()], networks: [def, ...nets.filter((n) => n !== def)], defaultNetwork: def, projectId: WC_ID,
