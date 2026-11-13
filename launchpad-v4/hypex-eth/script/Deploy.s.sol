@@ -16,6 +16,8 @@ import {IHypexLimitOrders} from "../src/interfaces/IHypexLimitOrders.sol";
 import {IHypexRevenue} from "../src/interfaces/IHypexRevenue.sol";
 import {HypexRevenue} from "../src/HypexRevenue.sol";
 import {HypexVesting} from "../src/HypexVesting.sol";
+import {HypexBridge} from "../src/HypexBridge.sol";
+import {IWormhole} from "../src/interfaces/IWormhole.sol";
 import {MockEthUsdFeed} from "./MockEthUsdFeed.sol";
 import {StartTick} from "./StartTick.sol";
 
@@ -67,6 +69,17 @@ contract Deploy is Script {
     uint256 internal constant ROBINHOOD_CHAIN_ID = 4663;
     uint256 internal constant ROBINHOOD_TESTNET_CHAIN_ID = 46630;
     uint256 internal constant ETHEREUM_CHAIN_ID = 1;
+    /// Hypex's chains: every coin launches on both, HYPE-paired, with its own floor on each, moved between them by
+    /// HypexBridge over Wormhole. Elysium is an Arbitrum Orbit chain on HyperEVM (its block.number is HyperEVM's).
+    uint256 internal constant HYPEREVM_CHAIN_ID = 999;
+    uint256 internal constant ELYSIUM_CHAIN_ID = 99901;
+    address internal constant HYPEREVM_POOL_MANAGER = 0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F;
+    address internal constant ELYSIUM_POOL_MANAGER = 0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1;
+    /// Wormhole Core Bridge and chain ids (wormhole.com/docs/reference/contract-addresses)
+    address internal constant HYPEREVM_WORMHOLE = 0x7C0faFc4384551f063e05aee704ab943b8B53aB3;
+    address internal constant ELYSIUM_WORMHOLE = 0xC8aD24fC6063c41cB5C12a8e3851AafC3b3CF027;
+    uint16 internal constant HYPEREVM_WH_CHAIN = 47;
+    uint16 internal constant ELYSIUM_WH_CHAIN = 74;
     /// Uniswap v4 PoolManager on Ethereum mainnet (docs.uniswap.org/contracts/v4/deployments)
     address internal constant ETHEREUM_POOL_MANAGER = 0x000000000004444c5dc75cB358380D2e3dE08A90;
     /// Chainlink's ETH / USD proxy on Ethereum mainnet (8 decimals, 1 h heartbeat, 0.5% deviation)
@@ -96,8 +109,12 @@ contract Deploy is Script {
             HypexBurner burner
         )
     {
+        // the native coin's price in whole dollars: ETH, or HYPE on Hypex's chains
         uint256 ethUsd = vm.envUint("ETH_USD");
-        require(ethUsd >= 1000, "ETH_USD: the ETH price in whole dollars, e.g. 2600 (at least 1000)");
+        require(
+            isHypeChain() ? ethUsd >= 1 : ethUsd >= 1000,
+            "ETH_USD: the native coin's price in whole dollars, e.g. 2600 for ETH (at least 1000), 72 for HYPE"
+        );
         address team = vm.envAddress("TEAM");
         address owner = vm.envOr("OWNER", address(0));
         address startSigner = vm.envAddress("START_SIGNER");
@@ -118,6 +135,8 @@ contract Deploy is Script {
         }
         IPoolManager pm = IPoolManager(vm.envOr("POOL_MANAGER", address(0)));
         if (address(pm) == address(0) && block.chainid == ETHEREUM_CHAIN_ID) pm = IPoolManager(ETHEREUM_POOL_MANAGER);
+        if (address(pm) == address(0) && block.chainid == HYPEREVM_CHAIN_ID) pm = IPoolManager(HYPEREVM_POOL_MANAGER);
+        if (address(pm) == address(0) && block.chainid == ELYSIUM_CHAIN_ID) pm = IPoolManager(ELYSIUM_POOL_MANAGER);
         if (address(pm) == address(0)) {
             require(block.chainid == LOCAL_CHAIN_ID, "set POOL_MANAGER");
             pm = IPoolManager(address(new PoolManager(msg.sender)));
@@ -129,6 +148,18 @@ contract Deploy is Script {
         revenue = new HypexRevenue(pm, msg.sender, team);
         limitOrders = deployLimitOrders(pm, factory, deployer, ethUsd);
         burner = new HypexBurner(pm, msg.sender);
+        // Hypex: the bridge right after, so it has the same address on every chain (the same deployer, the same nonce),
+        // as every coin does (the same factory address and init code)
+        HypexBridge bridge;
+        if (isHypeChain()) {
+            bridge = new HypexBridge(IWormhole(wormholeCore()), address(factory), msg.sender);
+            factory.setBridge(address(bridge));
+            // the peer is this same address on the other chain
+            bridge.setPeer(otherWormholeChain(), bytes32(uint256(uint160(address(bridge)))));
+            if (keeper != address(0)) bridge.setKeeper(keeper);
+            address legLauncher = vm.envOr("LEG_LAUNCHER", keeper);
+            if (legLauncher != address(0)) factory.setLegLauncher(legLauncher);
+        }
 
         bool isArbitrum = isArbitrumChain();
         bytes memory init = abi.encodePacked(
@@ -153,7 +184,10 @@ contract Deploy is Script {
         int24 mid = StartTick.forEthUsd(ethUsd);
         int24 half = factory.MAX_START_BAND() / 2;
         factory.setStartBand(mid - half, mid + half);
-        if (owner != address(0) && owner != msg.sender) offerOwnership(owner, factory, revenue, limitOrders, burner, hook);
+        if (owner != address(0) && owner != msg.sender) {
+            offerOwnership(owner, factory, revenue, limitOrders, burner, hook);
+            if (address(bridge) != address(0)) bridge.transferOwnership(owner);
+        }
         vm.stopBroadcast();
 
         console2.log("PoolManager", address(pm));
@@ -162,11 +196,12 @@ contract Deploy is Script {
         console2.log("HypexRevenue", address(revenue));
         console2.log("HypexLimitOrders", address(limitOrders));
         console2.log("HypexBurner ", address(burner));
+        console2.log("HypexBridge ", address(bridge));
         console2.log("HypexVesting", address(factory.vesting()));
         console2.log("keeper (HypexBurner, HypexLimitOrders)", keeper);
         console2.log("hook counts blocks with ArbSys (isArbitrum)", hook.isArbitrum());
         // reverts unless the feed answers, positive and fresh: a broken feed fails the deploy, not the first fill
-        console2.log("ETH/USD feed (1e18)", limitOrders.ethUsd());
+        if (!isHypeChain()) console2.log("ETH/USD feed (1e18)", limitOrders.ethUsd());
         console2.log("launch fee (wei)", launchFee);
         console2.log("start signer", startSigner);
         if (factory.pendingOwner() != address(0)) {
@@ -199,6 +234,10 @@ contract Deploy is Script {
                 launchFee,
                 startSigner
             );
+            if (address(bridge) != address(0)) {
+                vm.writeJson(vm.toString(address(bridge)), path, ".bridge");
+                vm.writeJson(vm.toString(wormholeCore()), path, ".wormhole");
+            }
             console2.log("wrote", path);
         }
     }
@@ -273,6 +312,8 @@ contract Deploy is Script {
         address sequencerFeed = vm.envOr("SEQUENCER_UPTIME_FEED", address(0));
         uint256 grace = sequencerFeed == address(0) ? 0 : vm.envOr("SEQUENCER_GRACE_PERIOD", uint256(1 hours));
         lo = new HypexLimitOrders(pm, IHypexFactory(address(factory)), deployer, IAggregatorV3(sequencerFeed), grace);
+        // Hypex's chains have no Chainlink HYPE/USD feed: limit orders open once the owner whitelists a pay token
+        if (isHypeChain() && vm.envOr("ETH_USD_FEED", address(0)) == address(0)) return lo;
         (address feed, uint256 maxAge) = ethUsdFeed(ethUsd);
         lo.setPayToken(address(0), IAggregatorV3(feed), maxAge, false, true);
     }
@@ -346,7 +387,21 @@ contract Deploy is Script {
     /// so the hook counts blocks with ArbSys.arbBlockNumber() there (HypexHook.isArbitrum). Every other chain (anvil
     /// 31337 included) uses block.number. Add an Arbitrum chain here before deploying to it.
     function isArbitrumChain() internal view returns (bool) {
-        return block.chainid == ROBINHOOD_CHAIN_ID || block.chainid == ROBINHOOD_TESTNET_CHAIN_ID;
+        return block.chainid == ROBINHOOD_CHAIN_ID || block.chainid == ROBINHOOD_TESTNET_CHAIN_ID
+            || block.chainid == ELYSIUM_CHAIN_ID;
+    }
+
+    function isHypeChain() internal view returns (bool) {
+        return block.chainid == HYPEREVM_CHAIN_ID || block.chainid == ELYSIUM_CHAIN_ID;
+    }
+
+    function wormholeCore() internal view returns (address) {
+        return vm.envOr("WORMHOLE", block.chainid == ELYSIUM_CHAIN_ID ? ELYSIUM_WORMHOLE : HYPEREVM_WORMHOLE);
+    }
+
+    /// The Wormhole chain id of the other Hypex chain (the bridge's peer)
+    function otherWormholeChain() internal view returns (uint16) {
+        return block.chainid == ELYSIUM_CHAIN_ID ? HYPEREVM_WH_CHAIN : ELYSIUM_WH_CHAIN;
     }
 
     /// Deployment files are named like the chain's Substreams network, so the indexer config finds them by that name.
@@ -355,6 +410,8 @@ contract Deploy is Script {
         if (block.chainid == ETHEREUM_CHAIN_ID) return "ethereum";
         if (block.chainid == ROBINHOOD_CHAIN_ID) return "robinhood";
         if (block.chainid == ROBINHOOD_TESTNET_CHAIN_ID) return "robinhood-sepolia";
+        if (block.chainid == HYPEREVM_CHAIN_ID) return "hyperevm";
+        if (block.chainid == ELYSIUM_CHAIN_ID) return "elysium";
         revert("unknown chain: set DEPLOYMENT");
     }
 

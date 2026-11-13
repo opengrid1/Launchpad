@@ -416,16 +416,20 @@ contract AttackRevenueTest is AttackRevenueBase {
         assertTrue(p.swapped(), "re-entrant swap went through");
         assertEq(p.received(), owedP, "paid exactly once");
         // the re-entrant swap's partner share is booked again for p, the rest for the referrer (t is tx.origin) / team
-        uint256 sum = revenue.owed(address(p), ETH) + revenue.owed(team, ETH) + revenue.owed(r, ETH);
+        // (and t's airdrop: t is tx.origin of both swaps)
+        uint256 sum = revenue.owed(address(p), ETH) + revenue.owed(team, ETH) + revenue.owed(r, ETH) + revenue.owed(t, ETH)
+            + revenue.owed(alice, ETH); // alice: the setup's buys
         assertEq(_revClaims(ETH), sum, "claims == sum owed after a re-entrant claim");
         revenue.claim(address(p), ETH, address(p));
         revenue.claim(team, ETH, team);
         revenue.claim(r, ETH, r);
+        revenue.claim(t, ETH, t);
+        revenue.claim(alice, ETH, alice);
         assertEq(_revClaims(ETH), 0);
     }
 
-    /// Wash trading with every rebate an outsider can get: the attacker launches its own pool (creator fee 0.6%),
-    /// names its second wallet as referrer before its first credited swap (+0.1%), is the only holder (gets the floor
+    /// Wash trading with every rebate an outsider can get: the attacker launches its own pool (creator fee 0.7%), takes
+    /// its own trader airdrop (0.7%), names its second wallet as referrer before its first credited swap (+0.15%), is the only holder (gets the floor
     /// back through its own tokens), and round-trips 10 x 10 ETH. It ends with less ETH than it started with.
     function test_washTradingWithSelfReferralAndCreatorFeeLoses() public {
         address atk = _user("washer");
@@ -449,10 +453,11 @@ contract AttackRevenueTest is AttackRevenueBase {
         }
         hook.claimCreator(wk, _creatorOf(wk));
         revenue.claim(alt, ETH, alt);
+        revenue.claim(atk, ETH, atk); // Hypex: its own trader airdrop too
         uint256 end = atk.balance + alt.balance;
         emit log_named_decimal_uint("washer net loss (ETH)", start - end, 18);
         assertLt(end, start, "wash trading is a loss");
-        assertGt(start - end, 0.2 ether, "loses at least the team's 0.3% of 100 ETH");
+        assertGt(start - end, 0.2 ether, "loses at least the team's 0.45% left of 100 ETH");
     }
 
     /// Self-referral and referral loops are bounded: A -> B, B -> A both work, but nobody can be its own referrer and a
@@ -468,18 +473,21 @@ contract AttackRevenueTest is AttackRevenueBase {
         assertEq(revenue.registerBy(ts, rs), 2);
         assertEq(revenue.registerBy(_one(a), _one(makeAddr("other"))), 0, "never changed");
         assertEq(revenue.referrerOf(a), b);
-        // 0.1% each of 10 ETH (rounding), owed to the other
+        // 0.15% each of 10 ETH (25% of the 0.6% protocol fee, rounding), owed to the other
         vm.recordLogs();
         _swap(a, kumoKey, true, -10 ether, 10 ether);
         SplitLog memory x = _lastSplit();
         assertEq(x.referrer, b);
-        assertApproxEqRel(x.toReferrer, 0.01 ether, 0.001e18);
+        assertApproxEqRel(x.toReferrer, 0.015 ether, 0.001e18);
         vm.recordLogs();
         _swap(b, kumoKey, true, -10 ether, 10 ether);
         x = _lastSplit();
         assertEq(x.referrer, a);
-        assertApproxEqRel(x.toReferrer, 0.01 ether, 0.001e18);
-        assertEq(revenue.owed(a, ETH) + revenue.owed(b, ETH), 2 * x.toReferrer, "each owed its share, nothing more");
+        assertApproxEqRel(x.toReferrer, 0.015 ether, 0.001e18);
+        // each also has its own trader airdrop (0.7% of its 10 ETH): nothing more
+        assertEq(
+            revenue.owed(a, ETH) + revenue.owed(b, ETH), 2 * x.toReferrer + 2 * 0.07 ether, "each owed its share, nothing more"
+        );
     }
 
     /// No one but the hook can credit, and nobody can claim someone else's balance to themselves.
@@ -487,7 +495,7 @@ contract AttackRevenueTest is AttackRevenueBase {
         address atk = makeAddr("atk");
         vm.prank(atk);
         vm.expectRevert(IHypexRevenue.NotHook.selector);
-        revenue.credit(ETH, atk, 1 ether, 0);
+        revenue.credit(ETH, atk, 1 ether, 0, 0);
         vm.prank(atk);
         vm.expectRevert(IHypexRevenue.NotPoolManager.selector);
         revenue.unlockCallback(abi.encode(ETH, atk, 1 ether));
@@ -660,7 +668,11 @@ contract AttackRevenueTest is AttackRevenueBase {
         assertEq(team.balance - t0, owedTeam, "the team claims normally");
         _swap(t, kumoKey, true, -10 ether, 10 ether);
         assertGt(revenue.owed(sink, ETH), owedSink, "swaps keep crediting it");
-        assertEq(_revClaims(ETH), revenue.owed(sink, ETH) + revenue.owed(team, ETH), "claims == sum owed");
+        assertEq(
+            _revClaims(ETH),
+            revenue.owed(sink, ETH) + revenue.owed(team, ETH) + revenue.owed(t, ETH) + revenue.owed(alice, ETH), // airdrops
+            "claims == sum owed"
+        );
     }
 
     /// Failed attack: the registrar can't overwrite a referral, even by naming the trader twice or in a later batch,

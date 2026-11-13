@@ -50,8 +50,12 @@ interface IHypexHook {
     /// @notice The owner took a pool's whole liquidity (HypexHook.collectAll): every tranche, the band, the waiting floor
     ///         money and the dust reserve. `quote` and `tokens` are what went to `to`.
     event LiquidityCollected(PoolId indexed id, uint256 quote, uint256 tokens, address to);
+    /// @notice Floor money moved with coins between chains: `tokens` left and took `quote` of the floor with them
+    ///         (incoming false), or `quote` was paid into the floor (incoming true, tokens 0)
+    event FloorBridged(PoolId indexed id, uint256 tokens, uint256 quote, bool incoming);
 
     error NotFactory();
+    error NotBridge();
     error ZeroAddress();
     error NotSelf();
     error NotCreator();

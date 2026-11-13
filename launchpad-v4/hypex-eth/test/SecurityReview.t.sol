@@ -66,7 +66,7 @@ contract SecurityReviewTest is HypexBase {
         vm.expectRevert();
         pm.transferFrom(address(revenue), attacker, 0, 1);
         vm.stopPrank();
-        _assertEthClaims();
+        _assertEthClaims(new address[](0));
     }
 
     function test_productionRuntimeCodeFitsEip170() public view {
@@ -116,7 +116,9 @@ contract SecurityReviewTest is HypexBase {
         if (collected != 0) _swap(collector, hypexKey, false, -int256(collected), 0);
         assertLe(_tick(hypexKey), lastFloor + 60, "all sellable tokens exit within floor");
         assertEq(HypexToken(hypex).balanceOf(address(hook)), donated, "donations cannot be stolen");
-        _assertEthClaims();
+        address[] memory traders = new address[](3);
+        (traders[0], traders[1], traders[2]) = (alice, bob, collector);
+        _assertEthClaims(traders);
         _assertNoFailures();
     }
 
@@ -150,10 +152,11 @@ contract SecurityReviewTest is HypexBase {
         );
         assertEq(pm.balanceOf(alice, uint160(hypex)), 0);
         assertLe(_tick(hypexKey), floor + 60);
-        _assertEthClaims();
+        _assertEthClaims(_one(alice));
     }
 
-    function _assertEthClaims() internal view {
+    /// Hypex: HypexRevenue owes the team and each trader's airdrop
+    function _assertEthClaims(address[] memory traders) internal view {
         (,,,,,,,, uint128 snipe, uint128 released,,, uint256 pot, uint256 creator,,) = hook.pools(hypexKey.toId());
         Currency eth = Currency.wrap(address(0));
         assertEq(
@@ -161,7 +164,11 @@ contract SecurityReviewTest is HypexBase {
             pot + snipe - released + creator + hook.teamOwed(eth),
             "hook ETH claims cover exactly its obligations"
         );
-        assertEq(pm.balanceOf(address(revenue), 0), revenue.owed(team, address(0)));
+        uint256 owed = revenue.owed(team, address(0));
+        for (uint256 i; i < traders.length; i++) {
+            owed += revenue.owed(traders[i], address(0));
+        }
+        assertEq(pm.balanceOf(address(revenue), 0), owed);
     }
 
     function _assertNoFailures() internal {

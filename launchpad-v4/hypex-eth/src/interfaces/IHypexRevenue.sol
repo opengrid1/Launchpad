@@ -35,8 +35,8 @@ interface IHypexRevenue {
     );
     /// @notice A partner's share of one credit (one per partner with a non-zero share, before its Split).
     event PartnerCredited(address indexed account, address indexed currency, uint256 amount);
-    /// @notice A trader's airdrop: AIRDROP_PARTS/PROTOCOL_PARTS of the protocol fee their swap paid (0.7% of the trade),
-    ///         booked to them at once, claimable any time (claim)
+    /// @notice A trader's airdrop (0.7% of their trade), booked to them in the swap that paid it, claimable any time
+    ///         (claim)
     event Airdropped(address indexed trader, address indexed currency, uint256 amount);
     /// @notice Named apart from HypexHook's Claimed so the two never share a topic. `account` is who was owed (the
     ///         recipient is the claim's `to`: the account unless it sent it elsewhere).
@@ -84,7 +84,9 @@ interface IHypexRevenue {
     ///        referred, registerBy skips a zero trader)
     /// @param protocolFee the protocol fee (referral applies)
     /// @param creatorFee $HYPEX's own creator fee (partners only), 0 in every other pool
-    function credit(address currency, address trader, uint256 protocolFee, uint256 creatorFee) external;
+    /// @param airdrop the trader's airdrop (0.7% of the trade), booked to `trader` (to the team when trader is zero)
+    function credit(address currency, address trader, uint256 protocolFee, uint256 creatorFee, uint256 airdrop)
+        external;
 
     /// @notice Pays everything `account` is owed in `currency` to `to`. Anyone can trigger it with `to` = `account`;
     ///         only the account can pick another `to`.

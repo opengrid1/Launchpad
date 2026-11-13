@@ -148,6 +148,7 @@ abstract contract HookTax is HookFloor {
         uint256 toTeam;
         uint256 toBurn;
         uint256 fee; // the protocol fee (none in the snipe window)
+        uint256 air; // the trader's airdrop (none in the snipe window)
         if (snipe) {
             uint256 share = Tax.snipeBurn(tax);
             // $HYPEX's own pool can't buy itself back: the share is its creator fee
@@ -160,11 +161,13 @@ abstract contract HookTax is HookFloor {
             p.snipePot += (tax - share).toUint128();
         } else {
             toCreator = Tax.creatorShare(tax);
-            toTeam = fee = Tax.protocolShare(tax);
+            fee = Tax.protocolShare(tax);
+            air = Tax.airdropShare(tax);
+            toTeam = fee + air; // both leave through HypexRevenue (TaxPaid counts the airdrop with the team's)
             p.pot += tax - toCreator - toTeam;
         }
         // $HYPEX's creator fee is HYPEX's revenue: HypexRevenue shares it out with the protocol fee, in this swap
-        p.creatorOwed += toCreator - _credit(id, quote, trader, fee, p.creator == address(0) ? toCreator : 0);
+        p.creatorOwed += toCreator - _credit(id, quote, trader, fee, p.creator == address(0) ? toCreator : 0, air);
         emit TaxPaid(id, swapper, buy, volume, tax - toCreator - toTeam - toBurn, toCreator, toTeam, toBurn);
     }
 
@@ -175,18 +178,18 @@ abstract contract HookTax is HookFloor {
     ///      reverts anyway the swap still goes through and the protocol fee stays the team's here (teamOwed: no referral
     ///      or partner share of it, accepted, README §5.1). Returns the creator fee HypexRevenue took (`creatorFee`, or 0
     ///      if it failed: the caller keeps it in the creator balance, which claimCreator credits to HypexRevenue later).
-    function _credit(PoolId id, Currency quote, address trader, uint256 protocolFee, uint256 creatorFee)
+    function _credit(PoolId id, Currency quote, address trader, uint256 protocolFee, uint256 creatorFee, uint256 air)
         internal
         returns (uint256)
     {
-        uint256 amount = protocolFee + creatorFee;
+        uint256 amount = protocolFee + creatorFee + air;
         if (amount == 0) return 0;
         if (gasleft() < CREDIT_GAS * 64 / 63 + 20_000) revert NeedGas();
-        try revenue.credit{gas: CREDIT_GAS}(Currency.unwrap(quote), trader, protocolFee, creatorFee) {
+        try revenue.credit{gas: CREDIT_GAS}(Currency.unwrap(quote), trader, protocolFee, creatorFee, air) {
             return creatorFee;
         } catch {
             emit CreditFailed(id, amount);
-            teamOwed[quote] += protocolFee;
+            teamOwed[quote] += protocolFee + air;
             return 0;
         }
     }
@@ -197,6 +200,8 @@ abstract contract HookTax is HookFloor {
     ///      bundler's EOA, which normally has no referrer. Only ever used to pick a referrer, never for authorization.
     function _trader(address sender, bytes calldata hookData) internal view returns (address) {
         if (sender == limitOrders) return abi.decode(hookData, (address));
+        // Hypex: HypexBurner's buybacks are the protocol's own swaps: no trader, so their airdrop is the team's
+        if (sender == burner) return address(0);
         return tx.origin;
     }
 }

@@ -10,6 +10,7 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {Currency, CurrencyLibrary} from "v4-core/src/types/Currency.sol";
 import {IHypexRevenue} from "./interfaces/IHypexRevenue.sol";
+import {IHypexFactory} from "./interfaces/IHypexFactory.sol";
 import {IHypexToken} from "./interfaces/IHypexToken.sol";
 import {Claims} from "./libraries/Claims.sol";
 import {Curve, N_TRANCHES} from "./libraries/Curve.sol";
@@ -17,6 +18,7 @@ import {FloorMath} from "./libraries/FloorMath.sol";
 import {Ticks} from "./libraries/Ticks.sol";
 import {HookStorage} from "./hook/HookStorage.sol";
 import {HookClaims} from "./hook/HookClaims.sol";
+import {HookOps} from "./hook/HookOps.sol";
 import {Owned} from "./base/Owned.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 
@@ -129,7 +131,8 @@ contract HypexHook is HookClaims, IUnlockCallback, Owned {
     function unlockCallback(bytes calldata data) external onlyPoolManager returns (bytes memory) {
         (uint8 action, bytes memory args) = abi.decode(data, (uint8, bytes));
         if (action == ACTION_PLACE) {
-            _place(abi.decode(args, (PoolKey)));
+            PoolKey memory key = abi.decode(args, (PoolKey));
+            HookOps.place(pools[key.toId()], poolManager, key);
         } else if (action == ACTION_POKE) {
             PoolKey memory key = abi.decode(args, (PoolKey));
             _refreshRef(pools[key.toId()], key.toId());
@@ -139,7 +142,15 @@ contract HypexHook is HookClaims, IUnlockCallback, Owned {
             poolManager.redeem(currency, to, amount);
         } else if (action == ACTION_COLLECT_ALL) {
             (PoolKey memory key, address to) = abi.decode(args, (PoolKey, address));
-            _collectAll(key, to);
+            HookOps.collectAll(pools[key.toId()], poolManager, key, to);
+        } else if (action == ACTION_BRIDGE_OUT) {
+            (PoolKey memory key, uint256 amount, address to) = abi.decode(args, (PoolKey, uint256, address));
+            Pool storage p = pools[key.toId()];
+            (uint160 sCur,,,) = poolManager.getSlot0(key.toId());
+            return abi.encode(HookOps.bridgeOut(p, poolManager, key, amount, _circulating(p, sCur), to));
+        } else if (action == ACTION_ADD_FLOOR) {
+            (PoolKey memory key, uint256 amount) = abi.decode(args, (PoolKey, uint256));
+            HookOps.addFloor(pools[key.toId()], poolManager, key, amount);
         }
         return "";
     }
@@ -158,71 +169,31 @@ contract HypexHook is HookClaims, IUnlockCallback, Owned {
         poolManager.unlock(abi.encode(ACTION_COLLECT_ALL, abi.encode(key, to)));
     }
 
-    /// @dev Removes every live position (tranche 0 at [MIN_TICK, tickF], each unmerged tranche at [MIN_TICK, its start],
-    ///      the band at [tickB, tickB + 60]) and takes what they release to `to`, then redeems the hook's claims that back
-    ///      the pool's floor money and dust reserve to `to` as well.
-    function _collectAll(PoolKey memory key, address to) internal {
-        PoolId id = key.toId();
-        Pool storage p = pools[id];
-        int256 q;
-        int256 t;
-        for (uint256 i; i < N_TRANCHES; i++) {
-            if (i != 0 && i <= p.merged) continue; // merged into tranche 0
-            uint128 l = p.liqs[i];
-            if (l == 0) continue;
-            BalanceDelta d = _modify(key, MIN_TICK, i == 0 ? p.tickF : _start(p, i), -int256(uint256(l)), _salt(i));
-            q += d.amount0();
-            t += d.amount1();
-            p.liqs[i] = 0;
-        }
-        if (p.liqBand != 0) {
-            BalanceDelta d = _modify(key, p.tickB, p.tickB + SPACING, -int256(uint256(p.liqBand)), SALT_BAND);
-            q += d.amount0();
-            t += d.amount1();
-            p.liqBand = 0;
-        }
-        // removing liquidity only ever pays out: q, t >= 0
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint256 quoteOut = uint256(q);
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint256 tokenOut = uint256(t);
-        if (quoteOut != 0) poolManager.take(key.currency0, to, quoteOut);
-        if (tokenOut != 0) poolManager.take(key.currency1, to, tokenOut);
-        // the floor money (pot and the unvested snipe tax) and the dust reserve are the hook's claims
-        uint256 held = p.pot + p.snipePot - p.snipeReleased;
-        p.pot = 0;
-        p.snipeReleased = p.snipePot;
-        if (held != 0) poolManager.redeem(key.currency0, to, held);
-        uint256 dust = p.reserve;
-        p.reserve = 0;
-        if (dust != 0) poolManager.redeem(key.currency1, to, dust);
-        emit LiquidityCollected(id, quoteOut + held, tokenOut + dust, to);
+    // =====================================================================================================
+    // bridge (HypexBridge: coins moving between chains take their share of the floor with them)
+    // =====================================================================================================
+
+    /// @notice The factory's bridge burned `amount` of `token` leaving this chain: lets go of their share of the floor
+    ///         (HookOps.bridgeOut) and pays its quote to the bridge, which carries it to the chain they went to.
+    function bridgeOut(address token, uint256 amount) external returns (uint256) {
+        address b = IHypexFactory(factory).bridge();
+        if (msg.sender != b || b == address(0)) revert NotBridge();
+        return abi.decode(
+            poolManager.unlock(abi.encode(ACTION_BRIDGE_OUT, abi.encode(_known(token), amount, b))), (uint256)
+        );
     }
 
-    function _place(PoolKey memory key) internal {
-        Pool storage p = pools[key.toId()];
-        uint256 supply = IHypexToken(p.token).totalSupply();
-        uint160 sMin = TickMath.getSqrtPriceAtTick(MIN_TICK);
-        uint256 left = supply - RESERVE;
-        int256 used;
-        for (uint256 i; i < N_TRANCHES; i++) {
-            (uint256 bps,) = Curve.tranche(i);
-            uint256 amt = i + 1 == N_TRANCHES ? left : supply * bps / 10_000; // the last tranche takes the remainder
-            left -= amt;
-            int24 top = _start(p, i);
-            uint128 l = FloorMath.liquidityForToken(sMin, TickMath.getSqrtPriceAtTick(top), amt);
-            used += _modify(key, MIN_TICK, top, int256(uint256(l)), _salt(i)).amount1();
-            p.liqs[i] = l;
-        }
-        // pay the full supply in, keep what the positions didn't use as the dust reserve (claims)
-        poolManager.sync(key.currency1);
-        // forge-lint: disable-next-line(erc20-unchecked-transfer)
-        IHypexToken(p.token).transfer(address(poolManager), supply); // HypexToken (OpenZeppelin ERC20) reverts on failure
-        poolManager.settle();
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint256 leftover = supply - uint256(-used); // used sums adds' amount1, each <= 0
-        poolManager.mint(address(this), key.currency1.toId(), leftover);
-        p.reserve = leftover;
+    /// @notice Pays native quote into an ETH- or HYPE-paired pool's floor money: the bridge pays in the floor that came
+    ///         with coins from another chain. Anyone can add to a floor.
+    function addFloor(address token) external payable {
+        PoolKey memory key = _known(token);
+        if (msg.value != 0) poolManager.unlock(abi.encode(ACTION_ADD_FLOOR, abi.encode(key, msg.value)));
+    }
+
+    /// @dev The native-quote pool of a coin this hook launched (UnknownPool otherwise).
+    function _known(address token) internal view returns (PoolKey memory key) {
+        key = keyFor(address(0), token);
+        if (pools[key.toId()].token == address(0)) revert UnknownPool();
     }
 
     // =====================================================================================================

@@ -75,10 +75,20 @@ interface IHypexFactory {
     error FeeTransferFailed();
     error ZeroAddress();
     error VestWithoutDevBuy();
+    error NotLegLauncher();
+    error BridgeSet();
 
     /// @notice Launch a token. Send the launch fee plus enough ETH for the dev buy; the rest is refunded. On a pair other
     ///         than ETH or $HYPEX the dev buy is paid in the quote itself: approve this factory for it first.
     function launch(LaunchParams calldata lp) external payable returns (address token, PoolId poolId);
+    function launchLeg(LaunchParams calldata lp, address creator)
+        external
+        payable
+        returns (address token, PoolId poolId);
+    function bridge() external view returns (address);
+    function legLauncher() external view returns (address);
+    function setBridge(address bridge) external;
+    function setLegLauncher(address launcher) external;
 
     /// @notice The EIP-712 digest the start signer signs for a launch.
     function launchStartDigest(

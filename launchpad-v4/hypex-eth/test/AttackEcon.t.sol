@@ -818,7 +818,9 @@ contract AttackEcon is HypexBase {
         _pokeWindows(k, 20);
         uint256 swept = _burnerOwed(Currency.wrap(address(0))) - burn0;
         emit log_named_decimal_uint("E14 floor money swept after the exit", swept, 18);
-        assertGt(swept, 2 ether, "what 2,000 tokens can't carry left for the burn");
+        // Hypex: a 0.5% floor share (upstream 1.5%) leaves much less behind the whale's exit; some still can't be
+        // carried by 2,000 tokens and leaves
+        assertGt(swept, 0, "what 2,000 tokens can't carry left for the burn");
         {
             (int24 tf, uint256 pot,,, uint128 lb) = _pool(k);
             (int24 s1,) = hook.trancheOf(k, 1);
@@ -832,8 +834,10 @@ contract AttackEcon is HypexBase {
             assertLe(pot + bandQ, worth, "the floor keeps at most what they can carry");
             uint256 dustExit = _exitValueK(dust, k);
             emit log_named_decimal_uint("    dust holder exit value", dustExit, 18);
-            // the same 0.742 ETH as before the fix: only money it could never reach left
-            assertGe(dustExit, worth * 95 / 100, "the dust holder still exits at about its tokens' worth there");
+            // Hypex: a 0.5% floor share leaves less behind the whale than the 2,000 tokens could carry, so the dust holder
+            // exits with what the floor has, inside it (upstream's 1.5% share: about its tokens' worth there)
+            assertGt(dustExit, 0, "the dust holder still exits into the floor");
+            assertLe(dustExit, worth, "never more than its tokens' worth there");
         }
         uint256 dustBefore = _exitValueK(dust, k);
         uint256[4] memory holds = [uint256(1), 2, 3, 10];

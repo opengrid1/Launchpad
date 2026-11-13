@@ -175,7 +175,7 @@ abstract contract RevenueBase is HypexBase, IUnlockCallback {
             abi.decode(args, (HypexRevenue, address, address, uint256, uint256));
         vm.prank(address(hook));
         uint256 g = gasleft();
-        rev.credit(c, trader, protocolFee, creatorFee);
+        rev.credit(c, trader, protocolFee, creatorFee, 0);
         g -= gasleft();
         return abi.encode(g);
     }
@@ -254,7 +254,7 @@ contract RevenueConfigTest is RevenueBase {
         vm.expectPartialRevert(Ownable.OwnableUnauthorizedAccount.selector);
         revenue.transferOwnership(rando);
         vm.expectRevert(IHypexRevenue.NotHook.selector);
-        revenue.credit(ETH, rando, 1, 0);
+        revenue.credit(ETH, rando, 1, 0, 0);
         vm.stopPrank();
     }
 
@@ -699,13 +699,16 @@ contract RevenueSplitTest is RevenueBase {
         for (uint256 kind; kind < 4; kind++) {
             bool buy = kind < 2;
             Before memory b = _snap(k, referrer);
+            uint256 air0 = revenue.owed(trader, Currency.unwrap(k.currency0));
             vm.recordLogs();
             _swap(trader, k, buy, amounts[kind], buy && isEth ? 5 ether : 0);
             SplitLog memory x = _lastSplit();
             Before memory a = _snap(k, referrer);
             uint256 fee = x.protocolFee;
             assertGt(fee, 0);
-            assertEq(fee, x.taxToTeam, "the protocol fee is TaxPaid.toTeam");
+            // Hypex: TaxPaid.toTeam is everything that left through HypexRevenue: the protocol fee and the airdrop
+            uint256 air = revenue.owed(trader, Currency.unwrap(k.currency0)) - air0;
+            assertEq(fee + air, x.taxToTeam, "the protocol fee and the airdrop are TaxPaid.toTeam");
             assertEq(x.creatorFee, isHypex ? x.taxToCreator : 0, "creator fee only in $HYPEX's pool");
             assertEq(x.referrer, referrer);
             uint256 gross = fee + x.creatorFee;
@@ -727,7 +730,8 @@ contract RevenueSplitTest is RevenueBase {
             assertEq(toP, sumP);
             assertEq(toTeam, gross - expRef - sumP, "team: the rest");
             assertEq(a.team - b.team, toTeam);
-            assertEq(a.claims - b.claims, gross, "HypexRevenue holds exactly what it owes");
+            assertGt(air, 0, "the trader's airdrop");
+            assertEq(a.claims - b.claims, gross + air, "HypexRevenue holds exactly what it owes");
             assertEq(a.hookTeam, b.hookTeam, "nothing left with the hook's team balance");
             if (isHypex) assertEq(a.creatorOwed, b.creatorOwed, "$HYPEX's creator fee is shared out");
         }
@@ -829,17 +833,17 @@ contract RevenueSplitTest is RevenueBase {
         address t = _referred("referredTrader", r);
         address u = _trader("plainTrader");
         Before memory b = _snap(kumoKey, r);
-        _swap(t, kumoKey, true, -10 ether, 10 ether); // tax 0.25 ETH, protocol fee 0.04 ETH
+        _swap(t, kumoKey, true, -10 ether, 10 ether); // tax 0.25 ETH, protocol fee 0.06 ETH
         Before memory a = _snap(kumoKey, r);
-        assertEq(a.referrer - b.referrer, 0.01 ether, "referrer: 25% of the protocol fee");
-        assertEq(a.partners[0] - b.partners[0], 0.01 ether, "partner 1: 25%");
-        assertEq(a.team - b.team, 0.02 ether, "team: the rest, 50%");
+        assertEq(a.referrer - b.referrer, 0.015 ether, "referrer: 25% of the protocol fee");
+        assertEq(a.partners[0] - b.partners[0], 0.015 ether, "partner 1: 25%");
+        assertEq(a.team - b.team, 0.03 ether, "team: the rest, 50%");
         b = a;
         _swap(u, kumoKey, true, -10 ether, 10 ether);
         a = _snap(kumoKey, r);
         assertEq(a.referrer, b.referrer, "no referrer");
-        assertEq(a.partners[0] - b.partners[0], 0.01 ether, "partner 1: 25%");
-        assertEq(a.team - b.team, 0.03 ether, "team: 75%");
+        assertEq(a.partners[0] - b.partners[0], 0.015 ether, "partner 1: 25%");
+        assertEq(a.team - b.team, 0.045 ether, "team: 75%");
     }
 
     /// Two partners sharing a 30% partner fee 60/40, referral fee 25%: on a referred trade in an ETH pair (protocol fee
@@ -853,17 +857,17 @@ contract RevenueSplitTest is RevenueBase {
         Before memory b = _snap(kumoKey, r);
         _swap(t, kumoKey, true, -10 ether, 10 ether);
         Before memory a = _snap(kumoKey, r);
-        assertEq(a.partners[0] - b.partners[0], 0.0072 ether, "partner 1: 60% of 30%");
-        assertEq(a.partners[1] - b.partners[1], 0.0048 ether, "partner 2: 40% of 30%");
-        assertEq(a.referrer - b.referrer, 0.01 ether, "referrer: 25% of the protocol fee");
-        assertEq(a.team - b.team, 0.018 ether, "team: the rest");
+        assertEq(a.partners[0] - b.partners[0], 0.0108 ether, "partner 1: 60% of 30%");
+        assertEq(a.partners[1] - b.partners[1], 0.0072 ether, "partner 2: 40% of 30%");
+        assertEq(a.referrer - b.referrer, 0.015 ether, "referrer: 25% of the protocol fee");
+        assertEq(a.team - b.team, 0.027 ether, "team: the rest");
         b = _snap(hypexKey, r);
         _swap(t, hypexKey, true, -10 ether, 10 ether);
         a = _snap(hypexKey, r);
-        assertEq(a.partners[0] - b.partners[0], 0.018 ether, "partner 1: 60% of 30% of the gross");
-        assertEq(a.partners[1] - b.partners[1], 0.012 ether, "partner 2: 40% of 30% of the gross");
-        assertEq(a.referrer - b.referrer, 0.01 ether, "referrer: of the protocol fee only");
-        assertEq(a.team - b.team, 0.06 ether, "team: the rest");
+        assertEq(a.partners[0] - b.partners[0], 0.0234 ether, "partner 1: 60% of 30% of the gross");
+        assertEq(a.partners[1] - b.partners[1], 0.0156 ether, "partner 2: 40% of 30% of the gross");
+        assertEq(a.referrer - b.referrer, 0.015 ether, "referrer: of the protocol fee only");
+        assertEq(a.team - b.team, 0.076 ether, "team: the rest");
     }
 
     /// Removing a partner at launch-night settings: the partner fee to 0 first (with it on, the list can't be emptied),
@@ -879,20 +883,20 @@ contract RevenueSplitTest is RevenueBase {
         _swap(t, kumoKey, true, -10 ether, 10 ether);
         Before memory a = _snap(kumoKey, address(0));
         assertEq(a.partners[0], b.partners[0], "no more partner share");
-        assertEq(a.team - b.team, 0.04 ether, "the team gets all of an unreferred protocol fee");
+        assertEq(a.team - b.team, 0.06 ether, "the team gets all of an unreferred protocol fee");
     }
 
-    /// $HYPEX's own creator fee (0.6% of its volume): partners get their share of it, no referral on it, the team the rest
+    /// $HYPEX's own creator fee (0.7% of its volume): partners get their share of it, no referral on it, the team the rest
     function test_hypexCreatorFeeSplit() public {
         _onePartner(ps[0], 2_500);
         address r = makeAddr("referrer");
         address t = _referred("referredTrader", r);
         Before memory b = _snap(hypexKey, r);
-        _swap(t, hypexKey, true, -10 ether, 10 ether); // tax 0.25: creator fee 0.06, protocol fee 0.04
+        _swap(t, hypexKey, true, -10 ether, 10 ether); // tax 0.25: creator fee 0.07, protocol fee 0.06
         Before memory a = _snap(hypexKey, r);
-        assertEq(a.referrer - b.referrer, 0.01 ether, "referrer: 25% of the protocol fee only");
-        assertEq(a.partners[0] - b.partners[0], 0.025 ether, "partner: 25% of protocol + creator fee");
-        assertEq(a.team - b.team, 0.065 ether, "team: the rest");
+        assertEq(a.referrer - b.referrer, 0.015 ether, "referrer: 25% of the protocol fee only");
+        assertEq(a.partners[0] - b.partners[0], 0.0325 ether, "partner: 25% of protocol + creator fee");
+        assertEq(a.team - b.team, 0.0825 ether, "team: the rest");
         assertEq(a.creatorOwed, b.creatorOwed, "nothing to $HYPEX's creator balance in the hook");
     }
 
@@ -907,7 +911,7 @@ contract RevenueSplitTest is RevenueBase {
         Before memory b = _snap(hypexKey, r);
         assertEq(b.creatorOwed, 0, "every earlier swap was credited");
         vm.recordLogs();
-        _swap(t, hypexKey, true, -10 ether, 10 ether); // tax 0.25: creator fee 0.06, protocol fee 0.04
+        _swap(t, hypexKey, true, -10 ether, 10 ether); // tax 0.25: creator fee 0.07, protocol fee 0.06, airdrop 0.07
         Vm.Log[] memory logs = vm.getRecordedLogs();
         bool failed;
         for (uint256 i; i < logs.length; i++) {
@@ -915,21 +919,21 @@ contract RevenueSplitTest is RevenueBase {
         }
         assertTrue(failed, "CreditFailed");
         Before memory a = _snap(hypexKey, r);
-        assertEq(a.creatorOwed - b.creatorOwed, 0.06 ether, "the creator fee waits in $HYPEX's creator balance");
-        assertEq(a.hookTeam - b.hookTeam, 0.04 ether, "the protocol fee with the team in the hook");
+        assertEq(a.creatorOwed - b.creatorOwed, 0.07 ether, "the creator fee waits in $HYPEX's creator balance");
+        assertEq(a.hookTeam - b.hookTeam, 0.13 ether, "the protocol fee and the airdrop with the team in the hook");
         assertEq(a.referrer, b.referrer, "no referral on a failed credit");
         vm.clearMockedCalls();
         assertEq(_bind(address(0), r), 0, "registerBy skips trader 0");
         vm.expectEmit(address(revenue));
-        emit IHypexRevenue.Split(ETH, address(0), address(0), 0, 0.06 ether, 0, 0.015 ether, 0.045 ether);
+        emit IHypexRevenue.Split(ETH, address(0), address(0), 0, 0.07 ether, 0, 0.0175 ether, 0.0525 ether);
         vm.prank(t, t);
         hook.claimCreator(hypexKey, _creatorOf(hypexKey));
         Before memory c = _snap(hypexKey, r);
         assertEq(c.creatorOwed, 0);
-        assertEq(c.partners[0] - a.partners[0], 0.015 ether, "partner: 25% of it");
-        assertEq(c.team - a.team, 0.045 ether, "team: the rest");
+        assertEq(c.partners[0] - a.partners[0], 0.0175 ether, "partner: 25% of it");
+        assertEq(c.team - a.team, 0.0525 ether, "team: the rest");
         assertEq(c.referrer, a.referrer, "no referral on it");
-        assertEq(c.claims - a.claims, 0.06 ether, "HypexRevenue holds exactly what it owes");
+        assertEq(c.claims - a.claims, 0.07 ether, "HypexRevenue holds exactly what it owes");
         // nothing left: a second claim is a no-op
         vm.recordLogs();
         hook.claimCreator(hypexKey, _creatorOf(hypexKey));
@@ -984,9 +988,10 @@ contract RevenueSplitTest is RevenueBase {
                 _earned(r, cur[j]), revenue.owed(r, cur[j]), "the referrer was paid nothing in the swaps: all owed"
             );
         }
-        // the partner, the team and the referrer alike: anyone (the keeper) triggers the claim, it pays the account
-        address[3] memory who = [ps[0], team, r];
-        for (uint256 i; i < 3; i++) {
+        // the partner, the team, the referrer and the trader (its airdrop) alike: anyone (the keeper) triggers the claim,
+        // it pays the account
+        address[4] memory who = [ps[0], team, r, t];
+        for (uint256 i; i < 4; i++) {
             for (uint256 j; j < 2; j++) {
                 uint256 owed = revenue.owed(who[i], cur[j]);
                 assertGt(owed, 0);
@@ -1003,6 +1008,9 @@ contract RevenueSplitTest is RevenueBase {
                 assertEq(revenue.claim(who[i], cur[j], who[i]), 0, "nothing twice");
             }
         }
+        // alice's airdrop from the setup's buys
+        revenue.claim(alice, ETH, alice);
+        revenue.claim(alice, hypex, alice);
         assertEq(_revClaims(ETH), 0);
         assertEq(_revClaims(hypex), 0);
     }
@@ -1220,11 +1228,13 @@ contract RevenueReferrerOwedTest is RevenueBase {
             uint256 held = _held(r, c);
             uint256 owed = revenue.owed(r, c);
             uint256 claims = _revClaims(c);
+            uint256 air = revenue.owed(t, c);
             SplitLog memory x = _buy(ks[i], t);
+            air = revenue.owed(t, c) - air; // Hypex: the trader's airdrop
             assertGt(x.toReferrer, 0);
             assertEq(_held(r, c), held, "nothing sent in the swap");
             assertEq(revenue.owed(r, c) - owed, x.toReferrer, "owed, in the pool's quote");
-            assertEq(_revClaims(c) - claims, x.protocolFee + x.creatorFee, "claims == what it owes");
+            assertEq(_revClaims(c) - claims, x.protocolFee + x.creatorFee + air, "claims == what it owes");
         }
         for (uint256 j; j < 2; j++) {
             address c = j == 0 ? ETH : hypex;
@@ -1280,7 +1290,7 @@ contract RevenueReferrerOwedTest is RevenueBase {
 
 /// HypexRevenue that always reverts
 contract RevertingRevenue {
-    function credit(address, address, uint256, uint256) external pure {
+    function credit(address, address, uint256, uint256, uint256) external pure {
         revert("broken");
     }
 }
@@ -1289,7 +1299,7 @@ contract RevertingRevenue {
 contract GasBurnerRevenue {
     uint256 public x;
 
-    function credit(address, address, uint256, uint256) external {
+    function credit(address, address, uint256, uint256, uint256) external {
         while (true) {
             x++;
         }
@@ -1298,7 +1308,7 @@ contract GasBurnerRevenue {
 
 /// HypexRevenue that returns a huge revert reason (a returndata bomb)
 contract BombRevenue {
-    function credit(address, address, uint256, uint256) external pure {
+    function credit(address, address, uint256, uint256, uint256) external pure {
         assembly {
             revert(0, 1000000)
         }

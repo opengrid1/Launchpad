@@ -7,8 +7,8 @@ import {FullMath} from "v4-core/src/libraries/FullMath.sol";
 ///         on the quote leg's gross amount, rounded up (against the trader).
 library Tax {
     uint256 internal constant PIPS = 1_000_000;
-    /// @dev 2.5%: 0.5% floor / 0.7% creator / 0.7% trader airdrop / 0.6% protocol (team). The airdrop rides with the
-    ///      protocol share into HypexRevenue, which books it to the trader (HypexRevenue.credit)
+    /// @dev 2.5%: 0.5% floor / 0.7% creator / 0.7% trader airdrop / 0.6% protocol (team). The airdrop goes through
+    ///      HypexRevenue with the protocol fee, which books it to the trader (HypexRevenue.credit)
     uint256 internal constant BASE = 25_000;
     /// @dev The snipe window: 90% at second 0, linear down to BASE at SNIPE_SECONDS
     uint256 internal constant SNIPE_START = 900_000;
@@ -38,10 +38,14 @@ library Tax {
         return tax * 7 / 25;
     }
 
-    /// @dev A normal (post-snipe) tax's protocol share (52%: 1.3% of the trade): the trader's airdrop (0.7%, 7/13 of it)
-    ///      and the team's (0.6%), split by HypexRevenue.credit.
+    /// @dev A normal (post-snipe) tax's trader airdrop (28%: 0.7% of the trade), booked to the trader by HypexRevenue.
+    function airdropShare(uint256 tax) internal pure returns (uint256) {
+        return tax * 7 / 25;
+    }
+
+    /// @dev A normal (post-snipe) tax's protocol (team) share (24%: 0.6% of the trade).
     function protocolShare(uint256 tax) internal pure returns (uint256) {
-        return tax * 13 / 25;
+        return tax * 6 / 25;
     }
 
     /// @dev A snipe-window tax's burn share; the floor gets the rest.

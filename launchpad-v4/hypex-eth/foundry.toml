@@ -7,6 +7,9 @@ evm_version = "cancun"   # Uniswap v4 needs transient storage
 optimizer = true
 optimizer_runs = 200
 via_ir = true
+# no CBOR metadata in the bytecode: keeps HypexHook under EIP-170
+cbor_metadata = false
+bytecode_hash = "none"
 
 # Deploy.s.sol writes deployments/<network>.json on a broadcast run (test/Deploy.t.sol runs it without one)
 fs_permissions = [{ access = "read-write", path = "./deployments" }]

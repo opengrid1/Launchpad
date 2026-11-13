@@ -72,6 +72,12 @@ contract HypexFactory is IHypexFactory, IUnlockCallback, EIP712, ReentrancyGuard
     /// @notice A signed start is good for one launch: creator => salt => used. The token's CREATE2 salt is keyed by the
     ///         same creator (predictToken), so one (creator, salt) is one address.
     mapping(address => mapping(bytes32 => bool)) public startUsed;
+    /// @notice HypexBridge, which moves coins between the chains they are launched on (HypexToken trusts it to mint and
+    ///         burn). Set once.
+    address public bridge;
+    /// @notice May launch a coin's leg here for its creator (the launch service): the same coin, at the same address, as
+    ///         on the chain it was first launched on (launchLeg). Owner-set; address(0) disables it.
+    address public legLauncher;
 
     struct DevBuy {
         PoolKey key;
@@ -109,6 +115,21 @@ contract HypexFactory is IHypexFactory, IUnlockCallback, EIP712, ReentrancyGuard
     ///         than ETH or $HYPEX the dev buy is paid in the quote itself: approve this factory for it first.
     function launch(LaunchParams calldata lp) external payable nonReentrant returns (address token, PoolId poolId) {
         return _launch(lp, msg.sender);
+    }
+
+    /// @notice The launch service puts a coin launched on another chain on this one too, for the same creator: same name,
+    ///         ticker and salt, so the same address (HypexToken's init code doesn't depend on the chain), with its own
+    ///         pool and floor here. Its start is signed for this chain like any launch; no dev buy; the launch fee is the
+    ///         service's.
+    function launchLeg(LaunchParams calldata lp, address creator)
+        external
+        payable
+        nonReentrant
+        returns (address token, PoolId poolId)
+    {
+        if (msg.sender != legLauncher || msg.sender == address(0)) revert NotLegLauncher();
+        if (lp.devBuyTokens != 0) revert DevBuyTooBig();
+        return _launch(lp, creator);
     }
 
     function _launch(LaunchParams calldata lp, address creator) internal returns (address token, PoolId poolId) {
@@ -281,6 +302,18 @@ contract HypexFactory is IHypexFactory, IUnlockCallback, EIP712, ReentrancyGuard
     /// @notice The hook every launch creates its pool through. Once, and only a hook built for this factory (its
     ///         `factory()` is this contract): a wrong one could never be replaced. Its HypexBurner (immutable in the hook)
     ///         becomes the launch fee's recipient, so the two can never disagree.
+    function setBridge(address _bridge) external onlyOwner {
+        if (bridge != address(0)) revert BridgeSet();
+        if (_bridge == address(0)) revert ZeroAddress();
+        bridge = _bridge;
+        emit ConfigChanged("bridge", uint256(uint160(_bridge)));
+    }
+
+    function setLegLauncher(address launcher) external onlyOwner {
+        legLauncher = launcher;
+        emit ConfigChanged("legLauncher", uint256(uint160(launcher)));
+    }
+
     function setHook(IHypexHook _hook) external onlyOwner {
         if (address(hook) != address(0)) revert HookSet();
         if (address(_hook) == address(0)) revert ZeroAddress();

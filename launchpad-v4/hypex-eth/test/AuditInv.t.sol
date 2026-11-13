@@ -38,7 +38,8 @@ contract AuditInvTest is HypexBase {
     address[4] us;
     // everyone HypexRevenue may owe: the team, three partners, the traders, alice and a contract (the referrers u3, alice
     // and the contract: all owed, nobody is paid in a swap)
-    address[10] payees;
+    // Hypex: + every trader's airdrop, including tx.origin of pranked launches (the default sender: a dev buy's trader)
+    address[11] payees;
     // dust reserve emptied by the test (its claims stay with the hook)
     uint256[3] spent;
 
@@ -100,6 +101,7 @@ contract AuditInvTest is HypexBase {
         }
         payees[8] = alice;
         payees[9] = address(new ContractReferrer());
+        payees[10] = DEFAULT_SENDER;
         // shares of the partner fee adding up to 100%; fees adding up to at most 100%
         uint256 np = (seed >> 200) % 4;
         address[] memory pr = new address[](np);

@@ -28,7 +28,7 @@ abstract contract HookClaims is HookTax {
         if (creator == address(0)) {
             // $HYPEX's creator fee is HYPEX's revenue, credited in every swap: this is only what a swap couldn't credit
             // (CreditFailed). HypexRevenue shares it out with the partners at this claim (no trader, so no referral)
-            revenue.credit(Currency.unwrap(key.currency0), address(0), 0, amount);
+            revenue.credit(Currency.unwrap(key.currency0), address(0), 0, amount, 0);
             return;
         }
         _pay(key.currency0, to, amount);

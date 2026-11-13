@@ -560,7 +560,8 @@ contract HypexTest is HypexBase {
                 // $HYPEX's creator fee and the protocol fee go to HypexRevenue (no partners, bob has no referrer: the team)
                 assertEq(cr1, cr0, "$HYPEX's creator fee is shared out by HypexRevenue");
                 assertEq(hook.teamOwed(hypexKey.currency0), team0, "the protocol fee is shared out by HypexRevenue");
-                assertEq(revenue.owed(team, address(0)) - rev0, tax * 6 / 25 + tax * 4 / 25);
+                // Hypex: its 0.7% creator fee and the 0.6% protocol fee to the team, the 0.7% airdrop to bob
+                assertEq(revenue.owed(team, address(0)) - rev0, tax * 7 / 25 + tax * 6 / 25);
                 assertEq(sp1, sp0, "after the window nothing vests");
             }
             assertGe(pot1 + 1, pot0, "pot only grows or is spent on the floor");
@@ -1163,7 +1164,7 @@ contract HypexTest is HypexBase {
         PoolKey memory k = hook.keyFor(hypex, neko);
         (, uint256 pot, uint256 cr,,) = _pool(k);
         assertGt(cr, 0, "dev buy pays the normal split, not the snipe tax: the creator fee is owed");
-        assertApproxEqRel(pot, cr * 5 / 2, 0.01e18); // 1.5% floor vs 0.6% creator
+        assertApproxEqRel(pot, cr * 5 / 7, 0.01e18); // 0.5% floor vs 0.7% creator
         uint256 f1 = HypexToken(hypex).balanceOf(alice);
         hook.claimCreator(k, alice);
         assertEq(HypexToken(hypex).balanceOf(alice) - f1, cr, "claimed, in $HYPEX");
@@ -2298,8 +2299,8 @@ contract HypexTest is HypexBase {
         PoolKey memory k = hook.keyFor(address(0), kumo);
         (, uint256 pot, uint256 cr,,) = _pool(k);
         assertGt(cr, 0, "dev buy pays the normal split, not the snipe tax: the creator fee is owed");
-        assertApproxEqRel(pot, cr * 5 / 2, 0.01e18); // 1.5% floor vs 0.6% creator
-        assertApproxEqRel(cr * PIPS / 6000, paid, 0.001e18, "creator's 0.6% is of the ETH it paid");
+        assertApproxEqRel(pot, cr * 5 / 7, 0.01e18); // 0.5% floor vs 0.7% creator
+        assertApproxEqRel(cr * PIPS / 7000, paid, 0.001e18, "creator's 0.7% is of the ETH it paid");
         // the creator dumps it all straight away: the floor still holds, and it gets back less than it paid
         uint256 e1 = alice.balance;
         _approve(alice, kumo);
@@ -2548,8 +2549,8 @@ contract HypexTest is HypexBase {
         uint256 paid = u0 - usd.balanceOf(alice);
         PoolKey memory k = hook.keyFor(address(usd), neko);
         (, uint256 pot, uint256 cr,,) = _pool(k);
-        assertApproxEqRel(cr * PIPS / 6000, paid, 0.001e18, "the creator's buy paid the 2.5% in the quote");
-        assertApproxEqRel(pot, cr * 5 / 2, 0.01e18);
+        assertApproxEqRel(cr * PIPS / 7000, paid, 0.001e18, "the creator's buy paid the 2.5% in the quote");
+        assertApproxEqRel(pot, cr * 5 / 7, 0.01e18); // 0.5% floor vs 0.7% creator
         assertEq(usd.balanceOf(address(factory)), 0, "nothing stuck in the factory");
 
         // trading in the quote, then everyone exits above the floor

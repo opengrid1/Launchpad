@@ -222,14 +222,14 @@ contract QuoteDecimalsTest is QuoteBase {
         assertEq(_burnerOwed(cq) - burn0, 360e6, "HypexBurner holds it as claims of the 6-decimal quote");
         assertEq(hook.teamOwed(cq), team0, "nothing to the team");
 
-        // after the window: the creator's 0.6% is owed in the quote, not paid in the swap
+        // after the window: the creator's 0.7% is owed in the quote, not paid in the swap
         vm.warp(vm.getBlockTimestamp() + 61);
         a0 = usd.balanceOf(alice);
         (,, uint256 owed0,,) = _pool(k);
         _swap(bob, k, true, -int256(uint256(10_000e6)), 0);
         assertEq(usd.balanceOf(alice), a0, "nobody is paid in a swap");
         (, uint256 pot, uint256 creatorOwed,,) = _pool(k);
-        assertEq(creatorOwed - owed0, 10_000e6 * 6 / 1000, "0.6% of the trade owed to the creator");
+        assertEq(creatorOwed - owed0, 10_000e6 * 7 / 1000, "0.7% of the trade owed to the creator");
         assertGt(pot, 0);
 
         // the next block's first swap raises the floor
@@ -241,7 +241,7 @@ contract QuoteDecimalsTest is QuoteBase {
         assertLt(f1, f0, "the floor rose");
         assertGt(band, 0);
 
-        // the creator claims its USD (the raise's swap added its 0.6% too)
+        // the creator claims its USD (the raise's swap added its 0.7% too)
         (,, creatorOwed,,) = _pool(k);
         hook.claimCreator(k, alice);
         assertEq(usd.balanceOf(alice) - a0, creatorOwed, "claimed in the quote");
@@ -429,8 +429,8 @@ contract QuoteDecimalsTest is QuoteBase {
         usd.setFrozen(carol, true);
         _swap(bob, k, true, -int256(uint256(10_000e6)), 0);
         (,, uint256 creatorOwed,,) = _pool(k);
-        assertEq(creatorOwed, 10_000e6 * 6 / 1000, "the creator's 0.6% is owed, not paid");
-        uint256 referral = 10_000e6 * 4 / 1000 * 25 / 100; // 25% of the 0.4% protocol fee
+        assertEq(creatorOwed, 10_000e6 * 7 / 1000, "the creator's 0.7% is owed, not paid");
+        uint256 referral = 10_000e6 * 6 / 1000 * 25 / 100; // 25% of the 0.6% protocol fee
         assertEq(revenue.owed(carol, address(usd)), referral, "the referrer's share is owed");
         vm.expectRevert();
         hook.claimCreator(k, alice);

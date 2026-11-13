@@ -10,8 +10,8 @@ import {IHypexRevenue} from "./interfaces/IHypexRevenue.sol";
 import {Claims} from "./libraries/Claims.sol";
 
 /// @title HypexRevenue
-/// @notice Shares out HYPEX's protocol revenue: the protocol fee (1.3% of every swap, 52% of the 2.5% tax: the trader's
-///         0.7% airdrop, booked to the trader first, and the team's 0.6%) and
+/// @notice Books every trader's airdrop (0.7% of each of their swaps, 28% of the 2.5% tax) to them, and shares out
+///         HYPEX's protocol revenue: the protocol fee (the team's 0.6% of every swap, 24% of the tax) and
 ///         $HYPEX's own creator fee (0.6% of $HYPEX's volume, and the 40% of $HYPEX's snipe tax other pools burn). The hook
 ///         credits it here in the swap that paid it (a $HYPEX creator fee whose credit failed: later, through
 ///         HypexHook.claimCreator, with no trader), as PoolManager ERC-6909 claims in the pool's quote (ETH or $HYPEX). On a
@@ -32,10 +32,6 @@ contract HypexRevenue is IHypexRevenue, IUnlockCallback, Owned {
     using CurrencyLibrary for Currency;
 
     uint256 public constant BPS = 10_000;
-    /// @notice The trader's airdrop is AIRDROP_PARTS/PROTOCOL_PARTS of the protocol fee: 0.7% of the trade out of the
-    ///         1.3% the hook credits here (libraries/Tax.sol). The referral and the partners' fee come out of the rest.
-    uint256 public constant AIRDROP_PARTS = 7;
-    uint256 public constant PROTOCOL_PARTS = 13;
     /// @notice Most revenue-share partners at once (bounds the gas every swap spends crediting them: HypexHook.CREDIT_GAS
     ///         keeps 50% headroom over the worst credit with this many, ~226k cold).
     uint256 public constant MAX_PARTNERS = 5;
@@ -91,26 +87,26 @@ contract HypexRevenue is IHypexRevenue, IUnlockCallback, Owned {
     ///        never referred, registerBy skips a zero trader)
     /// @param protocolFee the protocol fee (referral applies)
     /// @param creatorFee $HYPEX's own creator fee (partners only), 0 in every other pool
-    function credit(address currency, address trader, uint256 protocolFee, uint256 creatorFee) external {
+    /// @param airdrop the trader's airdrop (0.7% of the trade): all of it to `trader` (the team's when trader is zero)
+    function credit(address currency, address trader, uint256 protocolFee, uint256 creatorFee, uint256 airdrop)
+        external
+    {
         if (msg.sender != hook) revert NotHook();
         uint256 gross = protocolFee + creatorFee;
-        poolManager.transferFrom(msg.sender, address(this), Currency.wrap(currency).toId(), gross);
-        // the trader's airdrop first: 7/13 of the protocol fee (0.7% of the trade), theirs at once (claim)
-        uint256 toTrader;
-        if (trader != address(0)) {
-            toTrader = protocolFee * AIRDROP_PARTS / PROTOCOL_PARTS;
-            if (toTrader != 0) {
-                owed[trader][currency] += toTrader;
-                emit Airdropped(trader, currency, toTrader);
-            }
+        poolManager.transferFrom(msg.sender, address(this), Currency.wrap(currency).toId(), gross + airdrop);
+        // the trader's airdrop: theirs at once, claimable any time (claim). No trader (claimCreator's credit has no
+        // airdrop anyway): the team's
+        if (airdrop != 0) {
+            address to = trader == address(0) ? team : trader;
+            owed[to][currency] += airdrop;
+            emit Airdropped(to, currency, airdrop);
         }
-        uint256 platform = protocolFee - toTrader;
         address referrer = referrerOf[trader];
         uint256 toReferrer;
-        if (referrer != address(0)) toReferrer = platform * referralBps / BPS;
+        if (referrer != address(0)) toReferrer = protocolFee * referralBps / BPS;
         uint256 toPartners;
         // partnerBps > 0 only with a non-empty list (setFeePercent / setPartners), whose shares add up to BPS
-        uint256 partnerFee = (platform + creatorFee) * partnerBps / BPS;
+        uint256 partnerFee = gross * partnerBps / BPS;
         if (partnerFee != 0) {
             uint256 n = partnerCount;
             for (uint256 i; i < n; i++) {
@@ -122,9 +118,9 @@ contract HypexRevenue is IHypexRevenue, IUnlockCallback, Owned {
                 emit PartnerCredited(pt.account, currency, a);
             }
         }
-        // >= 0: toReferrer <= platform * referralBps / BPS and toPartners <= (platform + creatorFee) * partnerBps / BPS,
-        // with partnerBps + referralBps <= BPS (rounding remainders stay here, with the team)
-        uint256 toTeam = gross - toTrader - toReferrer - toPartners;
+        // >= 0: toReferrer <= protocolFee * referralBps / BPS and toPartners <= gross * partnerBps / BPS, with
+        // protocolFee <= gross and partnerBps + referralBps <= BPS (rounding remainders stay here, with the team)
+        uint256 toTeam = gross - toReferrer - toPartners;
         if (toTeam != 0) owed[team][currency] += toTeam;
         if (toReferrer != 0) owed[referrer][currency] += toReferrer;
         emit Split(currency, trader, referrer, protocolFee, creatorFee, toReferrer, toPartners, toTeam);
