@@ -24,6 +24,7 @@ window.CFG = {
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
   official: ['0x8396671f72886007eba12dbc7a513a14f4bb75f2', '0x3ac60a683825b847fb9f78e574391df5a06986a5'], // $HYPEX (hypex.fun): Elysium, HyperEVM
+  hidden: [], // coins kept off the lists (their pages still open)
   /* the fee flywheel: protocol fees -> splitter -> stakers / buyback and burn of $KINEX / treasury */
   // the $KINEX airdrop: 20% of the supply in three pools. Points: 1 HYPE traded on Kinex = tradePts (from minHype on),
   // a creator earns creatorPts per HYPE other wallets trade on their coin; trades on other Elysium launchpads earn

@@ -175,7 +175,8 @@
       return true;
     },
     async find(addr, ms = 45000) { const t0 = Date.now(); while (Date.now() - t0 < ms) { await load(true); if (BY.has(low(addr))) return DATA.token(addr); await new Promise((r) => setTimeout(r, 2500)); } return null; },
-    tokens() { return ALL.filter((m) => m.name).map(view).sort((a, b) => b.createdAt - a.createdAt); },
+    // CFG.hidden: coins kept off the lists (explore, ticker, search, stats); their pages and holders' balances still show
+    tokens() { const hid = new Set((C.hidden || []).map(low)); return ALL.filter((m) => m.name && !Object.values(m.legs).some((l) => hid.has(low(l.addr)))).map(view).sort((a, b) => b.createdAt - a.createdAt); },
     raw(net) { return SS[net || C.chain.key] || null; },
     token(a) { const m = BY.get(low(a)); return m ? view(m) : null; },
     trades(a) { const m = BY.get(low(a)); return m ? m.trades.map(trView).reverse() : []; },
