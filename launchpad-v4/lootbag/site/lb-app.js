@@ -107,7 +107,7 @@
         <div style="min-width:0"><h1>${esc(c.name)}<span>$${esc(c.ticker)}</span></h1><div class="sub">Paired to <b>${esc(pairL)}</b> · holders are paid in ${esc(c.rewards.map((r) => (r === 'ETH' ? 'ETH' : '$' + label(r))).join(', '))} · ${ago(c.createdAt)} ago</div></div>
         <div class="links"><button class="btn sm" data-copy>Copy address <span class="mono">${short(c.addr)}</span></button>${c.x ? `<a class="btn sm" href="${esc(c.x)}" target="_blank" rel="noopener">X ↗</a>` : ''}<a class="btn sm" href="#" data-preview>DexScreener ↗</a><a class="btn sm" href="#" data-preview>Explorer ↗</a></div></div>
       <div class="kpis"><div><span>Market cap</span><b class="up">${usd(c.mcap)}</b></div><div><span>Price</span><b>${usd(c.priceUsd)}</b></div><div><span>Price in ${esc(pairL)}</span><b>${num(c.priceUsd / pairUsd, 9)}</b></div><div><span>Holders</span><b>${num(c.holders, 0)}</b></div></div>
-          <div class="card chart"><div class="tools">${['1m', '5m', '15m', '1h', '4h', '1d'].map((t) => `<button class="${t === '5m' ? 'on' : ''}" data-tf="${t}">${t}</button>`).join('')}<div class="tog"><button class="on">Market cap</button><button data-preview>Price</button></div></div><div id="cv"></div></div>
+          <div class="card chart"><div class="tools">${['1m', '5m', '15m', '1h', '4h', '1d'].map((t) => `<button class="${t === '5m' ? 'on' : ''}" data-tf="${t}">${t}</button>`).join('')}<div class="mode"><button class="on" data-mode="mc">MCap</button><i></i><button data-mode="px">Price</button></div></div><div id="cv"></div></div>
           <div class="hr">
             <h3>Holder rewards</h3>
             <p>The holders' share of every fee is kept by this coin's contract. Every 5 minutes, counted from this coin's launch, it pays every holder in ${esc(c.rewards.map(payTok).join(', '))}, by how much they hold. Nothing to claim.</p>
@@ -141,19 +141,22 @@
     };
 
     every(1000, () => { tickCards(); const el = $('#cd'); if (el) el.textContent = mmss(c.nextPayout); });
-    drawChart(c, 300);
-    $$('[data-tf]').forEach((b) => (b.onclick = () => { $$('[data-tf]').forEach((x) => x.classList.toggle('on', x === b)); drawChart(c, { '1m': 300, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400 }[b.dataset.tf]); }));
+    let step = 300, mode = 'mc';
+    drawChart(c, step, mode);
+    $$('[data-tf]').forEach((b) => (b.onclick = () => { $$('[data-tf]').forEach((x) => x.classList.toggle('on', x === b)); step = { '1m': 300, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400 }[b.dataset.tf]; drawChart(c, step, mode); }));
+    $$('[data-mode]').forEach((b) => (b.onclick = () => { $$('[data-mode]').forEach((x) => x.classList.toggle('on', x === b)); mode = b.dataset.mode; drawChart(c, step, mode); }));
   }
   let chart = null;
-  function drawChart(c, step) {
+  function drawChart(c, step, mode) {
+    const f = mode === 'px' ? 1e-9 : 1;
     const el = $('#cv'); if (!el || !window.LightweightCharts) return;
     if (chart) { chart.remove(); chart = null; }
     chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: '#8f9ab3', fontFamily: 'Space Grotesk', fontSize: 11 }, grid: { vertLines: { color: 'rgba(34,48,75,.35)' }, horzLines: { color: 'rgba(34,48,75,.35)' } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.2 } }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 4, barSpacing: 6 }, crosshair: { mode: 1, vertLine: { color: '#33466b', labelBackgroundColor: '#15233f' }, horzLine: { color: '#33466b', labelBackgroundColor: '#15233f' } }, autoSize: true });
-    const s = chart.addCandlestickSeries({ upColor: '#34d399', downColor: '#f2606b', borderVisible: false, wickUpColor: '#34d399', wickDownColor: '#f2606b', priceLineColor: '#3d7bff', priceLineStyle: 2, priceFormat: { type: 'custom', minMove: 0.01, formatter: (v) => usd(v) } });
+    const s = chart.addCandlestickSeries({ upColor: '#34d399', downColor: '#f2606b', borderVisible: false, wickUpColor: '#34d399', wickDownColor: '#f2606b', priceLineColor: '#3d7bff', priceLineStyle: 2, priceFormat: { type: 'custom', minMove: mode === 'px' ? 1e-12 : 0.01, formatter: (v) => usd(v) } });
     const vol = chart.addHistogramSeries({ priceScaleId: 'vol', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 }, visible: false });
     const out = [], vs = []; let cur = null, cv = 0;
-    for (const k of c.candles) { const b = Math.floor(k.t / step) * step; if (!cur || cur.time !== b) { if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? 'rgba(52,211,153,.45)' : 'rgba(242,96,107,.45)' }); } cur = { time: b, open: k.o, high: k.h, low: k.l, close: k.c }; cv = k.v; } else { cur.high = Math.max(cur.high, k.h); cur.low = Math.min(cur.low, k.l); cur.close = k.c; cv += k.v; } }
+    for (const k of c.candles) { const b = Math.floor(k.t / step) * step; if (!cur || cur.time !== b) { if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? 'rgba(52,211,153,.45)' : 'rgba(242,96,107,.45)' }); } cur = { time: b, open: k.o * f, high: k.h * f, low: k.l * f, close: k.c * f }; cv = k.v; } else { cur.high = Math.max(cur.high, k.h * f); cur.low = Math.min(cur.low, k.l * f); cur.close = k.c * f; cv += k.v; } }
     if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? 'rgba(52,211,153,.45)' : 'rgba(242,96,107,.45)' }); }
     s.setData(out); vol.setData(vs); chart.timeScale().fitContent();
   }
