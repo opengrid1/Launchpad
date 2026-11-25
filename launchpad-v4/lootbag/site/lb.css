@@ -22,7 +22,7 @@ input, textarea, select { font: inherit; color: var(--ink); }
 .brand b { font: 700 22px/1 var(--f); letter-spacing: .14em; }
 .nav { padding: 8px 12px; }
 .nav h6 { margin: 22px 12px 8px; font: 600 11px/1 var(--f); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
-.nav a { position: relative; display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #c9d1e3; font-weight: 500; font-size: 14.5px; }
+.nav a { position: relative; display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #c9d1e3; font-weight: 500; font-size: 14px; }
 .nav a svg { width: 17px; height: 17px; opacity: .85; }
 .nav a:hover { background: rgba(255,255,255,.03); color: var(--ink); }
 .nav a.on { background: #0f1a33; color: var(--ink); }
@@ -78,9 +78,9 @@ input, textarea, select { font: inherit; color: var(--ink); }
 .hero { position: relative; overflow: hidden; border-radius: 24px; border: 1px solid var(--line2); background: linear-gradient(135deg, #0d2149 0%, #0a1630 50%, #0b1226 100%); padding: 56px 40px 52px; }
 .hero .waves { position: absolute; left: 0; right: 0; bottom: 18px; width: 100%; height: 150px; opacity: .55; pointer-events: none; }
 .hero > div { position: relative; }
-.hero h1 { margin: 0; font: 700 52px/1.06 var(--f); letter-spacing: -.02em; }
+.hero h1 { margin: 0; font: 700 52px/1.02 var(--f); letter-spacing: -.02em; }
 .hero h1 span { color: var(--blue); }
-.hero p { margin: 18px 0 30px; max-width: 450px; color: #c5cde0; font-size: 16px; line-height: 1.65; }
+.hero p { margin: 16px 0 30px; max-width: 448px; color: #c5cde0; font-size: 15.5px; line-height: 1.625; }
 .hero .acts { display: flex; gap: 10px; flex-wrap: wrap; }
 @media (max-width: 900px) { .hero { padding: 36px 24px 40px; } .hero h1 { font-size: 40px; } .hero p { font-size: 16px; } }
 
@@ -97,18 +97,18 @@ input, textarea, select { font: inherit; color: var(--ink); }
 @media (max-width: 1150px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
 .card { background: linear-gradient(160deg, #0c1a36 0%, #0a1328 100%); border: 1px solid var(--line2); border-radius: 16px; }
-.coin { position: relative; overflow: hidden; display: block; padding: 20px; min-height: 184px; transition: border-color .15s; }
+.coin { position: relative; overflow: hidden; display: block; padding: 20px; height: 184px; transition: border-color .15s; }
 .coin:hover { border-color: #33466b; }
 .coin .ghost { position: absolute; right: -32px; top: 50%; width: 170px; height: 170px; transform: translateY(-50%); border-radius: 50%; overflow: hidden; opacity: .25; transition: opacity .2s; }
 .coin:hover .ghost { opacity: .35; }
 .coin .ghost .av { width: 100% !important; height: 100% !important; border-radius: 50% !important; font-size: 60px !important; }
-.coin .badge { position: absolute; right: 16px; top: 16px; height: 26px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--blue); color: #c9d6ff; font-size: 12.5px; display: flex; align-items: center; background: rgba(6,10,20,.4); }
+.coin .badge { position: absolute; right: 16px; top: 16px; height: 26px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--blue); color: #9dbbff; font-size: 12px; display: flex; align-items: center; background: rgba(6,10,20,.4); }
 .coin .in { position: relative; }
-.coin .tkl { margin-top: 12px; font-size: 13.5px; } .coin .tkl b { font-weight: 700; } .coin .tkl span { color: var(--dim); margin-left: 4px; }
-.coin .mc { margin-top: 2px; font: 700 28px/1.2 var(--f); letter-spacing: -.01em; }
-.coin .l1 { margin-top: 10px; font-size: 13.5px; color: #c5cde0; display: flex; align-items: center; gap: 6px; }
+.coin .tkl { margin-top: 12px; font-size: 13px; } .coin .tkl b { font-weight: 600; } .coin .tkl span { color: #5c6782; margin-left: 5px; font-size: 12.5px; }
+.coin .mc { margin-top: 4px; font: 700 28px/1.2 var(--f); letter-spacing: -.01em; }
+.coin .l1 { margin-top: 10px; font-size: 13px; color: var(--mute); display: flex; align-items: center; gap: 6px; }
 .coin .l1 b { font-weight: 600; color: var(--ink); }
-.coin .l2 { margin-top: 2px; font-size: 13px; color: var(--mute); }
+.coin .l2 { margin-top: 4px; font-size: 12.5px; color: var(--mute); }
 .coin .nd { position: absolute; left: 20px; right: 20px; bottom: 14px; }
 .pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 99px; background: rgba(61,123,255,.14); color: #c9d6ff; font-size: 12px; font-weight: 500; }
 .pill.green { background: rgba(52,211,153,.12); color: var(--buy); }
