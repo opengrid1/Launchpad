@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lootbag | Coins that pay their holders</title>
+<meta name="description" content="Launch a coin whose every trade drops ETH or tokenized stocks into its holders' wallets, every five minutes. No claim.">
+<meta name="theme-color" content="#0a0b0d">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/lb.css?v=1">
+</head>
+<body>
+<div class="preview-bar">Preview with sample coins. Nothing here is a real market yet.</div>
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="#/"><img src="/img/logo.svg" alt=""><b>Lootbag</b></a>
+    <nav class="nav" id="nav"></nav>
+    <div class="grow"></div>
+    <a class="btn gold" href="#/create">+ Create a coin</a>
+    <button class="btn" data-connect>Connect wallet</button>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <a href="#/"><img class="mlogo" src="/img/logo.svg" alt="Lootbag"></a>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Search coins, tickers or addresses" autocomplete="off"></div>
+      <div class="sp"></div>
+      <a class="chip-price" href="#/loot"><img src="/img/logo.svg" alt=""><span>$LOOT</span><b id="loot-px">$0.00124</b></a>
+      <a class="btn sm xlink" href="https://x.com" target="_blank" rel="noopener">X</a>
+    </header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<nav class="tabbar" id="tabbar"></nav>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="/lb-data.js?v=1"></script>
+<script src="/lb-app.js?v=1"></script>
+</body>
+</html>
