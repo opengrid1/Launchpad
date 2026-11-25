@@ -23,21 +23,21 @@
   const isStock = (s) => s !== 'ETH' && s !== 'USDG' && s !== 'LOOT';
 
   // ---------- nav
+  // nav icons: one 24px grid, 1.75 stroke, round caps and joins
+  const svg = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const I = {
-    board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
-    create: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
-    rewards: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11h16v9H4zM2.5 7h19v4h-19zM12 7v13M12 7c-2-4-6-4-6-1.5S10 7 12 7zm0 0c2-4 6-4 6-1.5S14 7 12 7z"/></svg>',
-    air: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0 1 18 0zM12 12v8M9 20h6"/></svg>',
-    bags: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4c1 .9 2 1.3 3 1.3S14 4.9 15 4l-1 3h-4zM10 8h4c3 1.8 5 4.4 5 7.2 0 3-2.8 4.8-7 4.8s-7-1.8-7-4.8C5 12.4 7 9.8 10 8z"/></svg>',
-    loot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/></svg>',
-    how: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5zM4 5.5v16"/></svg>',
+    home: svg('<path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-4.2v-6h-5.6v6H5A1.5 1.5 0 0 1 3.5 19z"/>'),
+    sack: svg('<path d="M9.2 3.6c.9.7 1.8 1 2.8 1s1.9-.3 2.8-1L13.7 7h-3.4z"/><path d="M10.1 7h3.8c3.2 1.8 5.4 4.7 5.4 8 0 3.4-2.9 5.5-7.3 5.5S4.7 18.4 4.7 15c0-3.3 2.2-6.2 5.4-8z"/><path d="M9.3 14.6c1.8 1.1 3.6 1.1 5.4 0"/>'),
+    grid: svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>'),
+    gift: svg('<rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v7a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-7M12 8v12.5"/><path d="M12 8C11 5 9.6 3.5 8 3.5a2.2 2.2 0 0 0 0 4.5zM12 8c1-3 2.4-4.5 4-4.5a2.2 2.2 0 0 1 0 4.5z"/>'),
+    chute: svg('<path d="M3 11a9 9 0 0 1 18 0z"/><path d="M3 11l7 7M21 11l-7 7M12 11v7"/><rect x="9.5" y="18" width="5" height="3.5" rx="1"/>'),
+    mint: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M12 8.5v7M8.5 12h7"/>'),
+    book: svg('<path d="M12 6.8v13.7"/><path d="M3.5 5.2c2.9-.9 5.7-.6 8.5 1.6 2.8-2.2 5.6-2.5 8.5-1.6v13.3c-2.9-.9-5.7-.6-8.5 1.6-2.8-2.2-5.6-2.5-8.5-1.6z"/>'),
+    plus: svg('<path d="M12 5v14M5 12h14"/>'),
   };
-  I.home = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>';
-  I.plus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>';
-  I.mint = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>';
-  const NAV = [['Trade', [['#/', 'Board', 'home'], ['#/coins', 'Lootbag coins', 'bags'], ['#/bags', 'Bags', 'board']]], ['Earn', [['#/rewards', 'Rewards', 'rewards'], ['#/airdrops', 'Airdrops', 'air'], ['#/mint', 'Mint', 'mint']]], ['Learn', [['#/how', 'How it works', 'how']]]];
+  const NAV = [['Trade', [['#/', 'Board', 'home'], ['#/coins', 'Lootbag coins', 'sack'], ['#/bags', 'Bags', 'grid']]], ['Earn', [['#/rewards', 'Rewards', 'gift'], ['#/airdrops', 'Airdrops', 'chute'], ['#/mint', 'Mint', 'mint']]], ['Learn', [['#/how', 'How it works', 'book']]]];
   $('#nav').innerHTML = NAV.map(([g, items]) => `<h6>${g}</h6>` + items.map(([h, l, i]) => `<a href="${h}" data-r="${h}">${I[i]}<span>${l}</span></a>`).join('')).join('');
-  $('#tabbar').innerHTML = [['#/', 'Board', 'home'], ['#/create', 'Create', 'plus', 'plus'], ['#/coins', 'Lootbag coins', 'bags'], ['#/bags', 'Bags', 'board'], ['#/rewards', 'Rewards', 'rewards'], ['#/airdrops', 'Airdrops', 'air'], ['#/mint', 'Mint', 'mint'], ['#/how', 'How it works', 'how']].map(([h, l, i, c]) => `<a href="${h}" data-r="${h}" class="${c || ''}" aria-label="${l}">${I[i]}</a>`).join('');
+  $('#tabbar').innerHTML = [['#/', 'Board', 'home'], ['#/create', 'Create', 'plus', 'plus'], ['#/coins', 'Lootbag coins', 'sack'], ['#/bags', 'Bags', 'grid'], ['#/rewards', 'Rewards', 'gift'], ['#/airdrops', 'Airdrops', 'chute'], ['#/mint', 'Mint', 'mint'], ['#/how', 'How it works', 'book']].map(([h, l, i, c]) => `<a href="${h}" data-r="${h}" class="${c || ''}" aria-label="${l}">${I[i]}</a>`).join('');
   const copyLoot = $('[data-copyloot]'); if (copyLoot) copyLoot.onclick = () => { navigator.clipboard && navigator.clipboard.writeText('0x10070000000000000000000000000000000b4c'); toast('$LOOT address copied'); };
   $$('[data-connect]').forEach((b) => (b.onclick = () => toast(PREVIEW)));
 
