@@ -27,10 +27,17 @@
   const DESCS = ['Holders get paid every five minutes.', 'A bag that fills itself.', 'Hold it, get stocks.', 'Every trade drops loot to holders.', 'No claim, just rewards.', '', 'Community coin. The pool pays the bag.', 'Stocks for holders, memes for everyone.'];
   const HUES = [42, 160, 200, 280, 330, 12, 90, 220, 260, 190];
 
+  // a launch's market cap path: an opening pump, a pullback, then a choppy walk that ends at `end`
   function series(start, end, n) {
-    // a random walk that ends at `end`, from about `start`
-    const out = []; let p = start;
-    for (let i = 0; i < n; i++) { const drift = (end - p) / (n - i); p = Math.max(start * 0.3, p + drift + (rnd() - 0.5) * p * 0.08); out.push(p); }
+    const out = [], peak = Math.max(end, start) * (1.12 + rnd() * 0.22), pumpN = Math.max(6, Math.floor(n * (0.12 + rnd() * 0.12)));
+    let p = start; const wv = rnd() * 6, ph = rnd() * 6;
+    for (let i = 0; i < n; i++) {
+      let target;
+      if (i < pumpN) target = start + (peak - start) * ((i + 1) / pumpN) ** 0.7;
+      else { const k = (i - pumpN) / (n - pumpN); target = (peak + (end - peak) * k) * (1 + Math.sin(k * (5 + wv) + ph) * 0.045 * (1 - k)); }
+      p = p * 0.45 + target * 0.55 + (rnd() - 0.5) * target * (i < pumpN ? 0.1 : 0.05) * (rnd() < 0.5 ? 0.3 : 1);
+      out.push(Math.max(start * 0.5, p));
+    }
     out[n - 1] = end; return out;
   }
 
@@ -48,9 +55,9 @@
       const vol24 = Math.round(mcap * (0.15 + rnd() * 1.6));
       const holders = Math.max(3, Math.round(mcap / (300 + rnd() * 900)));
       const fees24 = vol24 * 0.02, paid24 = vol24 * 0.005;
-      const n = 120, start = 5200;
+      const n = 144, start = mcap * (0.55 + rnd() * 0.35);
       const closes = series(start, mcap, n);
-      const candles = closes.map((c, k) => { const o = k ? closes[k - 1] : start; return { t: T0 - (n - k) * 300, o, c, h: Math.max(o, c) * (1 + rnd() * 0.04), l: Math.min(o, c) * (1 - rnd() * 0.04), v: Math.round(vol24 / n * (0.3 + rnd() * 1.7)) }; });
+      const candles = closes.map((c, k) => { const o = k ? closes[k - 1] : start, early = k < n * 0.2 ? 2.2 : 1; return { t: T0 - (n - k) * 300, o, c, h: Math.max(o, c) * (1 + rnd() * 0.012 * early), l: Math.min(o, c) * (1 - rnd() * 0.012 * early), v: Math.round((vol24 / n) * (0.15 + rnd() ** 2 * 2.2) * early) }; });
       const ch24 = (mcap / closes[Math.max(0, n - 48)] - 1) * 100;
       const c = {
         addr: official ? '0x10070000000000000000000000000000000b4c' : addr(), name, ticker, official,

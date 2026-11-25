@@ -101,48 +101,36 @@
     const pairUsd = c.pair === 'ETH' ? D.ethUsd : c.pair === 'USDG' ? 1 : c.pair === 'LOOT' ? LOOT_USD : (D.stocks.find((x) => x.sym === c.pair) || { usd: 100 }).usd;
     const routeTxt = c.pair === 'ETH' ? 'Trades straight against <b>ETH</b>' : `Goes through <a>${esc(pairL)}</a>: ETH → ${c.pair === 'USDG' ? 'USDG' : c.pair === 'LOOT' ? '$LOOT' : 'USDG → ' + esc(pairL)} → $${esc(c.ticker)}`;
     view.innerHTML = `<a class="back" href="#/">← Board</a>
+      <div class="cp">
+        <div>
       <div class="chead"><div class="lg">${av(c, 64)}<span class="pb">${tokenBadge(c.pair, 24)}</span></div>
         <div style="min-width:0"><h1>${esc(c.name)}<span>$${esc(c.ticker)}</span></h1><div class="sub">Paired to <b>${esc(pairL)}</b> · holders are paid in ${esc(c.rewards.map((r) => (r === 'ETH' ? 'ETH' : '$' + label(r))).join(', '))} · ${ago(c.createdAt)} ago</div></div>
         <div class="links"><button class="btn sm" data-copy>Copy address <span class="mono">${short(c.addr)}</span></button>${c.x ? `<a class="btn sm" href="${esc(c.x)}" target="_blank" rel="noopener">X ↗</a>` : ''}<a class="btn sm" href="#" data-preview>DexScreener ↗</a><a class="btn sm" href="#" data-preview>Explorer ↗</a></div></div>
       <div class="kpis"><div><span>Market cap</span><b class="up">${usd(c.mcap)}</b></div><div><span>Price</span><b>${usd(c.priceUsd)}</b></div><div><span>Price in ${esc(pairL)}</span><b>${num(c.priceUsd / pairUsd, 9)}</b></div><div><span>Holders</span><b>${num(c.holders, 0)}</b></div></div>
-      <div class="cp">
-        <div>
-          <div class="card chart"><div class="tools">${['5m', '15m', '1h', '4h'].map((t, i) => `<button class="${i ? '' : 'on'}" data-tf="${t}">${t}</button>`).join('')}<div class="tog"><button class="on">Market cap</button><button data-preview>Price</button></div></div><div id="cv"></div></div>
-          <div class="sect" style="margin-top:20px;border:0;padding-top:4px">
-            <h3 style="margin:0 0 8px;font:600 16px var(--f)">Holder rewards</h3>
-            <p class="mute" style="margin:0 0 14px;font-size:14px;line-height:1.7">The holders' share of every fee is kept by this coin's contract. Every 5 minutes, counted from this coin's launch, it pays every holder in ${esc(c.rewards.map((r) => (r === 'ETH' ? 'ETH' : '$' + label(r))).join(', '))}, by how much they hold. Nothing to claim.</p>
-            <div class="card panel" style="background:var(--panel)">
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">${tokenBadge(cur, 36)}<div><b>${esc(cur === 'ETH' ? 'ETH' : '$' + label(cur))}</b><div class="mute" style="font-size:13px">${c.pot >= 5 ? `<span class="up">Payout ready: ${usd(c.pot)}</span>` : `Payout waiting for $5 in fees (${usd(c.pot)} so far)`}</div></div><div style="margin-left:auto;text-align:right"><div class="mute" style="font-size:12px">Next payout</div><div class="count" id="cd">${mmss(c.nextPayout)}</div></div></div>
-              <div class="meter"><i style="width:${Math.min(100, (c.pot / 5) * 100)}%"></i></div>
-              ${c.rewards.length > 1 ? `<div class="rot">${c.rewards.map((r, i) => `<span class="${i === c.rewardIx ? 'cur' : ''}">${tokenBadge(r, 20)}${esc(r === 'ETH' ? 'ETH' : '$' + label(r))}</span>`).join('')}</div>` : ''}
-            </div>
-          </div>
-          <div class="card" style="margin-top:16px;background:var(--panel)">
-            <div class="stabs">${[['trades', 'Trades'], ['holders', 'Holders'], ['drops', 'Payouts']].map(([k, l], i) => `<button class="tab ${i ? '' : 'on'}" data-st="${k}">${l}</button>`).join('')}</div>
-            <div class="tw" id="st"></div>
+          <div class="card chart"><div class="tools">${['1m', '5m', '15m', '1h', '4h', '1d'].map((t) => `<button class="${t === '5m' ? 'on' : ''}" data-tf="${t}">${t}</button>`).join('')}<div class="tog"><button class="on">Market cap</button><button data-preview>Price</button></div></div><div id="cv"></div></div>
+          <div class="hr">
+            <h3>Holder rewards</h3>
+            <p>The holders' share of every fee is kept by this coin's contract. Every 5 minutes, counted from this coin's launch, it pays every holder in ${esc(c.rewards.map(payTok).join(', '))}, by how much they hold. Nothing to claim.</p>
+            <div class="hrow">${tokenBadge(cur, 32)}<b>${esc(payTok(cur))}</b>${c.rewards.length > 1 ? `<span class="dim">then ${esc(c.rewards.filter((r) => r !== cur).map(payTok).join(', '))}</span>` : ''}<span class="sp"></span><span class="mute">${c.pot >= 5 ? `Next payout in <b id="cd">${mmss(c.nextPayout)}</b>` : `Payout waiting for $5 in fees (${usd(c.pot)} so far)`}</span></div>
           </div>
         </div>
         <div class="sticky side-col">
           <div class="card panel">
             <div class="bs"><button class="on b" data-side="b">Buy</button><button class="s" data-side="s">Sell</button></div>
-            <div class="field"><label><span id="amt-l">Amount (ETH)</span><span>Slippage 3%</span></label><input class="inp" id="amt" placeholder="0.0" inputmode="decimal"><div class="presets" id="pre">${['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`).join('')}</div></div>
-            <div class="route">Balance: — ETH<br>${routeTxt}<br><span id="est">You get about —</span>${c.pair !== 'ETH' ? `<div class="paywith">Pay with <button class="on">ETH</button><button data-preview>${esc(pairL)}</button></div>` : ''}</div>
+            <div class="field"><label><span id="amt-l">Amount (ETH)</span><span>Slippage 3%</span></label><div class="unit-in"><input class="inp" id="amt" placeholder="0.0" inputmode="decimal"><span id="amt-u">ETH</span></div><div class="presets" id="pre">${['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`).join('')}</div></div>
+            <div class="route">Balance: — ETH<br>${routeTxt}<span id="est" hidden></span>${c.pair !== 'ETH' ? `<div class="paywith">Pay with <button class="on">ETH</button><button data-preview>${esc(pairL)}</button></div>` : ''}</div>
             <button class="btn green block" style="height:50px" id="go">Connect wallet</button>
           </div>
-          <div class="card panel" style="margin-top:14px">
-            <h3>Next payout</h3><div class="meter"><i style="width:${Math.min(100, (c.pot / 5) * 100)}%"></i></div><div class="mute" style="font-size:13px">Pays holders every 5 minutes once $5 has built up. Liquidity sits in its own Uniswap v4 pool and is locked forever.</div>
-            <div class="sect" style="margin-top:16px"><h4>Details</h4>
-              <div class="kv"><span>Address</span><b class="mono">${short(c.addr)}</b></div><div class="kv"><span>Pool</span><b>Uniswap v4</b></div><div class="kv"><span>Paired with</span><b>${esc(pairL)}</b></div><div class="kv"><span>Supply</span><b>1,000,000,000</b></div><div class="kv"><span>Trading fee</span><b>2%</b></div></div>
-            <div class="sect" style="padding-bottom:0"><h4>Where every fee goes</h4>
-              <div class="kv"><span><i class="drop-dot" style="background:var(--buy)"></i>Holders</span><b>0.5%</b></div><div class="kv"><span><i class="drop-dot" style="background:var(--blue)"></i>Lootbag</span><b>1.5%</b></div></div>
-          </div>
+          <div class="rs"><div class="rh"><b>Next payout</b><span class="blue">${c.pot >= 5 ? 'ready' : Math.round((c.pot / 5) * 100) + '%'}</span></div><div class="meter"><i style="width:${Math.min(100, (c.pot / 5) * 100)}%"></i></div><p>Pays every holder every 5 minutes once $5 has built up. The coin trades in its own Uniswap v4 pool, and its liquidity is locked forever.</p></div>
+          <div class="rs"><b class="rt">Details</b><div class="kv"><span>Address</span><b>${short(c.addr)}</b></div><div class="kv"><span>Pool</span><b>${short(c.creator)}</b></div><div class="kv"><span>Paired with</span><b>${esc(pairL)}</b></div><div class="kv"><span>Supply</span><b>1,000,000,000</b></div><div class="kv"><span>Trading fee</span><b>2%</b></div>
+            <h4 class="rt2">Where every fee goes</h4><div class="kv"><span><i class="drop-dot" style="background:var(--buy)"></i>Holders</span><b>0.5%</b></div><div class="kv"><span><i class="drop-dot" style="background:var(--blue)"></i>Lootbag</span><b>1.5%</b></div></div>
         </div>
       </div>${foot()}`;
     $('[data-copy]').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(c.addr); toast('Address copied'); };
     $$('[data-preview]').forEach((b) => (b.onclick = (e) => { e.preventDefault(); toast(PREVIEW); }));
     let side = 'b';
     const est = () => { const v = Number($('#amt').value) || 0; $('#est').textContent = v ? (side === 'b' ? `You get about ${num((v * D.ethUsd * 0.98) / c.priceUsd, 0)} $${c.ticker}` : `You get about ${num((v * c.priceUsd * 0.98) / D.ethUsd, 5)} ETH`) : 'You get about —'; };
-    $$('[data-side]').forEach((b) => (b.onclick = () => { side = b.dataset.side; $$('[data-side]').forEach((x) => x.classList.toggle('on', x === b)); $('#amt-l').textContent = side === 'b' ? 'Amount (ETH)' : 'Amount ($' + c.ticker + ')'; $('#pre').innerHTML = (side === 'b' ? ['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`) : ['25', '50', '75', '100'].map((v) => `<button data-v="${v}%">${v}%</button>`)).join(''); bindPre(); $('#go').className = 'btn block ' + (side === 'b' ? 'green' : 'red'); $('#go').style.height = '50px'; est(); }));
+    $$('[data-side]').forEach((b) => (b.onclick = () => { side = b.dataset.side; $$('[data-side]').forEach((x) => x.classList.toggle('on', x === b)); $('#amt-l').textContent = side === 'b' ? 'Amount (ETH)' : 'Amount ($' + c.ticker + ')'; $('#amt-u').textContent = side === 'b' ? 'ETH' : c.ticker; $('#pre').innerHTML = (side === 'b' ? ['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`) : ['25', '50', '75', '100'].map((v) => `<button data-v="${v}%">${v}%</button>`)).join(''); bindPre(); $('#go').className = 'btn block ' + (side === 'b' ? 'green' : 'red'); $('#go').style.height = '50px'; est(); }));
     const bindPre = () => $$('#pre button').forEach((b) => (b.onclick = () => { $('#amt').value = b.dataset.v.endsWith('%') ? '' : b.dataset.v; est(); }));
     bindPre(); $('#amt').oninput = est; $('#go').onclick = () => toast(PREVIEW);
     const sub = (k) => {
@@ -151,22 +139,25 @@
         : k === 'holders' ? `<table class="t"><tr><th>#</th><th>Wallet</th><th class="r">Share</th><th class="r">Earning</th></tr>${c.holderList.map((h, i) => `<tr><td class="mute">${i + 1}</td><td class="mono">${short(h.wallet)}</td><td class="r">${h.pct.toFixed(2)}%</td><td class="r up">${usd((c.paid24 * h.pct) / 100)}/day</td></tr>`).join('')}</table>`
         : `<table class="t"><tr><th>Paid</th><th>Paid in</th><th class="r">Amount</th><th class="r">Wallets</th></tr>${c.payouts.map((p) => `<tr><td class="mute">${ago(p.ts)} ago</td><td>${tokenBadge(p.token, 18)} ${esc(p.token === 'ETH' ? 'ETH' : '$' + label(p.token))}</td><td class="r up">${usd(p.usd)}</td><td class="r">${num(p.wallets, 0)}</td></tr>`).join('')}</table>`;
     };
-    $$('[data-st]').forEach((b) => (b.onclick = () => sub(b.dataset.st))); sub('trades');
+
     every(1000, () => { tickCards(); const el = $('#cd'); if (el) el.textContent = mmss(c.nextPayout); });
     drawChart(c, 300);
-    $$('[data-tf]').forEach((b) => (b.onclick = () => { $$('[data-tf]').forEach((x) => x.classList.toggle('on', x === b)); drawChart(c, { '5m': 300, '15m': 900, '1h': 3600, '4h': 14400 }[b.dataset.tf]); }));
+    $$('[data-tf]').forEach((b) => (b.onclick = () => { $$('[data-tf]').forEach((x) => x.classList.toggle('on', x === b)); drawChart(c, { '1m': 300, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400 }[b.dataset.tf]); }));
   }
   let chart = null;
   function drawChart(c, step) {
     const el = $('#cv'); if (!el || !window.LightweightCharts) return;
     if (chart) { chart.remove(); chart = null; }
-    chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: '#8f9ab3', fontFamily: 'Space Grotesk' }, grid: { vertLines: { color: '#111c33' }, horzLines: { color: '#111c33' } }, rightPriceScale: { borderColor: '#22304b' }, timeScale: { borderColor: '#22304b', timeVisible: true }, crosshair: { mode: 1 }, autoSize: true });
-    const s = chart.addCandlestickSeries({ upColor: '#34d399', downColor: '#f2606b', borderVisible: false, wickUpColor: '#34d399', wickDownColor: '#f2606b', priceFormat: { type: 'custom', formatter: (v) => usd(v) } });
-    const out = []; let cur = null;
-    for (const k of c.candles) { const b = Math.floor(k.t / step) * step; if (!cur || cur.time !== b) { if (cur) out.push(cur); cur = { time: b, open: k.o, high: k.h, low: k.l, close: k.c }; } else { cur.high = Math.max(cur.high, k.h); cur.low = Math.min(cur.low, k.l); cur.close = k.c; } }
-    if (cur) out.push(cur);
-    s.setData(out); chart.timeScale().fitContent();
+    chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: '#8f9ab3', fontFamily: 'Space Grotesk', fontSize: 11 }, grid: { vertLines: { color: 'rgba(34,48,75,.35)' }, horzLines: { color: 'rgba(34,48,75,.35)' } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.2 } }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 4, barSpacing: 6 }, crosshair: { mode: 1, vertLine: { color: '#33466b', labelBackgroundColor: '#15233f' }, horzLine: { color: '#33466b', labelBackgroundColor: '#15233f' } }, autoSize: true });
+    const s = chart.addCandlestickSeries({ upColor: '#34d399', downColor: '#f2606b', borderVisible: false, wickUpColor: '#34d399', wickDownColor: '#f2606b', priceLineColor: '#3d7bff', priceLineStyle: 2, priceFormat: { type: 'custom', minMove: 0.01, formatter: (v) => usd(v) } });
+    const vol = chart.addHistogramSeries({ priceScaleId: 'vol', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
+    chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 }, visible: false });
+    const out = [], vs = []; let cur = null, cv = 0;
+    for (const k of c.candles) { const b = Math.floor(k.t / step) * step; if (!cur || cur.time !== b) { if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? 'rgba(52,211,153,.45)' : 'rgba(242,96,107,.45)' }); } cur = { time: b, open: k.o, high: k.h, low: k.l, close: k.c }; cv = k.v; } else { cur.high = Math.max(cur.high, k.h); cur.low = Math.min(cur.low, k.l); cur.close = k.c; cv += k.v; } }
+    if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? 'rgba(52,211,153,.45)' : 'rgba(242,96,107,.45)' }); }
+    s.setData(out); vol.setData(vs); chart.timeScale().fitContent();
   }
+
 
   // ---------- create: one form card, the launch summary on the right
   function create() {
