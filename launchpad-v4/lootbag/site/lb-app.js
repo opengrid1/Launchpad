@@ -14,7 +14,7 @@
   const PREVIEW = 'Preview: launches and trades open when Lootbag goes live.';
 
   // ---------- marks: coin avatars and stock badges are drawn, not fetched
-  const av = (c, size = 44) => `<span class="av" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.28)}px;background:linear-gradient(140deg,hsl(${c.hue} 80% 66%),hsl(${(c.hue + 40) % 360} 75% 48%));font-size:${Math.round(size * 0.32)}px">${c.official ? `<img src="/img/logo.svg" style="width:100%;height:100%;border-radius:inherit">` : esc(c.ticker.slice(0, 2))}</span>`;
+  const av = (c, size = 44) => `<span class="av" style="width:${size}px;height:${size}px;background:${c.official ? '#16306b' : `linear-gradient(140deg,hsl(${c.hue} 70% 62%),hsl(${(c.hue + 40) % 360} 65% 44%))`};font-size:${Math.round(size * 0.34)}px">${c.official ? `<img src="/img/logo.svg" style="width:64%;height:64%">` : esc(c.ticker.slice(0, 2))}</span>`;
   const stkHue = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
   const tokenBadge = (s, size = 20) => s === 'ETH' ? `<span class="stk" style="width:${size}px;height:${size}px;background:#627eea">Ξ</span>` : s === 'USDG' ? `<span class="stk" style="width:${size}px;height:${size}px;background:#1d9e6b">$</span>` : s === 'LOOT' ? `<img src="/img/logo.svg" style="width:${size}px;height:${size}px;border-radius:6px">` : `<span class="stk" style="width:${size}px;height:${size}px;background:hsl(${stkHue(s)} 55% 42%)">${esc(s.slice(0, 4))}</span>`;
   const stack = (list, n = 4) => `<span class="stack">${list.slice(0, n).map((s) => tokenBadge(s)).join('')}</span>${list.length > n ? ` <span class="dim">+${list.length - n}</span>` : ''}`;
@@ -32,9 +32,13 @@
     loot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/></svg>',
     how: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5zM4 5.5v16"/></svg>',
   };
-  const NAV = [['Trade', [['#/', 'Board', 'board'], ['#/create', 'Create a coin', 'create']]], ['Earn', [['#/rewards', 'Rewards', 'rewards'], ['#/airdrops', 'Airdrops', 'air'], ['#/bags', 'Bags', 'bags'], ['#/loot', '$LOOT', 'loot']]], ['Learn', [['#/how', 'How it works', 'how']]]];
+  I.home = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>';
+  I.plus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>';
+  I.mint = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>';
+  const NAV = [['Trade', [['#/', 'Board', 'home'], ['#/coins', 'Lootbag coins', 'bags'], ['#/bags', 'Bags', 'board']]], ['Earn', [['#/rewards', 'Rewards', 'rewards'], ['#/airdrops', 'Airdrops', 'air'], ['#/mint', 'Mint', 'mint']]], ['Learn', [['#/how', 'How it works', 'how']]]];
   $('#nav').innerHTML = NAV.map(([g, items]) => `<h6>${g}</h6>` + items.map(([h, l, i]) => `<a href="${h}" data-r="${h}">${I[i]}<span>${l}</span></a>`).join('')).join('');
-  $('#tabbar').innerHTML = [['#/', 'Board', 'board'], ['#/rewards', 'Rewards', 'rewards'], ['#/create', 'Create', 'create'], ['#/airdrops', 'Airdrops', 'air'], ['#/bags', 'Bags', 'bags']].map(([h, l, i]) => `<a href="${h}" data-r="${h}">${I[i]}<span>${l}</span></a>`).join('');
+  $('#tabbar').innerHTML = [['#/', 'Board', 'home'], ['#/create', 'Create', 'plus', 'plus'], ['#/coins', 'Lootbag coins', 'bags'], ['#/bags', 'Bags', 'board'], ['#/rewards', 'Rewards', 'rewards'], ['#/airdrops', 'Airdrops', 'air'], ['#/mint', 'Mint', 'mint'], ['#/how', 'How it works', 'how']].map(([h, l, i, c]) => `<a href="${h}" data-r="${h}" class="${c || ''}" aria-label="${l}">${I[i]}</a>`).join('');
+  const copyLoot = $('[data-copyloot]'); if (copyLoot) copyLoot.onclick = () => { navigator.clipboard && navigator.clipboard.writeText('0x10070000000000000000000000000000000b4c'); toast('$LOOT address copied'); };
   $$('[data-connect]').forEach((b) => (b.onclick = () => toast(PREVIEW)));
 
   const foot = () => `<footer class="foot"><span>Coins on Lootbag are launched by their creators, not by Lootbag. They are highly risky and can lose all their value. Nothing here is financial advice.</span><span><a href="#/how">How it works</a> · <a href="#/how#contracts">Contracts</a> · © ${new Date().getFullYear()} Lootbag</span></footer>`;
@@ -42,27 +46,23 @@
   const every = (ms, f) => timers.push(setInterval(f, ms));
 
   // ---------- board
-  const state = { tab: 'trending', chip: 'all', q: '' };
+  const state = { tab: 'trending', chip: '', q: '' };
   function board() {
     const P = D.platform, cs = D.coins, recent = cs.filter((c) => !c.official).slice(0, 5);
     view.innerHTML = `
       <section class="hero">
+        <svg class="waves" viewBox="0 0 1200 150" preserveAspectRatio="none" fill="none" stroke="#3d7bff" stroke-opacity=".45" stroke-width="2"><path d="M0 95C150 20 250 20 400 95S650 170 800 95 1050 20 1200 95"/><path d="M0 125C150 50 250 50 400 125S650 200 800 125 1050 50 1200 125"/></svg>
         <div>
-          <h1>Hold the bag.<br><em>Get the loot.</em></h1>
-          <p>Launch a coin that pays its holders. Every trade drops ETH or tokenized stocks like NVDA and TSLA straight into holders' wallets, every five minutes. Nothing to claim.</p>
-          <div class="acts"><a class="btn gold" href="#/create">Launch a coin</a><a class="btn" href="#/how">How it works</a></div>
-          <div class="stats"><div><span>Paid to holders</span><b class="gold">${usd(P.paidHolders)}</b></div><div><span>Volume</span><b>${usd(P.volumeAll)}</b></div><div><span>Coins</span><b>${num(P.coins, 0)}</b></div><div><span>Traders</span><b>${num(P.traders, 0)}</b></div></div>
-        </div>
-        <div class="drops" id="drops">
-          <img class="bigbag" src="/img/logo.svg" alt="">
-          ${recent.slice(0, 4).map((c, i) => { const p = c.payouts[0], pos = [[2, 8], [44, 30], [6, 58], [36, 80]][i]; return `<div class="drop" style="left:${pos[0]}%;top:${pos[1]}%;animation-delay:${i * 0.9}s">${tokenBadge(p.token, 30)}<div><b>${usd(p.usd)} in ${esc(label(p.token))}</b><small>dropped to ${num(p.wallets, 0)} $${esc(c.ticker)} holders</small></div></div>`; }).join('')}
+          <h1>Hold the bag.<br><span>Get paid in stocks.</span></h1>
+          <p>Launch a coin on ETH, USDG or a stock. Every trade pays your holders in ETH or stocks, and traders earn ETH airdrops.</p>
+          <div class="acts"><a class="btn blue pill" href="#/create">Launch a coin</a></div>
         </div>
       </section>
-      <div class="bar">${[['trending', 'Trending'], ['new', 'New'], ['paying', 'Paying now'], ['top', 'Top']].map(([k, l]) => `<button class="tab ${state.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}<span class="live"><i class="dot"></i>${cs.length} live</span></div>
-      <div class="chips">${[['all', 'All'], ['stocks', 'Pays stocks'], ['eth', 'Pays ETH'], ['pETH', 'Paired with ETH'], ['pUSDG', 'Paired with USDG'], ['pSTK', 'Paired with a stock']].map(([k, l]) => `<button class="fchip ${state.chip === k ? 'on' : ''}" data-chip="${k}">${l}</button>`).join('')}</div>
+      <div class="bar">${[['trending', 'Trending'], ['new', 'New'], ['paying', 'Paying now'], ['top', 'Top']].map(([k, l]) => `<button class="tab ${state.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}<span class="live">${cs.length} live</span></div>
+      <div class="chips">${[['pETH', 'Paired with ETH'], ['pSTK', 'Paired with a stock'], ['stocks', 'Pays stocks'], ['eth', 'Pays ETH']].map(([k, l]) => `<button class="fchip ${state.chip === k ? 'on' : ''}" data-chip="${k}">${l}</button>`).join('')}</div>
       <div class="grid" id="grid"></div>${foot()}`;
     $$('[data-tab]').forEach((b) => (b.onclick = () => { state.tab = b.dataset.tab; board(); }));
-    $$('[data-chip]').forEach((b) => (b.onclick = () => { state.chip = b.dataset.chip; board(); }));
+    $$('[data-chip]').forEach((b) => (b.onclick = () => { state.chip = state.chip === b.dataset.chip ? '' : b.dataset.chip; board(); }));
     drawGrid();
     every(1000, tickCards);
   }
@@ -77,11 +77,13 @@
   }
   function card(c) {
     return `<a class="card coin" href="#/coin/${c.addr}">
-      <span class="ghost" style="background:linear-gradient(140deg,hsl(${c.hue} 80% 66%),hsl(${(c.hue + 40) % 360} 75% 48%))"></span>
-      <div class="row1">${av(c)}<div style="min-width:0"><div class="tk">$${esc(c.ticker)} ${c.official ? '<span class="pill">Lootbag</span>' : ''}</div><div class="nm">${esc(c.name)}</div></div></div>
-      <div class="mc"><b>${usd(c.mcap)}</b><span class="num ${c.ch24 >= 0 ? 'up' : 'dn'}">${pct(c.ch24)}</span></div>
-      <div class="meta"><span>Pays ${stack(c.rewards)} <span style="color:var(--ink)">${esc(pays(c).length > 26 ? label(c.rewards[0]) + ' +' + (c.rewards.length - 1) : pays(c))}</span></span><span>Paired with ${tokenBadge(c.pair, 16)} ${esc(label(c.pair))} · ${ago(c.createdAt)} old</span></div>
-      <div class="foot"><span>${usd(c.paid24)} paid in 24h</span><span class="pill gray" data-next="${c.addr}">Next drop ${mmss(c.nextPayout)}</span></div></a>`;
+      <span class="ghost">${av(c, 170)}</span>${c.official ? '<span class="badge">Lootbag</span>' : ''}
+      <span class="in">${av(c, 44)}
+        <div class="tkl"><b>$${esc(c.ticker)}</b><span>${esc(c.name)}</span></div>
+        <div class="mc">${usd(c.mcap)}</div>
+        <div class="l1">${c.official ? 'Lootbag coin' : `Paired to ${tokenBadge(c.pair, 16)} <b>${esc(c.pair === 'ETH' || c.pair === 'USDG' ? c.pair : '$' + label(c.pair))}</b>`}</div>
+        <div class="l2">Pays ${esc(c.rewards.slice(0, 2).map((r) => (r === 'ETH' ? 'ETH' : '$' + label(r))).join(' · '))}${c.rewards.length > 2 ? ' +' + (c.rewards.length - 2) : ''}</div>
+      </span></a>`;
   }
   function drawGrid() { const g = $('#grid'); if (g) g.innerHTML = filtered().map(card).join('') || '<p class="mute">No coins match.</p>'; }
   function tickCards() {
@@ -93,59 +95,60 @@
   function coin(a) {
     const c = D.coins.find((x) => x.addr === a);
     if (!c) { view.innerHTML = `<a class="back" href="#/">← Board</a><h1>Coin not found</h1>`; return; }
-    const cur = c.rewards[c.rewardIx];
+    const cur = c.rewards[c.rewardIx], pairL = c.pair === 'ETH' || c.pair === 'USDG' ? c.pair : '$' + label(c.pair);
+    const LOOT_USD = (D.coins.find((x) => x.official) || { priceUsd: 0.00124 }).priceUsd;
+    const pairUsd = c.pair === 'ETH' ? D.ethUsd : c.pair === 'USDG' ? 1 : c.pair === 'LOOT' ? LOOT_USD : (D.stocks.find((x) => x.sym === c.pair) || { usd: 100 }).usd;
+    const routeTxt = c.pair === 'ETH' ? 'Trades straight against <b>ETH</b>' : `Goes through <a>${esc(pairL)}</a>: ETH → ${c.pair === 'USDG' ? 'USDG' : c.pair === 'LOOT' ? '$LOOT' : 'USDG → ' + esc(pairL)} → $${esc(c.ticker)}`;
     view.innerHTML = `<a class="back" href="#/">← Board</a>
-      <div class="chead">${av(c, 64)}<div><h1>${esc(c.name)} <span class="mute" style="font-size:18px">$${esc(c.ticker)}</span></h1><div class="sub">Paired with ${esc(label(c.pair))} · holders are paid in ${esc(pays(c))} · launched ${ago(c.createdAt)} ago</div></div>
-        <div class="links"><button class="btn sm" data-copy="${c.addr}">${short(c.addr)} ⧉</button>${c.x ? `<a class="btn sm" href="${esc(c.x)}" target="_blank" rel="noopener">X</a>` : ''}${c.tg ? `<a class="btn sm" href="${esc(c.tg)}" target="_blank" rel="noopener">Telegram</a>` : ''}<a class="btn sm" href="#" data-preview>Explorer ↗</a></div></div>
-      ${c.desc ? `<p class="mute" style="margin:14px 0 0;max-width:720px">${esc(c.desc)}</p>` : ''}
-      <div class="kpis"><div><span>Market cap</span><b class="up">${usd(c.mcap)}</b></div><div><span>Price</span><b>${usd(c.priceUsd)}</b></div><div><span>24h volume</span><b>${usd(c.vol24)}</b></div><div><span>Holders</span><b>${num(c.holders, 0)}</b></div><div><span>Paid to holders</span><b class="gold">${usd(c.paidAll)}</b></div></div>
+      <div class="chead"><div class="lg">${av(c, 64)}<span class="pb">${tokenBadge(c.pair, 24)}</span></div>
+        <div style="min-width:0"><h1>${esc(c.name)}<span>$${esc(c.ticker)}</span></h1><div class="sub">Paired to <b>${esc(pairL)}</b> · holders are paid in ${esc(c.rewards.map((r) => (r === 'ETH' ? 'ETH' : '$' + label(r))).join(', '))} · ${ago(c.createdAt)} ago</div></div>
+        <div class="links"><button class="btn sm" data-copy>Copy address <span class="mono">${short(c.addr)}</span></button>${c.x ? `<a class="btn sm" href="${esc(c.x)}" target="_blank" rel="noopener">X ↗</a>` : ''}<a class="btn sm" href="#" data-preview>DexScreener ↗</a><a class="btn sm" href="#" data-preview>Explorer ↗</a></div></div>
+      <div class="kpis"><div><span>Market cap</span><b class="up">${usd(c.mcap)}</b></div><div><span>Price</span><b>${usd(c.priceUsd)}</b></div><div><span>Price in ${esc(pairL)}</span><b>${num(c.priceUsd / pairUsd, 9)}</b></div><div><span>Holders</span><b>${num(c.holders, 0)}</b></div></div>
       <div class="cp">
         <div>
-          <div class="card chart"><div class="tools">${['5m', '15m', '1h', '4h'].map((t, i) => `<button class="${i ? '' : 'on'}" data-tf="${t}">${t}</button>`).join('')}</div><div id="cv"></div></div>
-          <div class="card lootbox panel" style="margin-top:16px">
-            <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start">
-              <div><h3>Holder loot</h3><p class="mute" style="margin:0;font-size:13.5px;max-width:460px">0.5% of every trade goes to this coin's holders. Every five minutes it is turned into the current reward and dropped into every holder's wallet, by how much they hold. Nothing to claim.</p></div>
-              <div style="text-align:right"><div class="mute" style="font-size:12px">Next drop in</div><div class="count" id="cd">${mmss(c.nextPayout)}</div></div>
+          <div class="card chart"><div class="tools">${['5m', '15m', '1h', '4h'].map((t, i) => `<button class="${i ? '' : 'on'}" data-tf="${t}">${t}</button>`).join('')}<div class="tog"><button class="on">Market cap</button><button data-preview>Price</button></div></div><div id="cv"></div></div>
+          <div class="sect" style="margin-top:20px;border:0;padding-top:4px">
+            <h3 style="margin:0 0 8px;font:600 16px var(--f)">Holder rewards</h3>
+            <p class="mute" style="margin:0 0 14px;font-size:14px;line-height:1.7">The holders' share of every fee is kept by this coin's contract. Every 5 minutes, counted from this coin's launch, it pays every holder in ${esc(c.rewards.map((r) => (r === 'ETH' ? 'ETH' : '$' + label(r))).join(', '))}, by how much they hold. Nothing to claim.</p>
+            <div class="card panel" style="background:var(--panel)">
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">${tokenBadge(cur, 36)}<div><b>${esc(cur === 'ETH' ? 'ETH' : '$' + label(cur))}</b><div class="mute" style="font-size:13px">${c.pot >= 5 ? `<span class="up">Payout ready: ${usd(c.pot)}</span>` : `Payout waiting for $5 in fees (${usd(c.pot)} so far)`}</div></div><div style="margin-left:auto;text-align:right"><div class="mute" style="font-size:12px">Next payout</div><div class="count" id="cd">${mmss(c.nextPayout)}</div></div></div>
+              <div class="meter"><i style="width:${Math.min(100, (c.pot / 5) * 100)}%"></i></div>
+              ${c.rewards.length > 1 ? `<div class="rot">${c.rewards.map((r, i) => `<span class="${i === c.rewardIx ? 'cur' : ''}">${tokenBadge(r, 20)}${esc(r === 'ETH' ? 'ETH' : '$' + label(r))}</span>`).join('')}</div>` : ''}
             </div>
-            <div style="margin-top:14px;font-size:13.5px">Now paying <b>${tokenBadge(cur, 18)} ${esc(label(cur))}</b> · ${c.pot >= 5 ? `<span class="up">${usd(c.pot)} ready</span>` : `<span class="gold">waiting for $5 (${usd(c.pot)} so far)</span>`}</div>
-            <div class="meter"><i style="width:${Math.min(100, (c.pot / 5) * 100)}%"></i></div>
-            <div class="rot">${c.rewards.map((r, i) => `<span class="${i === c.rewardIx ? 'cur' : ''}">${tokenBadge(r, 20)}${esc(label(r))}</span>`).join('')}</div>
           </div>
-          <div class="card" style="margin-top:16px">
-            <div class="stabs" style="padding:6px 8px 0">${[['trades', 'Trades'], ['holders', 'Holders'], ['drops', 'Drops']].map(([k, l], i) => `<button class="tab ${i ? '' : 'on'}" data-st="${k}">${l}</button>`).join('')}</div>
+          <div class="card" style="margin-top:16px;background:var(--panel)">
+            <div class="stabs">${[['trades', 'Trades'], ['holders', 'Holders'], ['drops', 'Payouts']].map(([k, l], i) => `<button class="tab ${i ? '' : 'on'}" data-st="${k}">${l}</button>`).join('')}</div>
             <div class="tw" id="st"></div>
           </div>
         </div>
-        <div class="sticky">
+        <div class="sticky side-col">
           <div class="card panel">
             <div class="bs"><button class="on b" data-side="b">Buy</button><button class="s" data-side="s">Sell</button></div>
             <div class="field"><label><span id="amt-l">Amount (ETH)</span><span>Slippage 3%</span></label><input class="inp" id="amt" placeholder="0.0" inputmode="decimal"><div class="presets" id="pre">${['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`).join('')}</div></div>
-            <div class="route" id="route">${c.pair === 'ETH' ? 'Straight to the pool: <b>ETH → $' + esc(c.ticker) + '</b>' : 'Goes through ' + esc(label(c.pair)) + ': <b>ETH → ' + (c.pair === 'USDG' ? 'USDG' : 'USDG → ' + esc(label(c.pair))) + ' → $' + esc(c.ticker) + '</b>'}<br><span id="est">You get about —</span></div>
-            <button class="btn green block" id="go">Connect wallet</button>
+            <div class="route">Balance: — ETH<br>${routeTxt}<br><span id="est">You get about —</span>${c.pair !== 'ETH' ? `<div class="paywith">Pay with <button class="on">ETH</button><button data-preview>${esc(pairL)}</button></div>` : ''}</div>
+            <button class="btn green block" style="height:50px" id="go">Connect wallet</button>
           </div>
-          <div class="card panel" style="margin-top:14px"><h3>Details</h3>
-            <div class="kv"><span>Pool</span><b>Uniswap v4, liquidity locked forever</b></div>
-            <div class="kv"><span>Paired with</span><b>${esc(label(c.pair))}</b></div>
-            <div class="kv"><span>Supply</span><b class="num">1,000,000,000</b></div>
-            <div class="kv"><span>Creator</span><b class="num">${short(c.creator)}</b></div>
-            <h3 style="margin-top:18px">Where every trade's 2% goes</h3>
-            <div class="kv"><span>Holders, as loot drops</span><b class="gold">0.5%</b></div>
-            <div class="kv"><span>Lootbag</span><b>1.5%</b></div>
+          <div class="card panel" style="margin-top:14px">
+            <h3>Next payout</h3><div class="meter"><i style="width:${Math.min(100, (c.pot / 5) * 100)}%"></i></div><div class="mute" style="font-size:13px">Pays holders every 5 minutes once $5 has built up. Liquidity sits in its own Uniswap v4 pool and is locked forever.</div>
+            <div class="sect" style="margin-top:16px"><h4>Details</h4>
+              <div class="kv"><span>Address</span><b class="mono">${short(c.addr)}</b></div><div class="kv"><span>Pool</span><b>Uniswap v4</b></div><div class="kv"><span>Paired with</span><b>${esc(pairL)}</b></div><div class="kv"><span>Supply</span><b>1,000,000,000</b></div><div class="kv"><span>Trading fee</span><b>2%</b></div></div>
+            <div class="sect" style="padding-bottom:0"><h4>Where every fee goes</h4>
+              <div class="kv"><span><i class="drop-dot" style="background:var(--buy)"></i>Holders</span><b>0.5%</b></div><div class="kv"><span><i class="drop-dot" style="background:var(--blue)"></i>Lootbag</span><b>1.5%</b></div></div>
           </div>
         </div>
       </div>${foot()}`;
-    $('[data-copy]').onclick = (e) => { navigator.clipboard && navigator.clipboard.writeText(c.addr); toast('Address copied'); };
-    $('[data-preview]').onclick = (e) => { e.preventDefault(); toast(PREVIEW); };
+    $('[data-copy]').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(c.addr); toast('Address copied'); };
+    $$('[data-preview]').forEach((b) => (b.onclick = (e) => { e.preventDefault(); toast(PREVIEW); }));
     let side = 'b';
     const est = () => { const v = Number($('#amt').value) || 0; $('#est').textContent = v ? (side === 'b' ? `You get about ${num((v * D.ethUsd * 0.98) / c.priceUsd, 0)} $${c.ticker}` : `You get about ${num((v * c.priceUsd * 0.98) / D.ethUsd, 5)} ETH`) : 'You get about —'; };
-    $$('[data-side]').forEach((b) => (b.onclick = () => { side = b.dataset.side; $$('[data-side]').forEach((x) => x.classList.toggle('on', x === b)); $('#amt-l').textContent = side === 'b' ? 'Amount (ETH)' : 'Amount ($' + c.ticker + ')'; $('#pre').innerHTML = (side === 'b' ? ['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`) : ['25', '50', '75', '100'].map((v) => `<button data-v="${v}%">${v}%</button>`)).join(''); bindPre(); $('#go').className = 'btn block ' + (side === 'b' ? 'green' : 'red'); est(); }));
+    $$('[data-side]').forEach((b) => (b.onclick = () => { side = b.dataset.side; $$('[data-side]').forEach((x) => x.classList.toggle('on', x === b)); $('#amt-l').textContent = side === 'b' ? 'Amount (ETH)' : 'Amount ($' + c.ticker + ')'; $('#pre').innerHTML = (side === 'b' ? ['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`) : ['25', '50', '75', '100'].map((v) => `<button data-v="${v}%">${v}%</button>`)).join(''); bindPre(); $('#go').className = 'btn block ' + (side === 'b' ? 'green' : 'red'); $('#go').style.height = '50px'; est(); }));
     const bindPre = () => $$('#pre button').forEach((b) => (b.onclick = () => { $('#amt').value = b.dataset.v.endsWith('%') ? '' : b.dataset.v; est(); }));
     bindPre(); $('#amt').oninput = est; $('#go').onclick = () => toast(PREVIEW);
     const sub = (k) => {
       $$('[data-st]').forEach((b) => b.classList.toggle('on', b.dataset.st === k));
-      $('#st').innerHTML = k === 'trades' ? `<table class="t"><tr><th>Wallet</th><th>Side</th><th class="r">USD</th><th class="r">$${esc(c.ticker)}</th><th class="r">Age</th></tr>${c.trades.slice(0, 15).map((t) => `<tr><td class="num">${short(t.wallet)}</td><td class="${t.buy ? 'up' : 'dn'}">${t.buy ? 'Buy' : 'Sell'}</td><td class="r num">${usd(t.usd)}</td><td class="r num">${num(t.tokens, 0)}</td><td class="r mute">${ago(t.ts)}</td></tr>`).join('')}</table>`
-        : k === 'holders' ? `<table class="t"><tr><th>#</th><th>Wallet</th><th class="r">Share</th><th class="r">Earning</th></tr>${c.holderList.map((h, i) => `<tr><td class="mute">${i + 1}</td><td class="num">${short(h.wallet)}</td><td class="r num">${h.pct.toFixed(2)}%</td><td class="r num gold">${usd((c.paid24 * h.pct) / 100)}/day</td></tr>`).join('')}</table>`
-        : `<table class="t"><tr><th>Dropped</th><th>Paid in</th><th class="r">Amount</th><th class="r">Wallets</th></tr>${c.payouts.map((p) => `<tr><td class="mute">${ago(p.ts)} ago</td><td>${tokenBadge(p.token, 18)} ${esc(label(p.token))}</td><td class="r num gold">${usd(p.usd)}</td><td class="r num">${num(p.wallets, 0)}</td></tr>`).join('')}</table>`;
+      $('#st').innerHTML = k === 'trades' ? `<table class="t"><tr><th>Wallet</th><th>Side</th><th class="r">USD</th><th class="r">$${esc(c.ticker)}</th><th class="r">Age</th></tr>${c.trades.slice(0, 15).map((t) => `<tr><td class="mono">${short(t.wallet)}</td><td class="${t.buy ? 'up' : 'dn'}">${t.buy ? 'Buy' : 'Sell'}</td><td class="r">${usd(t.usd)}</td><td class="r">${num(t.tokens, 0)}</td><td class="r mute">${ago(t.ts)}</td></tr>`).join('')}</table>`
+        : k === 'holders' ? `<table class="t"><tr><th>#</th><th>Wallet</th><th class="r">Share</th><th class="r">Earning</th></tr>${c.holderList.map((h, i) => `<tr><td class="mute">${i + 1}</td><td class="mono">${short(h.wallet)}</td><td class="r">${h.pct.toFixed(2)}%</td><td class="r up">${usd((c.paid24 * h.pct) / 100)}/day</td></tr>`).join('')}</table>`
+        : `<table class="t"><tr><th>Paid</th><th>Paid in</th><th class="r">Amount</th><th class="r">Wallets</th></tr>${c.payouts.map((p) => `<tr><td class="mute">${ago(p.ts)} ago</td><td>${tokenBadge(p.token, 18)} ${esc(p.token === 'ETH' ? 'ETH' : '$' + label(p.token))}</td><td class="r up">${usd(p.usd)}</td><td class="r">${num(p.wallets, 0)}</td></tr>`).join('')}</table>`;
     };
     $$('[data-st]').forEach((b) => (b.onclick = () => sub(b.dataset.st))); sub('trades');
     every(1000, () => { tickCards(); const el = $('#cd'); if (el) el.textContent = mmss(c.nextPayout); });
@@ -156,8 +159,8 @@
   function drawChart(c, step) {
     const el = $('#cv'); if (!el || !window.LightweightCharts) return;
     if (chart) { chart.remove(); chart = null; }
-    chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: '#8b93a1', fontFamily: 'Inter' }, grid: { vertLines: { color: '#1b1f25' }, horzLines: { color: '#1b1f25' } }, rightPriceScale: { borderColor: '#232830' }, timeScale: { borderColor: '#232830', timeVisible: true }, crosshair: { mode: 1 }, autoSize: true });
-    const s = chart.addCandlestickSeries({ upColor: '#2fd58a', downColor: '#f2606b', borderVisible: false, wickUpColor: '#2fd58a', wickDownColor: '#f2606b', priceFormat: { type: 'custom', formatter: (v) => usd(v) } });
+    chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: '#8f9ab3', fontFamily: 'Space Grotesk' }, grid: { vertLines: { color: '#111c33' }, horzLines: { color: '#111c33' } }, rightPriceScale: { borderColor: '#22304b' }, timeScale: { borderColor: '#22304b', timeVisible: true }, crosshair: { mode: 1 }, autoSize: true });
+    const s = chart.addCandlestickSeries({ upColor: '#34d399', downColor: '#f2606b', borderVisible: false, wickUpColor: '#34d399', wickDownColor: '#f2606b', priceFormat: { type: 'custom', formatter: (v) => usd(v) } });
     const out = []; let cur = null;
     for (const k of c.candles) { const b = Math.floor(k.t / step) * step; if (!cur || cur.time !== b) { if (cur) out.push(cur); cur = { time: b, open: k.o, high: k.h, low: k.l, close: k.c }; } else { cur.high = Math.max(cur.high, k.h); cur.low = Math.min(cur.low, k.l); cur.close = k.c; } }
     if (cur) out.push(cur);
@@ -241,19 +244,31 @@
   }
   function bags() {
     const B = D.bags;
-    view.innerHTML = `<div class="ph1"><h1>Bags</h1><p>1,000 numbered Bags, each with its own vault. Every hour the Bag pot buys the day's stock and drops an equal share into every Bag's vault. Whoever holds the Bag owns its vault, and selling the Bag sells the vault with it.</p></div>
-      <div class="stat3"><div class="card"><span>Minted</span><b>${B.minted} / ${num(B.total, 0)}</b><span>${num(B.minted * B.perMintLoot, 0)} $LOOT burned</span></div><div class="card"><span>Paid into vaults</span><b class="gold">${usd(B.paidUsd)}</b></div><div class="card"><span>Next drop</span><b id="bcd">${mmss(B.nextHour)}</b><span>Today: ${esc(label(B.today))}</span></div></div>
-      <div class="cg"><div>
-        <div class="card panel" style="margin-bottom:16px"><h3>Where the Bag pot comes from</h3><div class="kv"><span>Lootbag revenue from every coin</span><b>25%</b></div><div class="kv"><span>Every new mint</span><b>0.045 ETH</b></div><div class="kv"><span>Spent every hour</span><b>5% of the pot</b></div><div class="kv"><span>Daily rotation</span><b>${B.rotation.map(label).join(' → ')}</b></div></div>
-        <div class="bags">${B.list.map((x) => `<div class="card bagc">${bagArt(x.id, x.hue)}<b>Bag #${x.id}</b><small>${usd(x.earned)} earned</small></div>`).join('')}</div>
-      </div>
-      <div class="sticky"><div class="card panel lootbox"><h3>Mint a Bag</h3><div style="max-width:200px;margin:6px auto 14px">${bagArt(B.minted + 1, 42)}</div>
-        <div class="kv"><span>You burn</span><b>${num(B.perMintLoot, 0)} $LOOT</b></div><div class="kv"><span>You pay</span><b>${B.perMintEth} ETH</b></div><div class="kv"><span>You get</span><b>Bag #${B.minted + 1}</b></div>
-        <button class="btn gold block" style="margin-top:14px" data-preview>Mint</button><div class="note" style="text-align:center">0.045 ETH goes to the Bags already minted, 0.005 ETH to Lootbag.</div></div></div></div>${foot()}`;
+    view.innerHTML = `<div class="ph1"><h1>Bags</h1><p>1,000 numbered Bags, each with its own vault. Every hour the Bag pot buys the day's stock and drops an equal share into every Bag's vault. Whoever holds the Bag owns its vault.</p></div>
+      <div class="stat3"><div class="card"><span>Minted</span><b>${B.minted} / ${num(B.total, 0)}</b><span>${num(B.minted * B.perMintLoot, 0)} $LOOT burned</span></div><div class="card"><span>Paid out so far</span><b class="up">${usd(B.paidUsd)}</b></div><div class="card"><span>Next payout in</span><b id="bcd">${mmss(B.nextHour)}</b><span>buys $${esc(label(B.today))} with 5% of the ${num(B.pot, 1)} ETH pot</span></div></div>
+      <div class="chips"><button class="fchip on">All ${B.minted}</button><button class="fchip" data-preview>Yours 0</button><a class="btn sm" href="#/mint" style="margin-left:auto">Mint a Bag</a></div>
+      <div class="bags">${B.list.map((x) => `<div class="card bagc">${bagArt(x.id, x.hue)}<b>Bag #${x.id}</b><small>${usd(x.earned)} earned</small></div>`).join('')}</div>${foot()}`;
     $$('[data-preview]').forEach((b) => (b.onclick = () => toast(PREVIEW)));
     let s = B.nextHour; every(1000, () => { s = s <= 1 ? 3600 : s - 1; const e = $('#bcd'); if (e) e.textContent = mmss(s); });
   }
-
+  function mint() {
+    const B = D.bags;
+    view.innerHTML = `<div class="ph1"><h1>Mint a Bag</h1><p>Minting burns $LOOT and gives you the next numbered Bag. Every hour, the Bag pot spends 5% of what it holds on the day's token and splits it equally between all active Bags, straight into their vaults. Sell or send the Bag and its whole vault goes with it.</p></div>
+      <div class="cg"><div>
+        <div class="card panel"><div class="kv"><span>You send</span><b>${num(B.perMintLoot, 0)} $LOOT <span class="mute">burned</span> + ${B.perMintEth} ETH</b></div><div class="kv"><span>Where the ETH goes</span><b>0.045 ETH to the Bags already minted, 0.005 ETH to Lootbag</b></div><div class="kv"><span>You receive</span><b>Bag #${B.minted + 1}</b></div><div class="kv"><span>Left</span><b>${num(B.total - B.minted, 0)} of ${num(B.total, 0)}</b></div></div>
+        <div class="card panel" style="margin-top:16px"><h3>How it works</h3>
+          <div class="lrow" style="border:0;padding-left:0"><span class="pill">1</span><div class="grow"><b>Mint</b><div class="mute" style="font-size:13.5px">Your $LOOT is burned and you get a Bag with a vault tied to it. Whoever holds the Bag owns everything in its vault.</div></div></div>
+          <div class="lrow" style="padding-left:0"><span class="pill">2</span><div class="grow"><b>Earn</b><div class="mute" style="font-size:13.5px">Every hour the pot spends 5% of what it holds on the day's token (${B.rotation.map((r) => '$' + label(r)).join(' → ')}) and sends every Bag an equal share.</div></div></div>
+          <div class="lrow" style="padding-left:0"><span class="pill">3</span><div class="grow"><b>Withdraw</b><div class="mute" style="font-size:13.5px">Take your vault's tokens out whenever you like, or sell the Bag with its vault on any NFT marketplace.</div></div></div>
+        </div>
+      </div>
+      <div class="sticky"><div class="card panel"><div style="max-width:220px;margin:0 auto 14px">${bagArt(B.minted + 1, 220)}</div><div style="text-align:center;margin-bottom:12px"><b>Bag #${B.minted + 1}</b><div class="mute" style="font-size:13px">The next Bag in line</div></div><button class="btn blue block" data-preview>Connect your wallet</button></div></div></div>${foot()}`;
+    $$('[data-preview]').forEach((b) => (b.onclick = () => toast(PREVIEW)));
+  }
+  function lootCoins() {
+    const cs = D.coins.filter((c) => c.official || c.pair === 'LOOT' || c.rewards.includes('LOOT')).sort((a, b) => b.mcap - a.mcap);
+    view.innerHTML = `<div class="ph1"><h1>Lootbag coins</h1><p>Coins paired with $LOOT or paying their holders in $LOOT. Every buy of them buys $LOOT too.</p></div><div class="grid">${cs.map(card).join('')}</div>${foot()}`;
+  }
   // ---------- $LOOT
   function loot() {
     const c = D.coins.find((x) => x.official);
@@ -289,8 +304,9 @@
     const key = '#/' + (r === 'coin' ? '' : r);
     $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === key));
     window.scrollTo(0, 0);
-    if (!r) board(); else if (r === 'coin') coin(parts[1] || ''); else if (r === 'create') create(); else if (r === 'rewards') rewards(); else if (r === 'airdrops') airdrops(); else if (r === 'bags') bags(); else if (r === 'loot') loot(); else if (r === 'how') how(); else board();
+    if (!r) board(); else if (r === 'coin') coin(parts[1] || ''); else if (r === 'create') create(); else if (r === 'rewards') rewards(); else if (r === 'airdrops') airdrops(); else if (r === 'bags') bags(); else if (r === 'mint') mint(); else if (r === 'coins') lootCoins(); else if (r === 'loot') loot(); else if (r === 'how') how(); else board();
   }
+  if (matchMedia('(max-width: 900px)').matches) $('#q').placeholder = 'Search';
   $('#q').oninput = () => { state.q = $('#q').value; if (location.hash && location.hash !== '#/') location.hash = '#/'; else drawGrid(); };
   D.ready.then(() => { route(); addEventListener('hashchange', route); });
 })();

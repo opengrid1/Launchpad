@@ -39,10 +39,10 @@
     const top = ['NVDA', 'TSLA', 'AAPL', 'SPY', 'QQQ', 'MSFT', 'GOOGL', 'META', 'AMZN', 'COIN', 'PLTR', 'AMD'].map((s) => STOCKS.find((x) => x.sym === s)).filter(Boolean);
     NAMES.forEach(([name, ticker], i) => {
       const official = i === 0;
-      const pairKind = official ? 'ETH' : pick(['ETH', 'ETH', 'ETH', 'USDG', 'STOCK']);
+      const pairKind = official ? 'ETH' : pick(['ETH', 'ETH', 'ETH', 'USDG', 'STOCK', 'LOOT']);
       const pair = pairKind === 'STOCK' ? pick(top).sym : pairKind;
       const nRewards = official ? 4 : pick([1, 1, 1, 2, 3, 5]);
-      const rewards = official ? ['NVDA', 'TSLA', 'SPY', 'LOOT'] : Array.from(new Set(Array.from({ length: nRewards }, () => (rnd() < 0.25 ? 'ETH' : pick(top).sym))));
+      const rewards = official ? ['NVDA', 'TSLA', 'SPY', 'LOOT'] : Array.from(new Set(Array.from({ length: nRewards }, () => (rnd() < 0.22 ? 'ETH' : rnd() < 0.2 ? 'LOOT' : pick(top).sym))));
       const ageMin = official ? 60 * 24 * 9 : Math.floor(rnd() ** 2 * 60 * 24 * 6) + 3;
       const mcap = official ? 1_240_000 : Math.round(6500 * Math.exp(rnd() ** 1.6 * 4.2));
       const vol24 = Math.round(mcap * (0.15 + rnd() * 1.6));

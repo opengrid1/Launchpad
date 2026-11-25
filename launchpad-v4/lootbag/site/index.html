@@ -5,36 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lootbag | Coins that pay their holders</title>
 <meta name="description" content="Launch a coin whose every trade drops ETH or tokenized stocks into its holders' wallets, every five minutes. No claim.">
-<meta name="theme-color" content="#0a0b0d">
+<meta name="theme-color" content="#060a14">
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/lb.css?v=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/lb.css?v=3">
 </head>
 <body>
-<div class="preview-bar">Preview with sample coins. Nothing here is a real market yet.</div>
 <div class="app">
   <aside class="side">
-    <a class="brand" href="#/"><img src="/img/logo.svg" alt=""><b>Lootbag</b></a>
+    <a class="brand" href="#/"><img src="/img/logo.svg" alt=""><b>LOOTBAG</b></a>
     <nav class="nav" id="nav"></nav>
     <div class="grow"></div>
-    <a class="btn gold" href="#/create">+ Create a coin</a>
-    <button class="btn" data-connect>Connect wallet</button>
+    <div class="acts"><a class="btn blue" href="#/create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Create coin</a><button class="btn" data-connect>Connect wallet</button></div>
   </aside>
   <div class="main">
+    <div class="preview-bar">Preview with sample coins. Nothing here is a real market yet.</div>
     <header class="top">
       <a href="#/"><img class="mlogo" src="/img/logo.svg" alt="Lootbag"></a>
       <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Search coins, tickers or addresses" autocomplete="off"></div>
       <div class="sp"></div>
-      <a class="chip-price" href="#/loot"><img src="/img/logo.svg" alt=""><span>$LOOT</span><b id="loot-px">$0.00124</b></a>
-      <a class="btn sm xlink" href="https://x.com" target="_blank" rel="noopener">X</a>
+      <div class="chip-price"><a href="#/loot"><b>$LOOT</b> <span class="px" id="loot-px">$0.00124</span></a><i class="sep"></i><button class="ca" data-copyloot>0x1007…0b4c <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button></div>
+      <a class="x" href="https://x.com" target="_blank" rel="noopener" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.3l-4.9-6.4L5.2 21H2.1l7.3-8.3L2 3h6.4l4.4 5.9zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg></a>
+      <button class="btn mconnect" data-connect>Connect wallet</button>
     </header>
     <main class="view" id="view"></main>
   </div>
 </div>
 <nav class="tabbar" id="tabbar"></nav>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-<script src="/lb-data.js?v=1"></script>
-<script src="/lb-app.js?v=1"></script>
+<script src="/lb-data.js?v=3"></script>
+<script src="/lb-app.js?v=3"></script>
 </body>
 </html>
