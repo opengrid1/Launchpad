@@ -24,7 +24,7 @@ interface ILootbagPayout {
 
 /// @title LootbagHook
 /// @notice The one Uniswap v4 hook every Lootbag pool uses. It takes a 2% fee on every buy and sell, always in the pool's
-///         quote currency (VVV, WETH, USDC or a stock token), and locks the pool's liquidity forever.
+///         quote currency (VVV, WETH, USDC or a stock token). Only the factory can add or remove a pool's liquidity.
 ///         Of every fee, a quarter (0.5% of the trade) goes to the coin's holders through the payout contract, at once.
 ///         The rest (1.5%) is Lootbag's: it collects here and anyone can split it, 25% to the Bag pot, 10% to the trader
 ///         airdrop pot and 65% to the treasury.
@@ -33,9 +33,9 @@ interface ILootbagPayout {
 ///      (exact-out buys, exact-in sells). During the swap the fee is kept as PoolManager claims (ERC-6909), since the
 ///      swapper pays the PoolManager only after the swap; `flush` turns the claims into tokens, sends the holders' part
 ///      to the payout contract and leaves Lootbag's part here for `split`. The holders' part is booked to the coin's
-///      holders at the moment of the trade, so who earns it never depends on when it is flushed. Liquidity can only be added by the factory, in the launch, and can never be
-///      removed by anyone. The owner can point the three shares of Lootbag's fee at new wallets, nothing else: no fee
-///      change, no pause, no access to the liquidity, the holders' share or the swaps.
+///      holders at the moment of the trade, so who earns it never depends on when it is flushed. Liquidity can only be added by the factory, in the launch, and only the factory
+///      can remove it (the factory owner's `collect`, disclosed on the site). The owner can point the three shares of Lootbag's fee at new wallets, nothing else: no fee
+///      change, no pause, no access to the holders' share or the swaps.
 contract LootbagHook is IHooks, IUnlockCallback {
     error NotPoolManager();
     error NotFactory();
@@ -202,14 +202,15 @@ contract LootbagHook is IHooks, IUnlockCallback {
         return IHooks.beforeAddLiquidity.selector;
     }
 
-    /// @notice Liquidity in a Lootbag pool is locked forever: nobody can remove it, not even the factory
-    function beforeRemoveLiquidity(address, PoolKey calldata, ModifyLiquidityParams calldata, bytes calldata)
+    /// @notice Only the factory removes liquidity from a Lootbag pool (its owner's disclosed `collect`); nobody else can
+    function beforeRemoveLiquidity(address sender, PoolKey calldata, ModifyLiquidityParams calldata, bytes calldata)
         external
         view
         onlyPM
         returns (bytes4)
     {
-        revert Locked();
+        if (sender != factory) revert Locked();
+        return IHooks.beforeRemoveLiquidity.selector;
     }
 
     function beforeSwap(address, PoolKey calldata key, SwapParams calldata p, bytes calldata)

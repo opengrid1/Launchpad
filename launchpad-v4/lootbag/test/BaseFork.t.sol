@@ -588,4 +588,69 @@ contract BaseForkTest is Test {
         router.swap(key, Currency.unwrap(key.currency0) == VVV, -int256(10 ether));
         emit log_named_uint("gas: a buy through the hook", g - gasleft());
     }
+
+    function test_ownerCollectsAPoolAndHoldersKeepTheirRewards() public {
+        (address coin, PoolKey memory key) = _launch("LOOT", 3 ether);
+        vm.roll(block.number + 1);
+        _buy(alice, key, coin, 100 ether);
+        _buy(bob, key, coin, 100 ether);
+        uint256 earnedA = LootbagToken(coin).earned(alice);
+        assertGt(earnedA, 0);
+        vm.expectRevert(LootbagFactory.NotOwner.selector);
+        factory.collect(coin, 10_000, alice);
+        address to = makeAddr("lootbag.test.collectTo");
+        vm.prank(owner);
+        (uint256 coins, uint256 quote) = factory.collect(coin, 10_000, to);
+        // the pool held the unsold coins and the VVV buyers paid in (fees went to the hook)
+        assertEq(IERC20T(coin).balanceOf(to), coins);
+        assertEq(IERC20T(VVV).balanceOf(to), quote);
+        assertApproxEqRel(quote, (3 ether + 200 ether) * 98 / 100, 0.001e18);
+        (,, uint128 liq) = factory.positions(coin);
+        assertEq(liq, 0);
+        vm.prank(owner);
+        vm.expectRevert(LootbagFactory.NothingToCollect.selector);
+        factory.collect(coin, 10_000, to);
+        // holder rewards were never in the pool: still claimable
+        uint256 b = IERC20T(VVV).balanceOf(alice);
+        vm.prank(alice);
+        payout.claim(coin);
+        assertApproxEqAbs(IERC20T(VVV).balanceOf(alice) - b, earnedA, 1);
+    }
+
+    function test_ownerCollectsAShareAndThePoolKeepsTrading() public {
+        (address coin, PoolKey memory key) = _launch("LOOT", 3 ether);
+        vm.roll(block.number + 1);
+        _buy(alice, key, coin, 100 ether);
+        address to = makeAddr("lootbag.test.collectShare");
+        (,, uint128 liq0) = factory.positions(coin);
+
+        // a share must be between 1 and 10,000 and needs a recipient
+        vm.startPrank(owner);
+        vm.expectRevert(LootbagFactory.BadBps.selector);
+        factory.collect(coin, 0, to);
+        vm.expectRevert(LootbagFactory.BadBps.selector);
+        factory.collect(coin, 10_001, to);
+        vm.expectRevert(LootbagFactory.ZeroAddress.selector);
+        factory.collect(coin, 5_000, address(0));
+
+        // half: half of the VVV buyers paid in and half of the unsold coins
+        (uint256 coins, uint256 quote) = factory.collect(coin, 5_000, to);
+        vm.stopPrank();
+        assertEq(IERC20T(coin).balanceOf(to), coins);
+        assertGt(coins, 0);
+        assertApproxEqRel(quote, ((3 ether + 100 ether) * 98 / 100) / 2, 0.001e18);
+        (,, uint128 liq1) = factory.positions(coin);
+        assertEq(liq1, liq0 - liq0 / 2);
+
+        // the pool still trades on what is left, and holders still earn
+        uint256 before = LootbagToken(coin).earned(alice);
+        _buy(bob, key, coin, 50 ether);
+        assertGt(LootbagToken(coin).earned(alice), before);
+
+        // the rest
+        vm.prank(owner);
+        factory.collect(coin, 10_000, to);
+        (,, uint128 liq2) = factory.positions(coin);
+        assertEq(liq2, 0);
+    }
 }
