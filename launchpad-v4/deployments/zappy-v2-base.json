@@ -1,0 +1,45 @@
+{
+ "network": "base",
+ "chainId": 8453,
+ "brand": "zappy",
+ "deployer": "0x34878Bbc0752C4A62e81499dE17c2750FB2A7Ec0",
+ "owner": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+ "ownershipPending": true,
+ "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b",
+ "positionManager": "0x7C5f5A4bBd8fD63184577525326123B519429bDc",
+ "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+ "hook": "0x3fc4B416e02c2879FfBDa58b5D77095965B4A0CC",
+ "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000030b9",
+ "locker": "0x1cdBd96F80F7e9ac45bBf4fDFaC7D4F5Fdf003CA",
+ "tokenImplementation": "0x45667c6CCc44Fd4d621EF83d5413197750183375",
+ "factory": "0xAe6e1C7f5F34BaabCB7f545bc6ADcdA65418cB66",
+ "launchConfigs": [
+  {
+   "pairToken": "0x0000000000000000000000000000000000000000",
+   "supply": "1000000000000000000000000000",
+   "startMcap": "1750000000000000000",
+   "band1Mcap": "7000000000000000000",
+   "band2Mcap": "35000000000000000000",
+   "band0Bps": 2000,
+   "band1Bps": 3000,
+   "tickSpacing": 200,
+   "enabled": true
+  }
+ ],
+ "launchFee": "200000000000000",
+ "launchEnabled": false,
+ "fromBlock": 53717066,
+ "transactions": {
+  "LiquidFiToken": "0x210477b55d42ca364ea915067ab53b7254a1809abc21ba495885e0909ba8c3aa",
+  "LiquidFiLocker": "0xe77d6d52f4d86141517617f856b402de9d2cd0cdae0924f40def2b989afaadcc",
+  "BuzzPadHook": "0x8df33d31c5b9befd6fac0af3640820352b21e890169da39e56edef1a00a73d76",
+  "BuzzPadFactory": "0x26a35db9ffb21e44eb7cee4ba34589cd84a800f103584d5fddf7a5f117e7aa49",
+  "hook.setFactory": "0x941f6c87362e7703a192e8f323736410669ddb3672304615decf0d8bd0b4ad16",
+  "locker.setFactory": "(sent before the RPC error; factory set onchain)",
+  "config ETH": "0x877ec860127f9989ae8369f7470730c4d45ae25b713fabfb2d8a8c0f30144db2",
+  "hook.transferOwnership": "0xd3cc7843a4d6fed804f8af4c512c309843a178604a5724b9bddb229c4481247f",
+  "factory.transferOwnership": "0x4708f81c4130db10b9c43c867cef22881dcb71c6f1621878f99deec5e0361d1f",
+  "locker.transferOwnership": "0xeeb8cb26b45b186fb9df9fc8d8c661630f3dd6850c4b019048223770f238b072"
+ },
+ "deployedAt": "2026-11-06T02:57:00.690Z"
+}

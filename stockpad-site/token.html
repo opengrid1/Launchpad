@@ -1,0 +1,155 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Coin | Equo</title><meta name="description" content="Price, chart, trades, holders, the last-buyer pot and the crash shield for an Equo coin on every chain it lives on.">
+<link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
+<meta property="og:image" content="/img/og.png?v=17">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=25">
+<style>
+/* coin page, scoped under #pg-coin */
+#pg-coin .cols{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px;align-items:start}
+#pg-coin .left{min-width:0;display:flex;flex-direction:column;gap:14px}
+#pg-coin .right{position:sticky;top:calc(var(--top) + 14px);display:flex;flex-direction:column;gap:14px}
+#pg-coin .head{padding:18px 20px}
+#pg-coin .hd{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;align-items:start}
+#pg-coin .hd .lg{width:72px;height:72px;border-radius:50%;background:var(--s3);border:1px solid var(--line-2);object-fit:cover}
+#pg-coin .t1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap} #pg-coin .t1 h1{font-size:24px;margin:0} #pg-coin .t1 .sym{font:500 15px var(--mono);color:var(--fg-3)} #pg-coin .t1 .wstar{align-self:center}
+#pg-coin .t2{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:7px;font:12px var(--mono);color:var(--fg-3)}
+#pg-coin .t2 .lk{display:inline-flex;align-items:center;gap:4px;color:var(--fg-2);font-family:var(--sans)} #pg-coin .t2 .lk:hover{color:var(--fg)} #pg-coin .t2 .lk svg{width:12px;height:12px}
+#pg-coin .desc{margin:10px 0 0;color:var(--fg-2);font-size:13.5px;line-height:1.55;max-width:70ch}
+#pg-coin .by{margin-top:8px;font-size:12px;color:var(--fg-3);display:flex;align-items:center;gap:6px}
+#pg-coin .big{text-align:right;white-space:nowrap} #pg-coin .big span{display:block;font:500 11px var(--mono);color:var(--fg-3)} #pg-coin .big b{display:block;font:700 22px var(--mono);margin-top:2px} #pg-coin .big small{font:12px var(--mono)}
+#pg-coin .srow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+#pg-coin .srow span{display:block;font:500 11px var(--mono);color:var(--fg-3)} #pg-coin .srow b{display:block;margin-top:2px;font:600 15px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-coin .cas{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+#pg-coin .ca{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 4px;border:1px solid var(--line-2);border-radius:8px;background:var(--s2);font:500 11.5px var(--mono);color:var(--fg-2);cursor:pointer}
+#pg-coin .ca img{width:18px;height:18px;border-radius:50%} #pg-coin .ca:hover{color:var(--fg);border-color:var(--line-3)} #pg-coin .ca.off{opacity:.45}
+#pg-coin .cad{position:relative;display:inline-block;margin-top:12px;max-width:100%}
+#pg-coin .cad-b{max-width:100%} #pg-coin .cad-b>span:first-of-type{color:var(--fg-3)} #pg-coin .cad-n{padding:1px 6px;border-radius:6px;background:var(--s3);color:var(--fg-2);font-size:10.5px}
+#pg-coin .cad-b svg{width:14px;height:14px;transform:rotate(90deg);transition:transform .15s;color:var(--fg-3)} #pg-coin .cad.open .cad-b svg{transform:rotate(-90deg)} #pg-coin .cad.open .cad-b{border-color:var(--line-3);color:var(--fg)}
+#pg-coin .cad-m{display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:40;width:min(340px,calc(100vw - 32px));padding:6px;border:1px solid var(--line-2);border-radius:12px;background:var(--s1);box-shadow:0 16px 40px rgba(0,0,0,.35)}
+#pg-coin .cad.open .cad-m{display:block}
+#pg-coin .cad-h{padding:6px 8px 8px;font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+#pg-coin .cad-r{display:flex;align-items:center;gap:2px} #pg-coin .cad-r>button{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:36px;padding:0 8px;border-radius:8px;color:var(--fg-2);text-align:left}
+#pg-coin .cad-r>button:hover,#pg-coin .cad-r>a:hover{background:var(--s2);color:var(--fg)} #pg-coin .cad-r img{width:18px;height:18px;border-radius:50%;flex:none}
+#pg-coin .cad-c{flex:1;min-width:0;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #pg-coin .cad-r code{font:500 11.5px var(--mono);color:var(--fg-3)}
+#pg-coin .cad-r svg{width:14px;height:14px;flex:none} #pg-coin .cad-r>a{display:grid;place-items:center;width:32px;height:36px;border-radius:8px;color:var(--fg-3)}
+#pg-coin .chart{overflow:hidden}
+#pg-coin .tabs2{display:flex;gap:2px;padding:8px 10px;border-bottom:1px solid var(--line)} #pg-coin .tabs2 button{height:30px;padding:0 12px;border-radius:7px;font-weight:600;color:var(--fg-3)} #pg-coin .tabs2 button.on{background:var(--s3);color:var(--fg)}
+#pg-coin .pane{display:none} #pg-coin .pane.on{display:block} #pg-coin .tw{overflow-x:auto}
+#pg-coin table{width:100%;border-collapse:collapse;font-size:12.5px} #pg-coin th{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+#pg-coin td{padding:9px 10px;border-bottom:1px solid var(--line);font-family:var(--mono);white-space:nowrap} #pg-coin td.r,#pg-coin th.r{text-align:right}
+#pg-coin .b{color:var(--up)} #pg-coin .s{color:var(--dn)}
+/* trade card */
+#pg-coin .trade .pb{padding:14px}
+#pg-coin .sides{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r);background:var(--s2)}
+#pg-coin .sides button{height:34px;border-radius:7px;font-weight:600;color:var(--fg-3)} #pg-coin .sides button.on.bu{background:var(--up-dim);color:var(--up)} #pg-coin .sides button.on.se{background:var(--dn-dim,rgba(240,80,80,.14));color:var(--dn)}
+#pg-coin .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+#pg-coin .chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px 0 4px;border:1px solid var(--line-2);border-radius:999px;font:600 11.5px var(--mono);color:var(--fg-2)}
+#pg-coin .chip img{width:18px;height:18px;border-radius:50%} #pg-coin .chip.on{border-color:var(--cc,var(--ac));color:var(--fg);box-shadow:0 0 0 1px var(--cc,var(--ac)) inset}
+#pg-coin .box{margin-top:10px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--s2)} #pg-coin .box.out{background:var(--s1)}
+#pg-coin .box .lr{display:flex;justify-content:space-between;gap:10px;font:11.5px var(--mono);color:var(--fg-3)}
+#pg-coin .box .ir{display:flex;align-items:center;gap:10px;margin-top:6px} #pg-coin .box input{flex:1;min-width:0;background:none;border:0;outline:0;font:500 24px var(--mono);color:var(--fg);padding:0}
+#pg-coin .box .outv{flex:1;min-width:0;font:500 24px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #pg-coin .box .outv.dim{color:var(--fg-3)}
+#pg-coin .asset{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 10px 0 5px;border:1px solid var(--line-2);border-radius:999px;background:var(--s1);font:600 13px var(--mono);flex:none}
+#pg-coin .asset img{width:22px;height:22px;border-radius:50%;object-fit:cover}
+#pg-coin .quick{display:flex;gap:4px;margin-top:8px} #pg-coin .quick button{height:24px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;font:500 11px var(--mono);color:var(--fg-2)} #pg-coin .quick button:hover{border-color:var(--line-3);color:var(--fg)}
+#pg-coin .det{margin-top:10px} #pg-coin .det .kv{padding:6px 0;font-size:12.5px}
+#pg-coin .cta{margin-top:12px;width:100%;height:44px;font:600 14px var(--disp)} #pg-coin .cta.bu{background:var(--up);border-color:var(--up);color:#03170e} #pg-coin .cta.se{background:var(--dn);border-color:var(--dn);color:#fff} #pg-coin .cta:disabled{opacity:.55;cursor:not-allowed}
+#pg-coin .note{margin:10px 0 0;font-size:12px;color:var(--fg-3);line-height:1.5}
+/* pot and shield */
+#pg-coin .pot .pb,#pg-coin .shield .pb,#pg-coin .crt .pb{padding:14px}
+#pg-coin .potv{display:flex;align-items:baseline;justify-content:space-between;gap:10px} #pg-coin .potv b{font:700 26px var(--mono)} #pg-coin .potv small{font:12px var(--mono);color:var(--fg-3)}
+#pg-coin .timer{margin-top:10px;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2)}
+#pg-coin .timer b{font:700 22px var(--mono);letter-spacing:.02em} #pg-coin .timer.hot b{color:var(--amber)} #pg-coin .timer span{font-size:12px;color:var(--fg-3)}
+#pg-coin .sbar{height:6px;border-radius:3px;background:var(--s3);overflow:hidden;margin-top:10px} #pg-coin .sbar i{display:block;height:100%;background:var(--amber)}
+#pg-coin .shield.up{border-color:rgba(255,183,77,.5)}
+#pg-coin .empty.panel{padding:60px 20px}
+#pg-coin .cimg{display:inline-block;width:16px;height:16px;border-radius:50%;vertical-align:-3px;margin-right:6px}
+#pg-coin .ph2 .lbl{display:inline-flex;align-items:center;gap:2px;font:500 11px var(--mono);color:var(--fg-3)}
+/* the chart (chart.js) */
+.eqc{display:flex;flex-direction:column;padding:16px 16px 12px;gap:10px;font-variant-numeric:tabular-nums}
+.eqc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:58px}
+.eqc-leg{display:flex;flex-direction:column;gap:3px;min-width:0}
+.eqc-leg .t{font-size:12px;color:var(--fg-3);font-weight:500}
+.eqc-leg .v{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.eqc-leg .v b{font:700 28px/1.1 var(--sans);letter-spacing:-.02em;color:var(--fg)}
+.eqc-leg .v em{font-style:normal;font-size:13px;font-weight:600;padding:2px 7px;border-radius:6px} .eqc-leg .v em.up{color:var(--up);background:var(--up-dim)} .eqc-leg .v em.dn{color:var(--dn);background:var(--dn-dim)}
+.eqc-leg .v small{font-size:12px;color:var(--fg-3)}
+.eqc-leg .ohlc{font-size:11.5px;color:var(--fg-3)} .eqc-leg .ohlc b{color:var(--fg-2);font-weight:500;margin-right:6px}
+.eqc-leg .ls{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px} .eqc-leg .ls>span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-3)} .eqc-leg .ls i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)} .eqc-leg .ls b{color:var(--fg);font-weight:600}
+.eqc-r{display:flex;gap:6px;flex-wrap:wrap}
+.eqc-seg{display:inline-flex;background:var(--s3);border:1px solid var(--line);border-radius:9px;padding:2px}
+.eqc-seg button,.eqc-rg button{all:unset;cursor:pointer;height:26px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;font-size:12px;font-weight:600;color:var(--fg-3);transition:color .15s,background .15s}
+.eqc-seg button:hover,.eqc-rg button:hover{color:var(--fg)} .eqc-seg button.on,.eqc-rg button.on{background:var(--s4);color:var(--fg)}
+.eqc-seg svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.eqc-box{position:relative;height:340px;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none} .eqc-box canvas{position:absolute;inset:0;display:block} .eqc.grab .eqc-box{cursor:grabbing}
+.eqc-ib{all:unset;cursor:pointer;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;background:var(--s3);border:1px solid var(--line);color:var(--fg-3);transition:color .15s,border-color .15s} .eqc-ib:hover{color:var(--fg);border-color:var(--line-3)}
+.eqc-ib svg,.eqc-zm svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.eqc-l{display:flex;align-items:center;gap:8px}
+.eqc-zm{display:flex;gap:2px;padding-left:8px;border-left:1px solid var(--line)}
+.eqc-zm button{all:unset;cursor:pointer;width:28px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;color:var(--fg-3);transition:color .15s,background .15s} .eqc-zm button:hover{color:var(--fg);background:var(--s4)}
+.eqc.zoomed .eqc-zm [data-z="fit"]{color:var(--ac)}
+.eqc.full{position:fixed;inset:0;z-index:1000;background:var(--s1);padding:20px 24px 16px} .eqc.full .eqc-box{height:auto;flex:1;min-height:0} html.eqc-lock{overflow:hidden}
+@media (hover:none){ .eqc-zm{display:none} .eqc.zoomed .eqc-zm{display:flex} }
+.eqc-leg .ohlc{min-height:17px}
+.eqc-dot{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c);pointer-events:none;box-shadow:0 0 0 3px rgba(10,10,11,.9)}
+.eqc-dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--c);opacity:0;animation:eqcPulse 1.8s ease-out infinite}
+@keyframes eqcPulse{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+.eqc-no{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:12px;color:var(--fg-3);background:var(--s3);border:1px solid var(--line);padding:5px 11px;border-radius:999px;pointer-events:none}
+.eqc-bot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.eqc-rg{display:flex;gap:2px}
+.eqc-ch{display:flex;gap:4px;align-items:center;overflow-x:auto;scrollbar-width:none;max-width:100%} .eqc-ch::-webkit-scrollbar{display:none}
+.eqc-ch button{all:unset;cursor:pointer;flex:none;height:28px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--fg-3);transition:border-color .15s,color .15s,background .15s}
+.eqc-ch button.tx{padding:0 11px} .eqc-ch button.lg{width:28px} .eqc-ch button img{width:18px;height:18px;border-radius:50%;filter:saturate(.5) opacity(.7);transition:filter .15s}
+.eqc-ch button:hover{color:var(--fg);border-color:var(--line-3)} .eqc-ch button:hover img{filter:none}
+.eqc-ch button.on{color:var(--fg);background:var(--s3);border-color:var(--line-3)} .eqc-ch button.lg.on{border-color:var(--c);box-shadow:0 0 0 1px var(--c) inset} .eqc-ch button.on img{filter:none}
+
+@media(max-width:1100px){#pg-coin .cols{grid-template-columns:minmax(0,1fr) 340px} #pg-coin .srow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){
+  #pg-coin .cols{display:flex;flex-direction:column;align-items:stretch} #pg-coin .left,#pg-coin .right{display:contents}
+  #pg-coin .head{order:1} #pg-coin .chart{order:2} #pg-coin .trade{order:3} #pg-coin .pot{order:4} #pg-coin .shield{order:5} #pg-coin .crt{order:6} #pg-coin .ptabs{order:7}
+  #pg-coin .hd{grid-template-columns:56px minmax(0,1fr)} #pg-coin .hd .lg{width:56px;height:56px} #pg-coin .big{grid-column:1/-1;text-align:left} #pg-coin .srow{grid-template-columns:1fr 1fr}
+  #pg-coin .right{position:static} .eqc-box{height:280px}
+}
+</style>
+</head><body data-page="token">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-coin">
+  <div class="crumb" id="cn-crumb"></div>
+  <div id="cn-empty" class="empty panel hidden"></div>
+  <div class="cols" id="cn-page">
+    <div class="left">
+      <section class="panel head" id="cn-head"></section>
+      <section class="panel chart"><div id="tv"></div></section>
+      <section class="panel ptabs">
+        <div class="tabs2" id="cn-tabs"><button data-t="trades" class="on">Trades</button><button data-t="holders">Holders</button><button data-t="pools">Pools</button></div>
+        <div class="pane on tw" id="cn-trades"></div><div class="pane tw" id="cn-holders"></div><div class="pane tw" id="cn-pools"></div>
+      </section>
+    </div>
+    <div class="right">
+      <section class="panel trade"><div class="pb">
+        <div class="sides" id="cn-sides"><button data-side="buy" class="bu on">Buy</button><button data-side="sell" class="se">Sell</button></div>
+        <div class="chips" id="cn-chips"></div>
+        <div class="box"><div class="lr"><span>You pay</span><span id="cn-bal-in">Balance: —</span></div>
+          <div class="ir"><input id="cn-amt" inputmode="decimal" placeholder="0" autocomplete="off"><span class="asset" id="cn-asset-in"></span></div>
+          <div class="quick" id="cn-quick"></div></div>
+        <div class="box out"><div class="lr"><span>You get</span><span id="cn-bal-out">Balance: —</span></div>
+          <div class="ir"><span class="outv dim" id="cn-out">0</span><span class="asset" id="cn-asset-out"></span></div></div>
+        <div class="det">
+          <div class="kv"><span>Minimum received</span><b id="cn-min">—</b></div>
+          <div class="kv"><span id="cn-fee-l">Fee</span><b id="cn-fee">—</b></div>
+          <div class="kv"><span>Slippage</span><b><span class="seg" id="cn-slip"><button data-s="1" class="on">1%</button><button data-s="3">3%</button><button data-s="10">10%</button></span></b></div>
+        </div>
+        <button class="btn cta bu" id="cn-cta">Connect a wallet</button>
+        <p class="note" id="cn-note"></p>
+      </div></section>
+      <section class="panel pot"><div class="ph2"><span>Last-buyer pot</span><span class="lbl" id="cn-pot-ch"></span></div><div class="pb" id="cn-pot"></div></section>
+      <section class="panel shield" id="cn-shield-p"><div class="ph2"><span>Crash shield</span></div><div class="pb" id="cn-shield"></div></section>
+      <section class="panel crt"><div class="ph2"><span>Creator fees</span></div><div class="pb" id="cn-crt"></div></section>
+    </div>
+  </div>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js?v=17"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=2"></script><script src="/solleg.js?v=1"></script><script src="/wallet.js"></script><script src="/chart.js?v=6"></script><script src="/core.js?v=43"></script><script src="/sp-coin.js?v=3"></script>
+</body></html>

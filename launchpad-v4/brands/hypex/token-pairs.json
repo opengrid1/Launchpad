@@ -1,0 +1,6 @@
+{
+  "note": "Token pairs other than the EQX stocks: Kinetiq's KNTQ, bridged from HyperEVM by Elysium's token bridge (the Elysium address is what its gateway router maps the HyperEVM token to). Config ids follow the EQX list.",
+  "pairs": [
+    { "key": "kntq", "sym": "KNTQ", "name": "Kinetiq", "hyperevm": "0x000000000000780555bD0BCA3791f89f9542c2d6", "elysium": "0xe45a355d9e9cAd2aD85F2d03E3eE3102A036acF0", "decimals": 18, "spot": "@334" }
+  ]
+}

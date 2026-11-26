@@ -1,0 +1,85 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Launch a coin | Equo</title><meta name="description" content="Launch one coin on up to ten chains at once, at the same opening price, with a last-buyer pot and a crash shield on every EVM pool.">
+<link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=16"><meta name="theme-color" content="#000000">
+<meta property="og:title" content="Launch a coin | Equo"><meta property="og:description" content="One coin, every chain."><meta property="og:image" content="/img/og.png?v=17">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=25">
+<style>
+/* launch page (Equo v2), scoped under #pg-launch */
+#pg-launch{max-width:1120px;margin:0 auto}
+#pg-launch .tophd{margin:6px 0 16px} #pg-launch .tophd h1{font:700 26px var(--disp);letter-spacing:-.02em;margin:0} #pg-launch .tophd p{margin:6px 0 0;color:var(--fg-3);font-size:13.5px}
+#pg-launch .lw{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+#pg-launch .card{border:1px solid var(--line-2);border-radius:16px;background:var(--s1);padding:20px}
+#pg-launch .sec{margin-top:22px} #pg-launch .sec:first-child{margin-top:0}
+#pg-launch .sec>h3{margin:0 0 10px;font:600 14px var(--disp)} #pg-launch .sec>h3 small{font:400 12px var(--sans);color:var(--fg-3);margin-left:6px}
+#pg-launch .two{display:grid;grid-template-columns:1fr 1fr;gap:12px} #pg-launch .three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+#pg-launch label.l{display:block;font:500 11.5px var(--mono);color:var(--fg-3);margin-bottom:6px}
+#pg-launch .inp{width:100%} #pg-launch textarea.inp{min-height:76px;resize:vertical;padding-top:10px}
+#pg-launch .idrow{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:start}
+#pg-launch .drop{width:96px;height:96px;border-radius:50%;border:1px dashed var(--line-3);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:var(--s2);color:var(--fg-3);font:600 12px var(--mono);text-align:center}
+#pg-launch .drop img{width:100%;height:100%;object-fit:cover} #pg-launch .drop:hover{border-color:var(--ac)}
+#pg-launch .fees{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+#pg-launch .fees button,#pg-launch .chs button{height:40px;border:1px solid var(--line-2);border-radius:10px;background:var(--s2);font:600 13px var(--mono);color:var(--fg-2)}
+#pg-launch .fees button.on{border-color:var(--ac);color:var(--fg);box-shadow:0 0 0 1px var(--ac) inset}
+#pg-launch .chs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#pg-launch .chs button{display:flex;align-items:center;gap:7px;padding:0 10px;font-family:var(--disp);font-size:12.5px;text-align:left}
+#pg-launch .chs button img{width:20px;height:20px;border-radius:50%} #pg-launch .chs button.on{border-color:var(--cc);color:var(--fg);box-shadow:0 0 0 1px var(--cc) inset} #pg-launch .chs button:not(.on){opacity:.55}
+#pg-launch .hint{margin:8px 0 0;font-size:12px;color:var(--fg-3);line-height:1.5} #pg-launch .err{color:var(--dn)}
+#pg-launch .kv{padding:7px 0;font-size:13px} #pg-launch .kv b{font-family:var(--mono)}
+#pg-launch .tot{border-top:1px solid var(--line);margin-top:6px;padding-top:10px} #pg-launch .tot b{font-size:15px}
+#pg-launch .go{width:100%;height:48px;margin-top:14px;font:600 15px var(--disp)}
+#pg-launch .pv{position:sticky;top:calc(var(--top) + 14px)}
+#pg-launch .pvc{display:flex;gap:12px;align-items:center} #pg-launch .pvc img{width:56px;height:56px;border-radius:50%;object-fit:cover;background:var(--s3);border:1px solid var(--line-2)}
+#pg-launch .pvc b{display:block;font:600 17px var(--disp)} #pg-launch .pvc small{font:12px var(--mono);color:var(--fg-3)}
+#pg-launch .steps{margin-top:14px;display:flex;flex-direction:column;gap:6px} #pg-launch .steps div{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--fg-3)}
+#pg-launch .steps div i{width:8px;height:8px;border-radius:50%;background:var(--line-3)} #pg-launch .steps div.on{color:var(--fg)} #pg-launch .steps div.on i{background:var(--ac);box-shadow:0 0 0 3px var(--ac-dim)} #pg-launch .steps div.ok i{background:var(--up)} #pg-launch .steps div.ok{color:var(--fg-2)}
+#pg-launch .legs{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:10px;font:12px var(--mono)} #pg-launch .legs span{display:flex;align-items:center;gap:6px;color:var(--fg-3)} #pg-launch .legs span img{width:14px;height:14px;border-radius:50%} #pg-launch .legs span.ok{color:var(--up)}
+@media(max-width:900px){#pg-launch .lw{grid-template-columns:1fr} #pg-launch .pv{position:static} #pg-launch .chs{grid-template-columns:repeat(2,1fr)} #pg-launch .three{grid-template-columns:1fr}}
+</style>
+</head><body data-page="launch">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-launch">
+  <div class="tophd"><h1>Launch a coin</h1><p>One coin on every chain you pick, 1B on each, all opening at a $3,000 market cap. Every EVM pool has a last-buyer pot and a crash shield.</p></div>
+  <div class="lw">
+    <div class="card">
+      <div class="sec"><h3>The coin</h3>
+        <div class="idrow"><label class="drop" for="f-logo" id="drop"><input id="f-logo" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden><span id="drop-in">Logo</span></label>
+          <div><div class="two"><div><label class="l" for="f-name">Name</label><input class="inp" id="f-name" maxlength="32" placeholder="Equo" autocomplete="off"></div>
+            <div><label class="l" for="f-sym">Ticker</label><input class="inp" id="f-sym" maxlength="10" placeholder="EQUO" autocomplete="off" style="text-transform:uppercase"></div></div>
+            <div style="margin-top:10px"><label class="l" for="f-desc">Description</label><textarea class="inp" id="f-desc" maxlength="500" placeholder="What the coin is about."></textarea></div></div></div>
+        <div class="three" style="margin-top:10px"><div><label class="l" for="f-web">Website</label><input class="inp" id="f-web" placeholder="https://" autocomplete="off"></div><div><label class="l" for="f-x">X</label><input class="inp" id="f-x" placeholder="https://x.com/…" autocomplete="off"></div><div><label class="l" for="f-tg">Telegram</label><input class="inp" id="f-tg" placeholder="https://t.me/…" autocomplete="off"></div></div>
+      </div>
+      <div class="sec"><h3>Trading fee <small>on every buy and sell, fixed for good</small></h3>
+        <div class="fees" id="f-fee"></div>
+        <p class="hint" id="fee-split"></p></div>
+      <div class="sec"><h3>Chains <small>the coin launches on each one you pick</small></h3>
+        <div class="chs" id="f-chains"></div></div>
+      <div class="sec"><h3>Launch from</h3>
+        <div class="two"><div><label class="l" for="f-home">Your wallet pays on</label><select class="inp" id="f-home"></select></div>
+          <div><label class="l" for="f-dev">First buy <span id="dev-sym"></span> · optional</label><input class="inp" id="f-dev" inputmode="decimal" placeholder="0" autocomplete="off"></div></div>
+        <p class="hint" id="home-hint"></p>
+        <div id="sol-row" class="hidden" style="margin-top:12px"><label class="l" for="f-solw">Your Solana wallet <span class="muted">· gets your creator fees on Solana</span></label>
+          <div style="display:flex;gap:8px"><input class="inp" id="f-solw" placeholder="Solana address" autocomplete="off" spellcheck="false"><button type="button" class="btn" id="sol-use">Use my wallet</button></div></div></div>
+      <div class="sec"><h3>Cost</h3>
+        <div class="kv"><span>Launch fee <small class="muted">· Equo launches the other chains with it</small></span><b id="c-fee">…</b></div>
+        <div class="kv"><span>First buy</span><b id="c-dev">—</b></div>
+        <div class="kv"><span>Gas on <span id="c-home-n"></span> (about)</span><b id="c-gas">…</b></div>
+        <div class="kv tot"><span>Total from your wallet</span><b id="c-tot">…</b></div>
+        <button class="btn go" id="go">Connect a wallet</button>
+        <p class="hint" id="go-msg"></p></div>
+    </div>
+    <div class="pv"><div class="card">
+      <div class="pvc"><img id="pv-img" src="/img/t-default.png" alt=""><div><b id="pv-n">Your coin</b><small id="pv-t">$TICKER</small></div></div>
+      <div class="kv" style="margin-top:12px"><span>Opens at</span><b>$3,000 market cap per chain</b></div>
+      <div class="kv"><span>Supply</span><b id="pv-sup">8B (1B per chain)</b></div>
+      <div class="kv"><span>Fee</span><b id="pv-fee">1%</b></div>
+      <div class="steps" id="steps"><div data-s="quote"><i></i>Sign the launch</div><div data-s="home"><i></i>Your chain goes live</div><div data-s="others"><i></i>The other chains follow</div><div data-s="done"><i></i>Open the coin</div></div>
+      <div class="legs" id="legs"></div>
+      <p class="hint">After your own chain, Equo launches the rest within a minute or two (HyperEVM's large blocks come once a minute).</p>
+    </div></div>
+  </div>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js?v=17"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=2"></script><script src="/solleg.js?v=1"></script><script src="/wallet.js"></script><script src="/core.js?v=43"></script><script src="/sp-launch2.js?v=3"></script>
+</body></html>

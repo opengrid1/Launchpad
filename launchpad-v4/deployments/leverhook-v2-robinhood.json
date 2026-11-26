@@ -1,0 +1,1119 @@
+{
+ "network": "robinhood",
+ "chainId": 4663,
+ "brand": "leverhook",
+ "deployer": "0x9A54332c5C2DE73Ab376D705F82071e0634a76cf",
+ "owner": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+ "ownershipPending": true,
+ "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+ "positionManager": "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+ "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+ "hook": "0xC24a51b4E15957fe984C01f52FeFcB99840360cc",
+ "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000001b0d",
+ "locker": "0x837D35A707A0AFfC9AC755F217af85711A6c9Aa7",
+ "tokenImplementation": "0x48B227Dc9dbf59FA4d299FaDe8a7f1A81c269736",
+ "factory": "0x812b3718F9b896e4c8f9B0f13fEDdE5A2772d790",
+ "leverage": {
+  "margin": "0xBE6983438Fd2ec64bBEf016124FccAd51E468134",
+  "swapper": "0xF8355310fcB84940EDb30e1348D0f350409953Fc",
+  "opensEnabled": false
+ },
+ "stockPairs": [
+  {
+   "key": "nvda",
+   "sym": "NVDA",
+   "name": "NVIDIA",
+   "addr": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+   "cfg": 1,
+   "open": 20.90144503114828,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC"
+    ]
+   }
+  },
+  {
+   "key": "aapl",
+   "sym": "AAPL",
+   "name": "Apple",
+   "addr": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+   "cfg": 2,
+   "open": 11.311978502679173,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9"
+    ]
+   }
+  },
+  {
+   "key": "spcx",
+   "sym": "SPCX",
+   "name": "Space Exploration Technologies Corp",
+   "addr": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+   "cfg": 3,
+   "open": 29.557108167703372,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     500,
+     "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa"
+    ]
+   }
+  },
+  {
+   "key": "googl",
+   "sym": "GOOGL",
+   "name": "Alphabet Class A",
+   "addr": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+   "cfg": 4,
+   "open": 13.641788445168396,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3"
+    ]
+   }
+  },
+  {
+   "key": "tsla",
+   "sym": "TSLA",
+   "name": "Tesla",
+   "addr": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+   "cfg": 5,
+   "open": 10.87194741668019,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x322F0929c4625eD5bAd873c95208D54E1c003b2d"
+    ]
+   }
+  },
+  {
+   "key": "amd",
+   "sym": "AMD",
+   "name": "AMD",
+   "addr": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+   "cfg": 6,
+   "open": 8.889858089669863,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC"
+    ]
+   }
+  },
+  {
+   "key": "amzn",
+   "sym": "AMZN",
+   "name": "Amazon",
+   "addr": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+   "cfg": 7,
+   "open": 14.893792250088383,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x12f190a9F9d7D37a250758b26824B97CE941bF54"
+    ]
+   }
+  },
+  {
+   "key": "msft",
+   "sym": "MSFT",
+   "name": "Microsoft",
+   "addr": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+   "cfg": 8,
+   "open": 7.285374087210437,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xe93237C50D904957Cf27E7B1133b510C669c2e74"
+    ]
+   }
+  },
+  {
+   "key": "pltr",
+   "sym": "PLTR",
+   "name": "Palantir Technologies",
+   "addr": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+   "cfg": 9,
+   "open": 24.243844912535508,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A"
+    ]
+   }
+  },
+  {
+   "key": "meta",
+   "sym": "META",
+   "name": "Meta Platforms",
+   "addr": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+   "cfg": 10,
+   "open": 6.300566503459717,
+   "info": {
+    "route": "v4",
+    "hops": [
+     {
+      "c": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "fee": 500,
+      "ts": 10,
+      "hooks": "0x0000000000000000000000000000000000000000"
+     },
+     {
+      "c": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+      "fee": 3000,
+      "ts": 60,
+      "hooks": "0x0000000000000000000000000000000000000000"
+     }
+    ]
+   }
+  },
+  {
+   "key": "mu",
+   "sym": "MU",
+   "name": "Micron Technology",
+   "addr": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD",
+   "cfg": 11,
+   "open": 5.6950790967866345,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD"
+    ]
+   }
+  },
+  {
+   "key": "coin",
+   "sym": "COIN",
+   "name": "Coinbase",
+   "addr": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+   "cfg": 12,
+   "open": 29.218771814730356,
+   "info": {
+    "route": "v4",
+    "hops": [
+     {
+      "c": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "fee": 500,
+      "ts": 10,
+      "hooks": "0x0000000000000000000000000000000000000000"
+     },
+     {
+      "c": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+      "fee": 10000,
+      "ts": 200,
+      "hooks": "0x0000000000000000000000000000000000000000"
+     }
+    ]
+   }
+  },
+  {
+   "key": "intc",
+   "sym": "INTC",
+   "name": "Intel",
+   "addr": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+   "cfg": 13,
+   "open": 69.99251104014729,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681"
+    ]
+   }
+  },
+  {
+   "key": "spy",
+   "sym": "SPY",
+   "name": "SPDR S&P 500 ETF Trust",
+   "addr": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+   "cfg": 14,
+   "open": 5.266866797766203,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C"
+    ]
+   }
+  },
+  {
+   "key": "sndk",
+   "sym": "SNDK",
+   "name": "Sandisk Corporation",
+   "addr": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
+   "cfg": 15,
+   "open": 4.71852932923056,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xB90A19fF0Af67f7779afF50A882A9CfF42446400"
+    ]
+   }
+  },
+  {
+   "key": "usar",
+   "sym": "USAR",
+   "name": "USA Rare Earth",
+   "addr": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+   "cfg": 16,
+   "open": 483.6848743150387,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xd917B029C761D264c6A312BBbcDA868658eF86a6"
+    ]
+   }
+  },
+  {
+   "key": "gme",
+   "sym": "GME",
+   "name": "GameStop",
+   "addr": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+   "cfg": 17,
+   "open": 159.51381376212956,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x1b0E319c6A659F002271B69dB8A7df2F911c153E"
+    ]
+   }
+  },
+  {
+   "key": "qqq",
+   "sym": "QQQ",
+   "name": "Invesco QQQ",
+   "addr": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+   "cfg": 18,
+   "open": 5.925494430855183,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68"
+    ]
+   }
+  },
+  {
+   "key": "cost",
+   "sym": "COST",
+   "name": "Costco",
+   "addr": "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2",
+   "cfg": 19,
+   "open": 3.669348559539511,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2"
+    ]
+   }
+  },
+  {
+   "key": "slv",
+   "sym": "SLV",
+   "name": "iShares Silver Trust",
+   "addr": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+   "cfg": 20,
+   "open": 83.3024282513466,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f"
+    ]
+   }
+  },
+  {
+   "key": "nflx",
+   "sym": "NFLX",
+   "name": "Netflix",
+   "addr": "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8",
+   "cfg": 21,
+   "open": 60.57633651933856,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8"
+    ]
+   }
+  },
+  {
+   "key": "amat",
+   "sym": "AMAT",
+   "name": "Applied Materials",
+   "addr": "0x36046893810a7E7fCE501229d57dc3FC8c8716d0",
+   "cfg": 22,
+   "open": 9.895083048185258,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x36046893810a7E7fCE501229d57dc3FC8c8716d0"
+    ]
+   }
+  },
+  {
+   "key": "rddt",
+   "sym": "RDDT",
+   "name": "Reddit",
+   "addr": "0x05b37Fb53A299a1b874A619e1c4C404D52C36F4C",
+   "cfg": 23,
+   "open": 40.77253297553322,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x05b37Fb53A299a1b874A619e1c4C404D52C36F4C"
+    ]
+   }
+  },
+  {
+   "key": "uso",
+   "sym": "USO",
+   "name": "United States Oil Fund",
+   "addr": "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344",
+   "cfg": 24,
+   "open": 26.346764428579455,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344"
+    ]
+   }
+  },
+  {
+   "key": "lly",
+   "sym": "LLY",
+   "name": "Eli Lilly",
+   "addr": "0x8005d266423c7ea827372c9c864491e5786600ea",
+   "cfg": 25,
+   "open": 2.8570881763454983,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x8005d266423c7ea827372c9c864491e5786600ea"
+    ]
+   }
+  },
+  {
+   "key": "dell",
+   "sym": "DELL",
+   "name": "Dell",
+   "addr": "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd",
+   "cfg": 26,
+   "open": 11.830773616657341,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd"
+    ]
+   }
+  },
+  {
+   "key": "avgo",
+   "sym": "AVGO",
+   "name": "Broadcom",
+   "addr": "0x156E175DD063a8cE274C50654eF40e0032b3fbcF",
+   "cfg": 27,
+   "open": 13.31563057255555,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x156E175DD063a8cE274C50654eF40e0032b3fbcF"
+    ]
+   }
+  },
+  {
+   "key": "mrvl",
+   "sym": "MRVL",
+   "name": "Marvell Technology",
+   "addr": "0x62fd0668e10D8B72339BE2DCF7643001688ff13B",
+   "cfg": 28,
+   "open": 28.359044316385333,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x62fd0668e10D8B72339BE2DCF7643001688ff13B"
+    ]
+   }
+  },
+  {
+   "key": "tsm",
+   "sym": "TSM",
+   "name": "Taiwan Semiconductor Manufacturing",
+   "addr": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA",
+   "cfg": 29,
+   "open": 10.396820309422221,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA"
+    ]
+   }
+  },
+  {
+   "key": "mstr",
+   "sym": "MSTR",
+   "name": "Strategy Inc.",
+   "addr": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+   "cfg": 30,
+   "open": 30.610660520389033,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xec262a75e413fAfD0dF80480274532C79D42da09"
+    ]
+   }
+  },
+  {
+   "key": "sgov",
+   "sym": "SGOV",
+   "name": "iShares 0-3 Month Treasury Bond ETF",
+   "addr": "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5",
+   "cfg": 31,
+   "open": 38.37464756797255,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5"
+    ]
+   }
+  },
+  {
+   "key": "rblx",
+   "sym": "RBLX",
+   "name": "Roblox",
+   "addr": "0xF0C4BF4C582cb3836e98394b1d4e7B7281101bE8",
+   "cfg": 32,
+   "open": 80.54008954766842,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xF0C4BF4C582cb3836e98394b1d4e7B7281101bE8"
+    ]
+   }
+  },
+  {
+   "key": "asml",
+   "sym": "ASML",
+   "name": "ASML Holding NV",
+   "addr": "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA",
+   "cfg": 33,
+   "open": 2.7468801246249512,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA"
+    ]
+   }
+  },
+  {
+   "key": "ttwo",
+   "sym": "TTWO",
+   "name": "Take-Two Interactive Software",
+   "addr": "0x5e81213613b6B86EaB4c6c50d718d34359459786",
+   "cfg": 34,
+   "open": 18.051367817520454,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     3000,
+     "0x5e81213613b6B86EaB4c6c50d718d34359459786"
+    ]
+   }
+  },
+  {
+   "key": "rklb",
+   "sym": "RKLB",
+   "name": "Rocket Lab Corporation",
+   "addr": "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2",
+   "cfg": 35,
+   "open": 79.40953571916711,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2"
+    ]
+   }
+  },
+  {
+   "key": "nu",
+   "sym": "NU",
+   "name": "Nu",
+   "addr": "0x408c14038a04f7bD235329E26d2bf569ee20e250",
+   "cfg": 36,
+   "open": 321.6798198495992,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x408c14038a04f7bD235329E26d2bf569ee20e250"
+    ]
+   }
+  },
+  {
+   "key": "aaoi",
+   "sym": "AAOI",
+   "name": "Applied Optoelectronics",
+   "addr": "0x521Cf887E6531c6F667b5BC4D896E5d9bfE8EB2E",
+   "cfg": 37,
+   "open": 44.448234755432644,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x521Cf887E6531c6F667b5BC4D896E5d9bfE8EB2E"
+    ]
+   }
+  },
+  {
+   "key": "qubt",
+   "sym": "QUBT",
+   "name": "Quantum Computing",
+   "addr": "0x59818904ab4cE163b3cE4FfB64f2D6Ca02c434B4",
+   "cfg": 38,
+   "open": 636.6568807039351,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x59818904ab4cE163b3cE4FfB64f2D6Ca02c434B4"
+    ]
+   }
+  },
+  {
+   "key": "ionq",
+   "sym": "IONQ",
+   "name": "IonQ",
+   "addr": "0x558378E000D634A36593E338eBacdd6207640EfE",
+   "cfg": 39,
+   "open": 125.70836441611202,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x558378E000D634A36593E338eBacdd6207640EfE"
+    ]
+   }
+  },
+  {
+   "key": "sofi",
+   "sym": "SOFI",
+   "name": "SoFi Technologies",
+   "addr": "0x98E75885157C80992A8D41b696D8c9C6Fb30A926",
+   "cfg": 40,
+   "open": 256.85735306732477,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x98E75885157C80992A8D41b696D8c9C6Fb30A926"
+    ]
+   }
+  },
+  {
+   "key": "ups",
+   "sym": "UPS",
+   "name": "UPS",
+   "addr": "0xf23250dac154D05Bb671CB0d0eBEf3c635c79CE2",
+   "cfg": 41,
+   "open": 35.531639988900494,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xf23250dac154D05Bb671CB0d0eBEf3c635c79CE2"
+    ]
+   }
+  },
+  {
+   "key": "soxx",
+   "sym": "SOXX",
+   "name": "iShares Semiconductor ETF",
+   "addr": "0x75742c18BC1f1C5c5f448f4C9D9C6F66dafAAa38",
+   "cfg": 42,
+   "open": 10.122304266626864,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x75742c18BC1f1C5c5f448f4C9D9C6F66dafAAa38"
+    ]
+   }
+  },
+  {
+   "key": "xlk",
+   "sym": "XLK",
+   "name": "State Street Technology Select Sector SPDR ETF",
+   "addr": "0x15Cd20759CE7F3285c29A319dE2D1A2e098c6f43",
+   "cfg": 43,
+   "open": 21.518275883418205,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x15Cd20759CE7F3285c29A319dE2D1A2e098c6f43"
+    ]
+   }
+  },
+  {
+   "key": "ddog",
+   "sym": "DDOG",
+   "name": "Datadog",
+   "addr": "0x27c99fBde9D0d2AA4f4Bfb4943f237843DdF6958",
+   "cfg": 44,
+   "open": 21.129935084568107,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x27c99fBde9D0d2AA4f4Bfb4943f237843DdF6958"
+    ]
+   }
+  },
+  {
+   "key": "f",
+   "sym": "F",
+   "name": "Ford Motor",
+   "addr": "0x25C288E6D899b9BC30160965aD9644c67e73bE0C",
+   "cfg": 45,
+   "open": 309.93650224929337,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     3000,
+     "0x25C288E6D899b9BC30160965aD9644c67e73bE0C"
+    ]
+   }
+  },
+  {
+   "key": "ccl",
+   "sym": "CCL",
+   "name": "Carnival Corporation",
+   "addr": "0x9651342CeA770aE9a2969Ba2A52611523146aef9",
+   "cfg": 46,
+   "open": 124.36017238845547,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x9651342CeA770aE9a2969Ba2A52611523146aef9"
+    ]
+   }
+  },
+  {
+   "key": "poet",
+   "sym": "POET",
+   "name": "POET Technologies",
+   "addr": "0xcf6B2D875361be807EAfa57458c80f28521F9333",
+   "cfg": 47,
+   "open": 575.0952915626339,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xcf6B2D875361be807EAfa57458c80f28521F9333"
+    ]
+   }
+  },
+  {
+   "key": "ba",
+   "sym": "BA",
+   "name": "Boeing",
+   "addr": "0x4D21483a44Bf67a86b77E3dA301411880797D452",
+   "cfg": 48,
+   "open": 22.645364057336995,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x4D21483a44Bf67a86b77E3dA301411880797D452"
+    ]
+   }
+  },
+  {
+   "key": "rivn",
+   "sym": "RIVN",
+   "name": "Rivian Automotive",
+   "addr": "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B",
+   "cfg": 49,
+   "open": 290.4548981860781,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B"
+    ]
+   }
+  },
+  {
+   "key": "umc",
+   "sym": "UMC",
+   "name": "United Microelectronics",
+   "addr": "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79",
+   "cfg": 50,
+   "open": 247.1067232065207,
+   "info": {
+    "route": "v3",
+    "path": [
+     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+     100,
+     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+     10000,
+     "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79"
+    ]
+   }
+  }
+ ],
+ "launchConfigs": [
+  {
+   "pairToken": "0x0000000000000000000000000000000000000000",
+   "supply": "1000000000000000000000000000",
+   "startMcap": "1750000000000000000",
+   "band1Mcap": "7000000000000000000",
+   "band2Mcap": "35000000000000000000",
+   "band0Bps": 2000,
+   "band1Bps": 3000,
+   "tickSpacing": 200,
+   "enabled": true
+  }
+ ],
+ "launchFee": "200000000000000",
+ "launchEnabled": false,
+ "fromBlock": 108455083,
+ "transactions": {
+  "LiquidFiToken": "0x85b30f5e1db3c0d9f7b56e304671de5fb568ce7d3738bb3a1e9d5018718d5ae6",
+  "ZappyLocker": "0x9a359a50c341529205d5e8b2c203c7014d4bae650269426502bfd339d8816741",
+  "BuzzPadHook": "0xa3685237f533e82bbb4084518c83fe87bd6b41d990e84f0a374ac3d379cf6526",
+  "BuzzPadFactory": "0x5455b4d81be3c2d6ae5c392cbe1c5cf97579117d3f1fb74e5939cc4355a7a781",
+  "hook.setFactory": "0x6166fb4b3f8368ddeb0b966676f6ff5228163c3786e2d713918d213efe9f6501",
+  "locker.setFactory": "0x484744c0d4db645db1d52349c0e6729f838ca9e71d0cd8513872a2de279c3143",
+  "config ETH": "0x1934b45ddb7738689d2fd9bafbe0e367d3877232256838ab2a9b5e4cc34acfec",
+  "approve NVDA": "0x7d30d0ef786e89838319f88f0407b3168905ee18010ead8e11695901fffabeeb",
+  "config NVDA": "0x59070e0fb9bad02d638ea3c733797aa420b48e7fccaec9a9005e94ca8a7e67bc",
+  "approve AAPL": "0xe83f9e49831bdf27636d5180b9d144d40ba3d778822cab557aa6bf976f7ffd48",
+  "config AAPL": "0x831a9a9f591923b4ae7dffc97393c04f4e615ac7e0604bcabb346002f008a4e4",
+  "approve SPCX": "0xb94549e2df35eb516d819d35be7240e8af5e842efe1e192603196a6fbd27b9b0",
+  "config SPCX": "0x55637be143354426b364cc6b2e04fdf75bb422deb3dce06ad07ce6c009491789",
+  "approve GOOGL": "0xe4f38693fe190a95aa3e7807dcb27a4eb4804f82e570c8d8b955e469ae5253e7",
+  "config GOOGL": "0x1905fbdc0fc846810237667ba4500ae59bd16c58f42ff4aa00a4e1398e9c3ca8",
+  "approve TSLA": "0x6f4255d9c59d0b1d363d58330b94139ef6cdc8c0fba1615a7b9227f8aa80d2fd",
+  "config TSLA": "0x1f5f155e62e8521ba30da59c87f0caa945bbe2d070fb08dfd29a799069f4691c",
+  "approve AMD": "0x86babfd264fa28950ae87d99b83108c8d5096d0f555a3a449bb9a4e0530dd706",
+  "config AMD": "0x044a7d1a89b7a049c90e0763bc8c87eb75c60256e4aebd90965f762cbe009cbf",
+  "approve AMZN": "0x12ac17f0d0237bba9afbe841ca4b45b0f01644e701eadb262fd8f047e8dadeea",
+  "config AMZN": "0x97b09b9d46c6144a8f31216dd5c81d431be434f5423f6fd0b998973da345249c",
+  "approve MSFT": "0xb4e6a9d01169217dfcaa9f11061512f158b92aec81e5069fbed6681949eba059",
+  "config MSFT": "0x49f9a82a7489b99df7f251534f6e79ffc56a01b133bf59730d29e9e323f9689a",
+  "approve PLTR": "0x003f218d63af8a64d60d98924644dda9a88f2c3a1858010b83950bbe8aca5c1d",
+  "config PLTR": "0xf0b957749283c54602aa9ba7ec4bdee35a1ef3759ee7a49d3477f5ac24de0da2",
+  "approve META": "0xa3751137f1264d673eafde060ed2a00616dd86eda5fefdc3a4bd8ba2779956e2",
+  "config META": "0xa6e7764db093488508dd6a65457b98437ddc8239f2eb7958b1669dde44675e5e",
+  "approve MU": "0x798ebe5c91f70f4c00848b549d8c3eb4cb1721f7f204a77ca6a40d3a654875bc",
+  "config MU": "0x182494875e913630a8e0ae804dec9e66af4b8a4cf00d29c3f06e2ebe5fd545e2",
+  "approve COIN": "0x15fc217f28338a312559aca1920df68f92f8f84bbf1a7b9a2a89ead0690b0695",
+  "config COIN": "0xd16eed7b3acaff2cf5f2bae3b148263714eee7729803a407d25539c60657970e",
+  "approve INTC": "0xf53c422f9c9bada52103c6eb6061b362321f88bf5cfb7bc29af8f3ae811f2043",
+  "config INTC": "0x1c44f1f1a3217e5313b52b46af2cf17ddb93b6903d4e7bd63add03efe16aa17c",
+  "approve SPY": "0xba727d3be3cc8333e895279e811251821685ab996d0c1110bba3870ab53d8b28",
+  "config SPY": "0xc69a4374f0210ee4549eb498025dbde9f8482a8714f3fcc25dd11ac1141fbc12",
+  "approve SNDK": "0x5747b49d24814fea8a0f4822c889c77b9a121c2cba7fc32e1409d40756ddaaca",
+  "config SNDK": "0xf9b2f9ad6a3877495a6334a5c2061e4a7863d70c1a0c9a809bd7792d69037aa8",
+  "approve USAR": "0xbc0fe77ac0c1ec53b793bf7c2c42f957ea581d0b7d005b4f399d1daa7787fee7",
+  "config USAR": "0xc066f04ad6b7322d4c09107d082fd4e099c1e79dcf41961048a6dac43e803ec2",
+  "approve GME": "0x369122622576b3f7401e59b9f89020328afeb02d78c52b9b0c757975ee99b8a1",
+  "config GME": "0xaf0cfd04d3037ddc4ba6977d85bbe2367a2fdef2aed22bc3f1b41e6fe444a38c",
+  "approve QQQ": "0x52a6185ca535fe2ea72df6e8f4bcb57a91d05c0027c29e01446e9031268694bc",
+  "config QQQ": "0x2e7029449f87edf1881599e236e4e9330b0ea1681addfc57d2fdbd41540c182a",
+  "approve COST": "0xea6bc80a4f751b5fbdeddf75c0aa785afdd33a794dd2c2b2092812c7c6e3d7fd",
+  "config COST": "0x7fcf664b279b5bd89e8760868f56e5ac633fc8ea2c1788a6c771194ae113afc5",
+  "approve SLV": "0x3ad4e6ba67dc048e0f883d1879d686a41b73442b9523953560f9dd6a92cdaf11",
+  "config SLV": "0x1d6b82ef1f722b3f4b110a037b0fb445e4188e881fa55152c66a057be06c46ab",
+  "approve NFLX": "0xd7350d67843bcb2b61dc5df8702e0befa53fe6060d1115679a7bd9da8f5c91cb",
+  "config NFLX": "0xc1d9d7f84ff4810c78978f1cef136821bee7398c8e2b2ef1051bb6387962bd50",
+  "approve AMAT": "0x842168925e703b85452858b75d0db263f8338a11275ea4872db956d56fba8980",
+  "config AMAT": "0x7a12f8ecea2dfba35c5f810f2fc6c6a2c8c6cf706589480f4492f7f1f1b7f55d",
+  "approve RDDT": "0x263541033b4a0ca422c0f64d2e78470319b200dc22072aef9b4de63b80473a4b",
+  "config RDDT": "0x9226b2778e0b29aa7d8c09c5d7f230cbe592eac7405e3f650eb53dee79a964d9",
+  "approve USO": "0xa5cd73919e7ad2f76a7972e4576183da090b12757c7ff3a250676de5e3fc4b95",
+  "config USO": "0x9b6adc2d7489b8924a444f225371e3d973a08acd45ce94e625ea3b63e1ea0a5f",
+  "approve LLY": "0x81b8849e270c009ef4ce8b3479a176f6f1cf2ea61ef0417afe5642e26f11762b",
+  "config LLY": "0xf8a52090051d6e7bb211d33ce5cb0c5e55cdcd54d7db0f0a7b5396c1785633a7",
+  "approve DELL": "0xc2dda2e4abdb1c570feb3d0824ac01907edd84c293ca378007c57993f572f3c1",
+  "config DELL": "0x1ec143c3f363a4d49fce84de70c4391365d9757f5251ce954e31ca75e128c2c9",
+  "approve AVGO": "0x0bc7f7c290ddbef531a800d338544b93c4d71f7b686a8a7c41c1eb0010c64b89",
+  "config AVGO": "0x14301059741aba33aebea5241170d61f7502bee7ce22248f6c0b4bf176091315",
+  "approve MRVL": "0x5c6df245a5686bfaafad099db7364676cce417073d08d9329ef85cfba1ca7d44",
+  "config MRVL": "0x1b847f922004735210ee0d484168d10e2ed2bd693203824418de0407e64593ba",
+  "approve TSM": "0x0e8ccd02243a2a02e8209933edc6d30cfd9fca1651b12336b64b12f2c5fd0eba",
+  "config TSM": "0xeaf136f68671df1017272f2b27e727d6ef8155cdf4b589de20f7968be2da6885",
+  "approve MSTR": "0xd1d6fac3920a50bd7bbe703413ff8cc886a84c7e43c2b80e391b76b5fcb3ce2d",
+  "config MSTR": "0x91469c600d0a010c04b58fcc89ecf3c9c7290c5cb03c76a582029c7e1feca8c2",
+  "approve SGOV": "0xbd20eb2aba49a4be623d1b8eb90eadb2f87765ddb94147c797b0294f4815b1d1",
+  "config SGOV": "0xcafc8ee6dd39020bbf233768000960f719c3e79e002aa51b751c9458957bc44c",
+  "approve RBLX": "0xef6d5767f2a5d261dd98b34d5efb7bb38cf84cb836c22c75fc349a70410387c8",
+  "config RBLX": "0x92da9b0e6fa8bd87c4f228f8e9b2e2bb5c11ef2f07de9b74657b3574b223c4c8",
+  "approve ASML": "0x9c0c98d1dcae26134c4f95fa211d1eb41f1c834314614c21171b509e2c0d3a9f",
+  "config ASML": "0xf910b1ca0873d395e8bfb6645f2a983010c0dc4137f67fa07ff6ca56c8c7a453",
+  "approve TTWO": "0xe0910eae86563ba46fe7e888065d652ebca9e6b7e1da5bb99aac3ab841b10dc2",
+  "config TTWO": "0xff026c35fe444c06c32cc0553897c3ed7cbdefcb21fe359c00ee3330ed720d2e",
+  "approve RKLB": "0xabe3ecd3852de7cf5df6d6310a32138929e0e58f752d36d717bdc299de43484a",
+  "config RKLB": "0x693fbed199ffdfd61d3e6a9a0cd40733e9d44f57ae20f7c31af211b27d8ea24d",
+  "approve NU": "0xe8fcece6dc5dd628fbeeca0c81c7f9985a40bbd0ebd579b437ab35fa9e7e4882",
+  "config NU": "0xe3a68e20f068d91ff0331df36772d14e36f0da8e3fcb2fd9070b8c45a1b8f81f",
+  "approve AAOI": "0xfae69f6245ddf70959bff307685e5b3b74d8bd131c2008de81da9c95ce7d751c",
+  "config AAOI": "0x9eb87a0cfd2be30ea0e76dc5bb457331af05dcdfe4cb010fc27f5dbb34ae6208",
+  "approve QUBT": "0x6545f36f4942fcce80fed4a2b9c30236c1a637d5817dabe304bff2c45b9a3522",
+  "config QUBT": "0x73d42fc857e2b63ac567ee875d61a471736d7ee1e3a1be88e7f345c86f71f0d4",
+  "approve IONQ": "0xa8f9de588d9f51d4954b92597a6ede77d3dcf4526541cc2fc33cff4c9bc32fc5",
+  "config IONQ": "0x4af6a161bbd55dea19406e158bb88c23fdec08fc3283b73b3195469efe181bee",
+  "approve SOFI": "0x5319b17cd87bb359b7e814388a7d27ca1cd902db3866f9ef3a495ab2cdb0a321",
+  "config SOFI": "0xd12e0e809340137305965e739e9d9d9642e0a2cabec88abf4910170db1c37b6b",
+  "approve UPS": "0xb51c05c4cb04906d84e543ae852b0e936690323b85468faa8b61ce057c11fe53",
+  "config UPS": "0x7470af83ff2ce77fcbcfa22272213e1195ec164a7fd171a77f311cfbc0712880",
+  "approve SOXX": "0x64e65b459f74cb93c179215907dfe66775ebd5a48e8bf80c9fadc621aacb21ac",
+  "config SOXX": "0x644eb0494bb59ce5d6bed4a1e6bf2dd39f493552ae6ba366c1f92908bda82abf",
+  "approve XLK": "0x79609a68e88474350d2a99704b65a4203fd8ce565d184a67f564d8c7a365c9b6",
+  "config XLK": "0x780643ecb529b64d8ee450570fa8f7abf4267e60667d5ea3170367653fb04b7b",
+  "approve DDOG": "0x721775cd597fe74001afb059a045db62d1be6a2a459d685fc93f20e3a6b2fa34",
+  "config DDOG": "0x69902ce9e0c38b209c307a9ad0e02c98eee88630a18027d20e40f539cc2762e9",
+  "approve F": "0xb1076f2a3321e93e235d5724410cc18d78c02f5a043de739456a73bfe6aca3af",
+  "config F": "0x9f1d5c564947ffdc980aa786c38bf11991e94bf62457a9f07afd64b9c07f0681",
+  "approve CCL": "0x10302268d9cbb092eea9403c38738f44a52f3e5f69a7c8e862efc43189d2542d",
+  "config CCL": "0xbe9a4715df02951e72a691690ded33bd720ff91dd23d8a11a8f9e98bc146622f",
+  "approve POET": "0xc624653e6180dcee5abdebbe0181cac8298bd4ee09151981961092c0cdd1430f",
+  "config POET": "0x0670e7203ae99f43df3fb68a6117de166d304477e769873e95f596ec64da8604",
+  "approve BA": "0x83b051070318bdbc25edc423c9a38d6af6f5ab98538bf3f91aef38cafb223fe1",
+  "config BA": "0x3fb901818fc90bd3365de4a625e1153debf16632138e53e605b1ae12c091719f",
+  "approve RIVN": "0xffd13aa87ddf28731de8c47683f31d08b4372d7f1d0bc8d858b98a2c9330b692",
+  "config RIVN": "0xcdd48101c235cb1b01371e59151df60158b5f0ff9c7954b7e0a62ddfb611f394",
+  "approve UMC": "0xa06c5e2577fccc0476cb488fd7ff4f7d2d5b568bf2139e0f607e260e0f8ac60c",
+  "config UMC": "0x5151e486c517ada51a8aee62ae40bc681122b1adc7af5db4da3138209dbe8fda",
+  "ZappySwapper": "0xf4088f495e99c7aab007d50a292c887b15c15e29ad5ee370bd0e9112dbf92ee2",
+  "ZappyMargin": "0x442d55e91b7a9a738fbc62c63f661601ca8daf0b4a64a3ec06b662182ac47edb",
+  "locker.setMargin": "0x904876a735e2665e92b5cf226fbd4e373e4d6f88ff40af73620ef5588f2f1116",
+  "route NVDA": "0xd484cc868a1181fe64ff9884a4f339f1d5ebccc5d8d663c6c460debf78637b81",
+  "route AAPL": "0x681308d5cccab77a23de008d9cfb8ed078e683ad02f30dba7bb7df58d0675e52",
+  "route SPCX": "0xdf548e34d67ade5fab5c96065147a9f22b776ec90789b9b4c0a9eb8b6692be4f",
+  "route GOOGL": "0xe425a14b9288793c2d130fd891cbcbfd2e7f788f645e47554778224dc58b6db8",
+  "route TSLA": "0xbc5d31020f311fceafcf309b12eeaa9716f373af0de4b1a770ff10b0c07b743c",
+  "route AMD": "0x040ee34b9a74909b22a24f0fa6faba369c805dd51dbf79efd12f9f20bd1d4a87",
+  "route AMZN": "0x397c4a1bc2c9047ec823aed1aeca4762e3a3727ab1592774fd783398cb55c81f",
+  "route MSFT": "0x7091a730ff3d71ce5011d9886636a62e7aa9d2599708bb2c5516e9c22785ea74",
+  "route PLTR": "0xee11432f63e4ab1e2997e59e325aa4e2d7376536e846123d768127d29d03a5e6",
+  "route META": "0x05b24c8b3d0b3a91ac6e2b062ec3698e5a3896791e58f33f42975813443d4511",
+  "route MU": "0x7f799032f7f25395eb8c459442ef0b61382b6c56e7ac362b76c1d24fa1f807c0",
+  "route COIN": "0x025f5f515514bbe083f2613353dbdaae5a0828babfca049413915f4d5c5ef19e",
+  "route INTC": "0xc5014d86f5f28a54fdd0d363812903a2d8abecd5601c71cce4c5303fb1585409",
+  "route SPY": "0xdec52ce6c2f7843429b04cd28f42ee32db801b72b878b88f92756fcd4f69d1de",
+  "route SNDK": "0xad65d43290326e446b0429d730b0e797a1caeb7eb1eea3fcf5e4a1d08c95654c",
+  "route USAR": "0xdd1334bc56939a757f8d7d0e5f225f529db7acd4a7a6e43e205dda5f5dc5e6f7",
+  "route GME": "0x39ad634a72cde64c79ac7c0148d561d76ec5e2d1624a72569c7df7b6717946ef",
+  "route QQQ": "0xf263fda7468b9b8f9b5ee6fbc8683f1d959c84eeb9ed909f0d81f678e786937d",
+  "route COST": "0x8dab86d009b867c0b9ee49cc5d90d3c29c583eecc0963cec83952cf1f69bf606",
+  "route SLV": "0x6d886c755ff21685d1f9371a0507e4fbac687fc0e69697986edea39c12b8f157",
+  "route NFLX": "0x1e3203c0a6bbe7dcc103d712836e3d00ffe0196a6c53ff70c002e6222b6c82b0",
+  "route AMAT": "0xd299fbfe70cac5a1f43be74f5b9399270b98507bd5853563a55706afb5951ae2",
+  "route RDDT": "0xb77fef672a469ff96d859759f7b945813ddc6f38eaca92a33ed035507d7dee07",
+  "route USO": "0xd968b7a317300e52eebd102d067894a8f78960ce4388b315bac97cf855c8fcac",
+  "route LLY": "0x9aa366a2b5549e70be9bc957b124b267f9ed7553a238dd7c070714e0523b8ea4",
+  "route DELL": "0x66f066830d07c309e848e5ada60c710e8cb41c0ce165127d670b3f79e32455df",
+  "route AVGO": "0x0dc17d87a489068ef1b3d7690fe4e6b6f0348e61109f094438cda5ac1a3dc6c4",
+  "route MRVL": "0x125dbc36273204d513d513262d637dd5b16ae72e1cadee4dd02add0012655352",
+  "route TSM": "0x8e09c587bf4b3718fcb837a3c11885cd72d6cd2fbde27e8df0bdabb90a56fba1",
+  "route MSTR": "0xce730928e33ed112d0dbe1bf5d9385fd3eb94a01076c15c70bdd0c22efeb8a03",
+  "route SGOV": "0x674c034f9da0c2f200ff237cc4e769321acfb5c58a35715e1edb578ab5992075",
+  "route RBLX": "0x35e7746ffcb79ee2b7ebd64fe2cb5da49d1eb643daaa9a3b5cbc3864657d654a",
+  "route ASML": "0xa987bf276d839b28d5fe1f27d2079641ccb363560876eb5db1fa6e16ed4f5579",
+  "route TTWO": "0x379aac83b583a421458e9aac4653cb720f88e6d21ab13733ba5d8b55311a7535",
+  "route RKLB": "0xabf5cf3b183e67cc9b8f41b70646f619d85db53fd3cc95e096025ff26ad0692f",
+  "route NU": "0xa43cd87208d6af434c020ab7caa95972f68445f5e486f710b8b6f781194fb85c",
+  "route AAOI": "0x1e46441cd8e2b8878fb038d664aab9bb849d5f2bac8b0256052b30135ceca79e",
+  "route QUBT": "0x7a917763a7047484a2f8ecf0afb2601772e08d69ee0ae9dbc55b16cdfcbaeb82",
+  "route IONQ": "0x66bb37ef25825d8dd97014fda1e2b7704a34ee9180881deb00074b677cf63cac",
+  "route SOFI": "0x7bc34f675e6b830e451edad2793aa7d475d208b60c713623ae2dd6ed1b0facc5",
+  "route UPS": "0x68b845a4f53e49627e1f88990d17bf64af38b52a55778ef7455c1ec7b8685353",
+  "route SOXX": "0x4c76803c5b042239c736b6a16ec8f3dc94049ab232ce4cadf2fcf1a371fd04a6",
+  "route XLK": "0xb6d6264cd741abe31b2cc62d5ae723089851995d14d596cab6d5b40376c3e688",
+  "route DDOG": "0x58207922f9ac869c20bc20479b6678a426f1e169dd25682b6d2dd765adcd7de4",
+  "route F": "0x07013805d5cb6f939e1d2a5ff5bc73b4136dfeb56db7e0d20c33fcf5468d2ecc",
+  "route CCL": "0x7d890598a1280b05f7db8acec022dbf45b97f903687fc6e148405e47aefe2cad",
+  "route POET": "0x9362b387a3000d5ddbf3e5263166a7b2adf3dd3835e717e74028285a9af48676",
+  "route BA": "0x3897a00d21a2ffd169fd0121675d1bd0c7e1233507751ac21900b0777c42e332",
+  "route RIVN": "0x7e2685e66826c3d27c0d10e8d6c31f0a0013bd5172a1a01192b7bd5ad90a1a5a",
+  "route UMC": "0x55eb4eac73a00bedd585c3e58639bae6ad5033a03796e912a1bebb4aad48a0c2",
+  "hook.transferOwnership": "0xd32e828683b47234172d410478d3ea803d93cce398ccd86cc9ff43bd74ca9419",
+  "factory.transferOwnership": "0x34c8d177fbd16a8df460ed665edf3f0d6702343d3934f5095f7e0fe600b7a5dd",
+  "locker.transferOwnership": "0xae54acf2f93555d4a4a69d24dfad7746b9a5512f9ca40add9af27dce4a838e5c",
+  "swapper.transferOwnership": "0x226d7b4c8d459345f8edc1a96eb9bfff49e8760b51d274658e524927915f00b7",
+  "margin.transferOwnership": "0x01eca8b9d59deaa13457de40601582d4833b28b89d6fe416de8cf934f8a83855"
+ },
+ "deployedAt": "2026-11-07T14:03:58.283Z"
+}

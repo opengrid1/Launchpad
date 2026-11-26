@@ -20,6 +20,38 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const STABLE_RPC_URL = process.env.STABLE_RPC_URL ?? "https://rpc.stable.xyz";
 const STABLE_CHAIN_ID = Number(process.env.STABLE_CHAIN_ID ?? 988);
 
+// OneHook (Ethereum mainnet) uses transient storage, so it targets the Cancun
+// EVM; the rest of the repo stays on the default target for the chains that
+// lack those opcodes. Optimizer runs mirror the verified mainnet build.
+const ONEHOOK_FILES = [
+  "IOneOracle.sol",
+  "OneToken.sol",
+  "OneDivToken.sol",
+  "OneTokenDeployer.sol",
+  "OneHook.sol",
+  "OneFactory.sol",
+  "OneRouter.sol",
+  "mocks/MockOneOracle.sol",
+].map((f) => `contracts/v4/onehook/${f}`).concat(
+  // Equo (v3 of the OneHook design): same compiler settings
+  ["EquoToken.sol", "EquoDivToken.sol", "EquoTokenCreators.sol", "EquoTokenDeployer.sol", "EquoPriceBook.sol", "EquoHook.sol", "EquoLaunchRules.sol", "EquoFactory.sol", "EquoRouter.sol"].map((f) => `contracts/v4/equo/${f}`),
+  // Liqio (Equo on HyperEVM): same compiler settings
+  ["LiqioToken.sol", "LiqioDivToken.sol", "LiqioTokenDeployer.sol", "LiqioOracle.sol", "LiqioFactory.sol", "mocks/LiqioMocks.sol"].map((f) => `contracts/v4/liqio/${f}`),
+);
+const ONEHOOK_COMPILER = {
+  version: "0.8.26",
+  settings: { optimizer: { enabled: true, runs: 40 }, viaIR: true, evmVersion: "cancun" },
+};
+const ETH_RPC_URL = process.env.ETH_RPC_URL ?? "https://ethereum-rpc.publicnode.com";
+// HyperEVM (Hyperliquid's EVM, chain 999): the Liqio deployment target. Contract deployments need big
+// blocks (30M gas) turned on for the deployer; launches run in the 3M-gas small blocks.
+const HYPEREVM_RPC_URL = process.env.HYPEREVM_RPC_URL ?? "https://rpc.hyperliquid.xyz/evm";
+
+// EQUO2_FORK=<name from scripts/equo2/chains.js> forks that chain into the in-process network.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const EQUO2_FORK = process.env.EQUO2_FORK ? require("./scripts/equo2/chains").CHAINS.find((c: any) => c.name === process.env.EQUO2_FORK) : undefined;
+if (process.env.EQUO2_FORK && !EQUO2_FORK) throw new Error(`unknown EQUO2_FORK ${process.env.EQUO2_FORK}`);
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -28,32 +60,40 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: { enabled: true, runs: 400 },
           viaIR: true,
+          // OpenZeppelin 5.6 (pinned by the lockfile) emits MCOPY in Math.sol,
+          // which every v4 factory imports, so the whole tree must target Cancun.
+          // Ethereum, Base and Arbitrum Orbit (Robinhood) all run Cancun.
+          evmVersion: "cancun",
         },
       },
     ],
-    // OpenZeppelin's ERC721 pulls in Strings -> Bytes, which uses MCOPY and so
-    // needs the Cancun EVM (Base runs it). Hardhat compiles every file in the
-    // import graph under its own settings, so the override lists the Basket
-    // NFT and the three library files on that path. Every other contract's
-    // bytecode is unchanged.
-    overrides: Object.fromEntries(
-      [
-        "contracts/v4/basket/BasketNFT.sol",
-        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
-        "@openzeppelin/contracts/utils/Strings.sol",
-        "@openzeppelin/contracts/utils/Bytes.sol",
-      ].map((file) => [
-        file,
-        {
-          version: "0.8.26",
-          settings: { optimizer: { enabled: true, runs: 400 }, viaIR: true, evmVersion: "cancun" },
-        },
-      ]),
-    ),
+    overrides: Object.fromEntries(ONEHOOK_FILES.map((f) => [f, ONEHOOK_COMPILER])),
   },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
+      // Local runs execute the Cancun opcodes OneHook needs.
+      hardfork: process.env.FORK_HARDFORK ?? "cancun",
+      ...(process.env.HYPEREVM_FORK === "1"
+        ? {
+            // HyperEVM fork for the Liqio fork test: real WHYPE, USDC, xStocks, PRJX pools and PoolManager.
+            hardfork: process.env.FORK_HARDFORK ?? "cancun",
+            forking: { url: HYPEREVM_RPC_URL, ...(process.env.HYPEREVM_FORK_BLOCK ? { blockNumber: Number(process.env.HYPEREVM_FORK_BLOCK) } : {}) },
+            chainId: 999,
+            // view calls at the fork block itself need a hardfork history for the remote chain
+            chains: { 999: { hardforkHistory: { cancun: 0 } } },
+          }
+        : {}),
+      ...(EQUO2_FORK
+        ? {
+            // A fork of one Equo v2 chain for the deploy rehearsal (scripts/equo2/deploy.ts): real PoolManager,
+            // LayerZero endpoint, libraries and DVNs.
+            hardfork: "cancun",
+            forking: { url: process.env.EQUO2_FORK_RPC ?? EQUO2_FORK.rpc },
+            chainId: EQUO2_FORK.chainId,
+            chains: { [EQUO2_FORK.chainId]: { hardforkHistory: { cancun: 0 } } },
+          }
+        : {}),
       ...(process.env.FORK === "1" && ROBINHOOD_RPC_URL
         ? {
             // Pin a recent hardfork so view calls against the forked chain's
@@ -82,26 +122,51 @@ const config: HardhatUserConfig = {
       chainId: STABLE_CHAIN_ID,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
+    hyperevm: {
+      url: HYPEREVM_RPC_URL,
+      chainId: 999,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+    },
+    // Ethereum mainnet: the OneHook deployment target.
+    mainnet: {
+      url: ETH_RPC_URL,
+      chainId: 1,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+    },
+    // The other Equo chains. RPCs can be replaced with <NAME>_RPC_URL.
+    base: { url: process.env.BASE_RPC_URL ?? "https://mainnet.base.org", chainId: 8453, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    bsc: { url: process.env.BSC_RPC_URL ?? "https://bsc-rpc.publicnode.com", chainId: 56, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    arbitrum: { url: process.env.ARBITRUM_RPC_URL ?? "https://arb1.arbitrum.io/rpc", chainId: 42161, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    monad: { url: process.env.MONAD_RPC_URL ?? "https://rpc.monad.xyz", chainId: 143, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    megaeth: { url: process.env.MEGAETH_RPC_URL ?? "https://mainnet.megaeth.com/rpc", chainId: 4326, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    ink: { url: process.env.INK_RPC_URL ?? "https://rpc-gel.inkonchain.com", chainId: 57073, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
+    unichain: { url: process.env.UNICHAIN_RPC_URL ?? "https://mainnet.unichain.org", chainId: 130, accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [] },
   },
   etherscan: {
-    // Blockscout instances accept any non-empty API key string.
-    apiKey: {
-      robinhood: process.env.BLOCKSCOUT_API_KEY ?? "blockscout",
-    },
-    customChains: BLOCKSCOUT_URL
-      ? [
-          {
-            network: "robinhood",
-            chainId: ROBINHOOD_CHAIN_ID,
-            urls: {
-              apiURL: `${BLOCKSCOUT_URL.replace(/\/$/, "")}/api`,
-              browserURL: BLOCKSCOUT_URL,
+    // Etherscan API v2 takes one key for every Etherscan-backed chain. The
+    // Blockscout custom chain below accepts any non-empty string, so the same
+    // value serves it when no Etherscan key is set.
+    apiKey: process.env.ETHERSCAN_API_KEY ?? process.env.BLOCKSCOUT_API_KEY ?? "blockscout",
+    customChains: [
+      // HyperEVMScan is an Etherscan-family explorer: the v2 API with chainid 999 and the same key
+      { network: "hyperevm", chainId: 999, urls: { apiURL: "https://api.etherscan.io/v2/api?chainid=999", browserURL: "https://hyperevmscan.io" } },
+      ...(BLOCKSCOUT_URL
+        ? [
+            {
+              network: "robinhood",
+              chainId: ROBINHOOD_CHAIN_ID,
+              urls: {
+                apiURL: `${BLOCKSCOUT_URL.replace(/\/$/, "")}/api`,
+                browserURL: BLOCKSCOUT_URL,
+              },
             },
-          },
-        ]
-      : [],
+          ]
+        : []),
+    ],
   },
-  sourcify: { enabled: false },
+  // Sourcify alongside Etherscan, so every OneHook contract (and each coin a
+  // user launches, by similar match) is open source on both.
+  sourcify: { enabled: true },
   mocha: { timeout: 120_000 },
 };
 

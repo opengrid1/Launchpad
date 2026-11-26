@@ -1,0 +1,274 @@
+{
+  "_note": "One entry per Equo chain, on the Equo v3 deployment (2026-10-28: the v2 contracts again, with Solana and Ink; v2 holds the addresses, which marks their coins as 9-decimal coins, stored scaled to 18, and v2.gen 3 tags them). priceFrom: the first Equo factory on that chain, read only for its native coin USD price. rpcs are tried in order; RPC_<KEY> in the environment (comma separated) replaces them. maxRange is the most blocks one eth_getLogs may span on these RPCs. minGapMs spaces requests for RPCs that limit requests per minute.",
+  "chains": [
+    {
+      "key": "eth",
+      "name": "Ethereum",
+      "chainId": 1,
+      "lzEid": 30101,
+      "native": "ETH",
+      "rpcs": [
+        "https://ethereum-rpc.publicnode.com",
+        "https://rpc.mevblocker.io"
+      ],
+      "maxRange": 4000,
+      "confirmations": 2,
+      "pollMs": 6000,
+      "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+      "wrappedNative": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+      "hook": "0x485E4328b0F4C5c11155bFeC43aF1c4D9462A8cC",
+      "tokenDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+      "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+      "startBlock": 26288391,
+      "v2": {
+        "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+        "hook": "0x485E4328b0F4C5c11155bFeC43aF1c4D9462A8cC",
+        "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+        "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+        "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+        "gen": 3
+      },
+      "priceFrom": "0x6b82ddCc081CB2bA668C5190139D16A4dBb2ef52"
+    },
+    {
+      "key": "base",
+      "name": "Base",
+      "chainId": 8453,
+      "lzEid": 30184,
+      "native": "ETH",
+      "rpcs": [
+        "https://base-rpc.publicnode.com",
+        "https://mainnet.base.org"
+      ],
+      "maxRange": 1000,
+      "confirmations": 2,
+      "pollMs": 4000,
+      "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "factory": "0xf51667a3607ca78e81344d95918651A5768621aB",
+      "hook": "0x6E58deD0b0D602CdE4715C88bFE2Ad9AdFd068CC",
+      "tokenDeployer": "0xb7f7b1060A7080CF7aB7676778d48f155377afC4",
+      "router": "0x7E39AF0100bbFF4Cd8C3d65bCcCD0A83c1694734",
+      "startBlock": 53183233,
+      "v2": {
+        "factory": "0xf51667a3607ca78e81344d95918651A5768621aB",
+        "hook": "0x6E58deD0b0D602CdE4715C88bFE2Ad9AdFd068CC",
+        "router": "0x7E39AF0100bbFF4Cd8C3d65bCcCD0A83c1694734",
+        "coinDeployer": "0xb7f7b1060A7080CF7aB7676778d48f155377afC4",
+        "coinCreator": "0x6E83fb3563053BbFB2D5BA51E63e69DFbA954a9c",
+        "gen": 3
+      },
+      "priceFrom": "0x3258C1D4473e9b91ddD6d92517F0929f49F5E1da"
+    },
+    {
+      "key": "bsc",
+      "name": "BNB Chain",
+      "chainId": 56,
+      "lzEid": 30102,
+      "native": "BNB",
+      "rpcs": [
+        "https://bsc-rpc.publicnode.com"
+      ],
+      "maxRange": 5000,
+      "confirmations": 3,
+      "pollMs": 4000,
+      "poolManager": "0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF",
+      "wrappedNative": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+      "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+      "hook": "0x22E64aeF76ec8299b66d412b4921507B927da8cc",
+      "tokenDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+      "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+      "startBlock": 130207257,
+      "v2": {
+        "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+        "hook": "0x22E64aeF76ec8299b66d412b4921507B927da8cc",
+        "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+        "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+        "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+        "gen": 3
+      },
+      "priceFrom": "0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d"
+    },
+    {
+      "key": "arbitrum",
+      "name": "Arbitrum",
+      "chainId": 42161,
+      "lzEid": 30110,
+      "native": "ETH",
+      "rpcs": [
+        "https://arb1.arbitrum.io/rpc"
+      ],
+      "maxRange": 10000,
+      "confirmations": 5,
+      "pollMs": 4000,
+      "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+      "wrappedNative": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+      "hook": "0xf465A98680ba72ABEc84e779b3694Ee37638E8CC",
+      "tokenDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+      "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+      "startBlock": 518926334,
+      "v2": {
+        "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+        "hook": "0xf465A98680ba72ABEc84e779b3694Ee37638E8CC",
+        "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+        "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+        "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+        "gen": 3
+      },
+      "priceFrom": "0x4f91CbFc45e76256Cd350A21Fe68Ec630731f492"
+    },
+    {
+      "key": "hyper",
+      "name": "HyperEVM",
+      "chainId": 999,
+      "lzEid": 30367,
+      "native": "HYPE",
+      "rpcs": [
+        "https://rpc.hypurrscan.io",
+        "https://rpc.hyperliquid.xyz/evm",
+        "https://hyperliquid-json-rpc.stakely.io"
+      ],
+      "maxRange": 1000,
+      "batchRanges": 2,
+      "minGapMs": 700,
+      "confirmations": 1,
+      "pollMs": 4000,
+      "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
+      "wrappedNative": "0x5555555555555555555555555555555555555555",
+      "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+      "hook": "0x24Aa9571B592f47fee0e64A2182cE082f6aAE8Cc",
+      "tokenDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+      "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+      "startBlock": 49714320,
+      "v2": {
+        "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+        "hook": "0x24Aa9571B592f47fee0e64A2182cE082f6aAE8Cc",
+        "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+        "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+        "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+        "gen": 3
+      },
+      "priceFrom": "0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d"
+    },
+    {
+      "key": "monad",
+      "name": "Monad",
+      "chainId": 143,
+      "lzEid": 30390,
+      "native": "MON",
+      "rpcs": [
+        "https://rpc.monad.xyz"
+      ],
+      "maxRange": 100,
+      "confirmations": 2,
+      "pollMs": 2000,
+      "poolManager": "0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e",
+      "wrappedNative": "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A",
+      "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+      "hook": "0x3fe54e87AF8b2747A2513A5B992a4FAecB6668CC",
+      "tokenDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+      "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+      "startBlock": 117211868,
+      "v2": {
+        "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+        "hook": "0x3fe54e87AF8b2747A2513A5B992a4FAecB6668CC",
+        "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+        "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+        "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+        "gen": 3
+      },
+      "priceFrom": "0x4f91CbFc45e76256Cd350A21Fe68Ec630731f492"
+    },
+    {
+      "key": "megaeth",
+      "name": "MegaETH",
+      "chainId": 4326,
+      "lzEid": 30398,
+      "native": "ETH",
+      "rpcs": [
+        "https://mainnet.megaeth.com/rpc"
+      ],
+      "maxRange": 1000,
+      "confirmations": 2,
+      "pollMs": 2000,
+      "poolManager": "0xaCB7e78fa05D562e0A5D3089ec896D57D057d38E",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+      "hook": "0x8b1F580e4150Ab7B67502C94c5169A8b810968cc",
+      "tokenDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+      "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+      "startBlock": 30358963,
+      "v2": {
+        "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+        "hook": "0x8b1F580e4150Ab7B67502C94c5169A8b810968cc",
+        "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+        "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+        "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+        "gen": 3
+      },
+      "priceFrom": "0x9E679424bc13A466aAe79DF17fC76506695B5bbf"
+    },
+    {
+      "key": "unichain",
+      "name": "Unichain",
+      "chainId": 130,
+      "lzEid": 30320,
+      "native": "ETH",
+      "rpcs": [
+        "https://unichain-rpc.publicnode.com",
+        "https://mainnet.unichain.org"
+      ],
+      "maxRange": 2000,
+      "confirmations": 2,
+      "pollMs": 2000,
+      "poolManager": "0x1F98400000000000000000000000000000000004",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+      "hook": "0xb322E409832CbD4B668dd12d6BCa33F08bD0E8Cc",
+      "tokenDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+      "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+      "startBlock": 62407546,
+      "v2": {
+        "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+        "hook": "0xb322E409832CbD4B668dd12d6BCa33F08bD0E8Cc",
+        "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9",
+        "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+        "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+        "gen": 3
+      },
+      "priceFrom": "0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d"
+    },
+    {
+      "key": "ink",
+      "name": "Ink",
+      "chainId": 57073,
+      "lzEid": 30339,
+      "native": "ETH",
+      "rpcs": [
+        "https://rpc-gel.inkonchain.com",
+        "https://ink.drpc.org"
+      ],
+      "maxRange": 1000,
+      "confirmations": 2,
+      "pollMs": 4000,
+      "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "factory": "0x183625c93080365556178346880D028B79036bAB",
+      "hook": "0xf6c3cd41a659d130242f873fc26175b0C12968cc",
+      "router": "0xe5D28aFa5402fcf37cc5FF0D42bD1EF522F4133b",
+      "tokenDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+      "v2": {
+        "factory": "0x183625c93080365556178346880D028B79036bAB",
+        "hook": "0xf6c3cd41a659d130242f873fc26175b0C12968cc",
+        "router": "0xe5D28aFa5402fcf37cc5FF0D42bD1EF522F4133b",
+        "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+        "coinCreator": "0x4DFB13BC1264f7bcA5Ed464E338C1A5ADC47C5d0",
+        "gen": 3
+      },
+      "startBlock": 59657511,
+      "priceAs": "base"
+    }
+  ]
+}

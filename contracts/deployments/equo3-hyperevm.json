@@ -1,0 +1,65 @@
+{
+  "contracts": {
+    "hook": "0x24Aa9571B592f47fee0e64A2182cE082f6aAE8Cc",
+    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000000666",
+    "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+    "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+    "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+    "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9"
+  },
+  "gas": {
+    "hook": 2865061,
+    "coinDeployer": 2263021,
+    "setEndpoint": 47512,
+    "coinCreator": 4410440,
+    "route bsc": 993604,
+    "route arbitrum": 993604,
+    "route base": 993604,
+    "route unichain": 993604,
+    "route monad": 993604,
+    "route megaeth": 993616,
+    "route ink": 993604,
+    "route solana": 1013528,
+    "factory": 4139076,
+    "coinDeployer.setFactory": 47292,
+    "hook.setFactory": 45441,
+    "router": 1933023,
+    "coinDeployer.endSetup": 22582
+  },
+  "network": "hyperevm",
+  "chainId": 999,
+  "eid": 30367,
+  "deployer": "0xA0783C5658F4D6cd90D89023F9Dd2Cc54CACaF0a",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "launcher": "0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67",
+  "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
+  "weth": "0x5555555555555555555555555555555555555555",
+  "lzEndpoint": "0x3A73033C0b1407574C76BdBAc67f126f6b4a9AA9",
+  "dvns": [
+    "0x8E49eF1DfAe17e547CA0E7526FfDA81FbaCA810A",
+    "0xc097ab8CD7b053326DFe9fB3E3a31a0CCe3B526f"
+  ],
+  "nativeUsdBand": [
+    "5",
+    "1000"
+  ],
+  "startBlock": 49714320,
+  "solDvns": [
+    "0xBB83Ecf372CbB6daa629ea9A9A53BEC6d601F229",
+    "0xc097ab8CD7b053326DFe9fB3E3a31a0CCe3B526f"
+  ],
+  "routes": {
+    "mainnet": 30101,
+    "bsc": 30102,
+    "arbitrum": 30110,
+    "base": 30184,
+    "unichain": 30320,
+    "monad": 30390,
+    "megaeth": 30398,
+    "ink": 30339,
+    "solana": 30168
+  },
+  "deployedAt": "2026-10-28T03:28:01.155Z"
+}

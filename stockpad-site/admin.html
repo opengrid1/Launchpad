@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Operator | Equo</title><meta name="description" content="Operator tools."><meta name="robots" content="noindex">
+<link rel="icon" href="/img/favicon.svg?v=16" type="image/svg+xml"><meta name="theme-color" content="#0a0a0b">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/ui.css?v=25">
+<style>#pg-admin .grid{align-items:start} #pg-admin .card .cb{display:flex;flex-direction:column;gap:10px} #pg-admin .inline{display:flex;gap:8px} #pg-admin .inline .inp{flex:1} #pg-admin .coinrow td .row{gap:8px} #pg-admin .coins{margin-top:28px} #pg-admin .coins .sec-h{margin-bottom:6px} #pg-admin table{width:100%;border-collapse:collapse;font-size:12.5px} #pg-admin th,#pg-admin td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap} #pg-admin th{font:500 10.5px var(--mono);text-transform:uppercase;color:var(--fg-3)} #pg-admin td{font-family:var(--mono)} #pg-admin .cimg{display:inline-block;width:16px;height:16px;border-radius:50%;vertical-align:-3px;margin-right:6px} #pg-admin .low{color:var(--dn)} #pg-admin .colw{display:flex;gap:6px;align-items:center} #pg-admin .colw .inp{width:84px;height:30px}</style>
+</head><body data-page="admin">
+<header id="sp-top"></header><div id="sp-tape"></div>
+<main id="sp-main"><div class="wrap"><div id="pg-admin">
+  <div class="ph"><div><h1>Operator</h1><p class="sub" style="color:var(--fg-3);margin:4px 0 0">Equo v2 on every chain. Admin wallet only.</p></div></div>
+  <div id="adm-gate" class="empty panel hidden"><b>Admin wallet only</b>Connect the Equo admin wallet to use these tools.</div>
+  <div id="adm-body" class="hidden">
+    <section class="panel"><div class="ph2"><span>Launch service</span><span class="lbl mono" id="adm-svc"></span></div><div class="tw"><table class="tbl" id="adm-bal"></table></div>
+      <p class="hint" style="padding:0 16px 14px;margin:0">The service pays the gas of every leg a creator does not launch (about 7.7M gas each) and runs collects. Launch fees from creators land on this address on the chain they launch from. Keep each chain topped up.</p></section>
+    <section class="panel coins" style="margin-top:14px"><div class="ph2"><span>Coins</span><span class="lbl" id="adm-count"></span></div><div class="tw"><table class="tbl" id="adm-coins"></table></div>
+      <p class="hint" style="padding:0 16px 14px;margin:0">Collect pulls the chosen share of a coin's pool liquidity (coins and native) on every chain it lives on, to the admin wallet. It cannot be undone. You sign a message; the service sends the transactions.</p></section>
+  </div>
+</div></div></main>
+<footer id="sp-foot"></footer>
+<script src="/config.js?v=17"></script><script src="/data.js?v=4"></script><script src="/avatar.js"></script><script src="/chain.js?v=23"></script><script src="/equo.js?v=7"></script><script src="/api.js?v=6"></script><script src="/v2.js?v=2"></script><script src="/wallet.js"></script><script src="/core.js?v=43"></script><script src="/sp-admin.js?v=20"></script>
+</body></html>

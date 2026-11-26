@@ -1,0 +1,116 @@
+{
+ "issuer": "EQX Labs",
+ "registry": "https://docs.eqxlabs.io/developers/token-registry.md",
+ "pairs": [
+  {
+   "key": "eqnvda",
+   "sym": "EQNVDA",
+   "name": "NVIDIA",
+   "ticker": "NVDA",
+   "hyperevm": "0xA23aFe6Bd466BdB806a83AfDDA76F644FC4347CF",
+   "elysium": "0x5CeFf5C7316067b81B537a9aE011d6882f0A558A",
+   "decimals": 8,
+   "spot": "@1155"
+  },
+  {
+   "key": "eqtsla",
+   "sym": "EQTSLA",
+   "name": "Tesla",
+   "ticker": "TSLA",
+   "hyperevm": "0x883DAd2Aa97175c0D1569E1de61204ac47b2b8fb",
+   "elysium": "0x7559191F12413d122493Fe43dE6d0B4544C6579F",
+   "decimals": 8,
+   "spot": "@1156"
+  },
+  {
+   "key": "eqaapl",
+   "sym": "EQAAPL",
+   "name": "Apple",
+   "ticker": "AAPL",
+   "hyperevm": "0x15d82780780Ca72570818f91587B752562D655bc",
+   "elysium": "0x60F8bf68d4B85CB9079FE68742edAd328d35f004",
+   "decimals": 8,
+   "spot": "@1157"
+  },
+  {
+   "key": "eqmsft",
+   "sym": "EQMSFT",
+   "name": "Microsoft",
+   "ticker": "MSFT",
+   "hyperevm": "0xca911A8ae21baAf9CDec0baa45259c64Ec8AE59E",
+   "elysium": "0x05a297057bC92CeA0259D87901a65284E2E32026",
+   "decimals": 8,
+   "spot": "@1160"
+  },
+  {
+   "key": "eqgoog",
+   "sym": "EQGOOG",
+   "name": "Alphabet",
+   "ticker": "GOOGL",
+   "hyperevm": "0x4720b40C89Ff3A74C6bE8eA34Cf40FaE5eacEd79",
+   "elysium": "0x3ADb8e7a4EDa0A1581b59AA168Aa5dbCB2880f51",
+   "decimals": 8,
+   "spot": "@1158"
+  },
+  {
+   "key": "eqmeta",
+   "sym": "EQMETA",
+   "name": "Meta",
+   "ticker": "META",
+   "hyperevm": "0xF5c6190d9178097563372a4acA15D52Ec24F129A",
+   "elysium": "0x6a62E27ea23a933990e3B444cC23809314E9991B",
+   "decimals": 8,
+   "spot": "@1159"
+  },
+  {
+   "key": "eqamzn",
+   "sym": "EQAMZN",
+   "name": "Amazon",
+   "ticker": "AMZN",
+   "hyperevm": "0x582C6ADd0eb720EA1c2e2019fF9b7c21Fe99288F",
+   "elysium": "0xA98485140Bc6d87C74B5fd59D11F086221Cef0bC",
+   "decimals": 8,
+   "spot": "@1161"
+  },
+  {
+   "key": "eqmu",
+   "sym": "EQMU",
+   "name": "Micron",
+   "ticker": "MU",
+   "hyperevm": "0x9164Fd5f67FE4188Ff79675182183512bC37d66D",
+   "elysium": "0x85854E22a602FFF395240d0739D42E51f542018a",
+   "decimals": 8,
+   "spot": "@1162"
+  },
+  {
+   "key": "eqspcx",
+   "sym": "EQSPCX",
+   "name": "SpaceX",
+   "ticker": "SPCX",
+   "hyperevm": "0xF115FF708A795cD0E06531Dec57ed716138bE8BD",
+   "elysium": "0x8264c91CedFE6CC078116083d5a3e198c16B1898",
+   "decimals": 8,
+   "spot": "@1163"
+  },
+  {
+   "key": "eqspy",
+   "sym": "EQSPY",
+   "name": "S&P 500 ETF",
+   "ticker": "SPY",
+   "hyperevm": "0x07A76acCed707De999A54D39aFF62A2d7ac4CC81",
+   "elysium": "0xacC8303c19a7D686339304405E0519fC14f90b87",
+   "decimals": 8,
+   "spot": "@1120"
+  },
+  {
+   "key": "eqqqq",
+   "sym": "EQQQQ",
+   "name": "Nasdaq 100 ETF",
+   "ticker": "QQQ",
+   "hyperevm": "0x095cca17f0619596115eA09bbE1D80431685Ba1A",
+   "elysium": "0x6c4a8a4712c8dEB7d14b97A35c6e96d2e83aE1b7",
+   "decimals": 8,
+   "spot": "@1119"
+  }
+ ]
+}

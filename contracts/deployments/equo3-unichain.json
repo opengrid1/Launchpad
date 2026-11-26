@@ -1,0 +1,67 @@
+{
+  "contracts": {
+    "hook": "0xb322E409832CbD4B668dd12d6BCa33F08bD0E8Cc",
+    "hookSalt": "0x000000000000000000000000000000000000000000000000000000000000d022",
+    "coinDeployer": "0xb7C76c44e4fA523071cAD82E5865Bdf133097b38",
+    "coinCreator": "0xfC15Ecc412ACDd25d9Ba33389E53579eD328DfbC",
+    "factory": "0x44D016b20a0c8f0A3791B3Ea10Ff09af0eCE1DC2",
+    "router": "0xE4767a75518E14D15F34DcE4155CC4256Ff3D0f9"
+  },
+  "gas": {
+    "hook": 2864653,
+    "coinDeployer": 2263021,
+    "setEndpoint": 47512,
+    "coinCreator": 4410440,
+    "setCreatorContract": 50672,
+    "route mainnet": 993592,
+    "route bsc": 993592,
+    "route arbitrum": 993592,
+    "route base": 993592,
+    "route hyperevm": 993592,
+    "route monad": 993592,
+    "route megaeth": 993604,
+    "route ink": 993592,
+    "route solana": 1013516,
+    "factory": 4138476,
+    "coinDeployer.setFactory": 47292,
+    "hook.setFactory": 45441,
+    "router": 1932615,
+    "coinDeployer.endSetup": 22582
+  },
+  "network": "unichain",
+  "chainId": 130,
+  "eid": 30320,
+  "deployer": "0xA0783C5658F4D6cd90D89023F9Dd2Cc54CACaF0a",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "signer": "0x43ecB6BA1341EDeAd6284d84DE3cE061bCe209B6",
+  "launcher": "0xCd7BA6f6dB7423d5C51a33921ea065fA55957D67",
+  "poolManager": "0x1F98400000000000000000000000000000000004",
+  "weth": "0x4200000000000000000000000000000000000006",
+  "lzEndpoint": "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B",
+  "dvns": [
+    "0x25e0e650a78e6304A3983Fc4b7Ffc6544b1bEea6",
+    "0x282b3386571f7f794450d5789911a9804FA346b4"
+  ],
+  "nativeUsdBand": [
+    "300",
+    "30000"
+  ],
+  "startBlock": 62407546,
+  "solDvns": [
+    "0x282b3386571f7f794450d5789911a9804FA346b4",
+    "0xC6a6324932B399D6A673B7Ed0af671F28033E046"
+  ],
+  "routes": {
+    "mainnet": 30101,
+    "bsc": 30102,
+    "arbitrum": 30110,
+    "base": 30184,
+    "hyperevm": 30367,
+    "monad": 30390,
+    "megaeth": 30398,
+    "ink": 30339,
+    "solana": 30168
+  },
+  "deployedAt": "2026-10-28T03:14:21.409Z"
+}

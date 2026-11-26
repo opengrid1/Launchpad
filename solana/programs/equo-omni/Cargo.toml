@@ -1,0 +1,14 @@
+[package]
+name = "equo-omni"
+version = "0.3.0"
+edition = "2021"
+description = "Equo on Solana, the Solana leg of a multichain launch: snapshot-verified Token-2022 coin bridged by a LayerZero OFT, Meteora DAMM v2 pool"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "equo_omni"
+
+[dependencies]
+pinocchio = "0.9"
+ruint = { version = "1.12", default-features = false }

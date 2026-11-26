@@ -1,0 +1,29 @@
+{
+  "network": "megaeth",
+  "chainId": 4326,
+  "model": "equo-v3-omni: onehook-v2 + cashback (no referrals), 70/30 split, cap presets, creator transfer, takeover (flags 0xCC); OFT coins, 0.2% bridge fee",
+  "deployedAt": "2026-10-26T04:00:37.845Z",
+  "deployer": "0x54Ee4998B3309b20daf07F082B9ad8d8De380D0F",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "contracts": {
+    "hookDeployer": "0x5612b52BE6e5ba305862252BFaBfBa5Dc94213Db",
+    "hook": "0x47a94C1cAceF22027756687F1Bf20031d44E00cc",
+    "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000027ae",
+    "tokenDeployer": "0x502Dc911055B057aBBE9605d72462A66fC2885a5",
+    "tokenCreator": "0x931939Ea61E4D3B2A16b486C8d3a656C718b9b07",
+    "divTokenCreator": "0x84BAfF09BB72A468d4387a6111259BEAb6d7633b",
+    "launchRules": "0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d",
+    "factory": "0x9E679424bc13A466aAe79DF17fC76506695B5bbf",
+    "router": "0x245EBB207bb18bB4E7E3A81aF9f7E69a43b63DD0",
+    "poolManager": "0xaCB7e78fa05D562e0A5D3089ec896D57D057d38E",
+    "weth": "0x4200000000000000000000000000000000000006",
+    "oracle": "0x6e71d7A0B3a5f168eBd86B7EcAD1A43D74AAc1D3",
+    "lzEndpoint": "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B"
+  },
+  "minFirstBuy": "1000000000000000",
+  "mevBand": {
+    "freePriorityGwei": "1",
+    "priorityUnitGwei": "0.05"
+  }
+}

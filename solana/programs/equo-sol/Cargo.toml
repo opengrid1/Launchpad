@@ -1,0 +1,14 @@
+[package]
+name = "equo-sol"
+version = "0.2.0"
+edition = "2021"
+description = "Equo launchpad on Solana: Token-2022 coin, Raydium CLMM pool (SOL or xStock pair, Pyth-priced 3,000 USD start), Pangea-style fee split, admin collect"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "equo_sol"
+
+[dependencies]
+pinocchio = "0.9"
+ruint = { version = "1.12", default-features = false }

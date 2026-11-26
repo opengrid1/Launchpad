@@ -1,0 +1,93 @@
+{
+  "network": "hyperevm",
+  "chainId": 999,
+  "model": "liqio-v2: equo hook + router + factory (admin collect, MIN_FIRST_BUY), clone coins with deployer-only initializers, HyperCore oracle (flags 0xCC)",
+  "deployedAt": "2026-10-24T05:11:02.263Z",
+  "deployer": "0x4E3862c6f000911Bf81F159ee0114B0a1184d68f",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "contracts": {
+    "hookDeployer": "0xa721481779a25543232390fb19387E0AE3D23388",
+    "hook": "0x176447020847b5cCeA98a46E303808d3De22C0Cc",
+    "hookSalt": "0x00000000000000000000000000000000000000000000000000000000000007d1",
+    "oracle": "0xC919c479e420A3F8b294fC2C00C3E264Edd1CD14",
+    "tokenDeployer": "0x2a04b14664eaB513873Faeb939595324C9051FA0",
+    "tokenImpl": "0x735093d0cc2DbF04a2B6Ae98FE36A719cD3861A8",
+    "divTokenImpl": "0x5f817bC7Fdb9E5b6b96b8224a3E7Bb4F3915123E",
+    "factory": "0x7b55B32B3DAeBAf3Bc8a76e84dFe4d9C1666cB14",
+    "router": "0x56F27321729E09fdb49Dc544E7c69263feeCDaEe",
+    "poolManager": "0x12D4Fd9C5DeDd00ab8a0bCe2CF0167bbf94b6B1F",
+    "weth": "0x5555555555555555555555555555555555555555"
+  },
+  "sources": [
+    {
+      "symbol": "WHYPE",
+      "token": "0x5555555555555555555555555555555555555555",
+      "kind": "core",
+      "index": 159,
+      "sz": 2,
+      "mult": "1000000000000000000",
+      "erc4626": false
+    },
+    {
+      "symbol": "USDC",
+      "token": "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+      "kind": "fixed",
+      "usd18": "1000000000000000000000000000000"
+    },
+    {
+      "symbol": "wNVDAx",
+      "token": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+      "kind": "core",
+      "index": 10002,
+      "sz": 3,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wSPYx",
+      "token": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540",
+      "kind": "core",
+      "index": 10052,
+      "sz": 3,
+      "mult": "100000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wSPCXx",
+      "token": "0x8e2eeD8b8B5E13Ea7BF38e50d7821d2C57309072",
+      "kind": "core",
+      "index": 10076,
+      "sz": 2,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wGMEx",
+      "token": "0x459D3ae62B86cC6125e06260DddFd3AFED24A877",
+      "kind": "core",
+      "index": 10041,
+      "sz": 2,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wMUx",
+      "token": "0xe2047ee3bdDb5C99ae428AB83df63f8730698e30",
+      "kind": "core",
+      "index": 10015,
+      "sz": 3,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    },
+    {
+      "symbol": "wSKHYx",
+      "token": "0x6215a58ed045d71F2561AaAbe54f4C885C522998",
+      "kind": "core",
+      "index": 10099,
+      "sz": 2,
+      "mult": "1000000000000000000",
+      "erc4626": true
+    }
+  ]
+}

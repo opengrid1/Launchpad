@@ -1,0 +1,12 @@
+$EQUO is live on 10 chains.
+
+One coin, one launch: Ethereum, Base, BNB Chain, Arbitrum, HyperEVM, Monad, MegaETH, Unichain, Ink and now Solana.
+
+Every chain opens at the same price, and holders move $EQUO between chains through LayerZero, Solana included.
+
+ETH, BSC, ARB, HYPE, MON, MEGA, UNI: 0x07d0AA4A30B078Aa798F08E131BaC62bd38F7BE9
+Base: 0x09405c85f19C5bb0Ea5B9FB760C3b9c39bF12De9
+Ink: 0x0E4aC5cA974Faa18E144965bd223a95eA2802ae9
+Solana: BrjqhMvPJ2qvC2c66CNSp6exULSAitrQLvC1JAu627d6
+
+Launch yours on up to 10 chains at once: equo.fun

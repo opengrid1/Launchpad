@@ -1,0 +1,29 @@
+{
+  "network": "arbitrum",
+  "chainId": 42161,
+  "model": "equo-v3-omni: onehook-v2 + cashback (no referrals), 70/30 split, cap presets, creator transfer, takeover (flags 0xCC); OFT coins, 0.2% bridge fee",
+  "deployedAt": "2026-10-26T03:21:11.870Z",
+  "deployer": "0x54Ee4998B3309b20daf07F082B9ad8d8De380D0F",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "contracts": {
+    "hookDeployer": "0x14627317afFDb8426715BD3fe0a90f8a9b9b585C",
+    "hook": "0xfecB10aD45782011d125f44B85da47EC9B5940CC",
+    "hookSalt": "0x0000000000000000000000000000000000000000000000000000000000006333",
+    "tokenDeployer": "0x502Dc911055B057aBBE9605d72462A66fC2885a5",
+    "tokenCreator": "0x931939Ea61E4D3B2A16b486C8d3a656C718b9b07",
+    "divTokenCreator": "0x84BAfF09BB72A468d4387a6111259BEAb6d7633b",
+    "launchRules": "0x6b82ddCc081CB2bA668C5190139D16A4dBb2ef52",
+    "factory": "0x4f91CbFc45e76256Cd350A21Fe68Ec630731f492",
+    "router": "0x0d0c4f86375a8361CDD2B5Df04Cf6540a2896c6d",
+    "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+    "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "oracle": "0x5612b52BE6e5ba305862252BFaBfBa5Dc94213Db",
+    "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c"
+  },
+  "minFirstBuy": "1000000000000000",
+  "mevBand": {
+    "freePriorityGwei": "1",
+    "priorityUnitGwei": "0.05"
+  }
+}
