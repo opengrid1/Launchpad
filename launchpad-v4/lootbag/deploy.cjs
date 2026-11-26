@@ -1,5 +1,6 @@
 // Deploys Lootbag on Base (or a Base fork with BASE_RPC): the route swapper, the payout contract, the hook at a
-// CREATE2 address carrying its permission flags, the factory, the Bags and the airdrop pot. Wires them, lists the
+// CREATE2 address carrying its permission flags, the factory, the Bags, the airdrop pot and the ETH trade router
+// (which has no owner). Wires them, lists the
 // tokens (VVV, WETH, USDC and every Base stock token whose USDC pool checks out) both as quotes a coin can be paired
 // with, each at an opening tick worked out from live pool prices, and as rewards holders can be paid in. Sets one
 // route into USDC and one out of it per token (the swapper joins the two for any pair), makes the owner wallet a
@@ -144,10 +145,10 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
     routes.push({ name: `route ${sym}>USDC`, tokenIn: token, tokenOut: A.usdc, hops: [v3(pool)] });
     routes.push({ name: `route USDC>${sym}`, tokenIn: A.usdc, tokenOut: token, hops: [v3(pool)] });
   }
-  console.log(`plan: 6 contracts, ${quotes.length} quotes, ${rewards.length} rewards, ${routes.length} routes${eq(me, OWNER) ? '' : ', 6 ownership offers'}`);
+  console.log(`plan: 7 contracts, ${quotes.length} quotes, ${rewards.length} rewards, ${routes.length} routes${eq(me, OWNER) ? '' : ', 6 ownership offers'}`);
 
   // ---------------------------------------------------------------- contracts
-  const Swapper = art('LootbagSwapper'), Payout = art('LootbagPayout'), Hook = art('LootbagHook'), Factory = art('LootbagFactory'), Bags = art('LootbagBags'), Airdrop = art('LootbagAirdrop');
+  const Swapper = art('LootbagSwapper'), Payout = art('LootbagPayout'), Hook = art('LootbagHook'), Factory = art('LootbagFactory'), Bags = art('LootbagBags'), Airdrop = art('LootbagAirdrop'), Router = art('LootbagRouter');
   const init = (a, types, args) => a.bytecode + AC.encode(types, args).slice(2);
   const hookInit = init(Hook, ['address', 'address'], [A.pm, me]);
   if (prog.hookFor !== me) { delete prog.hookSalt; delete prog.hook; }
@@ -215,9 +216,10 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   await step('LootbagHook', { to: A.create2, data: prog.hookSalt + hookInit.slice(2) });
   const hook = prog.hook;
   if ((await P.getCode(hook)) === '0x') throw new Error('the hook did not land at ' + hook);
-  const factory = (await step('LootbagFactory', { data: init(Factory, ['address', 'address', 'address', 'address', 'address'], [A.pm, hook, payout, me, TREASURY]) })).address;
+  const factory = (await step('LootbagFactory', { data: init(Factory, ['address', 'address', 'address', 'address', 'address', 'address', 'address'], [A.pm, hook, payout, me, TREASURY, swapper, A.weth]) })).address;
   const bags = (await step('LootbagBags', { data: init(Bags, ['address', 'address', 'address', 'address', 'address[]'], [A.vvv, swapper, me, TREASURY, days]) })).address;
   const airdrop = (await step('LootbagAirdrop', { data: init(Airdrop, ['address', 'address', 'address'], [A.vvv, swapper, me]) })).address;
+  const router = (await step('LootbagRouter', { data: init(Router, ['address', 'address', 'address', 'address'], [A.pm, factory, swapper, A.weth]) })).address;
 
   await call('hook.init', hook, Hook, 'init', [factory, payout, bags, airdrop, TREASURY]);
   await call('payout.init', payout, Payout, 'init', [factory, hook, swapper]);
@@ -248,7 +250,7 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
     startBlock: prog.steps.LootbagFactory.block, launchesPaused: true,
     liquidity: 'held by the factory; the owner can withdraw any share of a pool with collect(coin, bps, to)',
     hub: A.usdc,
-    contracts: { factory, hook, payout, swapper, bags, airdrop, poolManager: A.pm },
+    contracts: { factory, hook, payout, swapper, bags, airdrop, router, poolManager: A.pm },
     tokens: { vvv: A.vvv, weth: A.weth, usdc: A.usdc },
     quotes: quotes.map((q) => ({ symbol: q.sym, token: q.token, startTick: q.tick, minDevBuy: q.minDevBuy.toString(), opensAtUsd: Math.round(q.opensAtUsd) })),
     prices: { vvvUsd, ethUsd, startMcapUsd: START_MCAP_USD },

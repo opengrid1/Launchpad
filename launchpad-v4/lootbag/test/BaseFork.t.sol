@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
@@ -15,6 +15,7 @@ import {LootbagHook} from "../src/LootbagHook.sol";
 import {LootbagFactory} from "../src/LootbagFactory.sol";
 import {LootbagPayout} from "../src/LootbagPayout.sol";
 import {LootbagSwapper} from "../src/LootbagSwapper.sol";
+import {LootbagRouter} from "../src/LootbagRouter.sol";
 import {LootbagToken} from "../src/LootbagToken.sol";
 import {LootbagBags} from "../src/LootbagBags.sol";
 import {LootbagAirdrop} from "../src/LootbagAirdrop.sol";
@@ -95,6 +96,7 @@ contract BaseForkTest is Test {
     LootbagPayout payout;
     LootbagSwapper swapper;
     TestRouter router;
+    LootbagRouter ethRouter;
 
     function setUp() public {
         vm.createSelectFork(vm.envOr("BASE_RPC", string("https://mainnet.base.org")));
@@ -105,7 +107,8 @@ contract BaseForkTest is Test {
         hook = LootbagHook(hookAddr);
         payout = new LootbagPayout(owner);
         swapper = new LootbagSwapper(PM, owner, USDC);
-        factory = new LootbagFactory(PM, IHooks(hookAddr), address(payout), owner, treasury);
+        factory = new LootbagFactory(PM, IHooks(hookAddr), address(payout), owner, treasury, address(swapper), WETH);
+        ethRouter = new LootbagRouter(PM, address(factory), address(swapper), WETH);
         router = new TestRouter(PM);
 
         vm.startPrank(owner);
@@ -120,6 +123,13 @@ contract BaseForkTest is Test {
         hops[1].kind = 0;
         hops[1].pool = WETH_USDC_AERO;
         swapper.queueRoute(VVV, WETH, hops);
+        // ETH in: WETH -> USDC and USDC -> VVV, joined through the hub for WETH -> VVV
+        LootbagSwapper.Hop[] memory one = new LootbagSwapper.Hop[](1);
+        one[0].kind = 0;
+        one[0].pool = WETH_USDC_AERO;
+        swapper.queueRoute(WETH, USDC, one);
+        one[0].pool = VVV_USDC_UNI;
+        swapper.queueRoute(USDC, VVV, one);
         assertTrue(factory.paused(), "the factory starts paused");
         factory.setPaused(false);
         vm.stopPrank();
@@ -694,5 +704,206 @@ contract BaseForkTest is Test {
         factory.collect(coin, 10_000, to);
         (,, uint128 liq2) = factory.positions(coin);
         assertEq(liq2, 0);
+    }
+
+    // ------------------------------------------------------------------ ETH router
+
+    function test_routerBuysAndSellsWithEthAndNeverHoldsCoins() public {
+        (address coin,) = _launch("LOOT", 3 ether);
+        LootbagToken t = LootbagToken(coin);
+        vm.roll(block.number + 1);
+
+        // alice buys with ETH: ETH -> WETH -> USDC -> VVV -> the coin
+        uint256 aliceEth = alice.balance;
+        vm.prank(alice);
+        uint256 got = ethRouter.buy{value: 0.05 ether}(coin, 1, alice);
+        assertEq(t.balanceOf(alice), got);
+        assertGt(got, 0);
+        assertEq(alice.balance, aliceEth - 0.05 ether);
+        // and bob, so that there is a holder to earn from alice's sale
+        vm.prank(bob);
+        ethRouter.buy{value: 0.05 ether}(coin, 1, bob);
+
+        // a buy that would return less than asked reverts and costs nothing
+        vm.prank(alice);
+        vm.expectRevert();
+        ethRouter.buy{value: 0.05 ether}(coin, type(uint256).max, alice);
+
+        // alice sells half for ETH: the coins go straight from her into the pool
+        uint256 bobEarned = t.earned(bob);
+        vm.startPrank(alice);
+        t.approve(address(ethRouter), got / 2);
+        uint256 before = alice.balance;
+        uint256 ethOut = ethRouter.sell(coin, got / 2, 1, alice);
+        vm.stopPrank();
+        assertEq(alice.balance - before, ethOut);
+        assertGt(ethOut, 0);
+        assertLt(ethOut, 0.025 ether, "two 2% fees and two swaps: less than half of what went in");
+        assertEq(t.balanceOf(alice), got - got / 2);
+        assertGt(t.earned(bob), bobEarned, "the sale paid the holders");
+
+        // the router ends with nothing and earned nothing: it never held a coin
+        assertEq(t.balanceOf(address(ethRouter)), 0);
+        assertEq(t.earned(address(ethRouter)), 0);
+        assertEq(IERC20T(VVV).balanceOf(address(ethRouter)), 0);
+        assertEq(IERC20T(WETH).balanceOf(address(ethRouter)), 0);
+        assertEq(address(ethRouter).balance, 0);
+
+        // selling without an approval, or for more than it can return, reverts
+        vm.startPrank(bob);
+        vm.expectRevert();
+        ethRouter.sell(coin, 1 ether, 0, bob);
+        t.approve(address(ethRouter), type(uint256).max);
+        vm.expectRevert();
+        ethRouter.sell(coin, 1_000 ether, 100 ether, bob);
+        vm.stopPrank();
+
+        vm.expectRevert(LootbagRouter.UnknownCoin.selector);
+        ethRouter.buy{value: 0.01 ether}(address(0xBEEF), 0, alice);
+        vm.expectRevert(LootbagRouter.ZeroAmount.selector);
+        ethRouter.buy(coin, 0, alice);
+        // plain ETH sent to the router is refused
+        (bool sent,) = address(ethRouter).call{value: 1}("");
+        assertFalse(sent);
+    }
+
+    function test_routerTradesAWethPairedCoinWithoutASwap() public {
+        vm.startPrank(owner);
+        factory.setQuote(WETH, true, -149_600, 0.0005 ether);
+        vm.stopPrank();
+        address[] memory rewards = new address[](1);
+        rewards[0] = WETH;
+        vm.prank(creator);
+        address coin = factory.launchWithEth{value: 0.001 ether + 0.01 ether}(
+            LootbagFactory.LaunchParams({name: "Weth Coin", symbol: "WCOIN", quote: WETH, rewards: rewards, devBuy: 0, minCoinsOut: 1}),
+            LootbagFactory.Meta("", "", "", "", ""),
+            0
+        );
+        vm.roll(block.number + 1);
+        vm.prank(alice);
+        uint256 got = ethRouter.buy{value: 0.02 ether}(coin, 1, alice);
+        vm.startPrank(alice);
+        LootbagToken(coin).approve(address(ethRouter), got);
+        uint256 ethOut = ethRouter.sell(coin, got, 1, alice);
+        vm.stopPrank();
+        // 2% in and 2% out, and the pool's own price move: a little under 96% comes back
+        assertApproxEqRel(ethOut, 0.02 ether * 96 / 100, 0.01e18);
+        assertEq(IERC20T(WETH).balanceOf(address(ethRouter)), 0);
+    }
+
+    function test_routerRefusesAPoolWithNoLiquidityLeft() public {
+        (address coin,) = _launch("LOOT", 3 ether);
+        vm.roll(block.number + 1);
+        vm.prank(owner);
+        factory.collect(coin, 10_000, owner);
+        vm.prank(alice);
+        vm.expectRevert(LootbagRouter.PoolTooThin.selector);
+        ethRouter.buy{value: 0.01 ether}(coin, 0, alice);
+    }
+
+    // ------------------------------------------------------------------ launching with ETH
+
+    event MetaSet(address indexed coin, string image, string description, string x, string telegram, string website);
+
+    function _ethParams(string memory sym) internal pure returns (LootbagFactory.LaunchParams memory p) {
+        address[] memory rewards = new address[](2);
+        rewards[0] = WETH;
+        rewards[1] = VVV;
+        p = LootbagFactory.LaunchParams({name: "Eth Launch", symbol: sym, quote: VVV, rewards: rewards, devBuy: 0, minCoinsOut: 1});
+    }
+
+    function test_launchWithEthInOneTransaction() public {
+        address newbie = makeAddr("lootbag.test.newbie"); // holds ETH and nothing else, has approved nothing
+        vm.deal(newbie, 1 ether);
+        LootbagFactory.Meta memory m = LootbagFactory.Meta("data:image/webp;base64,AAAA", "A coin launched with ETH only.", "https://x.com/eth", "", "https://eth.example");
+        uint256 treasuryBefore = treasury.balance;
+
+        vm.prank(newbie);
+        vm.recordLogs();
+        address coin = factory.launchWithEth{value: 0.001 ether + 0.02 ether}(_ethParams("ETHL"), m, 1);
+        LootbagToken t = LootbagToken(coin);
+
+        assertEq(newbie.balance, 1 ether - 0.021 ether, "exactly the fee and the dev buy left the wallet");
+        assertEq(treasury.balance - treasuryBefore, 0.001 ether);
+        uint256 dev = t.balanceOf(newbie);
+        assertGt(dev, 0);
+        assertLe(dev, factory.MAX_DEV_BUY());
+        assertEq(factory.creatorOf(coin), newbie);
+        assertTrue(t.excluded(newbie), "the creator never earns from their own coin");
+        assertTrue(factory.metaSet(coin));
+        // nothing is left behind in the factory
+        assertEq(IERC20T(WETH).balanceOf(address(factory)), 0);
+        assertEq(IERC20T(VVV).balanceOf(address(factory)), 0);
+        assertEq(t.balanceOf(address(factory)), 0);
+        assertEq(address(factory).balance, 0);
+
+        // the picture, description and links were published in the launch
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bool found;
+        for (uint256 i; i < logs.length; i++) {
+            if (logs[i].topics[0] == MetaSet.selector) {
+                (string memory image, string memory desc, string memory x,, string memory web) =
+                    abi.decode(logs[i].data, (string, string, string, string, string));
+                assertEq(address(uint160(uint256(logs[i].topics[1]))), coin);
+                assertEq(image, m.image);
+                assertEq(desc, m.description);
+                assertEq(x, m.x);
+                assertEq(web, m.website);
+                found = true;
+            }
+        }
+        assertTrue(found, "MetaSet was emitted");
+
+        // they are published once: not by anyone else, and not again
+        vm.expectRevert(LootbagFactory.NotCreator.selector);
+        factory.setMeta(coin, m);
+        vm.prank(newbie);
+        vm.expectRevert(LootbagFactory.MetaAlreadySet.selector);
+        factory.setMeta(coin, m);
+
+        // the coin trades like any other
+        vm.roll(block.number + 1);
+        vm.prank(alice);
+        assertGt(ethRouter.buy{value: 0.01 ether}(coin, 1, alice), 0);
+    }
+
+    function test_launchWithEthRejectsBadLaunches() public {
+        address newbie = makeAddr("lootbag.test.newbie2");
+        vm.deal(newbie, 10 ether);
+        LootbagFactory.Meta memory none = LootbagFactory.Meta("", "", "", "", "");
+        vm.startPrank(newbie);
+        // only the fee: nothing left for the dev buy
+        vm.expectRevert(LootbagFactory.NoEthForDevBuy.selector);
+        factory.launchWithEth{value: 0.001 ether}(_ethParams("NOPE"), none, 0);
+        // a dev buy under the minimum (0.1 VVV in this test's setup)
+        vm.expectRevert(LootbagFactory.DevBuyTooSmall.selector);
+        factory.launchWithEth{value: 0.001 ether + 0.00001 ether}(_ethParams("NOPE"), none, 0);
+        // a dev buy that would take more than 2% of the supply
+        vm.expectRevert();
+        factory.launchWithEth{value: 0.001 ether + 1 ether}(_ethParams("NOPE"), none, 0);
+        // the swap into the quote returning less than asked
+        vm.expectRevert();
+        factory.launchWithEth{value: 0.001 ether + 0.02 ether}(_ethParams("NOPE"), none, 1_000_000 ether);
+        // a picture too large to publish
+        bytes memory big = new bytes(24_001);
+        vm.expectRevert(LootbagFactory.MetaTooLong.selector);
+        factory.launchWithEth{value: 0.001 ether + 0.02 ether}(_ethParams("NOPE"), LootbagFactory.Meta(string(big), "", "", "", ""), 0);
+        vm.stopPrank();
+        assertEq(newbie.balance, 10 ether, "every failed launch cost nothing");
+
+        // launched with nothing to publish, the creator can still publish once later
+        vm.prank(newbie);
+        address coin = factory.launchWithEth{value: 0.001 ether + 0.02 ether}(_ethParams("LATER"), none, 0);
+        assertFalse(factory.metaSet(coin));
+        vm.prank(newbie);
+        factory.setMeta(coin, LootbagFactory.Meta("", "Added afterwards.", "", "", ""));
+        assertTrue(factory.metaSet(coin));
+
+        // a paused factory launches nothing either way
+        vm.prank(owner);
+        factory.setPaused(true);
+        vm.prank(newbie);
+        vm.expectRevert(LootbagFactory.Paused.selector);
+        factory.launchWithEth{value: 0.001 ether + 0.02 ether}(_ethParams("PAUSED"), none, 0);
     }
 }

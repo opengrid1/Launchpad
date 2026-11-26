@@ -26,7 +26,18 @@ interface IPayoutReg {
 interface IERC20F {
     function transfer(address to, uint256 v) external returns (bool);
     function transferFrom(address f, address t, uint256 v) external returns (bool);
+    function approve(address s, uint256 v) external returns (bool);
     function balanceOf(address a) external view returns (uint256);
+}
+
+interface ISwapperF {
+    function swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 minOut, address recipient)
+        external
+        returns (uint256 out);
+}
+
+interface IWETHF {
+    function deposit() external payable;
 }
 
 /// @title LootbagFactory
@@ -37,6 +48,9 @@ interface IERC20F {
 ///         liquidity, up to all of it, with `collect` (the same call as the BuzzPad locker's), and the site says so.
 ///         Holder rewards are not in the pool and stay claimable after a collect. The creator picks the rewards
 ///         (1 to 10 tokens) the holders are paid in, in turns.
+///         A creator can launch in one transaction paying only ETH (`launchWithEth`: the ETH left after the launch
+///         fee is swapped into the quote and becomes the dev buy), or bring the quote themselves (`launch`). A coin's
+///         picture, description and links are published once, on-chain, as an event, and can't be changed.
 /// @dev The pool starts at the quote's opening tick (about $5K market cap) with the supply as a single-sided position
 ///      from there to the end of the price range, so the pool needs no quote to start. The pool has no LP fee: the
 ///      hook's 2% is the only fee. The position is the factory's; the hook lets only the factory remove it.
@@ -60,6 +74,10 @@ contract LootbagFactory is IUnlockCallback {
     error NothingToSettle();
     error NothingToCollect();
     error BadBps();
+    error NoEthForDevBuy();
+    error NotCreator();
+    error MetaAlreadySet();
+    error MetaTooLong();
 
     event Launched(
         address indexed coin,
@@ -76,6 +94,8 @@ contract LootbagFactory is IUnlockCallback {
     event RewardSet(address indexed token, bool listed);
     event CopyFeeSettled(address indexed coin, bool refunded);
     event Collected(address indexed coin, uint16 bps, uint256 coins, uint256 quote, address indexed to);
+    /// @notice a coin's picture (a small data: or https: URI), description and links, published once by its creator
+    event MetaSet(address indexed coin, string image, string description, string x, string telegram, string website);
 
     uint256 public constant SUPPLY = 1_000_000_000e18;
     uint256 public constant MAX_DEV_BUY = SUPPLY / 50; // 2%
@@ -83,11 +103,17 @@ contract LootbagFactory is IUnlockCallback {
     uint256 public constant LAUNCH_FEE = 0.001 ether;
     uint256 public constant COPY_FEE = 0.05 ether;
     uint256 public constant MAX_REWARDS = 10;
+    uint256 public constant MAX_IMAGE = 24_000; // bytes of the picture's URI: a small inline image fits
+    uint256 public constant MAX_DESCRIPTION = 280;
+    uint256 public constant MAX_LINK = 160;
 
     IPoolManager public immutable poolManager;
     IHooks public immutable hook;
     address public immutable payout;
     LootbagToken public immutable implementation;
+    /// @notice the route swapper that turns a creator's ETH into the quote for `launchWithEth`
+    ISwapperF public immutable swapper;
+    address public immutable weth;
 
     address public owner;
     address public pendingOwner;
@@ -108,6 +134,8 @@ contract LootbagFactory is IUnlockCallback {
     /// @notice copy fees held per coin until the owner refunds or keeps them
     mapping(address => uint256) public copyFeeHeld;
     mapping(address => address) public creatorOf;
+    /// @notice true once a coin's picture, description and links are published: they can't be changed after
+    mapping(address => bool) public metaSet;
     mapping(address => PoolKey) internal _keys;
 
     struct Position {
@@ -119,9 +147,20 @@ contract LootbagFactory is IUnlockCallback {
     /// @notice each coin's pool position, held by this factory
     mapping(address => Position) public positions;
 
-    constructor(IPoolManager pm, IHooks hook_, address payout_, address owner_, address treasury_) {
+    constructor(
+        IPoolManager pm,
+        IHooks hook_,
+        address payout_,
+        address owner_,
+        address treasury_,
+        address swapper_,
+        address weth_
+    ) {
         if (address(pm) == address(0) || address(hook_) == address(0) || payout_ == address(0)) revert ZeroAddress();
         if (owner_ == address(0) || treasury_ == address(0)) revert ZeroAddress();
+        if (swapper_ == address(0) || weth_ == address(0)) revert ZeroAddress();
+        swapper = ISwapperF(swapper_);
+        weth = weth_;
         poolManager = pm;
         hook = hook_;
         payout = payout_;
@@ -203,7 +242,7 @@ contract LootbagFactory is IUnlockCallback {
         string symbol;
         address quote;
         address[] rewards;
-        uint256 devBuy; // in the quote currency, pulled from the creator (approve it first)
+        uint256 devBuy; // `launch`: in the quote currency, pulled from the creator (approve it first). Unused by `launchWithEth`.
         uint256 minCoinsOut;
     }
 
@@ -221,7 +260,65 @@ contract LootbagFactory is IUnlockCallback {
         return LAUNCH_FEE + (tickerTaken[tickerKey(symbol)] ? COPY_FEE : 0);
     }
 
+    struct Meta {
+        string image;
+        string description;
+        string x;
+        string telegram;
+        string website;
+    }
+
+    /// @notice Launches with the quote brought by the creator: `p.devBuy` of it is pulled from them (approve it
+    ///         first), and `msg.value` is exactly the launch fee (`launchFee(symbol)`).
     function launch(LaunchParams calldata p) external payable returns (address coin) {
+        if (msg.value != LAUNCH_FEE + (tickerTaken[tickerKey(p.symbol)] ? COPY_FEE : 0)) revert BadFee();
+        coin = _launch(p, p.devBuy, true);
+    }
+
+    /// @notice Launches paying only ETH, in one transaction: the launch fee comes off `msg.value` and the rest is
+    ///         swapped into the quote (at least `minQuoteOut` of it) and spent as the dev buy. Also publishes the
+    ///         coin's picture, description and links. `p.devBuy` is not used; `p.minCoinsOut` still guards the buy.
+    function launchWithEth(LaunchParams calldata p, Meta calldata m, uint256 minQuoteOut)
+        external
+        payable
+        returns (address coin)
+    {
+        uint256 fee = LAUNCH_FEE + (tickerTaken[tickerKey(p.symbol)] ? COPY_FEE : 0);
+        if (msg.value <= fee) revert NoEthForDevBuy();
+        uint256 ethIn = msg.value - fee;
+        IWETHF(weth).deposit{value: ethIn}();
+        uint256 devBuy = ethIn;
+        if (p.quote != weth) {
+            IERC20F(weth).approve(address(swapper), ethIn);
+            devBuy = swapper.swap(weth, p.quote, ethIn, minQuoteOut, address(this));
+        }
+        coin = _launch(p, devBuy, false);
+        _setMeta(coin, m);
+    }
+
+    /// @notice A creator publishes their coin's picture, description and links, once, if the launch did not
+    function setMeta(address coin, Meta calldata m) external {
+        if (msg.sender != creatorOf[coin]) revert NotCreator();
+        _setMeta(coin, m);
+    }
+
+    function _setMeta(address coin, Meta calldata m) internal {
+        uint256 il = bytes(m.image).length;
+        uint256 dl = bytes(m.description).length;
+        uint256 ll = bytes(m.x).length + bytes(m.telegram).length + bytes(m.website).length;
+        if (il + dl + ll == 0) return; // nothing to publish: the creator can still do it later
+        if (metaSet[coin]) revert MetaAlreadySet();
+        if (
+            il > MAX_IMAGE || dl > MAX_DESCRIPTION || bytes(m.x).length > MAX_LINK || bytes(m.telegram).length > MAX_LINK
+                || bytes(m.website).length > MAX_LINK
+        ) revert MetaTooLong();
+        metaSet[coin] = true;
+        emit MetaSet(coin, m.image, m.description, m.x, m.telegram, m.website);
+    }
+
+    /// @dev The launch itself; the fee is already in msg.value. With `pull`, the dev buy's quote is taken from the
+    ///      creator once the launch has been checked; without it, it is already in this contract.
+    function _launch(LaunchParams calldata p, uint256 devBuy, bool pull) internal returns (address coin) {
         if (paused) revert Paused();
         _checkName(p.name);
         bytes32 tk = _checkSymbol(p.symbol);
@@ -230,9 +327,8 @@ contract LootbagFactory is IUnlockCallback {
         uint256 nr = p.rewards.length;
         if (nr == 0 || nr > MAX_REWARDS) revert BadRewards();
         for (uint256 i; i < nr; i++) if (p.rewards[i] != p.quote && !rewardListed[p.rewards[i]]) revert BadRewards();
-        if (p.devBuy < q.minDevBuy || p.devBuy == 0) revert DevBuyTooSmall();
+        if (devBuy < q.minDevBuy || devBuy == 0) revert DevBuyTooSmall();
         bool copy = tickerTaken[tk];
-        if (msg.value != LAUNCH_FEE + (copy ? COPY_FEE : 0)) revert BadFee();
         tickerTaken[tk] = true;
 
         // the coin
@@ -258,9 +354,9 @@ contract LootbagFactory is IUnlockCallback {
         poolManager.initialize(key, TickMath.getSqrtPriceAtTick(tick));
 
         // the supply in, as the factory's own position, and the dev buy, in one go
-        _pull(p.quote, msg.sender, p.devBuy);
+        if (pull) _pull(p.quote, msg.sender, devBuy);
         uint256 got =
-            abi.decode(poolManager.unlock(abi.encode(uint8(0), abi.encode(key, coinIs0, tick, p.devBuy, msg.sender))), (uint256));
+            abi.decode(poolManager.unlock(abi.encode(uint8(0), abi.encode(key, coinIs0, tick, devBuy, msg.sender))), (uint256));
         if (got > MAX_DEV_BUY) revert DevBuyTooBig(got);
         if (got < p.minCoinsOut) revert DevBuyShort(got);
         // rounding leaves a few coins out of the pool: burned
@@ -269,7 +365,7 @@ contract LootbagFactory is IUnlockCallback {
 
         if (copy) copyFeeHeld[coin] = COPY_FEE;
         _sendEth(treasury, LAUNCH_FEE);
-        emit Launched(coin, msg.sender, p.quote, key.toId(), p.name, p.symbol, p.rewards, p.devBuy, got);
+        emit Launched(coin, msg.sender, p.quote, key.toId(), p.name, p.symbol, p.rewards, devBuy, got);
     }
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
