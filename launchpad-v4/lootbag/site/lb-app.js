@@ -15,12 +15,12 @@
 
   // ---------- marks: coin avatars and stock badges are drawn, not fetched
   // a coin's picture: its uploaded image when it has one, otherwise a pixel sack drawn from its address
-  const av = (c, size = 44) => `<span class="av${c.official ? '' : ' art'}" style="width:${size}px;height:${size}px;${c.official ? 'background:#16306b' : ''}">${c.official ? `<img src="/img/logo.svg" alt="" style="width:64%;height:64%">` : c.img ? `<img src="${esc(c.img)}" alt="">` : bagArt(2000 + parseInt(c.addr.slice(2, 9), 16) % 100000)}</span>`;
+  const av = (c, size = 44) => `<span class="av${c.official ? '' : ' art'}" style="width:${size}px;height:${size}px;${c.official ? 'background:var(--logo-bg)' : ''}">${c.official ? `<img src="/img/logo.svg" alt="" style="width:64%;height:64%">` : c.img ? `<img src="${esc(c.img)}" alt="">` : bagArt(2000 + parseInt(c.addr.slice(2, 9), 16) % 100000)}</span>`;
   const stkHue = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
   const STK_LOGO = new Set(['AAOI', 'AAPL', 'ADBE', 'AMD', 'AMZN', 'ANT', 'ARM', 'AVGO', 'BE', 'BIDU', 'BILI', 'BRK.B', 'BUD', 'COIN', 'CRCL', 'CRWV', 'ETH', 'FGI', 'GME', 'GOOGL', 'GRND', 'HIMS', 'HOOD', 'HSAI', 'INFY', 'INTC', 'KO', 'LI', 'LITE', 'LLY', 'MCD', 'META', 'MRNA', 'MRVL', 'MSFT', 'MSTR', 'MU', 'NFLX', 'NIO', 'NKE', 'NOK', 'NOW', 'NVDA', 'NVO', 'ORCL', 'PDD', 'PLTR', 'SAN', 'SAP', 'SE', 'SGOV', 'SKHY', 'SNDK', 'SNOW', 'SONY', 'SPCX', 'SPYM', 'TSLA', 'TTWO', 'UBER', 'UL', 'USDC', 'VALE', 'VVV', 'WDC', 'WRD']), STK_LIGHT = new Set(['TTWO', 'VVV', 'SONY']);
   const tokenBadge = (s, size = 20) => {
     const z = `width:${size}px;height:${size}px`;
-    if (s === 'LOOT') return `<img class="tkl" src="/img/logo.svg" alt="" style="${z};border-radius:50%;background:#16306b;padding:${Math.round(size * 0.14)}px">`;
+    if (s === 'LOOT') return `<img class="tkl" src="/img/logo.svg" alt="" style="${z};border-radius:50%;background:var(--logo-bg);padding:${Math.round(size * 0.14)}px">`;
     if (STK_LOGO.has(s)) return `<span class="stk lg${STK_LIGHT.has(s) ? ' lt' : ''}" style="${z}" title="${esc(s)}"><img src="/img/stk/${esc(s)}.png" alt="" loading="lazy"></span>`;
     return `<span class="stk" style="${z};background:hsl(${stkHue(s)} 55% 42%);font-size:${Math.max(7, Math.round(size * 0.3))}px">${esc(s.slice(0, 4))}</span>`;
   };
@@ -59,7 +59,7 @@
     const P = D.platform, cs = D.coins, recent = cs.filter((c) => !c.official).slice(0, 5);
     view.innerHTML = `
       <section class="hero">
-        <svg class="waves" viewBox="0 0 1200 150" preserveAspectRatio="none" fill="none" stroke="#3d7bff" stroke-opacity=".45" stroke-width="2"><path d="M0 95C150 20 250 20 400 95S650 170 800 95 1050 20 1200 95"/><path d="M0 125C150 50 250 50 400 125S650 200 800 125 1050 50 1200 125"/></svg>
+        <svg class="waves" viewBox="0 0 1200 150" preserveAspectRatio="none" fill="none" stroke="var(--blue)" stroke-opacity=".45" stroke-width="2"><path d="M0 95C150 20 250 20 400 95S650 170 800 95 1050 20 1200 95"/><path d="M0 125C150 50 250 50 400 125S650 200 800 125 1050 50 1200 125"/></svg>
         <div>
           <h1>Hold the bag.<br><span>Get paid in stocks.</span></h1>
           <p>Launch a coin on VVV, ETH, USDC or a stock. Every trade pays your holders in ETH or stocks, and traders earn ETH airdrops.</p>
@@ -158,13 +158,14 @@
     const f = mode === 'px' ? 1e-9 : 1;
     const el = $('#cv'); if (!el || !window.LightweightCharts) return;
     if (chart) { chart.remove(); chart = null; }
-    chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: '#8f9ab3', fontFamily: 'Space Grotesk', fontSize: 11 }, grid: { vertLines: { color: 'rgba(34,48,75,.35)' }, horzLines: { color: 'rgba(34,48,75,.35)' } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.2 } }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 4, barSpacing: 6 }, crosshair: { mode: 1, vertLine: { color: '#33466b', labelBackgroundColor: '#15233f' }, horzLine: { color: '#33466b', labelBackgroundColor: '#15233f' } }, autoSize: true });
-    const s = chart.addCandlestickSeries({ upColor: '#34d399', downColor: '#f2606b', borderVisible: false, wickUpColor: '#34d399', wickDownColor: '#f2606b', priceLineColor: '#3d7bff', priceLineStyle: 2, priceFormat: { type: 'custom', minMove: mode === 'px' ? 1e-12 : 0.01, formatter: (v) => usd(v) } });
+    const V = (k) => getComputedStyle(document.documentElement).getPropertyValue(k).trim(), up = V('--buy'), dn = V('--sell'), ar = (c, o) => { const h = c.replace('#', ''); return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${o})`; };
+    chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: V('--mute'), fontFamily: 'Space Grotesk', fontSize: 11 }, grid: { vertLines: { color: ar(V('--line2'), 0.35) }, horzLines: { color: ar(V('--line2'), 0.35) } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.2 } }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 4, barSpacing: 6 }, crosshair: { mode: 1, vertLine: { color: V('--line3'), labelBackgroundColor: V('--chip') }, horzLine: { color: V('--line3'), labelBackgroundColor: V('--chip') } }, autoSize: true });
+    const s = chart.addCandlestickSeries({ upColor: up, downColor: dn, borderVisible: false, wickUpColor: up, wickDownColor: dn, priceLineColor: V('--blue'), priceLineStyle: 2, priceFormat: { type: 'custom', minMove: mode === 'px' ? 1e-12 : 0.01, formatter: (v) => usd(v) } });
     const vol = chart.addHistogramSeries({ priceScaleId: 'vol', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 }, visible: false });
     const out = [], vs = []; let cur = null, cv = 0;
-    for (const k of c.candles) { const b = Math.floor(k.t / step) * step; if (!cur || cur.time !== b) { if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? 'rgba(52,211,153,.45)' : 'rgba(242,96,107,.45)' }); } cur = { time: b, open: k.o * f, high: k.h * f, low: k.l * f, close: k.c * f }; cv = k.v; } else { cur.high = Math.max(cur.high, k.h * f); cur.low = Math.min(cur.low, k.l * f); cur.close = k.c * f; cv += k.v; } }
-    if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? 'rgba(52,211,153,.45)' : 'rgba(242,96,107,.45)' }); }
+    for (const k of c.candles) { const b = Math.floor(k.t / step) * step; if (!cur || cur.time !== b) { if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? ar(up, 0.45) : ar(dn, 0.45) }); } cur = { time: b, open: k.o * f, high: k.h * f, low: k.l * f, close: k.c * f }; cv = k.v; } else { cur.high = Math.max(cur.high, k.h * f); cur.low = Math.min(cur.low, k.l * f); cur.close = k.c * f; cv += k.v; } }
+    if (cur) { out.push(cur); vs.push({ time: cur.time, value: cv, color: cur.close >= cur.open ? ar(up, 0.45) : ar(dn, 0.45) }); }
     s.setData(out); vol.setData(vs); chart.timeScale().fitContent();
   }
 
