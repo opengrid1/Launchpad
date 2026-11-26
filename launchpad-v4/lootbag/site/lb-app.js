@@ -519,11 +519,11 @@
           <div class="ms"><h4>You send</h4><div class="mrow"><span><b>$LOOT</b> <i>burned</i></span><b class="big">${num(B.perMintLoot, 0)}</b></div><div class="mrow" style="border:0"><span>${tokenBadge('VVV', 18)} <b>VVV</b> <i>2.7 VVV goes to the Bags already minted, 0.3 VVV to Lootbag</i></span><b class="big">${B.perMintVvv}</b></div></div>
           <div class="arrow">↓</div>
           <div class="mr"><h4>You receive</h4><div class="recv"><div class="art">${bagArt(B.minted + 1)}</div><div><b style="font-size:20px">Bag #${B.minted + 1}</b><p class="mute" style="margin:4px 0 8px;font-size:14px">The next Bag in line. It earns ${B.rotation.length || 'its'} tokens in rotation, one a day. ${num(left, 0)} of ${num(B.total, 0)} are left.</p><span class="stack">${B.rotation.map((t) => tokenBadge(t, 22)).join('')}</span></div></div>
-          <p class="note">${B.lootSet ? 'Up to three approvals in your wallet: your $LOOT, your VVV, then the mint.' : 'Minting opens when $LOOT launches. $LOOT has not launched yet.'}</p><button class="btn blue block pillish" id="mintgo">Connect wallet</button></div></div>
+          <p class="note">${B.lootSet ? 'Up to three approvals in your wallet: your $LOOT, your VVV, then the mint.' : D.loot ? 'Minting is not open yet.' : 'Minting opens when $LOOT launches. $LOOT has not launched yet.'}</p><button class="btn blue block pillish" id="mintgo">Connect wallet</button></div></div>
         <div class="card yours"><h3>Your Bags</h3><div id="ybags"></div></div></div>
       <div class="card how3"><h3>How it works</h3><div class="cols">${[['Mint', 'Your $LOOT is burned and you get an NFT with a vault tied to it. Whoever holds the NFT owns everything in its vault.'], ['Earn', "Each round, the pot spends 5% of what it holds on the day's token and credits every Bag an equal share, straight into its vault."], ['Withdraw', 'Take what is in your Bag whenever you like. Sell or send the Bag and whatever is still in its vault goes with it.']].map(([t, d], i) => `<div><div class="ct"><span class="n">${i + 1}</span><b>${t}</b></div><p>${d}</p></div>`).join('')}</div></div>${foot()}`;
     const go = $('#mintgo');
-    if (!B.lootSet) { go.textContent = 'Opens when $LOOT launches'; go.disabled = true; }
+    if (!B.lootSet) { go.textContent = D.loot ? 'Minting is not open yet' : 'Opens when $LOOT launches'; go.disabled = true; }
     else if (left <= 0) { go.textContent = 'All Bags are minted'; go.disabled = true; }
     else needsWallet(go, 'Mint a Bag', () => run(go, (note) => LIVE.mintBag(note), 'Your Bag is minted.').then((r) => { if (r) mint(); }));
     const yours = () => {

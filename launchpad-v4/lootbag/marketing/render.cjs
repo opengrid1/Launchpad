@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
 const out = process.argv[2];
 (async () => {
   const logo = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(__dirname, '../site/img/logo.svg')).toString('base64');
-  const html = fs.readFileSync(path.join(__dirname, 'banner.html'), 'utf8').split('LOGO').join(logo);
+  const html = fs.readFileSync(path.join(__dirname, process.argv[3] || 'banner.html'), 'utf8').split('LOGO').join(logo);
   const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 })).newPage();
   await p.setContent(html, { waitUntil: 'networkidle' });
   await p.evaluate(() => document.fonts.ready);
