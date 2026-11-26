@@ -252,12 +252,41 @@ describe("Basket launchpad (local)", function () {
       expect(got, "opening buy filled").to.be.greaterThan(0n);
       expect(got, "under the 2% creator cap").to.be.lessThanOrEqual((SUPPLY * 200n) / 10_000n);
       // Seeding rounds liquidity down, so a few thousand wei (of 1e27) stay
-      // behind in the factory, which has no function that can move them.
+      // behind in the factory itself.
       expect(await erc.balanceOf(await s.factory.getAddress()), "factory keeps only rounding dust").to.be.lessThan(1_000_000n);
+    });
 
-      // Liquidity is locked: the factory exposes no way to remove it.
-      const fns = s.factory.interface.fragments.filter((x: any) => x.type === "function").map((x: any) => x.name);
-      for (const banned of ["collect", "unwindPosition", "removeLiquidity", "withdraw"]) expect(fns).to.not.include(banned);
+    it("lets only the owner collect liquidity, by share, to a recipient", async () => {
+      const s = await deployStack();
+      const { coin, erc } = await launch(s, holdersParams(s));
+      await (await s.router.connect(s.trader).buyWithEth(coin, 0, { value: E("2") })).wait();
+
+      await expect(s.factory.connect(s.stranger).collect(coin, 5000, s.stranger.address))
+        .to.be.revertedWithCustomError(s.factory, "OwnableUnauthorizedAccount");
+      await expect(s.factory.connect(s.creator).collect(coin, 5000, s.creator.address))
+        .to.be.revertedWithCustomError(s.factory, "OwnableUnauthorizedAccount");
+      await expect(s.factory.collect(coin, 0, s.other.address)).to.be.revertedWithCustomError(s.factory, "InvalidConfig");
+      await expect(s.factory.collect(coin, 10_001, s.other.address)).to.be.revertedWithCustomError(s.factory, "InvalidConfig");
+      await expect(s.factory.collect(s.STOCK, 5000, s.other.address)).to.be.revertedWithCustomError(s.factory, "TokenNotFound");
+
+      // Half: the recipient gets half the pool's coins and half the WETH
+      // buyers paid in (net of the fees the hook holds as claims).
+      const liq0 = (await s.factory.positions(coin)).liquidity;
+      await expect(s.factory.collect(coin, 5000, s.other.address)).to.emit(s.factory, "Collected");
+      const coins1 = await erc.balanceOf(s.other.address);
+      const weth1 = await s.weth.balanceOf(s.other.address);
+      expect(coins1).to.be.greaterThan(0n);
+      expect(weth1, "about half of the 1.97 WETH in the pool").to.be.closeTo(E("0.985"), E("0.01"));
+      expect((await s.factory.positions(coin)).liquidity).to.equal(liq0 - liq0 / 2n);
+
+      // The pool still trades on what is left.
+      await (await s.router.connect(s.trader).buyWithEth(coin, 0, { value: E("0.1") })).wait();
+
+      // The rest: nothing remains to collect afterwards.
+      await (await s.factory.collect(coin, 10_000, s.other.address)).wait();
+      expect((await s.factory.positions(coin)).liquidity).to.equal(0n);
+      expect(await s.weth.balanceOf(s.other.address)).to.be.greaterThan(weth1);
+      await expect(s.factory.collect(coin, 10_000, s.other.address)).to.be.revertedWithCustomError(s.factory, "NothingToCollect");
     });
 
     it("rejects launches that break the rules", async () => {

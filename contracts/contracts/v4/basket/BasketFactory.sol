@@ -35,9 +35,13 @@ interface IWETHLike {
 ///         One transaction mints a fixed 1B-supply B-20 coin with no admin
 ///         left on it, opens its Uniswap v4 pool against an approved pair
 ///         token, seeds the whole supply single-sided from the pair's start
-///         market cap, and makes the creator's required opening buy. The
-///         liquidity position stays in this contract and there is no function
-///         that removes it: liquidity is locked for good.
+///         market cap, and makes the creator's required opening buy.
+///
+///         LIQUIDITY IS PROTOCOL-MANAGED, NOT LOCKED. The liquidity position
+///         of every coin is held by this contract, and the owner can withdraw
+///         any share of it at any time with `collect`, receiving both the
+///         coins and the pair tokens buyers paid in. Anything that describes
+///         these launches to users must say so.
 ///
 ///         The creator chooses where the coin's share of trade fees goes:
 ///           - Holders: to a reward vault that pays holders in the reward
@@ -48,8 +52,9 @@ interface IWETHLike {
 ///         Admin follows the BuzzPad model: a single owner with two-step
 ///         handover that cannot be renounced. The owner sets the launch
 ///         switch, launch fee, pair configs, reward-token allowlist, fee
-///         policy for future launches, keeper and swap router. Nothing the
-///         owner sets changes a coin that has already launched.
+///         policy for future launches, keeper and swap router, and can
+///         `collect` liquidity. The settings never change the fee terms of a
+///         coin that has already launched.
 contract BasketFactory is BasketOwnable, ReentrancyGuard, IUnlockCallback {
     using SafeERC20 for IERC20;
     using PoolIdLibrary for PoolKey;
@@ -172,6 +177,7 @@ contract BasketFactory is BasketOwnable, ReentrancyGuard, IUnlockCallback {
     error OpeningBuySlippage(uint256 tokensOut, uint256 minimum);
     error NotPoolManager();
     error TokenNotFound();
+    error NothingToCollect();
 
     event TokenLaunched(
         address indexed token,
@@ -183,6 +189,7 @@ contract BasketFactory is BasketOwnable, ReentrancyGuard, IUnlockCallback {
         address beneficiary
     );
     event OpeningBuy(address indexed token, address indexed buyer, uint256 pairIn, uint256 tokensOut);
+    event Collected(address indexed token, uint16 bps, uint256 tokenAmount, uint256 pairAmount, address indexed recipient);
     event LaunchEnabledUpdated(bool enabled);
     event LaunchFeeUpdated(uint256 launchFee);
     event MaxOpeningBuyUpdated(uint16 bps);
@@ -323,7 +330,8 @@ contract BasketFactory is BasketOwnable, ReentrancyGuard, IUnlockCallback {
         poolId = PoolId.unwrap(key.toId());
 
         // Open the pool at the start market cap and seed the whole supply
-        // single-sided above it. The position is never removed.
+        // single-sided above it. This contract holds the position; only the
+        // owner's `collect` can remove any of it.
         {
             (uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper) = _initialPosition(tokenIsCurrency0, cfg.startMcap);
             poolManager.initialize(key, sqrtPriceX96);
@@ -440,6 +448,40 @@ contract BasketFactory is BasketOwnable, ReentrancyGuard, IUnlockCallback {
     }
 
     // ---------------------------------------------------------------------
+    // Liquidity (owner)
+    // ---------------------------------------------------------------------
+
+    /// @notice Remove `bps` (of 10,000) of a coin's remaining liquidity and
+    ///         send both sides, the coins and the pair tokens, to `recipient`.
+    ///         Owner only. It cannot be undone, it thins the pool, and it
+    ///         takes pair tokens that buyers paid in. This is the reason the
+    ///         liquidity of these launches is protocol-managed, not locked.
+    function collect(address token, uint16 bps, address recipient)
+        external
+        onlyOwner
+        nonReentrant
+        returns (uint256 tokenAmount, uint256 pairAmount)
+    {
+        if (bps == 0 || bps > BPS) revert InvalidConfig();
+        if (recipient == address(0)) revert ZeroAddress();
+        address pair = listings[token].pair;
+        if (pair == address(0)) revert TokenNotFound();
+
+        Position storage pos = positions[token];
+        uint128 removed = uint128((uint256(pos.liquidity) * bps) / BPS);
+        if (removed == 0) revert NothingToCollect();
+        pos.liquidity -= removed;
+
+        bool tokenIsCurrency0 = token < pair;
+        bytes memory res = poolManager.unlock(
+            abi.encode(uint8(2), abi.encode(_poolKey(token, pair), pos.tickLower, pos.tickUpper, removed, recipient))
+        );
+        (uint256 amount0, uint256 amount1) = abi.decode(res, (uint256, uint256));
+        (tokenAmount, pairAmount) = tokenIsCurrency0 ? (amount0, amount1) : (amount1, amount0);
+        emit Collected(token, bps, tokenAmount, pairAmount, recipient);
+    }
+
+    // ---------------------------------------------------------------------
     // PoolManager plumbing
     // ---------------------------------------------------------------------
 
@@ -465,6 +507,22 @@ contract BasketFactory is BasketOwnable, ReentrancyGuard, IUnlockCallback {
             return "";
         }
 
+        if (action == 2) {
+            (PoolKey memory key, int24 tickLower, int24 tickUpper, uint128 removed, address recipient) =
+                abi.decode(payload, (PoolKey, int24, int24, uint128, address));
+            (BalanceDelta delta,) = poolManager.modifyLiquidity(
+                key,
+                ModifyLiquidityParams({
+                    tickLower: tickLower,
+                    tickUpper: tickUpper,
+                    liquidityDelta: -int256(uint256(removed)),
+                    salt: bytes32(0)
+                }),
+                ""
+            );
+            return abi.encode(_takePos(key.currency0, delta.amount0(), recipient), _takePos(key.currency1, delta.amount1(), recipient));
+        }
+
         // Opening buy: spend the pair token for the coin.
         (PoolKey memory k, uint256 amountIn, bool tokenIs0) = abi.decode(payload, (PoolKey, uint256, bool));
         bool zeroForOne = !tokenIs0;
@@ -483,6 +541,12 @@ contract BasketFactory is BasketOwnable, ReentrancyGuard, IUnlockCallback {
         uint256 out = got > 0 ? uint256(uint128(got)) : 0;
         if (out > 0) poolManager.take(tokenIs0 ? k.currency0 : k.currency1, address(this), out);
         return abi.encode(out);
+    }
+
+    function _takePos(Currency currency, int128 amount, address to) private returns (uint256 value) {
+        if (amount <= 0) return 0;
+        value = uint256(uint128(amount));
+        poolManager.take(currency, to, value);
     }
 
     function _settleNeg(Currency currency, int128 amount) private {

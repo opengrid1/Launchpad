@@ -5,7 +5,8 @@ import { join } from "path";
 // Deploy the Basket launchpad to Base mainnet: "coins that pay holders".
 //
 //   - BasketFeeHook      2% trade fee before graduation, 1.25% after, always in the pair token
-//   - BasketFactory      launches, locked liquidity, required opening buy, 2% creator cap
+//   - BasketFactory      launches, required opening buy, 2% creator cap. Liquidity is
+//                        protocol-managed, not locked: the owner can withdraw it with collect()
 //   - BasketRewardVault  one per coin (deployed at launch), pays holders by Merkle proof
 //   - BasketRevenueSplitter  protocol revenue: 25% NFT pot / 7.5% airdrops / 67.5% treasury
 //   - BasketNFT + BasketPot  1,000 Baskets, hourly distributions to each NFT's vault
@@ -156,7 +157,7 @@ async function main() {
   const startBlock = await ethers.provider.getBlockNumber();
   const out = {
     chainId: 8453,
-    model: "basket: 2% fee before graduation, 1.25% after, always in the pair token; holders or creator mode",
+    model: "basket: 2% fee before graduation, 1.25% after, always in the pair token; holders or creator mode; liquidity protocol-managed (owner collect), not locked",
     admin,
     ownershipAccepted: admin.toLowerCase() === me.toLowerCase(),
     startBlock,
