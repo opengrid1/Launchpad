@@ -146,7 +146,8 @@
   const slot0Of = (poolId) => E.keccak256(E.AbiCoder.defaultAbiCoder().encode(['bytes32', 'uint256'], [poolId, 6]));
 
   // ---------------------------------------------------------------- the logs
-  const tsOf = (l) => l.bts || S.head.ts - (S.head.bn - l.bn) * 2; // Base makes a block every 2 seconds
+  // a log's time: its own timestamp where the RPC gives one, otherwise from the chain's measured block time
+  const tsOf = (l) => l.bts || Math.round(S.head.ts - (S.head.bn - l.bn) * (S.blockTime || 0.2));
   const okImg = (s) => (/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(s) ? s : '');
   const okUrl = (s) => (/^https?:\/\/[^\s"'<>]+$/i.test(s) ? s : '');
   const parse = (k, l) => { try { return I[k].parseLog({ topics: l.topics, data: l.data }); } catch (e) { return null; } };
@@ -157,7 +158,7 @@
         const p = parse('factory', l); if (!p) continue;
         if (p.name === 'Launched') {
           const a = p.args, c = {
-            addr: a.coin, name: a.name, ticker: a.symbol, official: false, desc: '', creator: a.creator, createdAt: S.reg.get(lc(a.coin)) || ts, block: l.bn, poolId: a.poolId,
+            addr: a.coin, name: a.name, ticker: a.symbol, official: false, desc: '', creator: a.creator, createdAt: S.reg.get(lc(a.coin)) || ts, block: l.bn, launchTx: l.tx, poolId: a.poolId,
             pairAddr: a.quote, rewardAddrs: [...a.rewards], pair: '', rewards: [], rewardIx: 0, mcap: 0, priceUsd: 0, priceQuote: 0, ch24: 0, vol24: 0, volAll: 0, holders: null,
             trades24: 0, fees24: 0, paid24: 0, paidAll: 0, pot: 0, heldQuote: 0n, nextPayout: 300, candles: [], x: '', tg: '', web: '', img: '', trades: [], holderList: [], payouts: [], detail: false,
           };
@@ -198,6 +199,7 @@
   async function doRefresh() {
     const head = await rpc((p) => p.send('eth_getBlockByNumber', ['latest', false]));
     S.head = { bn: parseInt(head.number, 16), ts: parseInt(head.timestamp, 16) };
+    if (!S.blockTime) { try { const old = await rpc((p) => p.send('eth_getBlockByNumber', [hex(S.head.bn - 5000), false])); S.blockTime = (S.head.ts - parseInt(old.timestamp, 16)) / 5000; } catch (e) { /* the default stands */ } }
     ingest(await getLogs({ address: [K.factory, K.hook, K.payout, K.router, K.airdrop, K.bags] }, S.scanned + 1, S.head.bn));
     S.scanned = S.head.bn;
     if (!S.listed && stockList.length) await listings().catch(() => {});
@@ -291,18 +293,21 @@
     const c = S.coins.get(lc(addr)); if (!c) return Promise.resolve(null);
     if (loading.has(lc(addr))) return loading.get(lc(addr));
     const job = (async () => {
-      const d = c._d || (c._d = { scanned: c.block - 1, swaps: [], bal: new Map() }), to = S.head.bn;
+      const d = c._d || (c._d = { scanned: c.block - 1, swaps: [], bal: new Map(), moves: new Map() }), to = S.head.bn;
       const [sw, tr] = await Promise.all([getLogs({ address: K.poolManager, topics: [SWAP_T, c.poolId] }, d.scanned + 1, to), getLogs({ address: c.addr, topics: [XFER_T] }, d.scanned + 1, to)]);
       const is0 = BigInt(lc(c.addr)) < BigInt(lc(c.pairAddr)), qd = dec(c.pairAddr);
       for (const l of sw) {
         const p = parse('pm', l); if (!p) continue;
-        const pr = ratio(p.args.sqrtPriceX96), q = is0 ? p.args.amount1 : p.args.amount0;
-        d.swaps.push({ ts: tsOf(l), px: (is0 ? pr : 1 / pr) * 10 ** (18 - qd), q: Math.abs(Number(E.formatUnits(q, qd))) });
+        // amounts are the swapper's: positive is what they received, so a positive coin amount is a buy
+        const pr = ratio(p.args.sqrtPriceX96), q = is0 ? p.args.amount1 : p.args.amount0, got = is0 ? p.args.amount0 : p.args.amount1;
+        d.swaps.push({ ts: tsOf(l), px: (is0 ? pr : 1 / pr) * 10 ** (18 - qd), q: Math.abs(Number(E.formatUnits(q, qd))), buy: got > 0n, tokens: Math.abs(Number(E.formatEther(got))), tx: l.tx, via: p.args.sender });
       }
       for (const l of tr) {
         const p = parse('token', l); if (!p) continue;
         const f = lc(p.args.from), t2 = lc(p.args.to), v = p.args.value;
         if (f !== ZERO) d.bal.set(f, (d.bal.get(f) || 0n) - v);
+        if (!d.moves.has(l.tx)) d.moves.set(l.tx, []);
+        d.moves.get(l.tx).push([f, t2]);
         d.bal.set(t2, (d.bal.get(t2) || 0n) + v);
       }
       d.scanned = to; c.detail = true;
@@ -327,6 +332,13 @@
       else { cur.h = Math.max(cur.h, mc); cur.l = Math.min(cur.l, mc); cur.c = mc; cur.v += v; }
     }
     c.candles = out;
+    // every swap in the pool is a trade, whichever app made it. The trader is whoever the coins ended up with (a buy)
+    // or first came from (a sell) in that transaction; the pool, the hook and the factory are never the trader.
+    const inner = new Set([ZERO, DEAD, lc(K.poolManager), lc(K.hook), lc(K.factory)]);
+    c.trades = d.swaps.map((s) => {
+      const mv = d.moves.get(s.tx) || [], who = s.buy ? mv.map((m) => m[1]).filter((a) => !inner.has(a)).pop() : mv.map((m) => m[0]).filter((a) => !inner.has(a))[0];
+      return { ts: s.ts, wallet: who || lc(s.via), buy: s.buy, usd: s.q * qUsd, tokens: s.tokens, tx: s.tx, dev: s.tx === c.launchTx };
+    }).reverse();
     const dayAgo = now() - 86400, before = d.swaps.filter((s) => s.ts < dayAgo).pop() || d.swaps[0];
     c.ch24 = before && before.px ? (c.priceQuote / before.px - 1) * 100 : 0;
     c.holders = d.holders;
