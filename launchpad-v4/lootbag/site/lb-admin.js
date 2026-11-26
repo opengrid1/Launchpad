@@ -18,14 +18,13 @@
     own: ['function owner() view returns (address)', 'function pendingOwner() view returns (address)', 'function transferOwnership(address to)', 'function acceptOwnership()'],
     factory: [
       'function paused() view returns (bool)', 'function treasury() view returns (address)',
-      'function quotes(address) view returns (bool listed, int24 startTick, uint256 minDevBuy)',
+      'function quotes(address) view returns (bool listed, int24 startTick, uint256 minDevBuy)', 'function rewardListed(address) view returns (bool)',
       'function positions(address) view returns (int24 lo, int24 hi, uint128 liquidity)', 'function copyFeeHeld(address) view returns (uint256)',
       'function setPaused(bool p)', 'function setTreasury(address t)', 'function setQuote(address quote, bool listed, int24 startTick, uint256 minDevBuy)',
       'function setReward(address token, bool listed)', 'function settleCopyFee(address coin, bool refund)',
       'function collect(address coin, uint16 bps, address to) returns (uint256 coins, uint256 quote)',
       'event Launched(address indexed coin, address indexed creator, address indexed quote, bytes32 poolId, string name, string symbol, address[] rewards, uint256 devBuyQuote, uint256 devBuyCoins)',
-      'event QuoteSet(address indexed quote, bool listed, int24 startTick, uint256 minDevBuy)', 'event RewardSet(address indexed token, bool listed)',
-    ],
+      ],
     hook: ['function claims(address) view returns (uint256)', 'function owed(address) view returns (uint256)', 'function owedHolders(address) view returns (uint256)', 'function flush(address quote)', 'function split(address quote)'],
     payout: [
       'function keeper(address) view returns (bool)', 'function held(address) view returns (uint256)', 'function currentReward(address) view returns (address)',
@@ -41,15 +40,32 @@
     erc20: ['function symbol() view returns (string)', 'function decimals() view returns (uint8)', 'function balanceOf(address) view returns (uint256)'],
   };
   const I = Object.fromEntries(Object.entries(ABI).map(([k, v]) => [k, new E.Interface(v)]));
-  const RO = new E.JsonRpcProvider(C.rpc, C.chainId, { staticNetwork: true });
-  const MC = new E.Contract(C.multicall, ['function aggregate3((address target, bool allowFailure, bytes callData)[] calls) view returns ((bool success, bytes returnData)[])'], RO);
+  // Public Base RPCs rate-limit hard and drop out, so every read is tried on each in turn: LB_CFG.rpc first, then
+  // LB_CFG.rpcFallbacks, staying on whichever answered last. A contract that reverts is an answer, not an RPC
+  // failure, so it is never retried elsewhere.
+  const PROVS = [C.rpc, ...(C.rpcFallbacks || [])].map((u) => new E.JsonRpcProvider(u, C.chainId, { staticNetwork: true }));
+  const MC_ABI = ['function aggregate3((address target, bool allowFailure, bytes callData)[] calls) view returns ((bool success, bytes returnData)[])'];
+  let rpcAt = 0;
+  async function rpc(fn) {
+    let last;
+    for (let i = 0; i < PROVS.length; i++) {
+      const at = (rpcAt + i) % PROVS.length;
+      try {
+        const v = await Promise.race([fn(PROVS[at]), new Promise((_, rej) => setTimeout(() => rej(new Error('the RPC did not answer in time')), 12000))]);
+        rpcAt = at;
+        return v;
+      } catch (e) { if (e && e.code === 'CALL_EXCEPTION') throw e; last = e; }
+    }
+    throw last;
+  }
 
   /** calls: [target, interfaceName, fn, args]. Returns one decoded value (or null) per call. */
   async function multi(calls) {
     const out = [];
     for (let i = 0; i < calls.length; i += 200) {
       const part = calls.slice(i, i + 200);
-      const res = await MC.aggregate3(part.map(([t, k, fn, a]) => ({ target: t, allowFailure: true, callData: I[k].encodeFunctionData(fn, a || []) })));
+      const batch = part.map(([t, k, fn, a]) => ({ target: t, allowFailure: true, callData: I[k].encodeFunctionData(fn, a || []) }));
+      const res = await rpc((p) => new E.Contract(C.multicall, MC_ABI, p).aggregate3(batch));
       res.forEach((r, j) => {
         let v = null;
         if (r.success && r.returnData !== '0x') { try { const d = I[part[j][1]].decodeFunctionResult(part[j][2], r.returnData); v = d.length === 1 ? d[0] : d; } catch { v = null; } }
@@ -59,8 +75,8 @@
     return out;
   }
   async function logs(address, topics, from) {
-    const head = await RO.getBlockNumber(), step = C.logStep || 9000, out = [];
-    for (let a = from; a <= head; a += step + 1) out.push(...(await RO.getLogs({ address, topics, fromBlock: a, toBlock: Math.min(head, a + step) })));
+    const head = await rpc((p) => p.getBlockNumber()), step = C.logStep || 9000, out = [];
+    for (let a = from; a <= head; a += step + 1) out.push(...(await rpc((p) => p.getLogs({ address, topics, fromBlock: a, toBlock: Math.min(head, a + step) }))));
     return out;
   }
 
@@ -106,7 +122,7 @@
     try { r = await multi(need.flatMap((a) => [[a, 'erc20', 'symbol'], [a, 'erc20', 'decimals']])); }
     catch {
       // one unreadable token can sink the whole batch: read them one by one instead
-      r = (await Promise.allSettled(need.flatMap((a) => { const c = new E.Contract(a, ABI.erc20, RO); return [c.symbol(), c.decimals()]; }))).map((x) => (x.status === 'fulfilled' ? x.value : null));
+      r = (await Promise.allSettled(need.flatMap((a) => [rpc((p) => new E.Contract(a, ABI.erc20, p).symbol()), rpc((p) => new E.Contract(a, ABI.erc20, p).decimals())]))).map((x) => (x.status === 'fulfilled' ? x.value : null));
     }
     need.forEach((a, i) => { meta[a] = { sym: friendly[a] || r[i * 2] || short(a), dec: r[i * 2 + 1] == null ? 18 : Number(r[i * 2 + 1]) }; });
   }
@@ -197,7 +213,7 @@
       return null;
     }
   }
-  const simulate = (target, abiName, fn, args) => new E.Contract(target, ABI[abiName], RO)[fn].staticCall(...args, { from: me });
+  const simulate = (target, abiName, fn, args) => rpc((p) => new E.Contract(target, ABI[abiName], p)[fn].staticCall(...args, { from: me }));
 
   // ---------------------------------------------------------------- state
   let S = null;
@@ -213,16 +229,18 @@
   async function load() {
     if (!LIVE) return previewState();
     const keys = Object.keys(NAMES), who = me || E.ZeroAddress;
-    const fl = await logs(K.factory, null, C.startBlock || 0);
-    const quoteSet = new Map(), rewardSet = new Map(), coins = [];
-    for (const l of fl) {
+    // Pairs and rewards: asked of the factory for every token the site knows (the three in the config and its stock
+    // list), which costs two calls instead of a scan of every listing event. Launches still come from the log.
+    await stocksReady;
+    const known = [...new Set([...Object.values(C.tokens).map(([a]) => a.toLowerCase()), ...Object.keys(friendly)])].map((a) => E.getAddress(a));
+    const listing = await multi(known.flatMap((t) => [[K.factory, 'factory', 'quotes', [t]], [K.factory, 'factory', 'rewardListed', [t]]]));
+    const quoteTokens = known.filter((t, i) => listing[i * 2] && listing[i * 2].listed);
+    const rewardTokens = known.filter((t, i) => listing[i * 2 + 1] === true);
+    const coins = [];
+    for (const l of await logs(K.factory, [I.factory.getEvent('Launched').topicHash], C.startBlock || 0)) {
       let p; try { p = I.factory.parseLog(l); } catch { p = null; }
-      if (!p) continue;
-      if (p.name === 'QuoteSet') quoteSet.set(p.args.quote.toLowerCase(), p.args.quote);
-      else if (p.name === 'RewardSet') rewardSet.set(p.args.token.toLowerCase(), p.args.listed ? p.args.token : null);
-      else if (p.name === 'Launched') coins.push({ addr: p.args.coin, creator: p.args.creator, quote: p.args.quote, name: p.args.name, symbol: p.args.symbol, rewards: [...p.args.rewards], block: l.blockNumber });
+      if (p && p.name === 'Launched') coins.push({ addr: p.args.coin, creator: p.args.creator, quote: p.args.quote, name: p.args.name, symbol: p.args.symbol, rewards: [...p.args.rewards], block: l.blockNumber });
     }
-    const quoteTokens = [...quoteSet.values()];
     await learnTokens([...quoteTokens, ...coins.flatMap((c) => [c.quote, ...c.rewards])]);
     for (const c of coins) meta[c.addr.toLowerCase()] = { sym: c.symbol, dec: 18 };
     const calls = [
@@ -243,8 +261,8 @@
     const quotes = quoteTokens.map((q) => { const cfg = r[i++], claims = r[i++] ?? 0n, owed = r[i++] ?? 0n, oh = r[i++] ?? 0n; return { token: q, listed: !!(cfg && cfg.listed), tick: cfg ? Number(cfg.startTick) : null, minDevBuy: cfg ? cfg.minDevBuy : null, claims, owed, owedHolders: oh }; });
     for (const c of coins) { c.held = r[i++] ?? 0n; c.reward = r[i++]; c.nextAt = r[i++] ?? 0n; const pos = r[i++]; c.liquidity = pos ? pos.liquidity : 0n; c.copyFee = r[i++] ?? 0n; }
     await learnTokens([bags.today, ...bags.days].filter(Boolean));
-    const now = (await RO.getBlock('latest')).timestamp;
-    return { owners, paused, treasury, quotes, rewards: [...rewardSet.values()].filter(Boolean), coins, bags, airdrop, payoutKeeper, now };
+    const now = (await rpc((p) => p.getBlock('latest'))).timestamp;
+    return { owners, paused, treasury, quotes, rewards: rewardTokens, coins, bags, airdrop, payoutKeeper, now };
   }
 
   // ---------------------------------------------------------------- render
@@ -253,6 +271,10 @@
   function render() {
     const owner = isOwner(), anyPending = S.owners.some((o) => eq(o.pending, me));
     const openMcap = (q) => (q.tick == null ? '' : ` · opens near ${fmt(BigInt(Math.round(1.0001 ** q.tick * 1e27)), dec(q.token), 2)} ${esc(sym(q.token))} market cap`);
+    // the three main pairs are shown in full; the stock pairs are folded away, and fees are listed where there are any
+    const main = new Set(Object.values(C.tokens).map(([a]) => a.toLowerCase())), isMain = (q) => main.has(q.token.toLowerCase());
+    const quoteRow = (q) => `<div class="ad-row"><div class="l"><b>${esc(sym(q.token))}</b> <span class="ad-pill ${q.listed ? 'ok' : 'bad'}">${q.listed ? 'pair listed' : 'off'}</span><small>${q.tick == null ? 'opening tick is set at deploy' : `tick ${q.tick}${openMcap(q)} · min dev buy ${amt(q.minDevBuy, q.token)}`}</small></div></div>`;
+    const stockQuotes = S.quotes.filter((q) => !isMain(q)), feeQuotes = S.quotes.filter((q) => isMain(q) || q.claims + q.owed + q.owedHolders > 0n);
     const coinOpts = S.coins.map((c) => `<option value="${c.addr}">${esc(c.name)} ($${esc(c.symbol)})</option>`).join('');
     const banner = !LIVE
       ? `<div class="ad-banner"><b>Preview.</b> The Lootbag contracts are not deployed yet, so this page shows the deploy defaults and sends nothing. After the deploy, put the addresses from <span class="mono">deployments/lootbag-base.json</span> into <span class="mono">lb-config.js</span>.</div>`
@@ -268,7 +290,8 @@
       <section class="card ad-card">
         <div class="ad-h"><div><h2>Launches</h2><p class="ad-sub">New launches are <b>${S.paused ? 'paused' : 'open'}</b>. Pausing never affects coins that already trade.</p></div>
           <button class="ad-sw${S.paused ? '' : ' on'}" role="switch" aria-checked="${!S.paused}" aria-label="Launches open" data-act="pause"${dis(owner)}></button></div>
-        ${S.quotes.map((q) => `<div class="ad-row"><div class="l"><b>${esc(sym(q.token))}</b> <span class="ad-pill ${q.listed ? 'ok' : 'bad'}">${q.listed ? 'pair listed' : 'off'}</span><small>${q.tick == null ? 'opening tick is set at deploy' : `tick ${q.tick}${openMcap(q)} · min dev buy ${amt(q.minDevBuy, q.token)}`}</small></div></div>`).join('')}
+        ${S.quotes.filter(isMain).map(quoteRow).join('')}
+        ${stockQuotes.length ? `<details style="margin-top:10px"><summary class="mute" style="cursor:pointer;font-size:13.5px">${stockQuotes.filter((q) => q.listed).length} stock pairs listed</summary>${stockQuotes.map(quoteRow).join('')}</details>` : ''}
         <details style="margin-top:10px"><summary class="mute" style="cursor:pointer;font-size:13.5px">Set or change a pair</summary>
           <div class="ad-form two">
             <div class="ad-f"><label>Pair token address</label><input class="inp mono" id="q-token" placeholder="0x…"></div>
@@ -295,9 +318,10 @@
       <section class="card ad-card wide">
         <div class="ad-h"><div><h2>Fees</h2><p class="ad-sub">Each trade's 2% waits in the pool. <b>Sweep</b> sends the holders' part to the payout contract. <b>Split</b> also divides Lootbag's part: 25% Bags, 10% airdrop pot, 65% treasury. Anyone can run these.</p></div></div>
         <div class="ad-scroll"><table class="ad-table"><thead><tr><th>Pair</th><th>Waiting in the pool</th><th>Holders' part to send</th><th>Lootbag's part to split</th><th></th></tr></thead><tbody>
-        ${S.quotes.map((q) => `<tr><td><b>${esc(sym(q.token))}</b></td><td class="mono">${fmt(q.claims, dec(q.token))}</td><td class="mono">${fmt(q.owedHolders, dec(q.token))}</td><td class="mono">${fmt(q.owed, dec(q.token))}</td>
+        ${feeQuotes.map((q) => `<tr><td><b>${esc(sym(q.token))}</b></td><td class="mono">${fmt(q.claims, dec(q.token))}</td><td class="mono">${fmt(q.owedHolders, dec(q.token))}</td><td class="mono">${fmt(q.owed, dec(q.token))}</td>
           <td><button class="btn s" data-act="flush" data-a="${q.token}">Sweep</button> <button class="btn s gold" data-act="split" data-a="${q.token}">Split</button></td></tr>`).join('')}
         </tbody></table></div>
+        ${stockQuotes.length ? `<p class="note">A stock pair appears here once it has fees waiting.</p>` : ''}
       </section>
 
       <section class="card ad-card wide">
@@ -398,7 +422,7 @@
     for (let i = 0; i < list.length; i += BATCH) {
       const batch = list.slice(i, i + BATCH), label = `Payout ${Math.floor(i / BATCH) + 1}/${Math.ceil(list.length / BATCH)}`;
       // The minimum out is priced for the round's reward token, so do not start a batch as the round is about to turn.
-      const left = Number(await new E.Contract(K.payout, ABI.payout, RO).nextRoundAt(c.addr)) - (await RO.getBlock('latest')).timestamp;
+      const left = Number(await rpc((p) => new E.Contract(K.payout, ABI.payout, p).nextRoundAt(c.addr))) - (await rpc((p) => p.getBlock('latest'))).timestamp;
       if (left < 40) { toast(`The round turns in ${left}s. Wait for the next round and press Pay holders again.`, true); break; }
       let out;
       try { out = await simulate(K.payout, 'payout', 'pay', [c.addr, batch, 0]); } catch (e) { toast(label + ' cannot run: ' + (e.shortMessage || e.reason || e.message).toString().slice(0, 140), true); break; }

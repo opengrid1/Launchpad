@@ -1,0 +1,547 @@
+{
+ "chainId": 8453,
+ "deployer": "0x9a4cB15E65aF781Cf2Ee22D4E5cf39a41cdf7193",
+ "owner": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+ "ownershipAccepted": false,
+ "treasury": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+ "keeper": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+ "startBlock": 62517259,
+ "launchesPaused": true,
+ "liquidity": "held by the factory; the owner can withdraw any share of a pool with collect(coin, bps, to)",
+ "hub": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+ "contracts": {
+  "factory": "0xe1e57D339C840545Eb38131A0085369F2E08430d",
+  "hook": "0x84d04ca2A620610d16D8004C89D9aaa73d612AcC",
+  "payout": "0x27476fDdf3BD05AD06aa3Aa54b4CAf0717ecb1E2",
+  "swapper": "0x5776229B170713Fc150Cce7Dc860FE8E522534AE",
+  "bags": "0x7864584917E42628FD335ebec1de13C9484E53fb",
+  "airdrop": "0xE8A74b2971d691b95Db0B5499DcC8F2e7D7d6D99",
+  "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b"
+ },
+ "tokens": {
+  "vvv": "0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf",
+  "weth": "0x4200000000000000000000000000000000000006",
+  "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+ },
+ "quotes": [
+  {
+   "symbol": "VVV",
+   "token": "0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf",
+   "startTick": -155200,
+   "minDevBuy": "300000000000000000",
+   "opensAtUsd": 5043
+  },
+  {
+   "symbol": "WETH",
+   "token": "0x4200000000000000000000000000000000000006",
+   "startTick": -196400,
+   "minDevBuy": "5000000000000000",
+   "opensAtUsd": 5026
+  },
+  {
+   "symbol": "USDC",
+   "token": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+   "startTick": -398400,
+   "minDevBuy": "8400000",
+   "opensAtUsd": 4995
+  },
+  {
+   "symbol": "NVDA",
+   "token": "0xb20000000000000000000078ee7ce2fE4908108C",
+   "startTick": -402400,
+   "minDevBuy": "5600000",
+   "opensAtUsd": 5048
+  },
+  {
+   "symbol": "AMZN",
+   "token": "0xb200000000000000000000d9192b6B456483C2E8",
+   "startTick": -407400,
+   "minDevBuy": "3400000",
+   "opensAtUsd": 5010
+  },
+  {
+   "symbol": "GOOGL",
+   "token": "0xb2000000000000000000002D0BA3164cc74f58B7",
+   "startTick": -408600,
+   "minDevBuy": "3000000",
+   "opensAtUsd": 4957
+  },
+  {
+   "symbol": "SPCX",
+   "token": "0xb2000000000000000000007b9fcbd005511aCBd5",
+   "startTick": -401000,
+   "minDevBuy": "6500000",
+   "opensAtUsd": 4976
+  },
+  {
+   "symbol": "SNDK",
+   "token": "0xb200000000000000000000397293Cb8cda9a10c5",
+   "startTick": -416400,
+   "minDevBuy": "1400000",
+   "opensAtUsd": 5003
+  },
+  {
+   "symbol": "ANT",
+   "token": "0xb20000000000000000000016e38FD364d271Ba28",
+   "startTick": -396600,
+   "minDevBuy": "10000000",
+   "opensAtUsd": 4997
+  },
+  {
+   "symbol": "META",
+   "token": "0xb2000000000000000000008bC8786B856E61707C",
+   "startTick": -416600,
+   "minDevBuy": "1300000",
+   "opensAtUsd": 4958
+  },
+  {
+   "symbol": "MSTR",
+   "token": "0xb2000000000000000000004884b426556b92883d",
+   "startTick": -396400,
+   "minDevBuy": "10000000",
+   "opensAtUsd": 5030
+  },
+  {
+   "symbol": "MU",
+   "token": "0xb200000000000000000000Fd2f87532B90095211",
+   "startTick": -416400,
+   "minDevBuy": "1300000",
+   "opensAtUsd": 5034
+  },
+  {
+   "symbol": "AAPL",
+   "token": "0xb200000000000000000000C2e324d24d7eEcd1fb",
+   "startTick": -411000,
+   "minDevBuy": "2300000",
+   "opensAtUsd": 5047
+  },
+  {
+   "symbol": "MSFT",
+   "token": "0xB200000000000000000000Ab99cFa739E253872B",
+   "startTick": -414400,
+   "minDevBuy": "1700000",
+   "opensAtUsd": 4981
+  },
+  {
+   "symbol": "TSLA",
+   "token": "0xb2000000000000000000001e800a7f5189430cD0",
+   "startTick": -411800,
+   "minDevBuy": "2200000",
+   "opensAtUsd": 5002
+  },
+  {
+   "symbol": "PLTR",
+   "token": "0xb2000000000000000000007d16372840dF4dAbbe",
+   "startTick": -403400,
+   "minDevBuy": "5100000",
+   "opensAtUsd": 4989
+  },
+  {
+   "symbol": "AMD",
+   "token": "0xB2000000000000000000000d8Ce462E99ee7A47B",
+   "startTick": -412400,
+   "minDevBuy": "2000000",
+   "opensAtUsd": 5045
+  },
+  {
+   "symbol": "NFLX",
+   "token": "0xb20000000000000000000058B8c947e44011dFE6",
+   "startTick": -393200,
+   "minDevBuy": "14000000",
+   "opensAtUsd": 4978
+  },
+  {
+   "symbol": "ORCL",
+   "token": "0xb200000000000000000000347AFbA223D7B6b63C",
+   "startTick": -399000,
+   "minDevBuy": "8000000",
+   "opensAtUsd": 4974
+  },
+  {
+   "symbol": "TTWO",
+   "token": "0xB200000000000000000000f720C26062Bc3067Da",
+   "startTick": -406400,
+   "minDevBuy": "3700000",
+   "opensAtUsd": 5046
+  },
+  {
+   "symbol": "SPYM",
+   "token": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
+   "startTick": -166600,
+   "minDevBuy": "99000000000000000",
+   "opensAtUsd": 4993
+  },
+  {
+   "symbol": "HIMS",
+   "token": "0xB20000000000000000000043a599976181Bcf336",
+   "startTick": -379400,
+   "minDevBuy": "57000000",
+   "opensAtUsd": 4970
+  },
+  {
+   "symbol": "COIN",
+   "token": "0x5cDa0E1CA4ce2af96315f7F8963C85399c172204",
+   "startTick": -168600,
+   "minDevBuy": "80000000000000000",
+   "opensAtUsd": 5013
+  },
+  {
+   "symbol": "AVGO",
+   "token": "0xB200000000000000000000Fc737aeA6196aB5a4c",
+   "startTick": -409400,
+   "minDevBuy": "2800000",
+   "opensAtUsd": 5046
+  },
+  {
+   "symbol": "CRCL",
+   "token": "0xB20000000000000000000019f6E7C675b73C2e4D",
+   "startTick": -391200,
+   "minDevBuy": "17000000",
+   "opensAtUsd": 5022
+  },
+  {
+   "symbol": "BE",
+   "token": "0xb20000000000000000000016f9dfe862feBA122b",
+   "startTick": -402800,
+   "minDevBuy": "5400000",
+   "opensAtUsd": 5022
+  },
+  {
+   "symbol": "INTC",
+   "token": "0xB2000000000000000000004AFF16039bA04bdFBc",
+   "startTick": -392400,
+   "minDevBuy": "15000000",
+   "opensAtUsd": 5022
+  },
+  {
+   "symbol": "LLY",
+   "token": "0xB200000000000000000000f1a0F91e34892E4718",
+   "startTick": -424800,
+   "minDevBuy": "600000",
+   "opensAtUsd": 4967
+  },
+  {
+   "symbol": "MRNA",
+   "token": "0xB200000000000000000000e215e9B76ecBA02468",
+   "startTick": -406400,
+   "minDevBuy": "3800000",
+   "opensAtUsd": 4997
+  },
+  {
+   "symbol": "MRVL",
+   "token": "0xB200000000000000000000eC3c4c7395Cc609813",
+   "startTick": -401200,
+   "minDevBuy": "6300000",
+   "opensAtUsd": 5038
+  },
+  {
+   "symbol": "HOOD",
+   "token": "0xb2000000000000000000006F944897540579D3f2",
+   "startTick": -394400,
+   "minDevBuy": "12000000",
+   "opensAtUsd": 5020
+  },
+  {
+   "symbol": "KO",
+   "token": "0xb200000000000000000000ffef181DB6dC5ed6A3",
+   "startTick": -398200,
+   "minDevBuy": "8700000",
+   "opensAtUsd": 4960
+  },
+  {
+   "symbol": "LITE",
+   "token": "0xB200000000000000000000eDA6C2c6F11E0F838f",
+   "startTick": -414200,
+   "minDevBuy": "1700000",
+   "opensAtUsd": 4985
+  },
+  {
+   "symbol": "MCD",
+   "token": "0xb200000000000000000000d2f4cf2f7DEBB244BB",
+   "startTick": -408800,
+   "minDevBuy": "2900000",
+   "opensAtUsd": 5009
+  },
+  {
+   "symbol": "AAOI",
+   "token": "0xb200000000000000000000cf36D05963A3E2205c",
+   "startTick": -388800,
+   "minDevBuy": "22000000",
+   "opensAtUsd": 4954
+  },
+  {
+   "symbol": "ADBE",
+   "token": "0xB20000000000000000000034533Ed3961f222Cd4",
+   "startTick": -406800,
+   "minDevBuy": "3600000",
+   "opensAtUsd": 5022
+  },
+  {
+   "symbol": "NOW",
+   "token": "0xB20000000000000000000082Cd2C7801305808Df",
+   "startTick": -397600,
+   "minDevBuy": "9100000",
+   "opensAtUsd": 5017
+  },
+  {
+   "symbol": "GME",
+   "token": "0xb2000000000000000000007790ed6E48e06eD935",
+   "startTick": -385200,
+   "minDevBuy": "31000000",
+   "opensAtUsd": 5011
+  },
+  {
+   "symbol": "SNOW",
+   "token": "0xB2000000000000000000004AcDC9A922FCfBCc7f",
+   "startTick": -408400,
+   "minDevBuy": "3100000",
+   "opensAtUsd": 4977
+  },
+  {
+   "symbol": "BRK.B",
+   "token": "0xb20000000000000000000024170488e788CBbCb4",
+   "startTick": -416000,
+   "minDevBuy": "1400000",
+   "opensAtUsd": 5005
+  },
+  {
+   "symbol": "WDC",
+   "token": "0xb2000000000000000000008fde21a1F5c69FeC0b",
+   "startTick": -408600,
+   "minDevBuy": "3000000",
+   "opensAtUsd": 4963
+  },
+  {
+   "symbol": "CRWV",
+   "token": "0xB200000000000000000000F111184A74720787E6",
+   "startTick": -390000,
+   "minDevBuy": "19000000",
+   "opensAtUsd": 4995
+  },
+  {
+   "symbol": "SKHY",
+   "token": "0xb200000000000000000000187f7071D6E321a7d2",
+   "startTick": -399400,
+   "minDevBuy": "7600000",
+   "opensAtUsd": 5040
+  },
+  {
+   "symbol": "NIO",
+   "token": "0xb2000000000000000000002D2B5dc53c61f1bA06",
+   "startTick": -362200,
+   "minDevBuy": "310000000",
+   "opensAtUsd": 5006
+  },
+  {
+   "symbol": "ARM",
+   "token": "0xB20000000000000000000026215D755356E5043f",
+   "startTick": -403800,
+   "minDevBuy": "4900000",
+   "opensAtUsd": 5006
+  },
+  {
+   "symbol": "SONY",
+   "token": "0xb200000000000000000000a26326a922FFA87f6C",
+   "startTick": -385800,
+   "minDevBuy": "29000000",
+   "opensAtUsd": 5018
+  },
+  {
+   "symbol": "SAN",
+   "token": "0xB20000000000000000000017BB66E9301E913A99",
+   "startTick": -377600,
+   "minDevBuy": "67000000",
+   "opensAtUsd": 5037
+  },
+  {
+   "symbol": "NOK",
+   "token": "0xB2000000000000000000005ac674f707E357409c",
+   "startTick": -372200,
+   "minDevBuy": "110000000",
+   "opensAtUsd": 5042
+  },
+  {
+   "symbol": "SE",
+   "token": "0xB2000000000000000000003088798F6d0722AaAC",
+   "startTick": -394400,
+   "minDevBuy": "12000000",
+   "opensAtUsd": 4997
+  },
+  {
+   "symbol": "UL",
+   "token": "0xB200000000000000000000349ef3Aa93a0897476",
+   "startTick": -394400,
+   "minDevBuy": "12000000",
+   "opensAtUsd": 4978
+  },
+  {
+   "symbol": "PDD",
+   "token": "0xB200000000000000000000c8A7223510467D8563",
+   "startTick": -397000,
+   "minDevBuy": "9700000",
+   "opensAtUsd": 5027
+  },
+  {
+   "symbol": "SAP",
+   "token": "0xb200000000000000000000da6F64c306234127E0",
+   "startTick": -405800,
+   "minDevBuy": "4000000",
+   "opensAtUsd": 5002
+  },
+  {
+   "symbol": "HSAI",
+   "token": "0xb200000000000000000000f3049F4aa834b23b64",
+   "startTick": -377600,
+   "minDevBuy": "68000000",
+   "opensAtUsd": 4960
+  },
+  {
+   "symbol": "NVO",
+   "token": "0xb2000000000000000000008D5328e9208773dC58",
+   "startTick": -389400,
+   "minDevBuy": "20000000",
+   "opensAtUsd": 5032
+  },
+  {
+   "symbol": "INFY",
+   "token": "0xb200000000000000000000F6b0417af5F52341FC",
+   "startTick": -378200,
+   "minDevBuy": "63000000",
+   "opensAtUsd": 5011
+  },
+  {
+   "symbol": "BUD",
+   "token": "0xB200000000000000000000c36ce081Dd09e86cA2",
+   "startTick": -396200,
+   "minDevBuy": "10000000",
+   "opensAtUsd": 4991
+  },
+  {
+   "symbol": "LI",
+   "token": "0xb200000000000000000000D61eFD9F54A23ef9eB",
+   "startTick": -377000,
+   "minDevBuy": "71000000",
+   "opensAtUsd": 5037
+  },
+  {
+   "symbol": "BIDU",
+   "token": "0xb200000000000000000000d2b7D9aeE52F6C6BEf",
+   "startTick": -393800,
+   "minDevBuy": "13000000",
+   "opensAtUsd": 5019
+  },
+  {
+   "symbol": "WRD",
+   "token": "0xb200000000000000000000e88EFe88D8aDE3f0dA",
+   "startTick": -363200,
+   "minDevBuy": "280000000",
+   "opensAtUsd": 4988
+  },
+  {
+   "symbol": "VALE",
+   "token": "0xB20000000000000000000063376b142C0764B489",
+   "startTick": -375200,
+   "minDevBuy": "86000000",
+   "opensAtUsd": 4991
+  },
+  {
+   "symbol": "BILI",
+   "token": "0xb200000000000000000000ca7C6D1438e7245eb6",
+   "startTick": -376400,
+   "minDevBuy": "76000000",
+   "opensAtUsd": 4987
+  },
+  {
+   "symbol": "SGOV",
+   "token": "0x78c31580c97101694C70022c83D570150c11e935",
+   "startTick": -168400,
+   "minDevBuy": "83000000000000000",
+   "opensAtUsd": 4976
+  },
+  {
+   "symbol": "UBER",
+   "token": "0xb200000000000000000000cAE20cb1446462e24c",
+   "startTick": -394400,
+   "minDevBuy": "12000000",
+   "opensAtUsd": 4983
+  }
+ ],
+ "prices": {
+  "vvvUsd": 27.69437837138825,
+  "ethUsd": 1699.0687604346583,
+  "startMcapUsd": 5000
+ },
+ "rewards": {
+  "VVV": "0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf",
+  "WETH": "0x4200000000000000000000000000000000000006",
+  "USDC": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "NVDA": "0xb20000000000000000000078ee7ce2fE4908108C",
+  "AMZN": "0xb200000000000000000000d9192b6B456483C2E8",
+  "GOOGL": "0xb2000000000000000000002D0BA3164cc74f58B7",
+  "SPCX": "0xb2000000000000000000007b9fcbd005511aCBd5",
+  "SNDK": "0xb200000000000000000000397293Cb8cda9a10c5",
+  "ANT": "0xb20000000000000000000016e38FD364d271Ba28",
+  "META": "0xb2000000000000000000008bC8786B856E61707C",
+  "MSTR": "0xb2000000000000000000004884b426556b92883d",
+  "MU": "0xb200000000000000000000Fd2f87532B90095211",
+  "AAPL": "0xb200000000000000000000C2e324d24d7eEcd1fb",
+  "MSFT": "0xB200000000000000000000Ab99cFa739E253872B",
+  "TSLA": "0xb2000000000000000000001e800a7f5189430cD0",
+  "PLTR": "0xb2000000000000000000007d16372840dF4dAbbe",
+  "AMD": "0xB2000000000000000000000d8Ce462E99ee7A47B",
+  "NFLX": "0xb20000000000000000000058B8c947e44011dFE6",
+  "ORCL": "0xb200000000000000000000347AFbA223D7B6b63C",
+  "TTWO": "0xB200000000000000000000f720C26062Bc3067Da",
+  "SPYM": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
+  "HIMS": "0xB20000000000000000000043a599976181Bcf336",
+  "COIN": "0x5cDa0E1CA4ce2af96315f7F8963C85399c172204",
+  "AVGO": "0xB200000000000000000000Fc737aeA6196aB5a4c",
+  "CRCL": "0xB20000000000000000000019f6E7C675b73C2e4D",
+  "BE": "0xb20000000000000000000016f9dfe862feBA122b",
+  "INTC": "0xB2000000000000000000004AFF16039bA04bdFBc",
+  "LLY": "0xB200000000000000000000f1a0F91e34892E4718",
+  "MRNA": "0xB200000000000000000000e215e9B76ecBA02468",
+  "MRVL": "0xB200000000000000000000eC3c4c7395Cc609813",
+  "HOOD": "0xb2000000000000000000006F944897540579D3f2",
+  "KO": "0xb200000000000000000000ffef181DB6dC5ed6A3",
+  "LITE": "0xB200000000000000000000eDA6C2c6F11E0F838f",
+  "MCD": "0xb200000000000000000000d2f4cf2f7DEBB244BB",
+  "AAOI": "0xb200000000000000000000cf36D05963A3E2205c",
+  "ADBE": "0xB20000000000000000000034533Ed3961f222Cd4",
+  "NOW": "0xB20000000000000000000082Cd2C7801305808Df",
+  "GME": "0xb2000000000000000000007790ed6E48e06eD935",
+  "SNOW": "0xB2000000000000000000004AcDC9A922FCfBCc7f",
+  "BRK.B": "0xb20000000000000000000024170488e788CBbCb4",
+  "WDC": "0xb2000000000000000000008fde21a1F5c69FeC0b",
+  "CRWV": "0xB200000000000000000000F111184A74720787E6",
+  "SKHY": "0xb200000000000000000000187f7071D6E321a7d2",
+  "NIO": "0xb2000000000000000000002D2B5dc53c61f1bA06",
+  "ARM": "0xB20000000000000000000026215D755356E5043f",
+  "SONY": "0xb200000000000000000000a26326a922FFA87f6C",
+  "SAN": "0xB20000000000000000000017BB66E9301E913A99",
+  "NOK": "0xB2000000000000000000005ac674f707E357409c",
+  "SE": "0xB2000000000000000000003088798F6d0722AaAC",
+  "UL": "0xB200000000000000000000349ef3Aa93a0897476",
+  "PDD": "0xB200000000000000000000c8A7223510467D8563",
+  "SAP": "0xb200000000000000000000da6F64c306234127E0",
+  "HSAI": "0xb200000000000000000000f3049F4aa834b23b64",
+  "NVO": "0xb2000000000000000000008D5328e9208773dC58",
+  "INFY": "0xb200000000000000000000F6b0417af5F52341FC",
+  "BUD": "0xB200000000000000000000c36ce081Dd09e86cA2",
+  "LI": "0xb200000000000000000000D61eFD9F54A23ef9eB",
+  "BIDU": "0xb200000000000000000000d2b7D9aeE52F6C6BEf",
+  "WRD": "0xb200000000000000000000e88EFe88D8aDE3f0dA",
+  "VALE": "0xB20000000000000000000063376b142C0764B489",
+  "BILI": "0xb200000000000000000000ca7C6D1438e7245eb6",
+  "SGOV": "0x78c31580c97101694C70022c83D570150c11e935",
+  "UBER": "0xb200000000000000000000cAE20cb1446462e24c"
+ },
+ "bagDays": [
+  "VVV",
+  "NVDA",
+  "AMZN",
+  "TSLA"
+ ],
+ "routes": 124,
+ "gasUsed": "35318367"
+}
