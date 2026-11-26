@@ -179,14 +179,28 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
     return;
   }
 
-  let nonce = await P.getTransactionCount(me, 'pending');
+  // A public RPC can refuse a request for being over its rate limit. Reads are simply tried again; once a
+  // transaction has been sent, only its receipt is polled, so a refused request can never send it twice.
+  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  const retry = async (fn) => {
+    for (let i = 0; ; i++) {
+      try { return await fn(); } catch (e) {
+        const m = String((e && (e.shortMessage || e.message)) || e);
+        if (i >= 8 || !/limit|429|timeout|coalesce|ECONNRESET|ETIMEDOUT|50[234]|missing response/i.test(m)) throw e;
+        await pause(1500 * (i + 1));
+      }
+    }
+  };
+  let nonce = await retry(() => P.getTransactionCount(me, 'pending'));
   const step = async (name, tx) => {
     if (prog.steps[name]) return prog.steps[name];
-    const est = await P.estimateGas({ from: me, ...tx }).catch((e) => { throw new Error(name + ': ' + (e.shortMessage || e.message)); });
-    const fee = await P.getFeeData();
+    const est = await retry(() => P.estimateGas({ from: me, ...tx })).catch((e) => { throw new Error(name + ': ' + (e.shortMessage || e.message)); });
+    const fee = await retry(() => P.getFeeData());
     const sent = await w.sendTransaction({ ...tx, nonce: nonce++, gasLimit: (est * 12n) / 10n + 50000n, maxFeePerGas: (fee.maxFeePerGas || fee.gasPrice) * 2n, maxPriorityFeePerGas: fee.maxPriorityFeePerGas || 1000000n });
-    const r = await sent.wait();
-    if (!r || r.status !== 1) throw new Error(name + ' reverted ' + sent.hash);
+    let r = null;
+    for (let i = 0; i < 90 && !r; i++) { await pause(i ? 2000 : 1200); r = await retry(() => P.getTransactionReceipt(sent.hash)); }
+    if (!r) throw new Error(name + ' was sent but is not confirmed yet: ' + sent.hash + '. Run again to continue.');
+    if (r.status !== 1) throw new Error(name + ' reverted ' + sent.hash);
     prog.steps[name] = { hash: sent.hash, block: r.blockNumber, gas: Number(r.gasUsed), address: r.contractAddress || undefined };
     save();
     console.log(`  ${name.padEnd(26)} ok ${r.gasUsed} gas`);
@@ -212,7 +226,18 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   await call('airdrop.setKeeper', airdrop, Airdrop, 'setKeeper', [KEEPER, true]);
   for (const q of quotes) await call(`quote ${q.sym}`, factory, Factory, 'setQuote', [q.token, true, q.tick, q.minDevBuy]);
   for (const [sym, token] of rewards) await call(`reward ${sym}`, factory, Factory, 'setReward', [token, true]);
-  for (const r of routes) await call(r.name, swapper, Swapper, 'queueRoute', [r.tokenIn, r.tokenOut, r.hops]);
+  // Queueing a route that is already set would only queue a 48-hour change to the same thing, so a route found
+  // on-chain (from a run that was cut off before it could be recorded) is marked done instead of sent again.
+  const swapperRead = new ethers.Contract(swapper, Swapper.abi, P);
+  for (const r of routes) {
+    if (!prog.steps[r.name] && (await retry(() => swapperRead.route(r.tokenIn, r.tokenOut))).length !== 0) {
+      prog.steps[r.name] = { hash: 'already set on-chain', block: 0, gas: 0 };
+      save();
+      console.log(`  ${r.name.padEnd(26)} already set`);
+      continue;
+    }
+    await call(r.name, swapper, Swapper, 'queueRoute', [r.tokenIn, r.tokenOut, r.hops]);
+  }
 
   const owned = { factory: [factory, Factory], hook: [hook, Hook], payout: [payout, Payout], swapper: [swapper, Swapper], bags: [bags, Bags], airdrop: [airdrop, Airdrop] };
   if (!eq(me, OWNER)) for (const [n, [addr, a]] of Object.entries(owned)) await call(`offer ${n}`, addr, a, 'transferOwnership', [OWNER]);
