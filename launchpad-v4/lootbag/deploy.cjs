@@ -1,8 +1,9 @@
 // Deploys Lootbag on Base (or a Base fork with BASE_RPC): the route swapper, the payout contract, the hook at a
 // CREATE2 address carrying its permission flags, the factory, the Bags and the airdrop pot. Wires them, lists the
-// quotes (VVV, WETH, USDC) at an opening tick worked out from live pool prices, lists the rewards (those three plus
-// every Base stock token that has a USDC pool), sets the payout routes, makes the owner wallet a keeper (rounds are
-// run by hand from the admin page), and offers ownership of all six contracts to the owner wallet, which accepts.
+// tokens (VVV, WETH, USDC and every Base stock token whose USDC pool checks out) both as quotes a coin can be paired
+// with, each at an opening tick worked out from live pool prices, and as rewards holders can be paid in. Sets one
+// route into USDC and one out of it per token (the swapper joins the two for any pair), makes the owner wallet a
+// keeper (rounds are run by hand from the admin page), and offers ownership of all six contracts to the owner wallet.
 // The factory stays paused until the owner opens launches. Resumable: steps done are kept in
 // deployments/lootbag-base.progress.json.
 //
@@ -104,34 +105,45 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
     const opensAtUsd = (1.0001 ** tick * SUPPLY_WHOLE * 1e18) / 10 ** dec * usd;
     return { sym, token, dec, tick, minDevBuy, opensAtUsd };
   };
-  const quotes = prog.quotes
-    ? prog.quotes.map((q) => ({ ...q, minDevBuy: BigInt(q.minDevBuy) }))
-    : [quoteCfg('VVV', A.vvv, vvvUsd, 18), quoteCfg('WETH', A.weth, ethUsd, 18), quoteCfg('USDC', A.usdc, 1, 6)];
-  for (const q of quotes) console.log(`quote ${q.sym.padEnd(4)} opens at tick ${q.tick} (~$${Math.round(q.opensAtUsd)} market cap), min dev buy ${ethers.formatUnits(q.minDevBuy, q.dec)} ${q.sym}`);
 
   // ---------------------------------------------------------------- stocks with a usable USDC pool
+  // A stock is used when its pool really is USDC/stock. It is also listed as a quote when the pool's price is within
+  // 25% of the price recorded in the list (a thin pool can sit far from the real price, and a coin's opening tick is
+  // worked out from it); otherwise it is a reward only.
   const stockFile = JSON.parse(fs.readFileSync(path.join(DEP, 'base-stock-routes.json'), 'utf8'));
-  const cands = Object.entries(stockFile).filter(([, v]) => v.usdcPool && v.usdcPool.pool).map(([sym, v]) => ({ sym, token: ethers.getAddress(v.addr), pool: ethers.getAddress(v.usdcPool.pool) }));
+  const cands = Object.entries(stockFile).filter(([, v]) => v.usdcPool && v.usdcPool.pool).map(([sym, v]) => ({ sym, token: ethers.getAddress(v.addr), pool: ethers.getAddress(v.usdcPool.pool), dec: v.dec, px: v.px }));
   const infos = await poolInfo(cands.map((c) => c.pool));
-  const stocks = [], skipped = [];
+  const stocks = [], skipped = [], rewardOnly = [];
   cands.forEach((c, i) => {
     const f = infos[i];
     const ok = f && ((eq(f.token0, A.usdc) && eq(f.token1, c.token)) || (eq(f.token1, A.usdc) && eq(f.token0, c.token)));
-    (ok ? stocks : skipped).push(c);
+    if (!ok) return skipped.push(c);
+    c.usd = priceIn(f, c.token, c.dec, 6);
+    c.quotable = c.usd > 0 && c.px > 0 && Math.abs(c.usd / c.px - 1) <= 0.25;
+    if (!c.quotable) rewardOnly.push(c);
+    stocks.push(c);
   });
   stocks.splice(MAX_STOCKS);
   console.log(`stocks: ${stocks.length} with a checked USDC pool${skipped.length ? `; skipped ${skipped.map((s) => s.sym).join(', ')} (pool is not USDC/stock)` : ''}`);
+  if (rewardOnly.length) console.log(`  reward only, not a quote (pool price far from the listed price): ${rewardOnly.map((s) => `${s.sym} $${s.usd.toPrecision(4)} vs $${s.px}`).join(', ')}`);
+
+  const quotes = prog.quotes
+    ? prog.quotes.map((q) => ({ ...q, minDevBuy: BigInt(q.minDevBuy) }))
+    : [quoteCfg('VVV', A.vvv, vvvUsd, 18), quoteCfg('WETH', A.weth, ethUsd, 18), quoteCfg('USDC', A.usdc, 1, 6), ...stocks.filter((s) => s.quotable).map((s) => quoteCfg(s.sym, s.token, s.usd, s.dec))];
+  for (const q of quotes.slice(0, 6)) console.log(`quote ${q.sym.padEnd(5)} opens at tick ${q.tick} (~$${Math.round(q.opensAtUsd)} market cap), min dev buy ${ethers.formatUnits(q.minDevBuy, q.dec)} ${q.sym}`);
+  if (quotes.length > 6) console.log(`  ... and ${quotes.length - 6} more stock quotes, each opening near $${START_MCAP_USD}`);
   const bySym = Object.fromEntries([['VVV', A.vvv], ['WETH', A.weth], ['USDC', A.usdc], ...stocks.map((s) => [s.sym, s.token])]);
   const days = BAG_DAYS.filter((s) => bySym[s]).map((s) => bySym[s]);
   if (days.length !== BAG_DAYS.length) console.log(`note: Bag days without a route were left out; using ${BAG_DAYS.filter((s) => bySym[s]).join(', ')}`);
 
-  // routes: every quote into every reward, through USDC
+  // routes: each token gets one route into USDC and one out of it; the swapper joins the two for any pair
   const v3 = (pool) => ({ kind: 0, pool, key: [ethers.ZeroAddress, ethers.ZeroAddress, 0, 0, ethers.ZeroAddress] });
-  const toUsdc = { [A.vvv]: [v3(A.vvvUsdc)], [A.weth]: [v3(A.wethUsdc)], [A.usdc]: [] };
-  const fromUsdc = { [A.vvv]: [v3(A.vvvUsdc)], [A.weth]: [v3(A.wethUsdc)], [A.usdc]: [], ...Object.fromEntries(stocks.map((s) => [s.token, [v3(s.pool)]])) };
   const rewards = [['VVV', A.vvv], ['WETH', A.weth], ['USDC', A.usdc], ...stocks.map((s) => [s.sym, s.token])];
   const routes = [];
-  for (const q of quotes) for (const [rs, r] of rewards) if (!eq(q.token, r)) routes.push({ name: `route ${q.sym}>${rs}`, tokenIn: q.token, tokenOut: r, hops: [...toUsdc[q.token], ...fromUsdc[r]] });
+  for (const [sym, token, pool] of [['VVV', A.vvv, A.vvvUsdc], ['WETH', A.weth, A.wethUsdc], ...stocks.map((s) => [s.sym, s.token, s.pool])]) {
+    routes.push({ name: `route ${sym}>USDC`, tokenIn: token, tokenOut: A.usdc, hops: [v3(pool)] });
+    routes.push({ name: `route USDC>${sym}`, tokenIn: A.usdc, tokenOut: token, hops: [v3(pool)] });
+  }
   console.log(`plan: 6 contracts, ${quotes.length} quotes, ${rewards.length} rewards, ${routes.length} routes${eq(me, OWNER) ? '' : ', 6 ownership offers'}`);
 
   // ---------------------------------------------------------------- contracts
@@ -152,7 +164,7 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   if (!SEND) {
     let gas = 0n;
     for (const [n, data, to] of [
-      ['LootbagSwapper', init(Swapper, ['address', 'address'], [A.pm, me])],
+      ['LootbagSwapper', init(Swapper, ['address', 'address', 'address'], [A.pm, me, A.usdc])],
       ['LootbagPayout', init(Payout, ['address'], [me])],
       ['LootbagHook', prog.hookSalt + hookInit.slice(2), A.create2],
       ['LootbagAirdrop', init(Airdrop, ['address', 'address', 'address'], [A.vvv, A.multicall, me])],
@@ -162,8 +174,8 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
       console.log(`  ${n.padEnd(18)} ~${est} gas`);
     }
     const gp = (await P.getFeeData()).gasPrice || 0n;
-    // measured on a Base fork: the whole run (269 transactions, 45.0M gas) is about 9 times these four deployments
-    console.log(`dry run: these four are ~${gas} gas; the full run is roughly ${gas * 9n} gas, about ${ethers.formatEther(gas * 9n * gp)} ETH at the current ${ethers.formatUnits(gp, 'gwei')} gwei. Add --send to deploy.`);
+    // measured on a Base fork: the whole run (267 transactions, 35.4M gas) is about 7 times these four deployments
+    console.log(`dry run: these four are ~${gas} gas; the full run is roughly ${gas * 7n} gas, about ${ethers.formatEther(gas * 7n * gp)} ETH at the current ${ethers.formatUnits(gp, 'gwei')} gwei. Add --send to deploy.`);
     return;
   }
 
@@ -184,7 +196,7 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
   prog.quotes = prog.quotes || quotes.map((q) => ({ ...q, minDevBuy: q.minDevBuy.toString() }));
   save();
 
-  const swapper = (await step('LootbagSwapper', { data: init(Swapper, ['address', 'address'], [A.pm, me]) })).address;
+  const swapper = (await step('LootbagSwapper', { data: init(Swapper, ['address', 'address', 'address'], [A.pm, me, A.usdc]) })).address;
   const payout = (await step('LootbagPayout', { data: init(Payout, ['address'], [me]) })).address;
   await step('LootbagHook', { to: A.create2, data: prog.hookSalt + hookInit.slice(2) });
   const hook = prog.hook;
@@ -210,6 +222,7 @@ const save = () => fs.writeFileSync(PROG, JSON.stringify(prog, null, 1));
     chainId, deployer: me, owner: OWNER, ownershipAccepted: eq(me, OWNER), treasury: TREASURY, keeper: KEEPER,
     startBlock: prog.steps.LootbagFactory.block, launchesPaused: true,
     liquidity: 'held by the factory; the owner can withdraw any share of a pool with collect(coin, bps, to)',
+    hub: A.usdc,
     contracts: { factory, hook, payout, swapper, bags, airdrop, poolManager: A.pm },
     tokens: { vvv: A.vvv, weth: A.weth, usdc: A.usdc },
     quotes: quotes.map((q) => ({ symbol: q.sym, token: q.token, startTick: q.tick, minDevBuy: q.minDevBuy.toString(), opensAtUsd: Math.round(q.opensAtUsd) })),

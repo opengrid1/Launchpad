@@ -104,7 +104,7 @@ contract BaseForkTest is Test {
         deployCodeTo("LootbagHook.sol:LootbagHook", abi.encode(PM, owner), hookAddr);
         hook = LootbagHook(hookAddr);
         payout = new LootbagPayout(owner);
-        swapper = new LootbagSwapper(PM, owner);
+        swapper = new LootbagSwapper(PM, owner, USDC);
         factory = new LootbagFactory(PM, IHooks(hookAddr), address(payout), owner, treasury);
         router = new TestRouter(PM);
 
@@ -577,6 +577,48 @@ contract BaseForkTest is Test {
         IERC20T(VVV).approve(address(swapper), 10 ether);
         vm.expectRevert();
         swapper.swap(VVV, WETH, 10 ether, 1_000 ether, address(this));
+    }
+
+    function test_pairsWithoutARouteGoThroughTheHub() public {
+        // a fresh swapper with only VVV -> USDC and USDC -> WETH set: VVV -> WETH is put together from the two
+        LootbagSwapper s2 = new LootbagSwapper(PM, owner, USDC);
+        LootbagSwapper.Hop[] memory one = new LootbagSwapper.Hop[](1);
+        one[0].kind = 0;
+        deal(VVV, address(this), 20 ether);
+        IERC20T(VVV).approve(address(s2), 20 ether);
+        vm.expectRevert(LootbagSwapper.NoRoute.selector);
+        s2.swap(VVV, WETH, 10 ether, 0, address(this));
+
+        vm.startPrank(owner);
+        one[0].pool = VVV_USDC_UNI;
+        s2.queueRoute(VVV, USDC, one);
+        vm.stopPrank();
+        // half a way through is still no route
+        vm.expectRevert(LootbagSwapper.NoRoute.selector);
+        s2.swap(VVV, WETH, 10 ether, 0, address(this));
+        assertEq(s2.hopsFor(VVV, WETH).length, 0);
+
+        vm.startPrank(owner);
+        one[0].pool = WETH_USDC_AERO;
+        s2.queueRoute(USDC, WETH, one);
+        vm.stopPrank();
+        LootbagSwapper.Hop[] memory hops = s2.hopsFor(VVV, WETH);
+        assertEq(hops.length, 2);
+        assertEq(hops[0].pool, VVV_USDC_UNI);
+        assertEq(hops[1].pool, WETH_USDC_AERO);
+        assertEq(s2.route(VVV, WETH).length, 0, "no route of its own");
+
+        uint256 viaHub = s2.swap(VVV, WETH, 10 ether, 1, address(this));
+        assertGt(viaHub, 0);
+        assertEq(IERC20T(WETH).balanceOf(address(this)), viaHub);
+        // the swapper used by the rest of the tests has the same two pools as one VVV -> WETH route: same result
+        deal(VVV, address(this), 10 ether);
+        IERC20T(VVV).approve(address(swapper), 10 ether);
+        assertApproxEqRel(swapper.swap(VVV, WETH, 10 ether, 1, address(this)), viaHub, 0.01e18);
+
+        // a pair's own route wins over the hub, and into or out of the hub never doubles back
+        assertEq(s2.hopsFor(VVV, USDC).length, 1);
+        assertEq(s2.hopsFor(USDC, VVV).length, 0);
     }
 
     function test_gas() public {

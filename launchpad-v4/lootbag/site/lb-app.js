@@ -1,5 +1,6 @@
 /* Lootbag front-end: hash routes #/ (board), #/coin/<addr>, #/create, #/rewards, #/airdrops, #/bags, #/loot,
-   #/how. Reads window.LB_DATA (sample coins in the preview, the indexer once live). No wallet writes in the preview. */
+   #/how. Reads window.LB_DATA (sample coins in the preview, the indexer once live). Wallets connect through Reown; no
+   wallet writes in the preview. */
 (function () {
   const D = window.LB_DATA, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const view = $('#view');
@@ -46,7 +47,38 @@
   $('#nav').innerHTML = NAV.map(([g, items]) => `<h6>${g}</h6>` + items.map(([h, l, i]) => `<a href="${h}" data-r="${h}">${I[i]}<span>${l}</span></a>`).join('')).join('');
   $('#tabbar').innerHTML = [['#/', 'Board', 'home'], ['#/create', 'Create', 'plus', 'plus'], ['#/coins', 'Lootbag coins', 'sack'], ['#/bags', 'Bags', 'grid'], ['#/rewards', 'Rewards', 'gift'], ['#/airdrops', 'Airdrops', 'chute'], ['#/mint', 'Mint', 'mint'], ['#/how', 'How it works', 'book']].map(([h, l, i, c]) => `<a href="${h}" data-r="${h}" class="${c || ''}" aria-label="${l}">${I[i]}</a>`).join('');
   const copyLoot = $('[data-copyloot]'); if (copyLoot) copyLoot.onclick = () => { navigator.clipboard && navigator.clipboard.writeText('0x10070000000000000000000000000000000b4c'); toast('$LOOT address copied'); };
-  $$('[data-connect]').forEach((b) => (b.onclick = () => toast(PREVIEW)));
+  // ---------- wallet: Reown AppKit (LB_CFG.walletConnect.projectId), loaded the first time someone connects.
+  // Connecting only identifies the wallet for now: launches and trades stay off until Lootbag is live.
+  const CFG = window.LB_CFG || {}, WC_ID = (CFG.walletConnect || {}).projectId || '';
+  let kitP = null, wallet = '';
+  const paintWallet = () => $$('[data-connect], [data-connect2]').forEach((b) => { b.textContent = wallet ? short(wallet) : 'Connect wallet'; });
+  function appKit() {
+    if (kitP) return kitP;
+    kitP = (async () => {
+      await import('/wc/appkit.js?v=1');
+      const { createAppKit, EthersAdapter } = window.KinexAppKit;
+      const net = { id: CFG.chainId, name: CFG.chainName, nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: [CFG.rpc] } }, blockExplorers: { default: { name: 'BaseScan', url: CFG.explorer } } };
+      const kit = createAppKit({
+        adapters: [new EthersAdapter()], networks: [net], defaultNetwork: net, projectId: WC_ID,
+        metadata: { name: 'Lootbag', description: 'Coins that pay their holders', url: location.origin, icons: [location.origin + '/img/apple-icon.png'] },
+        features: { analytics: false, email: false, socials: false, swaps: false, onramp: false, send: false, history: false },
+        themeMode: 'dark', themeVariables: { '--w3m-accent': '#f4b740', '--w3m-font-family': "'Space Grotesk', system-ui, sans-serif", '--w3m-border-radius-master': '2px' },
+      });
+      kit.subscribeAccount((a) => { wallet = a && a.isConnected && a.address ? String(a.address) : ''; paintWallet(); });
+      return kit;
+    })();
+    kitP.catch(() => { kitP = null; });
+    return kitP;
+  }
+  const openWallet = () => {
+    if (!WC_ID) return toast(PREVIEW);
+    if (!kitP) toast('Opening wallets…');
+    appKit().then((k) => k.open()).catch(() => toast('The wallet window could not load. Try again.'));
+  };
+  const bindConnect = () => { $$('[data-connect], [data-connect2]').forEach((b) => (b.onclick = openWallet)); paintWallet(); };
+  bindConnect();
+  // AppKit restores an earlier session by itself and reports it through subscribeAccount
+  try { if (WC_ID && Object.keys(localStorage).some((k) => /^(@appkit|wc@2|@w3m)/.test(k))) appKit().catch(() => {}); } catch (e) { /* storage unavailable */ }
 
   const foot = () => `<footer class="foot"><div class="fr"><b>© ${new Date().getFullYear()} Lootbag</b><span><a href="#/how#contracts">Contracts</a><a href="#" data-pv>Terms</a><a href="#" data-pv>Privacy</a><a href="https://x.com/lootbag_fun" target="_blank" rel="noopener">X</a></span></div><p>Tokens on Lootbag are launched by their creators, not by Lootbag. They are highly risky and can lose all their value. Nothing here is financial advice.</p></footer>`;
   const hms = (s) => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm ' + (s % 60) + 's'; };
@@ -237,7 +269,7 @@
       <div class="lh"><h3>Paying out now</h3><span>Hold any of these and you're paid every 5 minutes</span></div>
       <div>${paying.map((c) => `<a class="prow" href="#/coin/${c.addr}">${av(c, 40)}<div class="grow"><b>$${esc(c.ticker)}</b><div class="mute">${usd(c.paid24)} to holders in 24h · ${usd(c.mcap)} market cap</div></div><div class="pays"><span class="mute">Pays in</span>${tokenBadge(c.rewards[0], 20)}<b>${esc(payTok(c.rewards[0]))}</b>${c.rewards.length > 1 ? `<span class="dim">+${c.rewards.length - 1}</span>` : ''}</div></a>`).join('')}</div>
       <p class="fine">Every coin has its own payout round every 5 minutes, counted from its launch. In each round, the holders' share of its trading fees is swapped into the coin's reward token and split between all of its holders by how much they hold. A coin pays out once at least $5 has built up. A share under $1 in a round is skipped and stays in the pot for the next round.</p>${foot()}`;
-    $('[data-connect2]').onclick = () => toast(PREVIEW);
+    bindConnect();
     $('#rgo').onclick = () => { const v = $('#rq').value.trim(); $('#rres').innerHTML = /^0x[0-9a-fA-F]{40}$/.test(v) ? '<p class="note">No Lootbag coins in this wallet yet.</p>' : '<p class="note">Paste a full 0x address.</p>'; };
   }
 
@@ -253,7 +285,7 @@
       <div class="tw"><table class="t lb"><tr><th>#</th><th>Wallet</th><th class="r">Volume</th><th class="r">Share</th><th class="r">Payout</th></tr>${b.map((x, i) => `<tr><td class="dim">${i + 1}</td><td>${short(x.wallet)}</td><td class="r">${usd(x.vol)}</td><td class="r mute">${share(x, i).toFixed(2)}%</td><td class="r up">${num((A.pot * share(x, i)) / 100, 2)} VVV</td></tr>`).join('')}</table></div>
       <div class="lh"><h3>Past airdrops</h3></div><div class="past"><span class="mute">Round 1</span><span class="mute">${new Date(Date.now() - 36000e3).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span><b>${num(A.pot * 1.7, 1)} VVV</b><span class="mute">to 500 traders</span><span class="sp"></span><span class="mute">Every wallet</span><span class="mute">Transaction</span></div>
       <p class="fine">Payouts above are what the pot pays right now and grow as fees come in. A pot under 0.3 VVV, or a payout under 0.003 VVV, rolls into the next airdrop.</p>${foot()}`;
-    $('[data-connect2]').onclick = () => toast(PREVIEW);
+    bindConnect();
     every(1000, () => { const e = $('#acd'); if (e) e.textContent = hms(A.endsAt - Date.now() / 1000); });
   }
 

@@ -28,6 +28,8 @@ interface IV3Pool {
 ///         the round's reward), the Bags (the pot's VVV into the day's token) and the airdrop pot (fees into VVV).
 ///         Routes are set by the owner and every change waits 48 hours, so a route can't be swapped for a bad one
 ///         without everyone seeing it first. Each swap must return at least the caller's minimum or it reverts.
+///         A pair with no route of its own goes through the hub (USDC): tokenIn -> hub, then hub -> tokenOut. So
+///         each token needs only a route into the hub and one out of it to be swappable with every other token.
 /// @dev A hop is either a v3-style pool (Uniswap v3 or Aerodrome Slipstream, swapped directly with the pool's
 ///      callback) or a Uniswap v4 pool (a Lootbag coin's own pool, or any other v4 pool). It holds nothing between
 ///      calls: every swap pulls its input from the caller and sends the output to the recipient.
@@ -53,6 +55,8 @@ contract LootbagSwapper is IUnlockCallback {
     }
 
     IPoolManager public immutable poolManager;
+    /// @notice the token every pair without a route of its own is swapped through (USDC)
+    address public immutable hub;
     address public owner;
     address public pendingOwner;
 
@@ -63,17 +67,32 @@ contract LootbagSwapper is IUnlockCallback {
     /// @dev transient slot: the v3-style pool allowed to call back during the current hop
     bytes32 private constant EXPECTED = keccak256("lootbag.swapper.expected");
 
-    constructor(IPoolManager pm, address owner_) {
+    constructor(IPoolManager pm, address owner_, address hub_) {
         poolManager = pm;
         owner = owner_;
+        hub = hub_;
     }
 
     function _id(address a, address b) internal pure returns (bytes32) {
         return keccak256(abi.encode(a, b));
     }
 
+    /// @notice the route set for exactly this pair, if any
     function route(address tokenIn, address tokenOut) external view returns (Hop[] memory) {
         return _routes[_id(tokenIn, tokenOut)];
+    }
+
+    /// @notice the hops a swap of this pair takes: its own route, or else its route into the hub followed by the
+    ///         hub's route into `tokenOut`. Empty when there is no way through.
+    function hopsFor(address tokenIn, address tokenOut) public view returns (Hop[] memory hops) {
+        hops = _routes[_id(tokenIn, tokenOut)];
+        if (hops.length != 0 || tokenIn == hub || tokenOut == hub) return hops;
+        Hop[] memory a = _routes[_id(tokenIn, hub)];
+        Hop[] memory b = _routes[_id(hub, tokenOut)];
+        if (a.length == 0 || b.length == 0) return hops;
+        hops = new Hop[](a.length + b.length);
+        for (uint256 i; i < a.length; i++) hops[i] = a[i];
+        for (uint256 i; i < b.length; i++) hops[a.length + i] = b[i];
     }
 
     // ------------------------------------------------------------------ owner
@@ -123,7 +142,7 @@ contract LootbagSwapper is IUnlockCallback {
         external
         returns (uint256 out)
     {
-        Hop[] memory hops = _routes[_id(tokenIn, tokenOut)];
+        Hop[] memory hops = hopsFor(tokenIn, tokenOut);
         if (hops.length == 0) revert NoRoute();
         _pay(tokenIn, msg.sender, address(this), amountIn);
         address t = tokenIn;

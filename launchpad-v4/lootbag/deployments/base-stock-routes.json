@@ -1,6 +1,7 @@
 {
  "NVDA": {
   "addr": "0xb20000000000000000000078ee7ce2fe4908108c",
+  "dec": 8,
   "px": 151.42,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -11,6 +12,7 @@
  },
  "AMZN": {
   "addr": "0xb200000000000000000000d9192b6b456483c2e8",
+  "dec": 8,
   "px": 246.23,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -21,6 +23,7 @@
  },
  "GOOGL": {
   "addr": "0xb2000000000000000000002d0ba3164cc74f58b7",
+  "dec": 8,
   "px": 274.96,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -31,6 +34,7 @@
  },
  "SPCX": {
   "addr": "0xb2000000000000000000007b9fcbd005511acbd5",
+  "dec": 8,
   "px": 128.05,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -41,6 +45,7 @@
  },
  "SNDK": {
   "addr": "0xb200000000000000000000397293cb8cda9a10c5",
+  "dec": 8,
   "px": 602.9,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -51,6 +56,7 @@
  },
  "ANT": {
   "addr": "0xb20000000000000000000016e38fd364d271ba28",
+  "dec": 8,
   "px": 83.95,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -61,6 +67,7 @@
  },
  "META": {
   "addr": "0xb2000000000000000000008bc8786b856e61707c",
+  "dec": 8,
   "px": 611.03,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -71,6 +78,7 @@
  },
  "MSTR": {
   "addr": "0xb2000000000000000000004884b426556b92883d",
+  "dec": 8,
   "px": 82.44,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -81,6 +89,7 @@
  },
  "MU": {
   "addr": "0xb200000000000000000000fd2f87532b90095211",
+  "dec": 8,
   "px": 615.12,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -91,6 +100,7 @@
  },
  "AAPL": {
   "addr": "0xb200000000000000000000c2e324d24d7eecd1fb",
+  "dec": 8,
   "px": 355.14,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -101,6 +111,7 @@
  },
  "MSFT": {
   "addr": "0xb200000000000000000000ab99cfa739e253872b",
+  "dec": 8,
   "px": 491.37,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -111,6 +122,7 @@
  },
  "TSLA": {
   "addr": "0xb2000000000000000000001e800a7f5189430cd0",
+  "dec": 8,
   "px": 381.79,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -121,6 +133,7 @@
  },
  "PLTR": {
   "addr": "0xb2000000000000000000007d16372840df4dabbe",
+  "dec": 8,
   "px": 165.13,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -131,6 +144,7 @@
  },
  "AMD": {
   "addr": "0xb2000000000000000000000d8ce462e99ee7a47b",
+  "dec": 8,
   "px": 411.85,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -141,6 +155,7 @@
  },
  "NFLX": {
   "addr": "0xb20000000000000000000058b8c947e44011dfe6",
+  "dec": 8,
   "px": 59.4,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -151,6 +166,7 @@
  },
  "ORCL": {
   "addr": "0xb200000000000000000000347afba223d7b6b63c",
+  "dec": 8,
   "px": 105.56,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -161,6 +177,7 @@
  },
  "TTWO": {
   "addr": "0xb200000000000000000000f720c26062bc3067da",
+  "dec": 8,
   "px": 225.8,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -171,6 +188,7 @@
  },
  "SPYM": {
   "addr": "0x31c2c14134e6e3b7ef9478297f199331133fc2d8",
+  "dec": 18,
   "px": 84.51,
   "issuer": "ST0x",
   "usdcPool": {
@@ -181,6 +199,7 @@
  },
  "HIMS": {
   "addr": "0xb20000000000000000000043a599976181bcf336",
+  "dec": 8,
   "px": 14.97,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -191,6 +210,7 @@
  },
  "COIN": {
   "addr": "0x5cda0e1ca4ce2af96315f7f8963c85399c172204",
+  "dec": 18,
   "px": 105.56,
   "issuer": "ST0x",
   "usdcPool": {
@@ -201,6 +221,7 @@
  },
  "AVGO": {
   "addr": "0xb200000000000000000000fc737aea6196ab5a4c",
+  "dec": 8,
   "px": 303.14,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -211,6 +232,7 @@
  },
  "CRCL": {
   "addr": "0xb20000000000000000000019f6e7c675b73c2e4d",
+  "dec": 8,
   "px": 48.95,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -221,6 +243,7 @@
  },
  "BE": {
   "addr": "0xb20000000000000000000016f9dfe862feba122b",
+  "dec": 8,
   "px": 158.53,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -231,6 +254,7 @@
  },
  "INTC": {
   "addr": "0xb2000000000000000000004aff16039ba04bdfbc",
+  "dec": 8,
   "px": 54.73,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -241,6 +265,7 @@
  },
  "LLY": {
   "addr": "0xb200000000000000000000f1a0f91e34892e4718",
+  "dec": 8,
   "px": 1395.4,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -251,6 +276,7 @@
  },
  "MRNA": {
   "addr": "0xb200000000000000000000e215e9b76ecba02468",
+  "dec": 8,
   "px": 221.68,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -261,6 +287,7 @@
  },
  "MRVL": {
   "addr": "0xb200000000000000000000ec3c4c7395cc609813",
+  "dec": 8,
   "px": 133.19,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -271,6 +298,7 @@
  },
  "HOOD": {
   "addr": "0xb2000000000000000000006f944897540579d3f2",
+  "dec": 8,
   "px": 67.38,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -281,6 +309,7 @@
  },
  "KO": {
   "addr": "0xb200000000000000000000ffef181db6dc5ed6a3",
+  "dec": 8,
   "px": 97.48,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -291,6 +320,7 @@
  },
  "LITE": {
   "addr": "0xb200000000000000000000eda6c2c6f11e0f838f",
+  "dec": 8,
   "px": 484.86,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -301,6 +331,7 @@
  },
  "MCD": {
   "addr": "0xb200000000000000000000d2f4cf2f7debb244bb",
+  "dec": 8,
   "px": 283.79,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -311,6 +342,7 @@
  },
  "AAOI": {
   "addr": "0xb200000000000000000000cf36d05963a3e2205c",
+  "dec": 8,
   "px": 38.11,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -321,6 +353,7 @@
  },
  "ADBE": {
   "addr": "0xb20000000000000000000034533ed3961f222cd4",
+  "dec": 8,
   "px": 234.07,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -331,6 +364,7 @@
  },
  "NOW": {
   "addr": "0xb20000000000000000000082cd2c7801305808df",
+  "dec": 8,
   "px": 92.91,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -341,6 +375,7 @@
  },
  "GME": {
   "addr": "0xb2000000000000000000007790ed6e48e06ed935",
+  "dec": 8,
   "px": 26.79,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -351,6 +386,7 @@
  },
  "SNOW": {
   "addr": "0xb2000000000000000000004acdc9a922fcfbcc7f",
+  "dec": 8,
   "px": 269.81,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -361,6 +397,7 @@
  },
  "BRK.B": {
   "addr": "0xb20000000000000000000024170488e788cbbcb4",
+  "dec": 8,
   "px": 582.69,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -371,6 +408,7 @@
  },
  "WDC": {
   "addr": "0xb2000000000000000000008fde21a1f5c69fec0b",
+  "dec": 8,
   "px": 273.12,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -381,6 +419,7 @@
  },
  "CRWV": {
   "addr": "0xb200000000000000000000f111184a74720787e6",
+  "dec": 8,
   "px": 42.46,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -391,6 +430,7 @@
  },
  "SKHY": {
   "addr": "0xb200000000000000000000187f7071d6e321a7d2",
+  "dec": 8,
   "px": 112.75,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -401,12 +441,14 @@
  },
  "FGI": {
   "addr": "0x6aed8b1acfb04f4e0e6db580f12ff41438a394e5",
+  "dec": 18,
   "px": 5.17,
   "issuer": "ST0x",
   "usdcPool": null
  },
  "NIO": {
   "addr": "0xb2000000000000000000002d2b5dc53c61f1ba06",
+  "dec": 8,
   "px": 2.65,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -417,6 +459,7 @@
  },
  "ARM": {
   "addr": "0xb20000000000000000000026215d755356e5043f",
+  "dec": 8,
   "px": 161.49,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -427,6 +470,7 @@
  },
  "SONY": {
   "addr": "0xb200000000000000000000a26326a922ffa87f6c",
+  "dec": 8,
   "px": 28.63,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -437,6 +481,7 @@
  },
  "SAN": {
   "addr": "0xb20000000000000000000017bb66e9301e913a99",
+  "dec": 8,
   "px": 11.41,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -447,6 +492,7 @@
  },
  "NOK": {
   "addr": "0xb2000000000000000000005ac674f707e357409c",
+  "dec": 8,
   "px": 7.31,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -457,6 +503,7 @@
  },
  "SE": {
   "addr": "0xb2000000000000000000003088798f6d0722aaac",
+  "dec": 8,
   "px": 67.41,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -467,6 +514,7 @@
  },
  "UL": {
   "addr": "0xb200000000000000000000349ef3aa93a0897476",
+  "dec": 8,
   "px": 66.65,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -477,6 +525,7 @@
  },
  "PDD": {
   "addr": "0xb200000000000000000000c8a7223510467d8563",
+  "dec": 8,
   "px": 87.38,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -487,6 +536,7 @@
  },
  "SAP": {
   "addr": "0xb200000000000000000000da6f64c306234127e0",
+  "dec": 8,
   "px": 211.2,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -497,6 +547,7 @@
  },
  "HSAI": {
   "addr": "0xb200000000000000000000f3049f4aa834b23b64",
+  "dec": 8,
   "px": 12.4,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -507,6 +558,7 @@
  },
  "NVO": {
   "addr": "0xb2000000000000000000008d5328e9208773dc58",
+  "dec": 8,
   "px": 40.78,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -517,6 +569,7 @@
  },
  "INFY": {
   "addr": "0xb200000000000000000000f6b0417af5f52341fc",
+  "dec": 8,
   "px": 13.31,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -527,6 +580,7 @@
  },
  "BUD": {
   "addr": "0xb200000000000000000000c36ce081dd09e86ca2",
+  "dec": 8,
   "px": 79.64,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -537,6 +591,7 @@
  },
  "LI": {
   "addr": "0xb200000000000000000000d61efd9f54a23ef9eb",
+  "dec": 8,
   "px": 11.87,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -547,12 +602,14 @@
  },
  "GRND": {
   "addr": "0x1197e6fa778c4d13e47875bd1761c68c22c928e0",
+  "dec": 18,
   "px": 13.81,
   "issuer": "ST0x",
   "usdcPool": null
  },
  "BIDU": {
   "addr": "0xb200000000000000000000d2b7d9aee52f6c6bef",
+  "dec": 8,
   "px": 63.64,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -563,6 +620,7 @@
  },
  "WRD": {
   "addr": "0xb200000000000000000000e88efe88d8ade3f0da",
+  "dec": 8,
   "px": 2.96,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -573,6 +631,7 @@
  },
  "VALE": {
   "addr": "0xb20000000000000000000063376b142c0764b489",
+  "dec": 8,
   "px": 9.85,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -583,6 +642,7 @@
  },
  "BILI": {
   "addr": "0xb200000000000000000000ca7c6d1438e7245eb6",
+  "dec": 8,
   "px": 11.11,
   "issuer": "Coinbase",
   "usdcPool": {
@@ -593,12 +653,14 @@
  },
  "NKE": {
   "addr": "0x0883f32d23ed5535057a4b5e3eb1970fe08606af",
+  "dec": 18,
   "px": 36.88,
   "issuer": "ST0x",
   "usdcPool": null
  },
  "SGOV": {
   "addr": "0x78c31580c97101694c70022c83d570150c11e935",
+  "dec": 18,
   "px": 102.57,
   "issuer": "ST0x",
   "usdcPool": {
@@ -609,6 +671,7 @@
  },
  "UBER": {
   "addr": "0xb200000000000000000000cae20cb1446462e24c",
+  "dec": 8,
   "px": 66.85,
   "issuer": "Coinbase",
   "usdcPool": {
