@@ -16,6 +16,8 @@ import {LootbagFactory} from "../src/LootbagFactory.sol";
 import {LootbagPayout} from "../src/LootbagPayout.sol";
 import {LootbagSwapper} from "../src/LootbagSwapper.sol";
 import {LootbagToken} from "../src/LootbagToken.sol";
+import {LootbagBags} from "../src/LootbagBags.sol";
+import {LootbagAirdrop} from "../src/LootbagAirdrop.sol";
 
 interface IERC20T {
     function balanceOf(address) external view returns (uint256);
@@ -293,5 +295,54 @@ contract BaseForkTest is Test {
             LootbagFactory.LaunchParams({name: "Big", symbol: "BIG", quote: VVV, rewards: rewards, devBuy: 500 ether, minCoinsOut: 0})
         );
         vm.stopPrank();
+    }
+
+    /// @dev the whole loop: $LOOT launches against VVV, trading fills the Bag pot and the airdrop pot in VVV,
+    ///      Bags mint with real $LOOT and VVV, and the hourly drop pays every Bag's vault
+    function test_endToEndLootBagsAndAirdrop() public {
+        address[] memory d = new address[](2);
+        d[0] = VVV;
+        d[1] = WETH;
+        LootbagBags bags = new LootbagBags(VVV, address(swapper), owner, treasury, d);
+        LootbagAirdrop air = new LootbagAirdrop(VVV, address(swapper), owner);
+        vm.prank(owner);
+        hook.setWallets(address(bags), address(air), treasury);
+
+        (address loot, PoolKey memory key) = _launch("LOOT", 3 ether);
+        vm.prank(owner);
+        bags.setLoot(loot);
+        vm.roll(block.number + 1);
+        // two traders buy enough $LOOT to mint
+        _buy(alice, key, loot, 400 ether);
+        _buy(bob, key, loot, 400 ether);
+        hook.split(VVV);
+        uint256 potBefore = bags.pot();
+        assertGt(potBefore, 0, "the Bag pot gets 25% of Lootbag's fees");
+        assertGt(air.pot(), 0, "the airdrop pot gets 10%");
+
+        for (uint256 i; i < 2; i++) {
+            address w = [alice, bob][i];
+            vm.startPrank(w);
+            IERC20T(loot).approve(address(bags), type(uint256).max);
+            IERC20T(VVV).approve(address(bags), type(uint256).max);
+            bags.mint();
+            vm.stopPrank();
+        }
+        assertEq(bags.minted(), 2);
+        assertEq(LootbagToken(loot).balanceOf(bags.DEAD()) >= 200_000e18, true, "mints burn $LOOT");
+        assertEq(bags.vault(1, VVV), 2.7 ether, "bag 1 got bob's mint");
+
+        // the next VVV day's hourly drop
+        vm.warp((block.timestamp / 2 days + 1) * 2 days + 1);
+        assertEq(bags.today(), VVV);
+        uint256 p = bags.pot();
+        bags.drop(0);
+        assertEq(bags.vault(2, VVV), (p * 5 / 100) / 2);
+        address[] memory t = new address[](1);
+        t[0] = VVV;
+        uint256 b = IERC20T(VVV).balanceOf(alice);
+        vm.prank(alice);
+        bags.withdraw(1, t);
+        assertEq(IERC20T(VVV).balanceOf(alice) - b, 2.7 ether + (p * 5 / 100) / 2);
     }
 }
