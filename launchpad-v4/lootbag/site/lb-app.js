@@ -51,7 +51,11 @@
   // Connecting only identifies the wallet for now: launches and trades stay off until Lootbag is live.
   const CFG = window.LB_CFG || {}, WC_ID = (CFG.walletConnect || {}).projectId || '';
   let kitP = null, wallet = '';
-  const paintWallet = () => $$('[data-connect], [data-connect2]').forEach((b) => { b.textContent = wallet ? short(wallet) : 'Connect wallet'; });
+  const paintWallet = () => {
+    $$('[data-connect], [data-connect2]').forEach((b) => { b.textContent = wallet ? short(wallet) : 'Connect wallet'; });
+    // buttons that need a wallet (trade, launch, mint): "Connect wallet" until one is connected, then what they do
+    $$('[data-wallet]').forEach((b) => { b.textContent = wallet ? b.dataset.label : 'Connect wallet'; });
+  };
   function appKit() {
     if (kitP) return kitP;
     kitP = (async () => {
@@ -76,6 +80,9 @@
     appKit().then((k) => k.open()).catch(() => toast('The wallet window could not load. Try again.'));
   };
   const bindConnect = () => { $$('[data-connect], [data-connect2]').forEach((b) => (b.onclick = openWallet)); paintWallet(); };
+  // an action that needs a wallet: opens the wallet window first; once connected it is still a preview
+  const walletAct = () => (wallet ? toast(PREVIEW) : openWallet());
+  const needsWallet = (b, label) => { b.dataset.wallet = '1'; b.dataset.label = label; b.onclick = walletAct; paintWallet(); };
   bindConnect();
   // AppKit restores an earlier session by itself and reports it through subscribeAccount
   try { if (WC_ID && Object.keys(localStorage).some((k) => /^(@appkit|wc@2|@w3m)/.test(k))) appKit().catch(() => {}); } catch (e) { /* storage unavailable */ }
@@ -169,9 +176,9 @@
     $$('[data-preview]').forEach((b) => (b.onclick = (e) => { e.preventDefault(); toast(PREVIEW); }));
     let side = 'b';
     const est = () => { const v = Number($('#amt').value) || 0; $('#est').textContent = v ? (side === 'b' ? `You get about ${num((v * D.ethUsd * 0.98) / c.priceUsd, 0)} $${c.ticker}` : `You get about ${num((v * c.priceUsd * 0.98) / D.ethUsd, 5)} ETH`) : 'You get about —'; };
-    $$('[data-side]').forEach((b) => (b.onclick = () => { side = b.dataset.side; $$('[data-side]').forEach((x) => x.classList.toggle('on', x === b)); $('#amt-l').textContent = side === 'b' ? 'Amount (ETH)' : 'Amount ($' + c.ticker + ')'; $('#amt-u').textContent = side === 'b' ? 'ETH' : c.ticker; $('#pre').innerHTML = (side === 'b' ? ['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`) : ['25', '50', '75', '100'].map((v) => `<button data-v="${v}%">${v}%</button>`)).join(''); bindPre(); $('#go').className = 'btn block ' + (side === 'b' ? 'green' : 'red'); $('#go').style.height = '50px'; est(); }));
+    $$('[data-side]').forEach((b) => (b.onclick = () => { side = b.dataset.side; $$('[data-side]').forEach((x) => x.classList.toggle('on', x === b)); $('#amt-l').textContent = side === 'b' ? 'Amount (ETH)' : 'Amount ($' + c.ticker + ')'; $('#amt-u').textContent = side === 'b' ? 'ETH' : c.ticker; $('#pre').innerHTML = (side === 'b' ? ['0.01', '0.05', '0.1', '0.5'].map((v) => `<button data-v="${v}">${v} ETH</button>`) : ['25', '50', '75', '100'].map((v) => `<button data-v="${v}%">${v}%</button>`)).join(''); bindPre(); $('#go').className = 'btn block ' + (side === 'b' ? 'green' : 'red'); $('#go').style.height = '50px'; $('#go').dataset.label = (side === 'b' ? 'Buy $' : 'Sell $') + c.ticker; paintWallet(); est(); }));
     const bindPre = () => $$('#pre button').forEach((b) => (b.onclick = () => { $('#amt').value = b.dataset.v.endsWith('%') ? '' : b.dataset.v; est(); }));
-    bindPre(); $('#amt').oninput = est; $('#go').onclick = () => toast(PREVIEW);
+    bindPre(); $('#amt').oninput = est; needsWallet($('#go'), 'Buy $' + c.ticker);
     const sub = (k) => {
       $$('[data-st]').forEach((b) => b.classList.toggle('on', b.dataset.st === k));
       $('#st').innerHTML = k === 'trades' ? `<table class="t"><tr><th>Wallet</th><th>Side</th><th class="r">USD</th><th class="r">$${esc(c.ticker)}</th><th class="r">Age</th></tr>${c.trades.slice(0, 15).map((t) => `<tr><td class="mono">${short(t.wallet)}</td><td class="${t.buy ? 'up' : 'dn'}">${t.buy ? 'Buy' : 'Sell'}</td><td class="r">${usd(t.usd)}</td><td class="r">${num(t.tokens, 0)}</td><td class="r mute">${ago(t.ts)}</td></tr>`).join('')}</table>`
@@ -244,7 +251,7 @@
         ${taken ? `<p class="note warn">$${esc(tk)} is already on Lootbag: a copy costs 0.05 ETH, refunded if your coin reaches $70K within 48 hours.</p>` : ''}
         <p class="note" style="line-height:1.6;margin:10px 0 18px">2 approvals in your wallet: first your dev buy's ETH is made ready, then the launch with your dev buy inside it, so nobody can buy before you. Your coin is listed on Lootbag as soon as it goes through.</p>
         <button class="btn blue block" style="height:46px" id="launch">Connect wallet</button>`;
-      $('#launch').onclick = () => toast(PREVIEW);
+      needsWallet($('#launch'), 'Launch coin');
     };
     $$('[data-pair]').forEach((b) => (b.onclick = () => { F.pair = b.dataset.pair; $$('[data-pair]').forEach((x) => x.classList.toggle('on', x === b)); $('#pair-stock').style.display = F.pair === 'STOCK' ? '' : 'none'; pv(); }));
     $$('[data-cat]').forEach((b) => (b.onclick = () => { F.cat = b.dataset.cat; $$('[data-cat]').forEach((x) => x.classList.toggle('on', x === b)); rw(); }));
@@ -316,7 +323,7 @@
       <div class="metal"><span>Bag pot 0x9a2c…41f0</span><span>Collection 0x5b1e…7c2a</span><span>5% royalty on resales</span></div>
       <div class="card gridcard"><div class="gh"><div class="cats"><button class="on">All <i>${B.minted}</i></button><button data-preview>Yours <i>0</i></button></div><div class="srch" style="margin:0;max-width:290px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" placeholder="Bag # or owner wallet"></div></div>
         <div class="nftgrid">${list.map((x) => `<div class="nft"><div class="art">${bagArt(x.id)}</div><div class="nb"><b>Bag #${x.id}</b><span>${usd(x.earned)} <i>earned</i></span><button class="btn block" data-preview>OpenSea</button></div></div>`).join('')}</div></div>${foot()}`;
-    $$('[data-preview]').forEach((b) => (b.onclick = () => toast(PREVIEW)));
+    $$('[data-preview]').forEach((b) => (b.onclick = () => (/^\s*Yours/.test(b.textContent) ? walletAct() : toast(PREVIEW))));
     let s = B.nextHour; every(1000, () => { s = s <= 1 ? 3600 : s - 1; const e = $('#bcd'); if (e) e.textContent = 'in ' + mmss(s); });
   }
   function mint() {
@@ -329,7 +336,7 @@
           <p class="note">Plus a little ETH for gas to open the vault.</p><button class="btn blue block pillish" data-preview>Connect your wallet</button></div></div>
         <div class="card yours"><h3>Your Bags</h3><div class="empty">Connect your wallet to see your Bags.</div></div></div>
       <div class="card how3"><h3>How it works</h3><div class="cols">${[['Mint', 'Your $LOOT is burned and you get an NFT with a vault tied to it. Whoever holds the NFT owns everything in its vault.'], ['Activate', 'The vault opens a balance for each token in the rotation the first time it is paid, so it can receive every token from then on.'], ['Earn', "Every hour, the pot spends 5% of what it holds on the day's token and sends every active Bag an equal share, straight into its vault. Withdraw whenever you like."]].map(([t, d], i) => `<div><div class="ct"><span class="n">${i + 1}</span><b>${t}</b></div><p>${d}</p></div>`).join('')}</div></div>${foot()}`;
-    $$('[data-preview]').forEach((b) => (b.onclick = () => toast(PREVIEW)));
+    $$('[data-preview]').forEach((b) => needsWallet(b, 'Mint a Bag'));
   }
 
   // ---------- Lootbag coins: square tiles
