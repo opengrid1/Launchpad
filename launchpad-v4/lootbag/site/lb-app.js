@@ -17,18 +17,17 @@
   // a coin's picture: its uploaded image when it has one, otherwise a pixel sack drawn from its address
   const av = (c, size = 44) => `<span class="av${c.official ? '' : ' art'}" style="width:${size}px;height:${size}px;${c.official ? 'background:#16306b' : ''}">${c.official ? `<img src="/img/logo.svg" alt="" style="width:64%;height:64%">` : c.img ? `<img src="${esc(c.img)}" alt="">` : bagArt(2000 + parseInt(c.addr.slice(2, 9), 16) % 100000)}</span>`;
   const stkHue = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
-  const STK_LOGO = new Set(['AAOI', 'AAPL', 'AMAT', 'AMD', 'AMZN', 'ASML', 'AVGO', 'BA', 'CCL', 'COIN', 'COST', 'DDOG', 'DELL', 'ETH', 'F', 'GME', 'GOOGL', 'INTC', 'IONQ', 'LLY', 'META', 'MRVL', 'MSFT', 'MSTR', 'MU', 'NFLX', 'NU', 'NVDA', 'PLTR', 'POET', 'QQQ', 'QUBT', 'RBLX', 'RDDT', 'RIVN', 'RKLB', 'SGOV', 'SLV', 'SNDK', 'SOFI', 'SOXX', 'SPCX', 'SPY', 'TSLA', 'TSM', 'TTWO', 'UMC', 'UPS', 'USAR', 'USO', 'XLK']), STK_LIGHT = new Set(['TTWO', 'UMC', 'USO']);
+  const STK_LOGO = new Set(['AAPL', 'AMD', 'AMZN', 'ARM', 'AVGO', 'CRCL', 'CRWV', 'ETH', 'GME', 'GOOGL', 'HIMS', 'HOOD', 'INTC', 'KO', 'LLY', 'MCD', 'META', 'MRVL', 'MSFT', 'MSTR', 'MU', 'NFLX', 'NVDA', 'ORCL', 'PDD', 'PLTR', 'SNDK', 'SPCX', 'TSLA', 'TTWO', 'UBER', 'USDC', 'VVV']), STK_LIGHT = new Set(['TTWO', 'VVV']);
   const tokenBadge = (s, size = 20) => {
     const z = `width:${size}px;height:${size}px`;
     if (s === 'LOOT') return `<img class="tkl" src="/img/logo.svg" alt="" style="${z};border-radius:50%;background:#16306b;padding:${Math.round(size * 0.14)}px">`;
-    if (s === 'USDG') return `<img class="tkl" src="/img/stk/USDG.svg" alt="" style="${z}">`;
     if (STK_LOGO.has(s)) return `<span class="stk lg${STK_LIGHT.has(s) ? ' lt' : ''}" style="${z}" title="${esc(s)}"><img src="/img/stk/${esc(s)}.png" alt="" loading="lazy"></span>`;
     return `<span class="stk" style="${z};background:hsl(${stkHue(s)} 55% 42%);font-size:${Math.max(7, Math.round(size * 0.3))}px">${esc(s.slice(0, 4))}</span>`;
   };
   const stack = (list, n = 4) => `<span class="stack">${list.slice(0, n).map((s) => tokenBadge(s)).join('')}</span>${list.length > n ? ` <span class="dim">+${list.length - n}</span>` : ''}`;
   const label = (s) => s;
   const pays = (c) => c.rewards.map(label).join(', ');
-  const isStock = (s) => s !== 'ETH' && s !== 'USDG' && s !== 'LOOT';
+  const CRYPTO = ['ETH', 'USDC', 'VVV'], isStock = (s) => !CRYPTO.includes(s) && s !== 'LOOT';
 
   // ---------- nav
   // nav icons: one 24px grid, 1.75 stroke, round caps and joins
@@ -63,12 +62,12 @@
         <svg class="waves" viewBox="0 0 1200 150" preserveAspectRatio="none" fill="none" stroke="#3d7bff" stroke-opacity=".45" stroke-width="2"><path d="M0 95C150 20 250 20 400 95S650 170 800 95 1050 20 1200 95"/><path d="M0 125C150 50 250 50 400 125S650 200 800 125 1050 50 1200 125"/></svg>
         <div>
           <h1>Hold the bag.<br><span>Get paid in stocks.</span></h1>
-          <p>Launch a coin on ETH, USDG or a stock. Every trade pays your holders in ETH or stocks, and traders earn ETH airdrops.</p>
+          <p>Launch a coin on VVV, ETH, USDC or a stock. Every trade pays your holders in ETH or stocks, and traders earn ETH airdrops.</p>
           <div class="acts"><a class="btn blue pill" href="#/create">Launch a coin</a></div>
         </div>
       </section>
       <div class="bar">${[['trending', 'Trending'], ['new', 'New'], ['paying', 'Paying now'], ['top', 'Top']].map(([k, l]) => `<button class="tab ${state.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}<span class="live">${cs.length} live</span></div>
-      <div class="chips">${[['pETH', 'Paired with ETH'], ['pSTK', 'Paired with a stock'], ['stocks', 'Pays stocks'], ['eth', 'Pays ETH']].map(([k, l]) => `<button class="fchip ${state.chip === k ? 'on' : ''}" data-chip="${k}">${l}</button>`).join('')}</div>
+      <div class="chips">${[['pVVV', 'Paired with VVV'], ['pETH', 'Paired with ETH'], ['pSTK', 'Paired with a stock'], ['stocks', 'Pays stocks'], ['eth', 'Pays ETH']].map(([k, l]) => `<button class="fchip ${state.chip === k ? 'on' : ''}" data-chip="${k}">${l}</button>`).join('')}</div>
       <div class="grid" id="grid"></div>${foot()}`;
     $$('[data-tab]').forEach((b) => (b.onclick = () => { state.tab = b.dataset.tab; board(); }));
     $$('[data-chip]').forEach((b) => (b.onclick = () => { state.chip = state.chip === b.dataset.chip ? '' : b.dataset.chip; board(); }));
@@ -79,7 +78,7 @@
     let cs = D.coins.slice();
     const q = state.q.toLowerCase();
     if (q) cs = cs.filter((c) => c.name.toLowerCase().includes(q) || c.ticker.toLowerCase().includes(q) || c.addr.includes(q));
-    const f = { stocks: (c) => c.rewards.some(isStock), eth: (c) => c.rewards.includes('ETH'), pETH: (c) => c.pair === 'ETH', pUSDG: (c) => c.pair === 'USDG', pSTK: (c) => isStock(c.pair) }[state.chip];
+    const f = { stocks: (c) => c.rewards.some(isStock), eth: (c) => c.rewards.includes('ETH'), pVVV: (c) => c.pair === 'VVV', pETH: (c) => c.pair === 'ETH', pUSDC: (c) => c.pair === 'USDC', pSTK: (c) => isStock(c.pair) }[state.chip];
     if (f) cs = cs.filter(f);
     const sort = { trending: (a, b) => b.vol24 - a.vol24, new: (a, b) => b.createdAt - a.createdAt, paying: (a, b) => b.paid24 - a.paid24, top: (a, b) => b.mcap - a.mcap }[state.tab];
     return cs.sort(sort);
@@ -90,7 +89,7 @@
       <span class="in">${av(c, 44)}
         <div class="tkl"><b>$${esc(c.ticker)}</b><span>${esc(c.name)}</span></div>
         <div class="mc">${usd(c.mcap)}</div>
-        <div class="l1">${c.official ? 'Lootbag coin' : `Paired to ${tokenBadge(c.pair, 16)} <b>${esc(c.pair === 'ETH' || c.pair === 'USDG' ? c.pair : '$' + label(c.pair))}</b>`}</div>
+        <div class="l1">${c.official ? 'Lootbag coin' : `Paired to ${tokenBadge(c.pair, 16)} <b>${esc(CRYPTO.includes(c.pair) ? c.pair : '$' + label(c.pair))}</b>`}</div>
         <div class="l2">Pays ${esc(c.rewards.slice(0, 2).map((r) => (r === 'ETH' ? 'ETH' : '$' + label(r))).join(' · '))}${c.rewards.length > 2 ? ' +' + (c.rewards.length - 2) : ''}</div>
       </span></a>`;
   }
@@ -104,10 +103,10 @@
   function coin(a) {
     const c = D.coins.find((x) => x.addr === a);
     if (!c) { view.innerHTML = `<a class="back" href="#/">← Board</a><h1>Coin not found</h1>`; return; }
-    const cur = c.rewards[c.rewardIx], pairL = c.pair === 'ETH' || c.pair === 'USDG' ? c.pair : '$' + label(c.pair);
+    const cur = c.rewards[c.rewardIx], pairL = CRYPTO.includes(c.pair) ? c.pair : '$' + label(c.pair);
     const LOOT_USD = (D.coins.find((x) => x.official) || { priceUsd: 0.00124 }).priceUsd;
-    const pairUsd = c.pair === 'ETH' ? D.ethUsd : c.pair === 'USDG' ? 1 : c.pair === 'LOOT' ? LOOT_USD : (D.stocks.find((x) => x.sym === c.pair) || { usd: 100 }).usd;
-    const routeTxt = c.pair === 'ETH' ? 'Trades straight against <b>ETH</b>' : `Goes through <a>${esc(pairL)}</a>: ETH → ${c.pair === 'USDG' ? 'USDG' : c.pair === 'LOOT' ? '$LOOT' : 'USDG → ' + esc(pairL)} → $${esc(c.ticker)}`;
+    const pairUsd = c.pair === 'ETH' ? D.ethUsd : c.pair === 'USDC' ? 1 : c.pair === 'VVV' ? D.vvvUsd : c.pair === 'LOOT' ? LOOT_USD : (D.stocks.find((x) => x.sym === c.pair) || { usd: 100 }).usd;
+    const routeTxt = c.pair === 'ETH' ? 'Trades straight against <b>ETH</b>' : `Goes through <a>${esc(pairL)}</a>: ETH → ${c.pair === 'USDC' || c.pair === 'VVV' ? c.pair : c.pair === 'LOOT' ? '$LOOT' : 'USDC → ' + esc(pairL)} → $${esc(c.ticker)}`;
     view.innerHTML = `<a class="back" href="#/">← Board</a>
       <div class="cp">
         <div>
@@ -172,8 +171,8 @@
 
   // ---------- create: one form card, the launch summary on the right
   function create() {
-    const F = { pair: 'ETH', pairStock: 'NVDA', rewards: [], img: '', cat: 'all', dev: '0.01' };
-    const stocks = D.stocks, crypto = [{ sym: 'ETH', name: 'Ether', usd: D.ethUsd }, { sym: 'USDG', name: 'Global Dollar', usd: 1 }], memes = [{ sym: 'LOOT', name: 'Lootbag', usd: 0.00124 }];
+    const F = { pair: 'VVV', pairStock: 'NVDA', rewards: [], img: '', cat: 'all', dev: '0.01' };
+    const stocks = D.stocks, crypto = [{ sym: 'ETH', name: 'Ether', usd: D.ethUsd }, { sym: 'USDC', name: 'USD Coin', usd: 1 }, { sym: 'VVV', name: 'Venice', usd: D.vvvUsd }], memes = [{ sym: 'LOOT', name: 'Lootbag', usd: 0.00124 }];
     const pool = () => (F.cat === 'stocks' ? stocks : F.cat === 'crypto' ? crypto : F.cat === 'memes' ? memes : [...crypto, ...stocks, ...memes]);
     const ic = { x: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.3l-4.9-6.4L5.2 21H2.1l7.3-8.3L2 3h6.4l4.4 5.9zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg>', tg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M21 4 3 11l6 2 2 6 3-4 5 4z"/></svg>', web: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>', img: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="15" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m18.5 15-4-4-8 8M19 2v5M16.5 4.5h5"/></svg>' };
     view.innerHTML = `<div class="cg"><div class="card cform">
@@ -183,12 +182,12 @@
           <div class="field"><label><span class="lbl">Description</span><span id="d-n">0/280</span></label><textarea class="inp" id="f-desc" maxlength="280" placeholder="Tell people what your coin is about, in a line or two"></textarea></div></div></div>
         <div class="fs"><div class="fh"><span class="lbl">Links</span><span>Optional. X and Telegram show in wallets and on DexScreener; your website shows on the coin's page here</span></div>
           <div class="three"><div class="icon-in">${ic.x}<input class="inp t" placeholder="X URL"></div><div class="icon-in">${ic.tg}<input class="inp t" placeholder="Telegram URL"></div><div class="icon-in">${ic.web}<input class="inp t" placeholder="Website URL"></div></div></div>
-        <div class="fs"><div class="fh"><span class="lbl">Paired with</span><span id="pair-h">Trades in its own Uniswap v4 pool against ETH</span></div>
-          <div class="seg3" id="pair">${[['ETH', 'Ethereum'], ['USDG', 'USDG'], ['STOCK', 'Stock']].map(([k, t]) => `<button data-pair="${k}" class="${k === 'ETH' ? 'on' : ''}">${tokenBadge(k === 'ETH' ? 'ETH' : k === 'USDG' ? 'USDG' : 'NVDA', 24)}${t}</button>`).join('')}</div>
+        <div class="fs"><div class="fh"><span class="lbl">Paired with</span><span id="pair-h">Trades in its own Uniswap v4 pool against VVV</span></div>
+          <div class="seg3 four" id="pair">${[['VVV', 'VVV'], ['ETH', 'Ethereum'], ['USDC', 'USDC'], ['STOCK', 'Stock']].map(([k, t]) => `<button data-pair="${k}" class="${k === 'VVV' ? 'on' : ''}">${tokenBadge(k === 'STOCK' ? 'NVDA' : k, 24)}${t}</button>`).join('')}</div>
           <div id="pair-stock" style="display:none"><div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" id="ps-q" placeholder="Search by ticker or name"></div><div class="tgrid" id="ps"></div></div></div>
         <div class="fs"><div class="fh"><span class="lbl">Rewarded with</span><span>Paid to every holder in payout rounds every 5 minutes</span></div>
           <p class="fp">Each round buys the reward with the fees the coin earned and pays holders in it. Pick nothing and they get ETH. Pick more and they take turns.</p>
-          <div class="cats" id="cats">${[['all', 'All', stocks.length + 3], ['stocks', 'Stocks', stocks.length], ['crypto', 'Crypto', 2], ['memes', 'Memes', 1]].map(([k, l, n]) => `<button data-cat="${k}" class="${k === 'all' ? 'on' : ''}">${l} <i>${n}</i></button>`).join('')}</div>
+          <div class="cats" id="cats">${[['all', 'All', stocks.length + 4], ['stocks', 'Stocks', stocks.length], ['crypto', 'Crypto', 3], ['memes', 'Memes', 1]].map(([k, l, n]) => `<button data-cat="${k}" class="${k === 'all' ? 'on' : ''}">${l} <i>${n}</i></button>`).join('')}</div>
           <div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" id="rw-q" placeholder="Search by ticker, name or address"></div>
           <div class="tgrid" id="rw"></div></div>
         <div class="fs" style="border:0;padding-bottom:0"><div class="fh"><span class="lbl">Dev buy</span></div>
@@ -226,7 +225,7 @@
   }
 
   const statsRow = (items) => `<div class="srow">${items.map(([k, v, s]) => `<div><span>${k}</span><b>${v}</b>${s ? `<small>${s}</small>` : ''}</div>`).join('')}</div>`;
-  const payTok = (r) => (r === 'ETH' || r === 'USDG' ? r : '$' + label(r));
+  const payTok = (r) => (CRYPTO.includes(r) ? r : '$' + label(r));
 
   // ---------- rewards
   function rewards() {
@@ -308,7 +307,7 @@
       const cs = D.coins.filter((c) => !q || c.ticker.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)).sort((a, b) => (sort === 'mcap' ? b.mcap - a.mcap : b.mcap * 0.3 - a.mcap * 0.3 + (b.holders - a.holders)));
       $('#tiles').innerHTML = cs.map((c) => `<div class="tile"><a href="#/coin/${c.addr}" class="sq">${av(c, 210)}${c.official ? '<span class="tb gr">Lootbag</span>' : c.pair === 'LOOT' || c.rewards.includes('LOOT') ? '<span class="tb">LOOT</span>' : ''}</a><div class="tt"><b>$${esc(c.ticker)}</b> <span>${esc(c.name)}</span></div><div class="tm"><span class="up">${usd(c.mcap)}</span> · liq ${usd(c.mcap * 0.28)}</div><a class="btn block" href="#/coin/${c.addr}">Trade $${esc(c.ticker)}</a></div>`).join('');
     };
-    view.innerHTML = `<div class="ph1 row"><div><h1>Lootbag coins</h1><p>Coins launched on Lootbag, paired with ETH, USDG or a stock.</p></div><div class="ph1r"><div class="tog"><button class="on" data-s="mcap">Market cap</button><button data-s="liq">Liquidity</button></div><div class="srch" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" id="lq" placeholder="Search Lootbag coins"></div></div></div><div class="tiles" id="tiles"></div>${foot()}`;
+    view.innerHTML = `<div class="ph1 row"><div><h1>Lootbag coins</h1><p>Coins launched on Lootbag, paired with VVV, ETH, USDC or a stock.</p></div><div class="ph1r"><div class="tog"><button class="on" data-s="mcap">Market cap</button><button data-s="liq">Liquidity</button></div><div class="srch" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" id="lq" placeholder="Search Lootbag coins"></div></div></div><div class="tiles" id="tiles"></div>${foot()}`;
     $$('[data-s]').forEach((b) => (b.onclick = () => { sort = b.dataset.s; $$('[data-s]').forEach((x) => x.classList.toggle('on', x === b)); draw(); }));
     $('#lq').oninput = draw; draw();
   }
@@ -316,8 +315,8 @@
   // ---------- how it works
   function how() {
     const S = [
-      ['overview', 'Overview', `<p>Lootbag is a coin launchpad on Robinhood Chain, built on Uniswap v4. Every coin launched on Lootbag shares its trading fees with the wallets that hold it: part of the fee on each trade is kept for them and paid out every five minutes.</p><p>A creator makes two choices when launching a coin. The first is the pair, the token the coin is priced in: ETH, USDG or a tokenized stock. The second is the reward, the token its holders are paid in. Everything after the launch is automated: fees are collected, the reward is bought and distributed, and holders never have to claim anything.</p><p>Lootbag shares its own revenue as well. 10% of it is paid to the traders of Lootbag coins as ETH airdrops every 10 hours, and 25% goes to Bags and is paid into vaults owned by their holders.</p>`],
-      ['launch', 'Launching a coin', `<p>A launch takes one form and two wallet approvals.</p><ul><li><b>Pair.</b> ETH, USDG or a stock. Buyers can always pay in ETH: the route swaps it for them.</li><li><b>Reward.</b> The token holders are paid in. It defaults to ETH; pick up to 10 and they take turns.</li><li><b>Launch transaction.</b> Creates the coin and opens its own Uniswap v4 pool with all 1,000,000,000 coins in it, liquidity locked forever. It costs 0.001 ETH plus gas.</li><li><b>Dev buy.</b> Required, at least 0.005 ETH, inside the launch transaction so nobody can buy before the creator. A creator can hold at most 2% at launch.</li><li><b>Launch-block buyers earn nothing.</b> A wallet that buys in the launch block never receives holder rewards from that coin or airdrop credit for it.</li></ul>`],
+      ['overview', 'Overview', `<p>Lootbag is a coin launchpad on Base, built on Uniswap v4. Every coin launched on Lootbag shares its trading fees with the wallets that hold it: part of the fee on each trade is kept for them and paid out every five minutes.</p><p>A creator makes two choices when launching a coin. The first is the pair, the token the coin is priced in: VVV (the default), ETH, USDC or a tokenized stock. The second is the reward, the token its holders are paid in. Everything after the launch is automated: fees are collected, the reward is bought and distributed, and holders never have to claim anything.</p><p>Lootbag shares its own revenue as well. 10% of it is paid to the traders of Lootbag coins as ETH airdrops every 10 hours, and 25% goes to Bags and is paid into vaults owned by their holders.</p>`],
+      ['launch', 'Launching a coin', `<p>A launch takes one form and two wallet approvals.</p><ul><li><b>Pair.</b> VVV by default, or ETH, USDC or a stock. Buyers can always pay in ETH: the route swaps it for them.</li><li><b>Reward.</b> The token holders are paid in. It defaults to ETH; pick up to 10 and they take turns.</li><li><b>Launch transaction.</b> Creates the coin and opens its own Uniswap v4 pool with all 1,000,000,000 coins in it, liquidity locked forever. It costs 0.001 ETH plus gas.</li><li><b>Dev buy.</b> Required, at least 0.005 ETH, inside the launch transaction so nobody can buy before the creator. A creator can hold at most 2% at launch.</li><li><b>Launch-block buyers earn nothing.</b> A wallet that buys in the launch block never receives holder rewards from that coin or airdrop credit for it.</li></ul>`],
       ['trading', 'How a coin trades', `<p>Every coin trades in its own Uniswap v4 pool from the first block, on Lootbag or in any app that routes through Uniswap. There is no bonding curve and no graduation: the pool is the market from launch, and its liquidity can never be withdrawn.</p>`],
       ['fees', 'Fees', `<p>Every buy and sell pays a fee of 2%.</p><table><tr><th>Holders</th><th>Lootbag</th></tr><tr><td>0.5%</td><td>1.5%</td></tr></table><p>Lootbag's share is split as it is paid: 25% to the Bag pot, 10% to the trader airdrop pot, and the rest to Lootbag. Holders never receive Lootbag's share, and Lootbag never takes theirs.</p>`],
       ['rewards', 'Holder rewards', `<p>Every coin has its own payout round every five minutes, counted from its launch. In each round the holders' share is bought into the current reward and split between all holders by the size of their balances. Pools and launch-block buyers are left out, and so is the creator's wallet.</p><p>A coin pays out once at least $5 has built up. A share below $1 waits for a later round. Each holder's share is kept by the coin's own contract, which updates it on every transfer, so it is exact and on-chain.</p>`],

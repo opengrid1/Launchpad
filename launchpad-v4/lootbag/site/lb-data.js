@@ -1,18 +1,18 @@
-/* Lootbag preview data: sample coins on Robinhood Chain, built from a fixed seed so every visit shows the same
+/* Lootbag preview data: sample coins on Base, built from a fixed seed so every visit shows the same
    board. The live build replaces window.LB_DATA with the indexer (same shape). Real stock list and prices from
-   stocks.json (the Robinhood Chain stock tokens). */
+   stocks.json (the tokenized stocks on Base). */
 (function () {
   let seed = 20261125;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
   const pick = (a) => a[Math.floor(rnd() * a.length)];
   const now = () => Math.floor(Date.now() / 1000);
   const T0 = Math.floor(Date.now() / 1000 / 60) * 60;
-  const ETH_USD = 1821.4;
+  const ETH_USD = 1698.3, VVV_USD = 30.01;
   const hex = (n) => { let s = '0x'; for (let i = 0; i < n; i++) s += '0123456789abcdef'[Math.floor(rnd() * 16)]; return s; };
   const addr = () => hex(40);
 
   const STOCKS = [];
-  const LB = (window.LB_DATA = { ethUsd: ETH_USD, stocks: STOCKS, coins: [], ready: null });
+  const LB = (window.LB_DATA = { ethUsd: ETH_USD, vvvUsd: VVV_USD, stocks: STOCKS, coins: [], ready: null });
 
   const NAMES = [
     ['Loot', 'LOOT'], ['Golden Goose', 'GOOSE'], ['Stonks Cat', 'STONKS'], ['Dividend Dog', 'DIVDOG'], ['Treasure Toad', 'TOAD'],
@@ -42,14 +42,14 @@
   }
 
   function build(stocks) {
-    for (const [sym, name, usd] of stocks) STOCKS.push({ sym, name, usd });
-    const top = ['NVDA', 'TSLA', 'AAPL', 'SPY', 'QQQ', 'MSFT', 'GOOGL', 'META', 'AMZN', 'COIN', 'PLTR', 'AMD'].map((s) => STOCKS.find((x) => x.sym === s)).filter(Boolean);
+    for (const [sym, name, usd, addr] of stocks) STOCKS.push({ sym, name, usd, addr });
+    const top = ['NVDA', 'TSLA', 'AAPL', 'AMZN', 'GOOGL', 'META', 'MSFT', 'SPCX', 'MSTR', 'PLTR', 'AMD', 'HOOD', 'CRCL'].map((s) => STOCKS.find((x) => x.sym === s)).filter(Boolean);
     NAMES.forEach(([name, ticker], i) => {
       const official = i === 0;
-      const pairKind = official ? 'ETH' : pick(['ETH', 'ETH', 'ETH', 'USDG', 'STOCK', 'LOOT']);
+      const pairKind = official ? 'VVV' : pick(['VVV', 'VVV', 'VVV', 'VVV', 'ETH', 'USDC', 'STOCK', 'LOOT']);
       const pair = pairKind === 'STOCK' ? pick(top).sym : pairKind;
       const nRewards = official ? 4 : pick([1, 1, 1, 2, 3, 5]);
-      const rewards = official ? ['NVDA', 'TSLA', 'SPY', 'LOOT'] : Array.from(new Set(Array.from({ length: nRewards }, () => (rnd() < 0.22 ? 'ETH' : rnd() < 0.2 ? 'LOOT' : pick(top).sym))));
+      const rewards = official ? ['NVDA', 'TSLA', 'AMZN', 'LOOT'] : Array.from(new Set(Array.from({ length: nRewards }, () => (rnd() < 0.22 ? 'ETH' : rnd() < 0.08 ? 'VVV' : rnd() < 0.2 ? 'LOOT' : pick(top).sym))));
       const ageMin = official ? 60 * 24 * 9 : Math.floor(rnd() ** 2 * 60 * 24 * 6) + 3;
       const mcap = official ? 1_240_000 : Math.round(6500 * Math.exp(rnd() ** 1.6 * 4.2));
       const vol24 = Math.round(mcap * (0.15 + rnd() * 1.6));
@@ -75,7 +75,7 @@
     // the trader airdrop round and the Lootbag NFTs
     const roundEnd = T0 + 3 * 3600 + 1240;
     LB.airdrop = { pot: 34.82, potUsd: 34.82 * ETH_USD, endsAt: roundEnd, traders: 742, volume: 412_830, board: Array.from({ length: 50 }, (_, k) => ({ wallet: addr(), vol: Math.round(14000 * Math.exp(-k / 9) + 60 + rnd() * 400) })).sort((a, b) => b.vol - a.vol) };
-    LB.bags = { total: 1000, minted: 244, perMintLoot: 100_000, perMintEth: 0.05, pot: 61.3, paidUsd: 18_240, nextHour: 3600 - (now() % 3600), rotation: ['SPY', 'NVDA', 'TSLA', 'QQQ', 'LOOT'], today: 'NVDA',
+    LB.bags = { total: 1000, minted: 244, perMintLoot: 100_000, perMintEth: 0.05, pot: 61.3, paidUsd: 18_240, nextHour: 3600 - (now() % 3600), rotation: ['NVDA', 'AMZN', 'TSLA', 'GOOGL', 'LOOT'], today: 'NVDA',
       list: Array.from({ length: 24 }, (_, k) => ({ id: k + 1, earned: Math.round(140 - k * 2.1 + rnd() * 20), hue: Math.floor(rnd() * 360) })) };
     LB.platform = { volumeAll: 6_820_000, paidHolders: 142_300, coins: LB.coins.length, traders: 6_910, burnedLoot: 24_400_000 };
   }
