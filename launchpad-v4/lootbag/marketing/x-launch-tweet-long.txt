@@ -1,0 +1,29 @@
+Lootbag is live on Base.
+
+It's a launchpad where a coin pays the people who hold it. Every trade, a share of the fee goes to holders, in ETH, VVV or tokenized stocks like NVDA, TSLA and AAPL.
+
+Hold the bag. Get paid in stocks.
+
+How it works:
+
+1/ Launch in one transaction
+Pick a name, a ticker and a picture. Your coin gets its own Uniswap v4 pool from the first block. No bonding curve, no graduation. It costs 0.001 ETH plus your dev buy.
+
+2/ Pick the pair
+Price your coin in VVV, ETH, USDC or one of 60 tokenized stocks. Buyers always pay in ETH and the route does the swap for them.
+
+3/ Pick the reward
+Choose what your holders earn: ETH, VVV, USDC or stocks. Pick up to 10 and they take turns.
+
+4/ Every trade pays
+Each buy and sell has a 2% fee. A quarter of it is kept for the coin's holders, by how much they hold. Payout rounds send it to their wallets, and holders can also claim what they've earned at any time.
+
+5/ Fair starts
+A creator can hold at most 2% at launch, and the creator's wallet earns no holder rewards. Wallets that buy in the launch block earn nothing from that coin.
+
+6/ Traders earn too
+10% of Lootbag's own revenue goes into a VVV pot that is paid out to the top traders by volume.
+
+Next up: $LOOT and Bags, 1,000 NFTs with their own vaults that earn from every coin on Lootbag.
+
+Launch a coin. Let it pay your holders.
