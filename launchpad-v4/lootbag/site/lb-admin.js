@@ -283,9 +283,14 @@
         : anyPending ? `<div class="ad-banner"><b>Ownership is waiting for you.</b> This wallet has been offered ownership. Use "Accept all" under Ownership.</div>`
           : !owner ? `<div class="ad-banner bad"><b>This wallet does not own the contracts.</b> Owner and keeper controls are disabled. Sweeping fees still works for anyone.</div>` : '';
 
+    // $LOOT is launched but the Bags contract does not know it yet: the one-time button, where it cannot be missed
+    const mintBanner = LIVE && C.loot && eq(S.bags.loot, E.ZeroAddress)
+      ? `<div class="ad-banner"><b>Bag minting is closed.</b> $LOOT is launched, but it is not set on the Bags contract yet, so nobody can mint. <div style="margin-top:10px"><button class="btn s gold" data-act="bag-setloot"${dis(owner)}>Open the mint with $LOOT</button></div></div>` : '';
+
     root.innerHTML = `
       <div><h1>Admin</h1><p class="ad-sub">Owner controls and hand-run rounds for the Lootbag contracts on ${esc(C.chainName)}. Nothing here runs by itself: a payout, a Bag drop or a fee split happens when you press its button.</p></div>
       ${banner}
+      ${mintBanner}
       <div class="ad-grid">
 
       <section class="card ad-card">
