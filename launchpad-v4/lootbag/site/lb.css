@@ -44,11 +44,32 @@ input, textarea, select { font: inherit; color: var(--ink); }
 
 .main { min-width: 0; }
 .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 16px; height: 64px; padding: 0 24px; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-.search { flex: 1; max-width: 512px; position: relative; }
-.search input { width: 100%; height: 40px; border-radius: 8px; border: 1px solid var(--line2); background: var(--field); padding: 0 14px 0 36px; outline: none; font-size: 14.5px; }
+.search { flex: 1; max-width: 520px; position: relative; }
+.search > svg { position: absolute; left: 14px; top: 13px; width: 16px; height: 16px; color: var(--mute); pointer-events: none; transition: color .15s; }
+.search input { width: 100%; height: 42px; border-radius: 12px; border: 1px solid var(--line2); background: var(--field); padding: 0 44px 0 40px; outline: none; font-size: 14.5px; transition: border-color .15s, box-shadow .15s, background .15s; }
 .search input::placeholder { color: var(--dim); }
-.search input:focus { border-color: var(--line3); }
-.search svg { position: absolute; left: 12px; top: 12px; width: 16px; height: 16px; color: var(--dim); }
+.search input:hover { border-color: var(--line3); }
+.search input:focus { border-color: var(--acc-line); background: var(--card); box-shadow: 0 0 0 3px rgba(var(--acc-rgb), .14); }
+.search:focus-within > svg { color: var(--blue); }
+.search kbd { position: absolute; right: 11px; top: 11px; min-width: 20px; height: 20px; padding: 0 6px; display: grid; place-items: center; border: 1px solid var(--line2); border-radius: 6px; font: 500 11.5px/1 var(--fm); color: var(--dim); pointer-events: none; }
+.search:focus-within kbd { display: none; }
+.sres { position: absolute; top: 50px; left: 0; right: 0; z-index: 40; background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; padding: 6px; box-shadow: 0 18px 40px rgba(0,0,0,.5); max-height: min(440px, 70vh); overflow: auto; }
+.sres .sh { padding: 8px 10px 6px; font: 600 11px/1 var(--f); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.sres a { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 10px; }
+.sres a.on { background: var(--hover); }
+.sres .sn { flex: 1; min-width: 0; display: flex; flex-direction: column; } .sres .sn b { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .sres .sn small { color: var(--mute); font-size: 12.5px; }
+.sres .sv { text-align: right; display: flex; flex-direction: column; } .sres .sv b { font-size: 14px; font-weight: 600; } .sres .sv small { font-size: 12.5px; }
+.sres .sempty { padding: 18px 12px; color: var(--mute); font-size: 14px; text-align: center; }
+.msearch, .scancel { display: none; }
+@media (max-width: 900px) {
+  .top .search { display: none; }
+  .msearch { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line2); border-radius: 10px; color: var(--ink2); background: var(--field); }
+  .msearch svg { width: 18px; height: 18px; }
+  .top.searching > *:not(.search):not(.scancel) { display: none !important; }
+  .top.searching .search { display: block; max-width: none; }
+  .top.searching .scancel { display: block; color: var(--ink2); font-weight: 500; font-size: 14.5px; padding: 0 2px; }
+  .search kbd { display: none; }
+}
 .top .sp { flex: 1; }
 .chip-price { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
 .chip-price b { font-weight: 700; } .chip-price .px { font-weight: 500; }

@@ -341,8 +341,30 @@
     window.scrollTo(0, 0);
     if (!r) board(); else if (r === 'coin') coin(parts[1] || ''); else if (r === 'create') create(); else if (r === 'rewards') rewards(); else if (r === 'airdrops') airdrops(); else if (r === 'bags') bags(); else if (r === 'mint') mint(); else if (r === 'coins') lootCoins(); else if (r === 'loot') coin((D.coins.find((x) => x.official) || {}).addr || ''); else if (r === 'how') how(); else board();
   }
-  if (matchMedia('(max-width: 900px)').matches) $('#q').placeholder = 'Search';
-  $('#q').oninput = () => { state.q = $('#q').value; if (location.hash && location.hash !== '#/') location.hash = '#/'; else drawGrid(); };
+  // search: live results under the box; arrows to move, Enter to open, Esc to close, "/" to focus
+  const S = { list: [], ix: 0 }, sres = $('#sres'), qi = $('#q'), top = $('.top');
+  const shut = () => { sres.hidden = true; };
+  const sFind = (q) => { q = q.trim().toLowerCase().replace(/^\$/, ''); if (!q) return []; return D.coins.filter((c) => c.name.toLowerCase().includes(q) || c.ticker.toLowerCase().includes(q) || c.addr.includes(q)).map((c) => [c, (c.ticker.toLowerCase().startsWith(q) ? 3 : 0) + (c.name.toLowerCase().split(/\s+/).some((w) => w.startsWith(q)) ? 2 : 0)]).sort((a, b) => b[1] - a[1] || b[0].mcap - a[0].mcap).map((x) => x[0]).slice(0, 7); };
+  const sDraw = () => {
+    const q = qi.value.trim();
+    if (!q) { shut(); return; }
+    S.list = sFind(q); S.ix = Math.min(S.ix, Math.max(0, S.list.length - 1));
+    sres.innerHTML = S.list.length ? `<div class="sh">Coins</div>` + S.list.map((c, i) => `<a href="${c.official ? '#/loot' : '#/coin/' + c.addr}" class="${i === S.ix ? 'on' : ''}" data-i="${i}">${av(c, 34)}<span class="sn"><b>${esc(c.name)}</b><small>$${esc(c.ticker)} · ${short(c.addr)}</small></span><span class="sv"><b>${usd(c.mcap)}</b><small class="${c.ch24 >= 0 ? 'up' : 'dn'}">${c.ch24 >= 0 ? '+' : ''}${c.ch24.toFixed(1)}%</small></span></a>`).join('') : `<div class="sempty">No coins match "${esc(q)}"</div>`;
+    sres.hidden = false;
+    $$('#sres a').forEach((a) => { a.onmouseenter = () => { S.ix = +a.dataset.i; $$('#sres a').forEach((x) => x.classList.toggle('on', x === a)); }; a.onclick = () => { qi.value = ''; shut(); qi.blur(); top.classList.remove('searching'); }; });
+  };
+  qi.oninput = () => { S.ix = 0; sDraw(); state.q = ''; };
+  qi.onfocus = () => { if (qi.value.trim()) sDraw(); };
+  qi.onkeydown = (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!S.list.length) return; S.ix = (S.ix + (e.key === 'ArrowDown' ? 1 : -1) + S.list.length) % S.list.length; $$('#sres a').forEach((x, i) => x.classList.toggle('on', i === S.ix)); }
+    else if (e.key === 'Enter') { const c = S.list[S.ix]; if (c) { location.hash = c.official ? '#/loot' : '#/coin/' + c.addr; qi.value = ''; shut(); qi.blur(); top.classList.remove('searching'); } }
+    else if (e.key === 'Escape') { qi.value = ''; shut(); qi.blur(); top.classList.remove('searching'); }
+  };
+  document.addEventListener('keydown', (e) => { if (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); qi.focus(); } });
+  document.addEventListener('mousedown', (e) => { if (!e.target.closest('#search')) shut(); });
+  $('#msearch').onclick = () => { top.classList.add('searching'); qi.focus(); };
+  $('#scancel').onclick = () => { qi.value = ''; shut(); top.classList.remove('searching'); };
+  if (matchMedia('(max-width: 900px)').matches) qi.placeholder = 'Search coins or addresses';
   document.addEventListener('click', (e) => { const t = e.target.closest('[data-pv]'); if (t) { e.preventDefault(); toast(PREVIEW); } });
   D.ready.then(() => { route(); addEventListener('hashchange', route); });
 })();
