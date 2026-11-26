@@ -43,7 +43,7 @@
 
   function build(stocks) {
     for (const [sym, name, usd, addr] of stocks) STOCKS.push({ sym, name, usd, addr });
-    const top = ['NVDA', 'TSLA', 'AAPL', 'AMZN', 'GOOGL', 'META', 'MSFT', 'SPCX', 'MSTR', 'PLTR', 'AMD', 'HOOD', 'CRCL'].map((s) => STOCKS.find((x) => x.sym === s)).filter(Boolean);
+    const top = ['NVDA', 'TSLA', 'AAPL', 'AMZN', 'GOOGL', 'META', 'MSFT', 'SPCX', 'MSTR', 'PLTR', 'AMD', 'HOOD', 'CRCL', 'ANT', 'COIN', 'SPYM'].map((s) => STOCKS.find((x) => x.sym === s)).filter(Boolean);
     NAMES.forEach(([name, ticker], i) => {
       const official = i === 0;
       const pairKind = official ? 'VVV' : pick(['VVV', 'VVV', 'VVV', 'VVV', 'ETH', 'USDC', 'STOCK', 'LOOT']);

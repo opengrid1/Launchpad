@@ -17,7 +17,7 @@
   // a coin's picture: its uploaded image when it has one, otherwise a pixel sack drawn from its address
   const av = (c, size = 44) => `<span class="av${c.official ? '' : ' art'}" style="width:${size}px;height:${size}px;${c.official ? 'background:#16306b' : ''}">${c.official ? `<img src="/img/logo.svg" alt="" style="width:64%;height:64%">` : c.img ? `<img src="${esc(c.img)}" alt="">` : bagArt(2000 + parseInt(c.addr.slice(2, 9), 16) % 100000)}</span>`;
   const stkHue = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
-  const STK_LOGO = new Set(['AAPL', 'AMD', 'AMZN', 'ARM', 'AVGO', 'CRCL', 'CRWV', 'ETH', 'GME', 'GOOGL', 'HIMS', 'HOOD', 'INTC', 'KO', 'LLY', 'MCD', 'META', 'MRVL', 'MSFT', 'MSTR', 'MU', 'NFLX', 'NVDA', 'ORCL', 'PDD', 'PLTR', 'SNDK', 'SPCX', 'TSLA', 'TTWO', 'UBER', 'USDC', 'VVV']), STK_LIGHT = new Set(['TTWO', 'VVV']);
+  const STK_LOGO = new Set(['AAOI', 'AAPL', 'ADBE', 'AMD', 'AMZN', 'ANT', 'ARM', 'AVGO', 'BE', 'BIDU', 'BILI', 'BRK.B', 'BUD', 'COIN', 'CRCL', 'CRWV', 'ETH', 'FGI', 'GME', 'GOOGL', 'GRND', 'HIMS', 'HOOD', 'HSAI', 'INFY', 'INTC', 'KO', 'LI', 'LITE', 'LLY', 'MCD', 'META', 'MRNA', 'MRVL', 'MSFT', 'MSTR', 'MU', 'NFLX', 'NIO', 'NKE', 'NOK', 'NOW', 'NVDA', 'NVO', 'ORCL', 'PDD', 'PLTR', 'SAN', 'SAP', 'SE', 'SGOV', 'SKHY', 'SNDK', 'SNOW', 'SONY', 'SPCX', 'SPYM', 'TSLA', 'TTWO', 'UL', 'USDC', 'VALE', 'VVV', 'WDC', 'WRD']), STK_LIGHT = new Set(['TTWO', 'VVV', 'SONY']);
   const tokenBadge = (s, size = 20) => {
     const z = `width:${size}px;height:${size}px`;
     if (s === 'LOOT') return `<img class="tkl" src="/img/logo.svg" alt="" style="${z};border-radius:50%;background:#16306b;padding:${Math.round(size * 0.14)}px">`;
