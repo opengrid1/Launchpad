@@ -61,6 +61,9 @@ body { min-height: 100vh; }
 .ad-dlg > div { width: 100%; max-width: 440px; padding: 20px; border-radius: 16px; background: var(--card); border: 1px solid var(--line2); }
 .ad-dlg p { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--ink2); }
 select.inp { appearance: auto; }
+  .ad-t { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0 4px; }
+  .ad-t th, .ad-t td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line2); }
+  .ad-t th { color: var(--mute); font-weight: 500; }
 </style>
 </head>
 <body>
@@ -74,6 +77,7 @@ select.inp { appearance: auto; }
 <main class="ad-wrap" id="ad-root"><p class="mute">Loading…</p></main>
 <script src="/vendor/ethers.umd.min.js"></script>
 <script src="/lb-config.js?v=10"></script>
-<script src="/lb-admin.js?v=5"></script>
+<script src="/lb-live.js?v=4"></script>
+<script src="/lb-admin.js?v=6"></script>
 </body>
 </html>

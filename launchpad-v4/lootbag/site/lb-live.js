@@ -285,8 +285,9 @@
     const A = LB.airdrop;
     if (aPot) { A.pot = Number(E.formatEther(aPot[0])); A.potUsd = A.pot * LB.vvvUsd; }
     A.endsAt = aNext ? Number(aNext[0]) : 0;
-    A.board = [...traders.entries()].map(([wallet, vol]) => ({ wallet, vol })).sort((a, b) => b.vol - a.vol);
-    A.traders = A.board.length; A.volume = roundVol; A.rounds = S.posted.slice().reverse();
+    // until the full board has been worked out (leaderboard()), the trades through Lootbag's own router stand in
+    if (!S.boardFull) { A.board = [...traders.entries()].map(([wallet, vol]) => ({ wallet, vol })).sort((a, b) => b.vol - a.vol); A.traders = A.board.length; A.volume = roundVol; }
+    A.rounds = S.posted.slice().reverse();
 
     // Bags
     const B = LB.bags, days = bDays ? [...bDays[0]] : [];
@@ -369,6 +370,29 @@
     c.ch24 = before && before.px ? (c.priceQuote / before.px - 1) * 100 : 0;
     c.holders = d.holders;
     c.holderList = (d.top || []).map((h) => ({ wallet: h.wallet, pct: (Number(E.formatEther(h.bal)) / SUPPLY) * 100, creator: eq(h.wallet, c.creator), earnedUsd: units(h.earned, c.pairAddr) * qUsd }));
+  }
+
+  // ---------------------------------------------------------------- the trader airdrop's board
+  /** This round's volume by trader, from every swap in every Lootbag coin's pool: [{ wallet, vol }], biggest first. */
+  async function leaderboard() {
+    const coins = [...S.coins.values()].sort((a, b) => b.volAll - a.volAll).slice(0, 60);
+    await Promise.all(coins.map((c) => coinDetail(c.addr).catch(() => null)));
+    const from = S.posted.length ? S.posted[S.posted.length - 1].ts : 0, by = new Map();
+    const infra = new Set([K.router, K.swapper, K.poolManager, K.hook, K.factory, K.payout, K.bags, K.airdrop, ZERO, DEAD].map(lc));
+    for (const c of coins) for (const t of c.trades) { const w = lc(t.wallet); if (t.dev || t.ts < from || !w || infra.has(w)) continue; by.set(w, (by.get(w) || 0) + t.usd); }
+    const A = LB.airdrop;
+    A.board = [...by.entries()].map(([wallet, vol]) => ({ wallet, vol })).sort((a, b) => b.vol - a.vol);
+    A.traders = A.board.length; A.volume = A.board.reduce((n, x) => n + x.vol, 0); S.boardFull = true;
+    return A.board;
+  }
+  /** Each place's share of the pot, in percent: 5.3, 4 and 3 for the first three, 13 split by volume between places
+      4 to 20, the rest split by volume between places 21 to 500, and never more than the place above. */
+  function airdropShares(board) {
+    const b = board.slice(0, 500), mid = b.slice(3, 20).reduce((n, x) => n + x.vol, 0) || 1, rest = b.slice(20).reduce((n, x) => n + x.vol, 0) || 1;
+    const out = b.map((x, i) => (i === 0 ? 5.3 : i === 1 ? 4 : i === 2 ? 3 : i < 20 ? (13 * x.vol) / mid : (74.7 * x.vol) / rest));
+    // with few traders a lower place could come out ahead of a higher one: no place gets more than the one above it
+    for (let i = 1; i < out.length; i++) if (out[i] > out[i - 1]) out[i] = out[i - 1];
+    return out;
   }
 
   // ---------------------------------------------------------------- a wallet's own numbers
@@ -480,7 +504,7 @@
   async function withdrawBag(id, note) { const rc = await send(K.bags, 'bags', 'withdraw', [id, [...new Set([VVV, ...(LB.bags.dayAddrs || [])].map(lc))]], 0n, note); S.minted = -1; await refresh().catch(() => {}); return rc; }
 
   // ---------------------------------------------------------------- start, and keep fresh
-  window.LB_LIVE = { refresh, coinDetail, account, setProvider, quoteBuy, quoteSell, buy, sell, launch, launchFee, claim, mintBag, withdrawBag, explain, addrOf, usdOf, sym, onUpdate: (f) => subs.push(f), get me() { return me; }, contracts: K };
+  window.LB_LIVE = { refresh, coinDetail, leaderboard, airdropShares, account, setProvider, quoteBuy, quoteSell, buy, sell, launch, launchFee, claim, mintBag, withdrawBag, explain, addrOf, usdOf, sym, onUpdate: (f) => subs.push(f), get me() { return me; }, contracts: K };
   LB.ready = fetch('/stocks.json').then((r) => r.json()).then((rows) => {
     stockList = rows.map(([s, name, usd, addr, , d, pool]) => ({ sym: s, name, usd, listed: usd, addr, dec: d || 18, pool: pool || '' }));
     for (const s of stockList) TOK.set(lc(s.addr), { sym: s.sym, dec: s.dec });

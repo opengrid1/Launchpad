@@ -36,7 +36,9 @@
       'function drop(uint256 minOut) returns (uint256 out)', 'function convert(address token, uint256 minOut) returns (uint256 out)', 'function setKeeper(address k, bool on)',
       'function setLoot(address loot_)',
     ],
-    airdrop: ['function keeper(address) view returns (bool)', 'function pot() view returns (uint256)', 'function roundCount() view returns (uint256)', 'function nextRoundAt() view returns (uint256)', 'function setKeeper(address k, bool on)'],
+    airdrop: ['function keeper(address) view returns (bool)', 'function pot() view returns (uint256)', 'function roundCount() view returns (uint256)', 'function nextRoundAt() view returns (uint256)', 'function setKeeper(address k, bool on)',
+      'function post(bytes32 root, uint256 total, string listUri) returns (uint256 id)', 'function payMany(uint256 id, address[] accounts, uint256[] amounts, bytes32[][] proofs)',
+      'event Posted(uint256 indexed round, bytes32 root, uint256 total, string listUri)'],
     token: ['function earned(address) view returns (uint256)', 'event Transfer(address indexed from, address indexed to, uint256 value)'],
     erc20: ['function symbol() view returns (string)', 'function decimals() view returns (uint8)', 'function balanceOf(address) view returns (uint256)'],
   };
@@ -195,6 +197,34 @@
     if (kit) { try { await kit.disconnect(); } catch { /* already gone */ } }
     drop();
   }
+  // ---------------------------------------------------------------- airdrop rounds
+  // A round is a Merkle root over (wallet, amount), in the form the airdrop contract checks: a leaf is the hash of the
+  // hash of abi.encode(wallet, amount), and each pair is hashed smaller first. What is still unpaid of a posted round
+  // is kept in this browser, so paying can be picked up again if a batch is cancelled.
+  const AIR_BATCH = 60, AC = E.AbiCoder.defaultAbiCoder();
+  const leafOf = (account, amount) => E.keccak256(E.keccak256(AC.encode(['address', 'uint256'], [account, amount])));
+  const pairOf = (x, y) => (BigInt(x) < BigInt(y) ? E.keccak256(AC.encode(['bytes32', 'bytes32'], [x, y])) : E.keccak256(AC.encode(['bytes32', 'bytes32'], [y, x])));
+  function merkle(leaves) {
+    const layers = [leaves];
+    while (layers[layers.length - 1].length > 1) { const cur = layers[layers.length - 1], next = []; for (let i = 0; i < cur.length; i += 2) next.push(i + 1 < cur.length ? pairOf(cur[i], cur[i + 1]) : cur[i]); layers.push(next); }
+    const proof = (ix) => { const out = []; for (let l = 0; l < layers.length - 1; l++) { const sib = ix ^ 1; if (sib < layers[l].length) out.push(layers[l][sib]); ix >>= 1; } return out; };
+    return { root: layers[layers.length - 1][0], proof };
+  }
+  const AIR_KEY = 'lb-airdrop-unpaid:' + String(K.airdrop).toLowerCase();
+  const airLoad = () => { try { return JSON.parse(localStorage.getItem(AIR_KEY) || 'null'); } catch (e) { return null; } };
+  const airSave = (v) => { try { if (v && v.left.length) localStorage.setItem(AIR_KEY, JSON.stringify(v)); else localStorage.removeItem(AIR_KEY); } catch (e) { /* no storage */ } };
+  const airLeft = () => { const v = airLoad(); return v ? v.left.length : 0; };
+  async function airPay() {
+    let v = airLoad();
+    while (v && v.left.length) {
+      const part = v.left.slice(0, AIR_BATCH);
+      const r = await send(`Airdrop payments (${v.left.length} left)`, K.airdrop, 'airdrop', 'payMany', [v.id, part.map((x) => x.account), part.map((x) => x.amount), part.map((x) => x.proof)], true);
+      if (!r) { toast(`${v.left.length} payments are still unpaid. Press "Pay the ${v.left.length} still unpaid" to carry on.`, true); break; }
+      v = { id: v.id, left: v.left.slice(AIR_BATCH) }; airSave(v);
+    }
+    await refresh();
+  }
+
   /** Sends one transaction and waits for it. Returns the receipt, or null if it was not sent or failed. */
   async function send(label, target, abiName, fn, args, quiet) {
     if (!LIVE) { toast('Preview: the contracts are not deployed yet. Nothing was sent.'); return null; }
@@ -356,7 +386,8 @@
         <div class="ad-row"><div class="l">In the pot</div><div class="r mono">${amt(S.airdrop.pot, C.tokens.VVV[0])}</div></div>
         <div class="ad-row"><div class="l">Rounds posted</div><div class="r mono">${S.airdrop.rounds}</div></div>
         <div class="ad-row"><div class="l">Next round</div><div class="r mono">${S.airdrop.nextAt === 0n || Number(S.airdrop.nextAt) <= S.now ? 'can be posted now' : hms(Number(S.airdrop.nextAt) - S.now)}</div></div>
-        <p class="note">Posting a round needs the ranked trader list worked out from every trade. That tool is not built into this page yet, so airdrop rounds cannot be run from here.</p>
+        <p class="note">Posting a round ranks every trader of this round by volume (every swap in every Lootbag coin's pool), sets each one's share of the pot, records the list on-chain and then sends the VVV to their wallets, in batches.</p>
+        <div class="ad-end">${airLeft() ? `<button class="btn s" data-act="air-rest"${dis(true)}>Pay the ${airLeft()} still unpaid</button>` : ''}<button class="btn s gold" data-act="air-post"${dis(S.airdrop.keeper)}${S.airdrop.pot === 0n || (S.airdrop.nextAt !== 0n && Number(S.airdrop.nextAt) > S.now) ? ' disabled title="Nothing in the pot, or the last round is less than 10 hours old"' : ''}>Post this round and pay it</button></div>
       </section>
 
       <section class="card ad-card wide">
@@ -453,6 +484,25 @@
       let out; try { out = await simulate(K.bags, 'bags', 'drop', [0]); } catch (e) { return toast('The drop cannot run: ' + (e.shortMessage || e.reason || e.message).toString().slice(0, 140), true); }
       await send('Bag drop', K.bags, 'bags', 'drop', [(out * 98n) / 100n]);
     },
+    'air-post': async () => {
+      if (!signer && !(await connect())) return;
+      toast('Reading every trade of this round…');
+      let board; try { await window.LB_DATA.ready; await window.LB_LIVE.refresh(); board = (await window.LB_LIVE.leaderboard()).slice(0, 500); } catch (e) { return toast('Could not read the trades: ' + (e.shortMessage || e.message || e).toString().slice(0, 120), true); }
+      const pct = window.LB_LIVE.airdropShares(board), pot = S.airdrop.pot, MIN = 3000000000000000n; // under 0.003 VVV is not worth a transfer
+      const list = board.map((x, i) => ({ account: E.getAddress(x.wallet), amount: (pot * BigInt(Math.floor(pct[i] * 1e6))) / 100000000n, vol: x.vol })).filter((x) => x.amount >= MIN);
+      if (!list.length) return toast('No trader would get at least 0.003 VVV yet. Wait for more volume or a bigger pot.', true);
+      const total = list.reduce((n, x) => n + x.amount, 0n), tree = merkle(list.map((x) => leafOf(x.account, x.amount)));
+      const d = await dialog('Post this airdrop round', `<p><b>${list.length}</b> traders share <b>${amt(total, C.tokens.VVV[0])}</b> of the ${amt(pot, C.tokens.VVV[0])} in the pot. What is not given out stays in the pot.</p><table class="ad-t"><tr><th>#</th><th>Wallet</th><th>Volume</th><th>Gets</th></tr>${list.slice(0, 8).map((x, i) => `<tr><td>${i + 1}</td><td class="mono">${short(x.account)}</td><td>$${Math.round(x.vol).toLocaleString('en-US')}</td><td>${amt(x.amount, C.tokens.VVV[0])}</td></tr>`).join('')}</table>${list.length > 8 ? `<p class="note">and ${list.length - 8} more.</p>` : ''}<p class="note">One transaction records the round, then ${Math.ceil(list.length / AIR_BATCH)} more send the VVV. The next round can be posted 10 hours later.</p>`, 'Post and pay');
+      if (!d) return;
+      const r = await send('Post the round', K.airdrop, 'airdrop', 'post', [tree.root, total, location.origin + '/#/airdrops'], true);
+      if (!r) return;
+      const ev = r.logs.map((l) => { try { return I.airdrop.parseLog(l); } catch (e) { return null; } }).find((x) => x && x.name === 'Posted');
+      const id = ev ? Number(ev.args.round) : Number(S.airdrop.rounds);
+      const left = list.map((x, i) => ({ account: x.account, amount: x.amount.toString(), proof: tree.proof(i) }));
+      airSave({ id, left });
+      await airPay();
+    },
+    'air-rest': async () => { if (!signer && !(await connect())) return; await airPay(); },
     'bag-setloot': async () => {
       const d = await dialog('Open the mint', `<p>This sets $LOOT <span class="mono">${esc(C.loot)}</span> on the Bags contract. From then on anyone can mint a Bag by burning 100,000 of it and paying 3 VVV.</p><p><b>It can be done only once.</b> The Bags contract will use this $LOOT for good; it cannot be changed or undone.</p>`, 'Open the mint', true);
       if (d) await send('Open the mint', K.bags, 'bags', 'setLoot', [C.loot]);

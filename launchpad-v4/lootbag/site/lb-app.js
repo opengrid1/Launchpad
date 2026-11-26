@@ -451,21 +451,25 @@
   }
 
   // ---------- airdrops
-  function airdrops() {
-    const A = D.airdrop, b = A.board.slice(0, 50), top = A.board.slice(3, 20).reduce((s, y) => s + y.vol, 0) || 1, rest = A.board.slice(20, 500).reduce((s, y) => s + y.vol, 0) || 1;
+  function airdrops(full) {
+    const A = D.airdrop, b = A.board.slice(0, 50), pct = LIVE.airdropShares(A.board);
     // #1 to #3 take fixed shares, #4 to #20 split 13% by volume, everyone after splits what is left
-    const share = (x, i) => (i === 0 ? 5.3 : i === 1 ? 4 : i === 2 ? 3 : i < 20 ? (13 * x.vol) / top : (74.7 * x.vol) / rest);
+    const share = (x, i) => pct[i] || 0;
     const last = A.rounds[0], when = (ts) => new Date(ts * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     view.innerHTML = `<div class="ph1"><h1>Airdrops</h1><p>Trade any coin launched on Lootbag. 10% of Lootbag's share of every fee goes into a VVV pot, and each round the pot is split between the top 500 traders by volume. #1, #2 and #3 get 5.3%, 4%, 3% of the pot, places 4–20 share 13%, and everyone else shares the rest. Places 4 and down go by volume: the more volume, the bigger the share. Rounds are posted by Lootbag, about every 10 hours.</p></div>
       <div class="srow big"><div><span>In the pot</span><b>${num(A.pot, A.pot >= 100 ? 1 : 4)} VVV</b><small>≈ ${usd(A.potUsd)}</small></div><div><span>Next airdrop</span><b id="acd">${A.endsAt ? hms(A.endsAt - Date.now() / 1000) : 'Not scheduled yet'}</b><small>${num(A.traders, 0)} traders · ${usd(A.volume)} volume this round</small></div><div><span>Last airdrop${last ? ' · round ' + (last.id + 1) : ''}</span><b>${last ? num(last.total, 2) + ' VVV' : 'None yet'}</b><small>${last ? when(last.ts) : 'The first round has not been posted'}</small></div></div>
       <div class="lookup" style="margin-top:28px"><span id="myrank">Connect your wallet to see your rank and payout.</span><button class="btn blue" data-connect2>Connect wallet</button></div>
-      <div class="lh"><h3>Leaderboard</h3><span>Top 50 shown · volume traded through Lootbag this round</span></div>
+      <div class="lh"><h3>Leaderboard</h3><span>Top 50 shown · volume traded in Lootbag coins this round</span></div>
       ${b.length ? `<div class="tw"><table class="t lb"><tr><th>#</th><th>Wallet</th><th class="r">Volume</th><th class="r">Share</th><th class="r">Payout</th></tr>${b.map((x, i) => `<tr><td class="dim">${i + 1}</td><td>${short(x.wallet)}</td><td class="r">${usd(x.vol)}</td><td class="r mute">${share(x, i).toFixed(2)}%</td><td class="r up">${num((A.pot * share(x, i)) / 100, 4)} VVV</td></tr>`).join('')}</table></div>` : '<p class="mute">No trades this round yet.</p>'}
       <div class="lh"><h3>Past airdrops</h3></div>${A.rounds.map((r) => `<div class="past"><span class="mute">Round ${r.id + 1}</span><span class="mute">${when(r.ts)}</span><b>${num(r.total, 2)} VVV</b><span class="sp"></span>${r.listUri ? `<a class="mute" href="${esc(r.listUri)}" target="_blank" rel="noopener">Every wallet</a>` : ''}<a class="mute" href="${ex('tx', r.tx)}" target="_blank" rel="noopener">Transaction</a></div>`).join('') || '<p class="mute">No airdrop has been paid yet.</p>'}
       <p class="fine">Payouts above are what the pot would pay right now; they grow as fees come in and change with every trade. The final list for a round is posted on-chain by Lootbag with the round.</p>${foot()}`;
     bindConnect();
     onWallet = () => { const el = $('#myrank'); if (!el) return; const i = wallet ? A.board.findIndex((x) => x.wallet === wallet.toLowerCase()) : -1; el.textContent = !wallet ? 'Connect your wallet to see your rank and payout.' : i < 0 ? 'You have no volume in this round yet.' : `You are #${i + 1} with ${usd(A.board[i].vol)} of volume: about ${num((A.pot * share(A.board[i], i)) / 100, 4)} VVV right now.`; };
     onWallet();
+    // the board is worked out from every swap in every coin's pool; it is read once here and again as trades come in
+    const again = () => LIVE.leaderboard().then(() => { if ($('#myrank')) airdrops(true); }).catch(() => {});
+    if (!full) again();
+    onData = again;
     if (A.endsAt) every(1000, () => { const e = $('#acd'); if (e) e.textContent = A.endsAt > Date.now() / 1000 ? hms(A.endsAt - Date.now() / 1000) : 'Due now'; });
   }
 
