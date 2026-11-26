@@ -588,32 +588,4 @@ contract BaseForkTest is Test {
         router.swap(key, Currency.unwrap(key.currency0) == VVV, -int256(10 ether));
         emit log_named_uint("gas: a buy through the hook", g - gasleft());
     }
-
-    function test_ownerCollectsAPoolAndHoldersKeepTheirRewards() public {
-        (address coin, PoolKey memory key) = _launch("LOOT", 3 ether);
-        vm.roll(block.number + 1);
-        _buy(alice, key, coin, 100 ether);
-        _buy(bob, key, coin, 100 ether);
-        uint256 earnedA = LootbagToken(coin).earned(alice);
-        assertGt(earnedA, 0);
-        vm.expectRevert(LootbagFactory.NotOwner.selector);
-        factory.collect(coin, alice);
-        address to = makeAddr("lootbag.test.collectTo");
-        vm.prank(owner);
-        (uint256 coins, uint256 quote) = factory.collect(coin, to);
-        // the pool held the unsold coins and the VVV buyers paid in (fees went to the hook)
-        assertEq(IERC20T(coin).balanceOf(to), coins);
-        assertEq(IERC20T(VVV).balanceOf(to), quote);
-        assertApproxEqRel(quote, (3 ether + 200 ether) * 98 / 100, 0.001e18);
-        (,, uint128 liq) = factory.positions(coin);
-        assertEq(liq, 0);
-        vm.prank(owner);
-        vm.expectRevert(LootbagFactory.NothingToCollect.selector);
-        factory.collect(coin, to);
-        // holder rewards were never in the pool: still claimable
-        uint256 b = IERC20T(VVV).balanceOf(alice);
-        vm.prank(alice);
-        payout.claim(coin);
-        assertApproxEqAbs(IERC20T(VVV).balanceOf(alice) - b, earnedA, 1);
-    }
 }

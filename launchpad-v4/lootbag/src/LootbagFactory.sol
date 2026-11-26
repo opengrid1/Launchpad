@@ -32,16 +32,15 @@ interface IERC20F {
 /// @title LootbagFactory
 /// @notice Launches Lootbag coins. One transaction creates the coin (1,000,000,000 supply, no owner, no mint), opens
 ///         its own Uniswap v4 pool against the chosen quote (VVV by default, or WETH, USDC or a stock token) with the
-///         whole supply in it, and makes the creator's dev buy in the same transaction, so nobody can buy before them.
-///         The factory holds every pool's liquidity and its owner can withdraw all of a pool's liquidity with
-///         `collect`; the site discloses this. Holder rewards are not in the pool and stay claimable after a collect. The creator picks the rewards (1 to 10 tokens) the holders are paid in, in turns.
+///         whole supply in it, locked forever, and makes the creator's dev buy in the same transaction, so nobody can
+///         buy before them. The creator picks the rewards (1 to 10 tokens) the holders are paid in, in turns.
 /// @dev The pool starts at the quote's opening tick (about $5K market cap) with the supply as a single-sided position
 ///      from there to the end of the price range, so the pool needs no quote to start. The pool has no LP fee: the
-///      hook's 2% is the only fee. The position is the factory's; the hook lets only the factory remove it.
+///      hook's 2% is the only fee. The position is the factory's and the hook refuses every removal, so a pool's
+///      liquidity can never be withdrawn by anyone, including the factory owner.
 ///      The factory starts paused: no launch can happen until the owner opens launches.
 ///      The owner can: list quotes and rewards, set their opening ticks and minimum dev buys, pause new launches, and
-///      move the fee wallet, and collect a pool's liquidity. The owner can't change a launched coin, its fee, or the
-///      holders' rewards.
+///      move the fee wallet. The owner can't touch a launched coin, its pool, its liquidity or anyone's funds.
 contract LootbagFactory is IUnlockCallback {
     error NotOwner();
     error NotPoolManager();
@@ -56,7 +55,6 @@ contract LootbagFactory is IUnlockCallback {
     error DevBuyShort(uint256 coins);
     error ZeroAddress();
     error NothingToSettle();
-    error NothingToCollect();
 
     event Launched(
         address indexed coin,
@@ -72,7 +70,6 @@ contract LootbagFactory is IUnlockCallback {
     event QuoteSet(address indexed quote, bool listed, int24 startTick, uint256 minDevBuy);
     event RewardSet(address indexed token, bool listed);
     event CopyFeeSettled(address indexed coin, bool refunded);
-    event Collected(address indexed coin, address indexed to, uint256 coins, uint256 quote);
 
     uint256 public constant SUPPLY = 1_000_000_000e18;
     uint256 public constant MAX_DEV_BUY = SUPPLY / 50; // 2%
@@ -106,15 +103,6 @@ contract LootbagFactory is IUnlockCallback {
     mapping(address => uint256) public copyFeeHeld;
     mapping(address => address) public creatorOf;
     mapping(address => PoolKey) internal _keys;
-
-    struct Position {
-        int24 lo;
-        int24 hi;
-        uint128 liquidity;
-    }
-
-    /// @notice each coin's pool position, held by this factory
-    mapping(address => Position) public positions;
 
     constructor(IPoolManager pm, IHooks hook_, address payout_, address owner_, address treasury_) {
         if (address(pm) == address(0) || address(hook_) == address(0) || payout_ == address(0)) revert ZeroAddress();
@@ -164,17 +152,6 @@ contract LootbagFactory is IUnlockCallback {
         copyFeeHeld[coin] = 0;
         _sendEth(refund ? creatorOf[coin] : treasury, a);
         emit CopyFeeSettled(coin, refund);
-    }
-
-    /// @notice Withdraws all of `coin`'s pool liquidity (coins and quote) to `to`. The coin can no longer be traded
-    ///         in its pool afterwards. Holder rewards are held by the payout contract, not the pool, and are untouched.
-    function collect(address coin, address to) external onlyOwner returns (uint256 coins, uint256 quote) {
-        Position memory p = positions[coin];
-        if (p.liquidity == 0) revert NothingToCollect();
-        if (to == address(0)) revert ZeroAddress();
-        delete positions[coin];
-        (coins, quote) = abi.decode(poolManager.unlock(abi.encode(uint8(1), abi.encode(coin, to, p))), (uint256, uint256));
-        emit Collected(coin, to, coins, quote);
     }
 
     function transferOwnership(address to) external onlyOwner {
@@ -250,8 +227,7 @@ contract LootbagFactory is IUnlockCallback {
 
         // the supply in, locked, and the dev buy, in one go
         _pull(p.quote, msg.sender, p.devBuy);
-        uint256 got =
-            abi.decode(poolManager.unlock(abi.encode(uint8(0), abi.encode(key, coinIs0, tick, p.devBuy, msg.sender))), (uint256));
+        uint256 got = abi.decode(poolManager.unlock(abi.encode(key, coinIs0, tick, p.devBuy, msg.sender)), (uint256));
         if (got > MAX_DEV_BUY) revert DevBuyTooBig(got);
         if (got < p.minCoinsOut) revert DevBuyShort(got);
         // rounding leaves a few coins out of the pool: burned
@@ -265,10 +241,8 @@ contract LootbagFactory is IUnlockCallback {
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         if (msg.sender != address(poolManager)) revert NotPoolManager();
-        (uint8 mode, bytes memory inner) = abi.decode(data, (uint8, bytes));
-        if (mode == 1) return _collectCallback(inner);
         (PoolKey memory key, bool coinIs0, int24 tick, uint256 devBuy, address creator) =
-            abi.decode(inner, (PoolKey, bool, int24, uint256, address));
+            abi.decode(data, (PoolKey, bool, int24, uint256, address));
         address coin = Currency.unwrap(coinIs0 ? key.currency0 : key.currency1);
         address quote = Currency.unwrap(coinIs0 ? key.currency1 : key.currency0);
 
@@ -285,7 +259,6 @@ contract LootbagFactory is IUnlockCallback {
         );
         int128 owedCoin = coinIs0 ? d.amount0() : d.amount1();
         _settle(coin, uint256(int256(-owedCoin)));
-        positions[coin] = Position(lo, hi, liq);
 
         // the dev buy: quote in, coins to the creator (the hook takes its 2% like on any trade)
         bool zeroForOne = !coinIs0;
@@ -303,20 +276,6 @@ contract LootbagFactory is IUnlockCallback {
         _settle(quote, uint256(int256(-paid)));
         poolManager.take(Currency.wrap(coin), creator, uint256(int256(got)));
         return abi.encode(uint256(int256(got)));
-    }
-
-    function _collectCallback(bytes memory inner) internal returns (bytes memory) {
-        (address coin, address to, Position memory p) = abi.decode(inner, (address, address, Position));
-        PoolKey memory key = _keys[coin];
-        (BalanceDelta d,) = poolManager.modifyLiquidity(
-            key, ModifyLiquidityParams({tickLower: p.lo, tickUpper: p.hi, liquidityDelta: -int256(uint256(p.liquidity)), salt: bytes32(0)}), ""
-        );
-        uint256 a0 = uint256(int256(d.amount0()));
-        uint256 a1 = uint256(int256(d.amount1()));
-        if (a0 != 0) poolManager.take(key.currency0, to, a0);
-        if (a1 != 0) poolManager.take(key.currency1, to, a1);
-        bool coinIs0 = Currency.unwrap(key.currency0) == coin;
-        return abi.encode(coinIs0 ? a0 : a1, coinIs0 ? a1 : a0);
     }
 
     // ------------------------------------------------------------------ internal
