@@ -425,3 +425,14 @@ img.tkl { flex: none; display: inline-block; vertical-align: middle; box-sizing:
 
 /* create page: the form alone, at a readable width */
 .cg.one { grid-template-columns: minmax(0, 1fr); max-width: 860px; }
+
+/* docs on a phone: one full-width column (a later rule had put the two-column grid back) */
+@media (max-width: 900px) { .doc { grid-template-columns: minmax(0, 1fr); } }
+/* the contracts list: name and role on one line, the whole address under them */
+.caddrs { border-top: 1px solid var(--line2); margin-top: 12px; }
+.caddr { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 2px 14px; padding: 12px 0; border-bottom: 1px solid var(--line2); font-size: 14px; }
+.caddr b { font-weight: 600; }
+.caddr span { color: var(--mute); }
+.caddr a { grid-column: 1 / -1; font-size: 13px; color: var(--ink3); overflow-wrap: anywhere; }
+.caddr a:hover { color: var(--ink); text-decoration: underline; }
+@media (max-width: 520px) { .caddr { grid-template-columns: minmax(0, 1fr); } }
