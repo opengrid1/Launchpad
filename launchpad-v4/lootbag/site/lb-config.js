@@ -12,14 +12,16 @@ window.LB_CFG = {
   // Reown (WalletConnect) project id: public, it only identifies the site to Reown. The site's domain must be on
   // the project's allowlist in the Reown dashboard, or mobile wallets will refuse the connection.
   walletConnect: { projectId: 'e1bda672d5deb56579fe084dddfb9174' },
-  startBlock: 62517259,
+  startBlock: 62532742,
   contracts: {
-    factory: '0xe1e57D339C840545Eb38131A0085369F2E08430d',
-    hook: '0x84d04ca2A620610d16D8004C89D9aaa73d612AcC',
-    payout: '0x27476fDdf3BD05AD06aa3Aa54b4CAf0717ecb1E2',
-    swapper: '0x5776229B170713Fc150Cce7Dc860FE8E522534AE',
-    bags: '0x7864584917E42628FD335ebec1de13C9484E53fb',
-    airdrop: '0xE8A74b2971d691b95Db0B5499DcC8F2e7D7d6D99',
+    factory: '0x7dfcc0a34E1bfBb8228b582Dc355fe8f7B1f64a6',
+    hook: '0x3F7917B7B8bf79a7e84641491d9de80dea6ceAcC',
+    payout: '0x80eB12D43791E64cAeD65268A9e9aE590A761029',
+    swapper: '0x8c4D29F5d7A0DfC8B6D2d68649E0e3b1F116B34B',
+    bags: '0xed0aC0Cf3bB84fC431F214A6b96db6611B36FaA7',
+    airdrop: '0x3b12bEDe3839da8E9668eaF865B119d3C39227D7',
+    router: '0xFf6575873d47829a68c9d3D4e28bcFD937393DDe',
+    poolManager: '0x498581fF718922c3f8e6A244956aF099B2652b2b',
   },
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
   tokens: {
