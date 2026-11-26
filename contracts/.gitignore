@@ -13,3 +13,5 @@ cache-cntrlz/
 artifacts-onehook/
 cache-onehook/
 .env.onehook-deployer
+artifacts-lootbag/
+cache-lootbag/
