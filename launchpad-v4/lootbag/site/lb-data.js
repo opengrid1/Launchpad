@@ -74,7 +74,7 @@
     });
     // the trader airdrop round and the Lootbag NFTs
     const roundEnd = T0 + 3 * 3600 + 1240;
-    LB.airdrop = { pot: 34.82, potUsd: 34.82 * ETH_USD, endsAt: roundEnd, traders: 742, volume: 412_830, board: Array.from({ length: 50 }, (_, k) => ({ wallet: addr(), vol: Math.round(14000 * Math.exp(-k / 9) + 60 + rnd() * 400) })).sort((a, b) => b.vol - a.vol) };
+    LB.airdrop = { pot: 1971.4, potUsd: 1971.4 * VVV_USD, endsAt: roundEnd, traders: 742, volume: 412_830, board: Array.from({ length: 50 }, (_, k) => ({ wallet: addr(), vol: Math.round(14000 * Math.exp(-k / 9) + 60 + rnd() * 400) })).sort((a, b) => b.vol - a.vol) };
     LB.bags = { total: 1000, minted: 244, perMintLoot: 100_000, perMintVvv: 3, pot: 3470, paidUsd: 18_240, nextHour: 3600 - (now() % 3600), rotation: ['VVV', 'NVDA', 'AMZN', 'TSLA', 'LOOT'], today: 'VVV',
       list: Array.from({ length: 24 }, (_, k) => ({ id: k + 1, earned: Math.round(140 - k * 2.1 + rnd() * 20), hue: Math.floor(rnd() * 360) })) };
     LB.platform = { volumeAll: 6_820_000, paidHolders: 142_300, coins: LB.coins.length, traders: 6_910, burnedLoot: 24_400_000 };
