@@ -422,3 +422,6 @@ img.tkl { flex: none; display: inline-block; vertical-align: middle; box-sizing:
 .btn:disabled { opacity: .55; cursor: default; filter: none; }
 .t a { color: inherit; }
 .t a:hover { text-decoration: underline; }
+
+/* create page: the form alone, at a readable width */
+.cg.one { grid-template-columns: minmax(0, 1fr); max-width: 860px; }

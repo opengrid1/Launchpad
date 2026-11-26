@@ -325,7 +325,7 @@
   }
 
 
-  // ---------- create: one form card, the launch summary on the right
+  // ---------- create: one form card, the launch button at its foot
   // A coin's picture is stored on-chain with the launch, so it is cut square and squeezed under the contract's limit.
   const IMG_MAX = 23500;
   function shrink(file) {
@@ -351,7 +351,7 @@
     const stocks = D.stocks, crypto = [{ sym: 'ETH', name: 'Ether', usd: D.ethUsd }, { sym: 'USDC', name: 'USD Coin', usd: 1 }, { sym: 'VVV', name: 'Venice Token', usd: D.vvvUsd }], memes = D.memes || [];
     const pool = () => (F.cat === 'stocks' ? stocks : F.cat === 'crypto' ? crypto : F.cat === 'memes' ? memes : [...crypto, ...stocks, ...memes]);
     const ic = { x: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.3l-4.9-6.4L5.2 21H2.1l7.3-8.3L2 3h6.4l4.4 5.9zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg>', tg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M21 4 3 11l6 2 2 6 3-4 5 4z"/></svg>', web: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>', img: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="15" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m18.5 15-4-4-8 8M19 2v5M16.5 4.5h5"/></svg>' };
-    view.innerHTML = `<div class="cg"><div class="card cform">
+    view.innerHTML = `<div class="cg one"><div class="card cform">
         <div class="ch"><h1>Create a coin</h1><button class="btn sm" id="reset">↺ Reset</button></div>
         <div class="crow"><label class="imgbox" id="ph" for="img">${ic.img}<b>ADD IMAGE</b><small>PNG, JPG, WEBP, GIF</small></label><input type="file" id="img" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
           <div class="cfields"><div class="two"><div class="field"><label><span class="lbl">Name</span><span id="n-n">0/32</span></label><input class="inp t" id="f-name" maxlength="32" placeholder="Name"></div><div class="field"><label><span class="lbl">Ticker</span><span id="t-n">0/10</span></label><div class="pre-in"><span>$</span><input class="inp t" id="f-tk" maxlength="10" placeholder="TICKER" style="text-transform:uppercase"></div></div></div>
@@ -370,8 +370,8 @@
           <p class="fp">Required: about 0.006 ETH or more, up to 2% of the supply (around 0.05 ETH at launch). Creators can't hold more than that at launch, on every coin on Lootbag, and the creator's wallet earns no holder rewards.</p>
           <div class="devrow"><div class="cats" id="devp">${['0.006', '0.01', '0.02', '0.05'].map((v) => `<button data-dev="${v}" class="${v === F.dev ? 'on' : ''}">${v} ETH</button>`).join('')}</div><div class="amt-in"><input class="inp t" id="f-dev" value="${F.dev}" inputmode="decimal"><span>ETH</span></div></div>
           <div class="note" style="text-align:right" id="dev-usd"></div></div>
-      </div>
-      <div class="sticky"><div class="card panel" id="pv"></div></div></div>${foot()}`;
+        <div id="pv" style="margin-top:22px"></div>
+      </div></div>${foot()}`;
     const listBtn = (s, on, n) => `<button data-t="${esc(s.sym)}" class="${on ? 'on' : ''}">${tokenBadge(s.sym, 32)}<span><b>${esc(s.sym)}</b><small>${usd(s.usd)}</small></span>${n ? `<em>${n}</em>` : ''}</button>`;
     const ps = () => { const q = ($('#ps-q').value || '').toLowerCase(); $('#ps').innerHTML = stocks.filter((s) => !q || s.sym.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)).map((s) => listBtn(s, F.pairStock === s.sym)).join(''); $$('#ps [data-t]').forEach((b) => (b.onclick = () => { F.pairStock = b.dataset.t; ps(); pv(); })); };
     const rw = () => { const q = ($('#rw-q').value || '').toLowerCase(); $('#rw').innerHTML = pool().filter((s) => !q || s.sym.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)).map((s) => { const i = F.rewards.indexOf(s.sym); return listBtn(s, i >= 0, i >= 0 ? i + 1 : 0); }).join(''); $$('#rw [data-t]').forEach((b) => (b.onclick = () => { const s = b.dataset.t, i = F.rewards.indexOf(s); if (i >= 0) F.rewards.splice(i, 1); else if (F.rewards.length < 10) F.rewards.push(s); else toast('Up to 10 rewards'); rw(); pv(); })); };
@@ -395,14 +395,10 @@
       const name = $('#f-name').value.trim(), tk = $('#f-tk').value.trim().toUpperCase(), pair = F.pair === 'STOCK' ? F.pairStock : F.pair, dev = Number($('#f-dev').value.replace(',', '.')) || 0;
       $('#n-n').textContent = $('#f-name').value.length + '/32'; $('#t-n').textContent = $('#f-tk').value.length + '/10'; $('#dev-usd').textContent = '≈ ' + usd(dev * D.ethUsd);
       $('#pair-h').textContent = 'Trades in its own Uniswap v4 pool against ' + label(pair);
-      const taken = F.taken === tk || (tk && D.coins.some((c) => c.ticker.toUpperCase() === tk)), rew = F.rewards.length ? F.rewards : ['ETH'];
-      $('#pv').innerHTML = `<h3 style="font-size:16px;margin-bottom:16px">Launch summary</h3>
-        <div class="sumhead">${F.img ? `<span class="sumimg" style="background-image:url('${F.img}')"></span>` : `<span class="sumimg">${ic.img}</span>`}<div><b>${esc(name || 'Untitled')}</b><div class="mute" style="font-size:13px">${tk ? '$' + esc(tk) : 'No ticker yet'}</div></div></div>
-        <div style="margin:18px 0 4px"><div class="kv"><span>Trades on</span><b>Uniswap v4</b></div><div class="kv"><span>Paired with</span><b>${esc(label(pair))}</b></div><div class="kv"><span>Holders earn</span><b>${esc(rew.map(label).join(' → '))}</b></div><div class="kv"><span>Trading fee</span><b>2%</b></div><div class="kv"><span>Launch market cap</span><b>≈ $5K</b></div><div class="kv"><span>Supply</span><b>1,000,000,000</b></div><div class="kv"><span>Dev buy</span><b>${dev} ETH</b></div><div class="kv"><span>Liquidity</span><b>Held by Lootbag</b></div><div class="kv"><span>Launch cost</span><b>0.001 ETH${taken ? ' + 0.05 ETH copy fee' : ''}</b></div></div>
-        <div class="sect" style="padding-bottom:6px"><h4>Where every fee goes</h4><div class="kv"><span><i class="drop-dot" style="background:var(--buy)"></i>Holders</span><b>25%</b></div><div class="kv"><span><i class="drop-dot" style="background:var(--blue)"></i>Lootbag</span><b>75%</b></div></div>
-        ${taken ? `<p class="note warn">$${esc(tk)} is already on Lootbag: a copy costs 0.05 ETH, refunded if your coin reaches $70K within 48 hours.</p>` : ''}
-        <p class="note" style="line-height:1.6;margin:10px 0 18px">One approval in your wallet. Your dev buy's ETH is swapped into ${esc(label(pair))} and spent inside the launch itself, so nobody can buy before you. Lootbag holds the pool's liquidity and can withdraw it. Your coin is listed here as soon as it goes through.</p>
-        <button class="btn blue block" style="height:46px" id="launch">Connect wallet</button>`;
+      const taken = F.taken === tk || (tk && D.coins.some((c) => c.ticker.toUpperCase() === tk));
+      $('#pv').innerHTML = `${taken ? `<p class="note warn" style="margin:0 0 12px">$${esc(tk)} is already on Lootbag: a copy costs 0.05 ETH on top, refunded if your coin reaches $70K within 48 hours.</p>` : ''}
+        <button class="btn blue block" style="height:50px" id="launch">Connect wallet</button>
+        <p class="note" style="line-height:1.6;margin:12px 0 0">Costs ${taken ? '0.051' : '0.001'} ETH plus your dev buy, in one transaction. Lootbag holds the pool's liquidity and can withdraw it.</p>`;
       if (D.paused) { const b = $('#launch'); b.textContent = 'Launches are not open yet'; b.disabled = true; }
       else needsWallet($('#launch'), 'Launch coin', launch);
       // the contract knows whether a ticker was used before (a copy costs more)
