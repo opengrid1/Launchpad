@@ -6,6 +6,8 @@ window.LB_CFG = {
   rpc: 'https://base-rpc.publicnode.com',
   rpcFallbacks: ['https://mainnet.base.org', 'https://base.drpc.org'],
   explorer: 'https://basescan.org',
+  // the log cache (api/logs.js): closed windows of history, kept by the CDN. Empty reads everything from the RPC.
+  logsApi: '/api/logs',
   // the wallet that owns the contracts and runs the rounds by hand
   owner: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
   // Reown (WalletConnect) project id: public, it only identifies the site to Reown. The site's domain must be on

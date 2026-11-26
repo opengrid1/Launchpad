@@ -106,13 +106,39 @@
     try { return await rpc((p) => p.send('eth_getLogs', [{ ...filter, fromBlock: hex(a), toBlock: hex(b) }]), 25000); }
     catch (e) { if (b - a < 400) throw e; const m = Math.floor((a + b) / 2); return [...(await logSpan(filter, a, m)), ...(await logSpan(filter, m + 1, b))]; }
   }
-  async function getLogs(filter, from, to) {
+  // History that can no longer change comes from the log cache (LB_CFG.logsApi): fixed windows of blocks, 450,000 or
+  // 45,000 wide, answered once and then kept by the CDN. Only the open end of the range is read from the RPC. If the
+  // cache does not answer, that window is read from the RPC too.
+  const BIG = 450000, CLOSED = 1500;
+  let apiOff = !C.logsApi;
+  const shape = (l) => ({ address: lc(l.address), topics: l.topics, data: l.data, bn: parseInt(l.blockNumber, 16), ix: parseInt(l.logIndex, 16), tx: l.transactionHash, bts: l.blockTimestamp ? parseInt(l.blockTimestamp, 16) : 0 });
+  async function direct(filter, a, b) {
+    const out = []; for (let x = a; x <= b; x += SPAN) out.push(...(await logSpan(filter, x, Math.min(b, x + SPAN - 1))));
+    return out.map(shape);
+  }
+  async function cached(key, filter, a, size) {
+    if (!apiOff) {
+      try {
+        const r = await fetch(`${C.logsApi}?kind=${key.kind}${key.id ? '&id=' + key.id : ''}&from=${a}&size=${size}`);
+        if (r.status === 200) return (await r.json()).logs.map(([address, topics, data, bn, ix, tx, bts]) => ({ address: lc(address), topics, data, bn, ix, tx, bts }));
+        // too much for one answer: the same range in ten smaller windows
+        if (r.status === 413 && size === BIG) { const parts = []; for (let x = a; x < a + BIG; x += SPAN) parts.push(...(await cached(key, filter, x, SPAN))); return parts; }
+        if (r.status === 404 && !/json/.test(r.headers.get('content-type') || '')) apiOff = true; // no cache on this host
+      } catch (e) { /* the RPC answers instead */ }
+    }
+    return direct(filter, a, a + size - 1);
+  }
+  async function getLogs(filter, from, to, key) {
     if (to < from) return [];
-    const spans = []; for (let a = from; a <= to; a += SPAN) spans.push([a, Math.min(to, a + SPAN - 1)]);
-    const out = new Array(spans.length); let next = 0;
-    await Promise.all(Array.from({ length: Math.min(4, spans.length) }, async () => { while (next < spans.length) { const i = next++; out[i] = await logSpan(filter, spans[i][0], spans[i][1]); } }));
-    return out.flat().map((l) => ({ address: lc(l.address), topics: l.topics, data: l.data, bn: parseInt(l.blockNumber, 16), ix: parseInt(l.logIndex, 16), tx: l.transactionHash, bts: l.blockTimestamp ? parseInt(l.blockTimestamp, 16) : 0 }))
-      .sort((x, y) => x.bn - y.bn || x.ix - y.ix);
+    const jobs = [], safe = S.head.bn - CLOSED;
+    for (let x = from; x <= to;) {
+      if (key && !apiOff && x % BIG === 0 && x + BIG - 1 <= safe && x + BIG - 1 <= to) { const a = x; jobs.push(() => cached(key, filter, a, BIG)); x += BIG; }
+      else if (key && !apiOff && x % SPAN === 0 && x + SPAN - 1 <= safe && x + SPAN - 1 <= to) { const a = x; jobs.push(() => cached(key, filter, a, SPAN)); x += SPAN; }
+      else { const a = x, b = Math.min(to, (Math.floor(x / SPAN) + 1) * SPAN - 1); jobs.push(() => direct(filter, a, b)); x = b + 1; }
+    }
+    const out = new Array(jobs.length); let next = 0;
+    await Promise.all(Array.from({ length: Math.min(6, jobs.length) }, async () => { while (next < jobs.length) { const i = next++; out[i] = await jobs[i](); } }));
+    return out.flat().sort((x, y) => x.bn - y.bn || x.ix - y.ix);
   }
   const mcC = new E.Contract(C.multicall, ABI.mc);
   /** calls: [target, interface key, function, args]; returns each decoded result, or null where the call failed */
@@ -200,7 +226,7 @@
     const head = await rpc((p) => p.send('eth_getBlockByNumber', ['latest', false]));
     S.head = { bn: parseInt(head.number, 16), ts: parseInt(head.timestamp, 16) };
     if (!S.blockTime) { try { const old = await rpc((p) => p.send('eth_getBlockByNumber', [hex(S.head.bn - 5000), false])); S.blockTime = (S.head.ts - parseInt(old.timestamp, 16)) / 5000; } catch (e) { /* the default stands */ } }
-    ingest(await getLogs({ address: [K.factory, K.hook, K.payout, K.router, K.airdrop, K.bags] }, S.scanned + 1, S.head.bn));
+    ingest(await getLogs({ address: [K.factory, K.hook, K.payout, K.router, K.airdrop, K.bags] }, S.scanned + 1, S.head.bn, { kind: 'platform' }));
     S.scanned = S.head.bn;
     if (!S.listed && stockList.length) await listings().catch(() => {});
 
@@ -294,7 +320,7 @@
     if (loading.has(lc(addr))) return loading.get(lc(addr));
     const job = (async () => {
       const d = c._d || (c._d = { scanned: c.block - 1, swaps: [], bal: new Map(), moves: new Map() }), to = S.head.bn;
-      const [sw, tr] = await Promise.all([getLogs({ address: K.poolManager, topics: [SWAP_T, c.poolId] }, d.scanned + 1, to), getLogs({ address: c.addr, topics: [XFER_T] }, d.scanned + 1, to)]);
+      const [sw, tr] = await Promise.all([getLogs({ address: K.poolManager, topics: [SWAP_T, c.poolId] }, d.scanned + 1, to, { kind: 'swaps', id: lc(c.poolId) }), getLogs({ address: c.addr, topics: [XFER_T] }, d.scanned + 1, to, { kind: 'xfers', id: lc(c.addr) })]);
       const is0 = BigInt(lc(c.addr)) < BigInt(lc(c.pairAddr)), qd = dec(c.pairAddr);
       for (const l of sw) {
         const p = parse('pm', l); if (!p) continue;
