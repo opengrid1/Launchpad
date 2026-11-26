@@ -2,11 +2,11 @@
  "chainId": 8453,
  "deployer": "0x9a4cB15E65aF781Cf2Ee22D4E5cf39a41cdf7193",
  "owner": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
- "ownershipAccepted": false,
+ "ownershipAccepted": true,
  "treasury": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
  "keeper": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
  "startBlock": 62532742,
- "launchesPaused": true,
+ "launchesPaused": "set by the owner from the admin page; read factory.paused() for the current value",
  "liquidity": "held by the factory; the owner can withdraw any share of a pool with collect(coin, bps, to)",
  "hub": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
  "contracts": {
