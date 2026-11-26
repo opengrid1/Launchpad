@@ -29,6 +29,8 @@ window.LB_CFG = {
   pools: { ethUsdc: '0xb2cc224c1c9feE385f8ad6a55b4d94E92359DC59', vvvUsdc: '0x67A11022B7B6ed66f81233F6C8Ed6e48F7826530' },
   // true only when the factory in use cannot withdraw a pool's liquidity. This one can (collect), so it is false.
   liquidityLocked: false,
+  // pre-launch addresses where the draft wording (written for the next contracts) shows by default, under its strip
+  draftHosts: ['lootbag-nu.vercel.app'],
   // $LOOT's address, once it is launched (the Bags contract also reports it)
   loot: '',
   tokens: {
@@ -41,13 +43,14 @@ window.LB_CFG = {
 try {
   if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) { const t = JSON.parse(localStorage.getItem('lb-test') || 'null'); if (t) Object.assign(window.LB_CFG, t); }
 } catch (e) { /* no storage */ }
-// The draft view shows the text written for the next contracts, under a strip that says so. It changes words only,
-// and only in the browser that asked for it: /draft or ?draft=1 turns it on there and it is remembered; ?draft=0
-// turns it off.
+// The draft view shows the text written for the next contracts, under a strip that says so. It changes words only.
+// It is on by default on LB_CFG.draftHosts (the pre-launch address) and off everywhere else; ?draft=1 or /draft turns
+// it on in that browser, ?draft=0 turns it off, and the choice is remembered there.
 try {
   if (typeof location !== 'undefined') {
     if (/[?&]draft=1\b/.test(location.search)) localStorage.setItem('lb-draft', '1');
-    if (/[?&]draft=0\b/.test(location.search)) localStorage.removeItem('lb-draft');
-    if (localStorage.getItem('lb-draft') === '1') window.LB_CFG.draft = true;
+    if (/[?&]draft=0\b/.test(location.search)) localStorage.setItem('lb-draft', '0');
+    const choice = localStorage.getItem('lb-draft');
+    if (choice === '1' || (choice !== '0' && window.LB_CFG.draftHosts.includes(location.hostname))) window.LB_CFG.draft = true;
   }
 } catch (e) { /* not a browser, or no storage */ }
