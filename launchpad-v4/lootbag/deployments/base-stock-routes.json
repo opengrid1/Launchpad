@@ -1,0 +1,620 @@
+{
+ "NVDA": {
+  "addr": "0xb20000000000000000000078ee7ce2fe4908108c",
+  "px": 151.42,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xf668e21993f0acd7ab00bb1cfbaed0df28a3c8ec",
+   "dex": "aero-slipstream-base",
+   "liq": 2035643
+  }
+ },
+ "AMZN": {
+  "addr": "0xb200000000000000000000d9192b6b456483c2e8",
+  "px": 246.23,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x532e0f46d1e528507fc9454d5847c231f23bddf6",
+   "dex": "aero-slipstream-base",
+   "liq": 1589077
+  }
+ },
+ "GOOGL": {
+  "addr": "0xb2000000000000000000002d0ba3164cc74f58b7",
+  "px": 274.96,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x16c70f04c3080a127486cdf5a4c33c066bbf47c3",
+   "dex": "aero-slipstream-base",
+   "liq": 1543724
+  }
+ },
+ "SPCX": {
+  "addr": "0xb2000000000000000000007b9fcbd005511acbd5",
+  "px": 128.05,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x880db7dda4407d99508574e680d067d1164b3cfe",
+   "dex": "aero-slipstream-base",
+   "liq": 1069159
+  }
+ },
+ "SNDK": {
+  "addr": "0xb200000000000000000000397293cb8cda9a10c5",
+  "px": 602.9,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x2836e062a3fe75943a7f4a552e2365b98e414e75",
+   "dex": "aero-slipstream-base",
+   "liq": 1311931
+  }
+ },
+ "ANT": {
+  "addr": "0xb20000000000000000000016e38fd364d271ba28",
+  "px": 83.95,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x599c4225fe90214795a0be228d20d7680f8ced15",
+   "dex": "aero-slipstream-base",
+   "liq": 1201026
+  }
+ },
+ "META": {
+  "addr": "0xb2000000000000000000008bc8786b856e61707c",
+  "px": 611.03,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xd072410fa13d242e1d53721bcf7af02e3455dc96",
+   "dex": "aero-slipstream-base",
+   "liq": 794076
+  }
+ },
+ "MSTR": {
+  "addr": "0xb2000000000000000000004884b426556b92883d",
+  "px": 82.44,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x66dcd42e6314b287110922ae36cb2a8bdeecc153",
+   "dex": "aero-slipstream-base",
+   "liq": 445343
+  }
+ },
+ "MU": {
+  "addr": "0xb200000000000000000000fd2f87532b90095211",
+  "px": 615.12,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x41e21950362b1014bc629252ecfff8fca5f1646c",
+   "dex": "aero-slipstream-base",
+   "liq": 535850
+  }
+ },
+ "AAPL": {
+  "addr": "0xb200000000000000000000c2e324d24d7eecd1fb",
+  "px": 355.14,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xf5fcb9cdafce67d50afef298f88e709d2b946ba6",
+   "dex": "aero-slipstream-base",
+   "liq": 519541
+  }
+ },
+ "MSFT": {
+  "addr": "0xb200000000000000000000ab99cfa739e253872b",
+  "px": 491.37,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x2740c0faab738f6e346e545fde02aef9b1a01ee7",
+   "dex": "aero-slipstream-base",
+   "liq": 444286
+  }
+ },
+ "TSLA": {
+  "addr": "0xb2000000000000000000001e800a7f5189430cd0",
+  "px": 381.79,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x7a33000372f3f028f074182ccb9d16cbeefbf920",
+   "dex": "aero-slipstream-base",
+   "liq": 433036
+  }
+ },
+ "PLTR": {
+  "addr": "0xb2000000000000000000007d16372840df4dabbe",
+  "px": 165.13,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xa0473ced0cd1bfb857e3e04b5fa4b6af18c5e44d",
+   "dex": "aero-slipstream-base",
+   "liq": 341410
+  }
+ },
+ "AMD": {
+  "addr": "0xb2000000000000000000000d8ce462e99ee7a47b",
+  "px": 411.85,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x138cb591c4a7d854d796e1906af8228d84cb7642",
+   "dex": "aero-slipstream-base",
+   "liq": 330532
+  }
+ },
+ "NFLX": {
+  "addr": "0xb20000000000000000000058b8c947e44011dfe6",
+  "px": 59.4,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x67ba8dbedc6d7f93f0f5967aa2420715f1edc756",
+   "dex": "aero-slipstream-base",
+   "liq": 488586
+  }
+ },
+ "ORCL": {
+  "addr": "0xb200000000000000000000347afba223d7b6b63c",
+  "px": 105.56,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x62b5452e80e50b047dcf6dd3fb6a1d266c678eb5",
+   "dex": "aero-slipstream-base",
+   "liq": 282171
+  }
+ },
+ "TTWO": {
+  "addr": "0xb200000000000000000000f720c26062bc3067da",
+  "px": 225.8,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x18907cae5a9c7b45f85c5d2e1f7508c27c134f83",
+   "dex": "aero-slipstream-base",
+   "liq": 309813
+  }
+ },
+ "SPYM": {
+  "addr": "0x31c2c14134e6e3b7ef9478297f199331133fc2d8",
+  "px": 84.51,
+  "issuer": "ST0x",
+  "usdcPool": {
+   "pool": "0xf37e6b5547d1c641567722cf67b1deac7ba51096",
+   "dex": "aero-slipstream-base",
+   "liq": 26835
+  }
+ },
+ "HIMS": {
+  "addr": "0xb20000000000000000000043a599976181bcf336",
+  "px": 14.97,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x41d7793faa4ca181b6f021423ff3f9015c00b2ff",
+   "dex": "aero-slipstream-base",
+   "liq": 253818
+  }
+ },
+ "COIN": {
+  "addr": "0x5cda0e1ca4ce2af96315f7f8963c85399c172204",
+  "px": 105.56,
+  "issuer": "ST0x",
+  "usdcPool": {
+   "pool": "0x089262b9d991d7bc4a55b7cff0b7f26bde407985",
+   "dex": "aero-slipstream-base",
+   "liq": 27391
+  }
+ },
+ "AVGO": {
+  "addr": "0xb200000000000000000000fc737aea6196ab5a4c",
+  "px": 303.14,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x086a1447d0851f0aea9d09d6c547fec8e97be413",
+   "dex": "aero-slipstream-base",
+   "liq": 231559
+  }
+ },
+ "CRCL": {
+  "addr": "0xb20000000000000000000019f6e7c675b73c2e4d",
+  "px": 48.95,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x294666ad6a415e8c33af801225c04079bb4f1133",
+   "dex": "aero-slipstream-base",
+   "liq": 224878
+  }
+ },
+ "BE": {
+  "addr": "0xb20000000000000000000016f9dfe862feba122b",
+  "px": 158.53,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xde2bfe5409ad9e825cdb3562a06edafb9d753dfc",
+   "dex": "aero-slipstream-base",
+   "liq": 222183
+  }
+ },
+ "INTC": {
+  "addr": "0xb2000000000000000000004aff16039ba04bdfbc",
+  "px": 54.73,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x3d384288fa79b51de882b06b617ab7989ccad4f3",
+   "dex": "aero-slipstream-base",
+   "liq": 223142
+  }
+ },
+ "LLY": {
+  "addr": "0xb200000000000000000000f1a0f91e34892e4718",
+  "px": 1395.4,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x2b7ee4623ec6afbc1e587b2668c0ed8f3ff44949",
+   "dex": "aero-slipstream-base",
+   "liq": 221760
+  }
+ },
+ "MRNA": {
+  "addr": "0xb200000000000000000000e215e9b76ecba02468",
+  "px": 221.68,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x4ae3780242f43ef63c471fb8c2e9d30ec5fd5821",
+   "dex": "aero-slipstream-base",
+   "liq": 231824
+  }
+ },
+ "MRVL": {
+  "addr": "0xb200000000000000000000ec3c4c7395cc609813",
+  "px": 133.19,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x611ab290422d534d9595b01e648911fefa963137",
+   "dex": "aero-slipstream-base",
+   "liq": 228553
+  }
+ },
+ "HOOD": {
+  "addr": "0xb2000000000000000000006f944897540579d3f2",
+  "px": 67.38,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x25b45ff27bd03dafa0c0bf458762ffd0911fa9de",
+   "dex": "aero-slipstream-base",
+   "liq": 237834
+  }
+ },
+ "KO": {
+  "addr": "0xb200000000000000000000ffef181db6dc5ed6a3",
+  "px": 97.48,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x59c7a81e752fca11b89e29fa98e56a6f2ead5fb3",
+   "dex": "aero-slipstream-base",
+   "liq": 216963
+  }
+ },
+ "LITE": {
+  "addr": "0xb200000000000000000000eda6c2c6f11e0f838f",
+  "px": 484.86,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x16b8228cd097865d8f5a534b95e42e17d84551b0",
+   "dex": "aero-slipstream-base",
+   "liq": 216813
+  }
+ },
+ "MCD": {
+  "addr": "0xb200000000000000000000d2f4cf2f7debb244bb",
+  "px": 283.79,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x743f16ee460ab7401321e7f35c3fd187eff7d711",
+   "dex": "aero-slipstream-base",
+   "liq": 212566
+  }
+ },
+ "AAOI": {
+  "addr": "0xb200000000000000000000cf36d05963a3e2205c",
+  "px": 38.11,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xfb35d41801893197b5a4d477d0bf6737d2ad6106",
+   "dex": "aero-slipstream-base",
+   "liq": 210742
+  }
+ },
+ "ADBE": {
+  "addr": "0xb20000000000000000000034533ed3961f222cd4",
+  "px": 234.07,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x80997e422e1d03f8d41fe831a306df674128050d",
+   "dex": "aero-slipstream-base",
+   "liq": 210945
+  }
+ },
+ "NOW": {
+  "addr": "0xb20000000000000000000082cd2c7801305808df",
+  "px": 92.91,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xe2935cd42271a31afdedaeebc1e491214202e6b0",
+   "dex": "aero-slipstream-base",
+   "liq": 209121
+  }
+ },
+ "GME": {
+  "addr": "0xb2000000000000000000007790ed6e48e06ed935",
+  "px": 26.79,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xe1199a8b3cc490e2538adbd24c4853f78cbcaa07",
+   "dex": "aero-slipstream-base",
+   "liq": 208669
+  }
+ },
+ "SNOW": {
+  "addr": "0xb2000000000000000000004acdc9a922fcfbcc7f",
+  "px": 269.81,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x20812d6c78d972eea8df85319ec721db1e67b31f",
+   "dex": "aero-slipstream-base",
+   "liq": 211009
+  }
+ },
+ "BRK.B": {
+  "addr": "0xb20000000000000000000024170488e788cbbcb4",
+  "px": 582.69,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xbc5682de77d729397739982a577b7963ef2f6556",
+   "dex": "aero-slipstream-base",
+   "liq": 210017
+  }
+ },
+ "WDC": {
+  "addr": "0xb2000000000000000000008fde21a1f5c69fec0b",
+  "px": 273.12,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x8468bfd8a3c5bb04c44dabf3329d7902f340b12b",
+   "dex": "aero-slipstream-base",
+   "liq": 209065
+  }
+ },
+ "CRWV": {
+  "addr": "0xb200000000000000000000f111184a74720787e6",
+  "px": 42.46,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x4d942b4239e0894e5a80ca2b3944e3467f4ee464",
+   "dex": "aero-slipstream-base",
+   "liq": 207829
+  }
+ },
+ "SKHY": {
+  "addr": "0xb200000000000000000000187f7071d6e321a7d2",
+  "px": 112.75,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xebc746a47ebb274de1dbdc9a465e6c5c2301c5da",
+   "dex": "aero-slipstream-base",
+   "liq": 57916
+  }
+ },
+ "FGI": {
+  "addr": "0x6aed8b1acfb04f4e0e6db580f12ff41438a394e5",
+  "px": 5.17,
+  "issuer": "ST0x",
+  "usdcPool": null
+ },
+ "NIO": {
+  "addr": "0xb2000000000000000000002d2b5dc53c61f1ba06",
+  "px": 2.65,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x484cc2ca594ced3fe38362fe950c60ce66f53f6d",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 50221
+  }
+ },
+ "ARM": {
+  "addr": "0xb20000000000000000000026215d755356e5043f",
+  "px": 161.49,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x9a0f4fd0766ccdb792ba58fe631aa7720097623c",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 47099
+  }
+ },
+ "SONY": {
+  "addr": "0xb200000000000000000000a26326a922ffa87f6c",
+  "px": 28.63,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x26dd2ac81ea9a212afc84848893edc21c5a76fdc",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 50924
+  }
+ },
+ "SAN": {
+  "addr": "0xb20000000000000000000017bb66e9301e913a99",
+  "px": 11.41,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xe531069df73530bf59c954f3718945d5faa2e7df",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 45729
+  }
+ },
+ "NOK": {
+  "addr": "0xb2000000000000000000005ac674f707e357409c",
+  "px": 7.31,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xc541eac49f32d46c1e2f88952f22215ef0f2db71",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 47763
+  }
+ },
+ "SE": {
+  "addr": "0xb2000000000000000000003088798f6d0722aaac",
+  "px": 67.41,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x0274e5078033cb3fe788cf76bb97150fd9bc4547",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 45750
+  }
+ },
+ "UL": {
+  "addr": "0xb200000000000000000000349ef3aa93a0897476",
+  "px": 66.65,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x013fcb940735d17c81d3b91557acc62da723d9d5",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 50766
+  }
+ },
+ "PDD": {
+  "addr": "0xb200000000000000000000c8a7223510467d8563",
+  "px": 87.38,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x84608be6d655ee05032303fe7f0d6f3a51c2cf51",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 50522
+  }
+ },
+ "SAP": {
+  "addr": "0xb200000000000000000000da6f64c306234127e0",
+  "px": 211.2,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x21313a06b7f8ed38d8bc1fb8be2fbd847634a6ec",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 45949
+  }
+ },
+ "HSAI": {
+  "addr": "0xb200000000000000000000f3049f4aa834b23b64",
+  "px": 12.4,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xdc8d2c31de17bf4df00c05e4e132bcea22f24c3b",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 45789
+  }
+ },
+ "NVO": {
+  "addr": "0xb2000000000000000000008d5328e9208773dc58",
+  "px": 40.78,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xc1ba39d668f14eee2462ca5877402e4a7c4d1f34",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 50838
+  }
+ },
+ "INFY": {
+  "addr": "0xb200000000000000000000f6b0417af5f52341fc",
+  "px": 13.31,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x356cc16fe38a6ad0eb25e655759dd963f8d674bf",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 50901
+  }
+ },
+ "BUD": {
+  "addr": "0xb200000000000000000000c36ce081dd09e86ca2",
+  "px": 79.64,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x5ee52963d3d33196a47fad722abb897e0fa395d9",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 50820
+  }
+ },
+ "LI": {
+  "addr": "0xb200000000000000000000d61efd9f54a23ef9eb",
+  "px": 11.87,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xd71b2d9cb3532477df77ae26e780963cce784a0c",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 45421
+  }
+ },
+ "GRND": {
+  "addr": "0x1197e6fa778c4d13e47875bd1761c68c22c928e0",
+  "px": 13.81,
+  "issuer": "ST0x",
+  "usdcPool": null
+ },
+ "BIDU": {
+  "addr": "0xb200000000000000000000d2b7d9aee52f6c6bef",
+  "px": 63.64,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xd47b8f13ffc3198148b138d3f07cc89c92042950",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 40370
+  }
+ },
+ "WRD": {
+  "addr": "0xb200000000000000000000e88efe88d8ade3f0da",
+  "px": 2.96,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0xbc440aff9a79cced69d5b21c7b71e60bd0278efb",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 34013
+  }
+ },
+ "VALE": {
+  "addr": "0xb20000000000000000000063376b142c0764b489",
+  "px": 9.85,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x0f48336b76ee52fa6bb19edf5af358529df57574",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 40682
+  }
+ },
+ "BILI": {
+  "addr": "0xb200000000000000000000ca7c6d1438e7245eb6",
+  "px": 11.11,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x32a3ce6c3a8d6c24c4a51a5cf2869410cbf4d637",
+   "dex": "aerodrome-slipstream-3",
+   "liq": 40230
+  }
+ },
+ "NKE": {
+  "addr": "0x0883f32d23ed5535057a4b5e3eb1970fe08606af",
+  "px": 36.88,
+  "issuer": "ST0x",
+  "usdcPool": null
+ },
+ "SGOV": {
+  "addr": "0x78c31580c97101694c70022c83d570150c11e935",
+  "px": 102.57,
+  "issuer": "ST0x",
+  "usdcPool": {
+   "pool": "0x52caf25736f78ee7738da2ecde7c7555c50ce0c7",
+   "dex": "aero-slipstream-base",
+   "liq": 27923
+  }
+ },
+ "UBER": {
+  "addr": "0xb200000000000000000000cae20cb1446462e24c",
+  "px": 66.85,
+  "issuer": "Coinbase",
+  "usdcPool": {
+   "pool": "0x10658504d00d3d65610c0fd72a81b6926109117a",
+   "dex": "aero-slipstream-base",
+   "liq": 209470
+  }
+ }
+}
