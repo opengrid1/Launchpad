@@ -184,7 +184,7 @@
 
   // ---------- coin page
   function coin(a) {
-    const c = D.coins.find((x) => x.addr.toLowerCase() === String(a).toLowerCase());
+    const c = (D.allCoins || D.coins).find((x) => x.addr.toLowerCase() === String(a).toLowerCase()); // a hidden coin still has its page
     if (!c) { view.innerHTML = `<a class="back" href="#/">← Board</a><h1>${a ? 'Coin not found' : '$LOOT has not launched yet'}</h1><p class="mute">${a ? 'No Lootbag coin has this address.' : 'Its address will be shown here and in the header when it does.'}</p>`; return; }
     const pairL = CRYPTO.includes(c.pair) ? c.pair : '$' + label(c.pair), key = c.addr.toLowerCase();
     const routeTxt = c.pair === 'ETH' ? 'Trades straight against <b>ETH</b>' : `You pay and receive ETH. Route: ETH → ${c.pair === 'USDC' ? '' : 'USDC → '}${esc(pairL)} → $${esc(c.ticker)}`;

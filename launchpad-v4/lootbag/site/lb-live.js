@@ -277,9 +277,12 @@
       c.pot = units(c.heldQuote, c.pairAddr) * usdOf(c.pairAddr);
       if (c.detail) buildDetail(c);
     }
-    LB.coins = coins.slice().sort((a, b) => b.createdAt - a.createdAt);
+    // every coin, and the ones the site lists (LB_CFG.hidden are left off the lists but keep their own page)
+    const hid = new Set((C.hidden || []).map(lc));
+    LB.allCoins = coins.slice().sort((a, b) => b.createdAt - a.createdAt);
+    LB.coins = LB.allCoins.filter((c) => !hid.has(lc(c.addr)));
     LB.memes = LB.loot ? [{ sym: 'LOOT', name: 'Lootbag', usd: (S.coins.get(lc(LB.loot)) || {}).priceUsd || 0, addr: LB.loot }] : [];
-    LB.platform = { volumeAll: volAll, paidHolders: paidAll, payments: S.paid.reduce((n, x) => n + x.wallets, 0), coins: coins.length, traders: new Set(S.trades.map((x) => lc(x.wallet))).size };
+    LB.platform = { volumeAll: volAll, paidHolders: paidAll, payments: S.paid.reduce((n, x) => n + x.wallets, 0), coins: LB.coins.length, traders: new Set(S.trades.map((x) => lc(x.wallet))).size };
 
     // the trader airdrop: the pot, and this round's volume through the Lootbag router by wallet
     const A = LB.airdrop;
@@ -398,7 +401,7 @@
   // ---------------------------------------------------------------- a wallet's own numbers
   async function account(who) {
     who = E.getAddress(lc(who)); // a pasted address may carry a wrong checksum
-    const coins = LB.coins, r = await multi([[C.multicall, 'mc', 'getEthBalance', [who]], ...coins.flatMap((c) => [[c.addr, 'token', 'balanceOf', [who]], [c.addr, 'token', 'earned', [who]]])]);
+    const coins = LB.allCoins || LB.coins, r = await multi([[C.multicall, 'mc', 'getEthBalance', [who]], ...coins.flatMap((c) => [[c.addr, 'token', 'balanceOf', [who]], [c.addr, 'token', 'earned', [who]]])]);
     const out = { eth: r[0] ? r[0][0] : 0n, coins: {} };
     coins.forEach((c, i) => { const bal = r[1 + 2 * i] ? r[1 + 2 * i][0] : 0n, earned = r[2 + 2 * i] ? r[2 + 2 * i][0] : 0n; out.coins[lc(c.addr)] = { bal, earned, earnedUsd: units(earned, c.pairAddr) * usdOf(c.pairAddr), earnedIn: sym(c.pairAddr), earnedAmount: units(earned, c.pairAddr) }; });
     return out;
