@@ -31,8 +31,8 @@ window.LB_CFG = {
   liquidityLocked: false,
   // pre-launch addresses where the draft wording (written for the next contracts) shows by default, under its strip
   draftHosts: ['lootbag-nu.vercel.app'],
-  // $LOOT's address, once it is launched (the Bags contract also reports it)
-  loot: '',
+  // $LOOT, Lootbag's own coin ("lootbag.fun"). The Bags contract reports it too once the mint is opened with it.
+  loot: '0x9eC35D5720603CcBBc2fbBDEf69181F046011f15',
   tokens: {
     VVV: ['0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf', 18],
     WETH: ['0x4200000000000000000000000000000000000006', 18],

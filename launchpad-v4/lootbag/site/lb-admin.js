@@ -34,6 +34,7 @@
       'function keeper(address) view returns (bool)', 'function minted() view returns (uint256)', 'function pot() view returns (uint256)', 'function today() view returns (address)',
       'function lastDrop() view returns (uint256)', 'function dayTokens() view returns (address[])', 'function loot() view returns (address)',
       'function drop(uint256 minOut) returns (uint256 out)', 'function convert(address token, uint256 minOut) returns (uint256 out)', 'function setKeeper(address k, bool on)',
+      'function setLoot(address loot_)',
     ],
     airdrop: ['function keeper(address) view returns (bool)', 'function pot() view returns (uint256)', 'function roundCount() view returns (uint256)', 'function nextRoundAt() view returns (uint256)', 'function setKeeper(address k, bool on)'],
     token: ['function earned(address) view returns (uint256)', 'event Transfer(address indexed from, address indexed to, uint256 value)'],
@@ -340,6 +341,7 @@
         <div class="ad-row"><div class="l">In the pot</div><div class="r mono">${amt(S.bags.pot, C.tokens.VVV[0])}</div></div>
         <div class="ad-row"><div class="l">Today's token<small>Rotation: ${S.bags.days.map((d) => esc(sym(d))).join(' → ')}</small></div><div class="r"><b>${S.bags.today ? esc(sym(S.bags.today)) : ''}</b></div></div>
         <div class="ad-row"><div class="l">Next drop</div><div class="r mono" data-count="${Number(S.bags.lastDrop) + 3600}" data-ready="ready now">${Number(S.bags.lastDrop) + 3600 <= S.now ? 'ready now' : hms(Number(S.bags.lastDrop) + 3600 - S.now)}</div></div>
+        <div class="ad-row"><div class="l">Minting<small>A mint burns 100,000 $LOOT and takes 3 VVV. It opens once $LOOT is set on this contract, and that can be done only once.</small></div><div class="r">${eq(S.bags.loot, E.ZeroAddress) ? (C.loot ? `<button class="btn s gold" data-act="bag-setloot"${dis(owner)}>Open the mint with $LOOT</button>` : '<span class="ad-pill warn">closed: no $LOOT yet</span>') : `<span class="ad-pill ok">open</span> <span class="mono">${short(S.bags.loot)}</span>`}</div></div>
         <div class="ad-end"><button class="btn s" data-act="bag-convert"${dis(S.bags.keeper)}>Convert fees to VVV</button><button class="btn s gold" data-act="bag-drop"${dis(S.bags.keeper || eq(S.bags.today, C.tokens.VVV[0]))}${S.bags.minted === 0n ? ' disabled title="No Bags minted yet"' : ''}>Run the drop</button></div>
       </section>
 
@@ -445,6 +447,10 @@
       if (!signer && !(await connect())) return;
       let out; try { out = await simulate(K.bags, 'bags', 'drop', [0]); } catch (e) { return toast('The drop cannot run: ' + (e.shortMessage || e.reason || e.message).toString().slice(0, 140), true); }
       await send('Bag drop', K.bags, 'bags', 'drop', [(out * 98n) / 100n]);
+    },
+    'bag-setloot': async () => {
+      const d = await dialog('Open the mint', `<p>This sets $LOOT <span class="mono">${esc(C.loot)}</span> on the Bags contract. From then on anyone can mint a Bag by burning 100,000 of it and paying 3 VVV.</p><p><b>It can be done only once.</b> The Bags contract will use this $LOOT for good; it cannot be changed or undone.</p>`, 'Open the mint', true);
+      if (d) await send('Open the mint', K.bags, 'bags', 'setLoot', [C.loot]);
     },
     'bag-convert': async () => {
       const d = await dialog('Convert fees to VVV', `<p>Turns fee income the Bag pot received in another token into VVV.</p><div class="ad-f" style="margin-top:12px"><label>Token to convert</label><input class="inp mono" id="b-token" value="${esc(C.tokens.WETH[0])}"></div>`, 'Convert');
