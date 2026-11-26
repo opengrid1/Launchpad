@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lootbag banner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1600px; height: 900px; overflow: hidden; }
+  body { background: #0b0906; color: #f7f2e8; font-family: 'Space Grotesk', system-ui, sans-serif; position: relative; }
+  /* light: a warm glow behind the bag, a faint one bottom-left, fine grid */
+  .glow { position: absolute; inset: 0; background:
+    radial-gradient(620px 520px at 1290px 426px, rgba(244,183,64,.30), rgba(244,183,64,.08) 55%, transparent 72%),
+    radial-gradient(700px 420px at 120px 940px, rgba(244,183,64,.10), transparent 70%); }
+  .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,227,168,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,227,168,.045) 1px, transparent 1px); background-size: 80px 80px; -webkit-mask-image: radial-gradient(900px 620px at 1180px 430px, #000 20%, transparent 78%); mask-image: radial-gradient(900px 620px at 1180px 430px, #000 20%, transparent 78%); }
+  .waves { position: absolute; left: 0; right: 0; bottom: 96px; width: 1600px; height: 190px; opacity: .32; }
+  .frame { position: absolute; inset: 0; padding: 76px 88px 0; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand img { width: 62px; height: 62px; }
+  .brand b { font-size: 34px; font-weight: 700; letter-spacing: .2em; }
+  h1 { margin-top: 96px; font-size: 102px; line-height: 1.02; font-weight: 700; letter-spacing: -.035em; }
+  h1 span { display: block; background: linear-gradient(100deg, #fff1cc 0%, #f6cf72 38%, #f4b740 70%, #d99a2b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding-bottom: 10px; }
+  .sub { margin-top: 32px; width: 800px; font-size: 34px; line-height: 1.38; color: #d3cab8; font-weight: 400; }
+  .sub b { color: #f7f2e8; font-weight: 600; }
+  .chips { margin-top: 46px; display: flex; gap: 10px; flex-wrap: nowrap; }
+  .chip { height: 50px; padding: 0 18px; border-radius: 999px; border: 1.5px solid #3a2f1d; background: rgba(29,23,14,.85); display: flex; align-items: center; font-size: 23px; font-weight: 600; color: #f7f2e8; white-space: nowrap; }
+  .chip.ca { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 22px; color: #ffe3a8; border-color: #a37a2c; }
+  .chip.more { border-color: transparent; background: transparent; color: #a0957f; font-weight: 500; padding: 0 8px; }
+  /* the bag, with what lands in it */
+  .bag { position: absolute; left: 1100px; top: 236px; width: 380px; height: 380px; }
+  .bag .ring { position: absolute; inset: -38px; border-radius: 50%; border: 1.5px solid rgba(244,183,64,.22); }
+  .bag .ring.r2 { inset: -98px; border-color: rgba(244,183,64,.11); }
+  .bag .disc { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 38% 30%, #4a340d, #2a1e08 62%, #1a1306); box-shadow: 0 40px 120px -20px rgba(244,183,64,.38), inset 0 0 0 1.5px rgba(255,227,168,.20); }
+  .bag img { position: absolute; left: 70px; top: 64px; width: 240px; height: 240px; filter: drop-shadow(0 18px 30px rgba(0,0,0,.45)); }
+  .drop { position: absolute; height: 62px; padding: 0 24px 0 18px; border-radius: 999px; background: #10170f; border: 1.5px solid rgba(52,211,153,.55); color: #6ee7b7; font-size: 27px; font-weight: 600; display: flex; align-items: center; gap: 12px; box-shadow: 0 18px 40px -14px rgba(0,0,0,.8); white-space: nowrap; }
+  .drop i { width: 30px; height: 30px; border-radius: 50%; background: #34d399; color: #03241a; font-style: normal; font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .d1 { left: 1022px; top: 232px; }
+  .d2 { left: 1406px; top: 316px; }
+  .d3 { left: 1004px; top: 520px; }
+  .d4 { left: 1372px; top: 580px; }
+  .foot { position: absolute; left: 88px; right: 88px; bottom: 54px; display: flex; align-items: center; justify-content: space-between; font-size: 26px; color: #a0957f; }
+  .foot .l { display: flex; align-items: center; gap: 16px; }
+  .foot .dot { width: 6px; height: 6px; border-radius: 50%; background: #6d6352; }
+  .foot b { color: #ffe3a8; font-weight: 600; }
+  .rule { position: absolute; left: 88px; right: 88px; bottom: 116px; height: 1px; background: linear-gradient(90deg, #2e2619, rgba(46,38,25,.2)); }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="grid"></div>
+  <svg class="waves" viewBox="0 0 1600 190" preserveAspectRatio="none" fill="none" stroke="#f4b740" stroke-opacity=".28" stroke-width="2"><path d="M0 120C200 30 330 30 530 120S860 210 1060 120 1400 30 1600 120"/><path d="M0 160C200 70 330 70 530 160S860 250 1060 160 1400 70 1600 160"/></svg>
+  <div class="frame">
+    <div class="brand"><img src="LOGO" alt=""><b>LOOTBAG</b></div>
+    <h1>Bag mint is live.<span>1,000 Bags.</span></h1>
+    <p class="sub">An NFT with its own vault. Minting burns <b>100,000 $LOOT</b> and costs <b>3 VVV</b>. It earns from <b>every coin</b> on Lootbag.</p>
+    <div class="chips"><span class="chip ca">0xed0aC0Cf3bB84fC431F214A6b96db6611B36FaA7</span></div>
+  </div>
+  <div class="bag"><div class="ring r2"></div><div class="ring"></div><div class="disc"></div><img src="LOGO" alt=""></div>
+  <div class="drop d1"><i>+</i>$NVDA</div>
+  <div class="drop d2"><i>+</i>VVV</div>
+  <div class="drop d3"><i>+</i>$TSLA</div>
+  <div class="drop d4"><i>+</i>$AMZN</div>
+  <div class="rule"></div>
+  <div class="foot"><div class="l"><span>lootbag.fun/#/mint</span><span class="dot"></span><span>On Base</span></div><b>@lootbag_fun</b></div>
+</body>
+</html>
