@@ -41,5 +41,13 @@ window.LB_CFG = {
 try {
   if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) { const t = JSON.parse(localStorage.getItem('lb-test') || 'null'); if (t) Object.assign(window.LB_CFG, t); }
 } catch (e) { /* no storage */ }
-// ?draft=1 shows the text written for the next contracts, under a strip that says so. It changes words only.
-try { if (typeof location !== 'undefined' && /[?&]draft=1\b/.test(location.search)) window.LB_CFG.draft = true; } catch (e) { /* not a browser */ }
+// The draft view shows the text written for the next contracts, under a strip that says so. It changes words only,
+// and only in the browser that asked for it: /draft or ?draft=1 turns it on there and it is remembered; ?draft=0
+// turns it off.
+try {
+  if (typeof location !== 'undefined') {
+    if (/[?&]draft=1\b/.test(location.search)) localStorage.setItem('lb-draft', '1');
+    if (/[?&]draft=0\b/.test(location.search)) localStorage.removeItem('lb-draft');
+    if (localStorage.getItem('lb-draft') === '1') window.LB_CFG.draft = true;
+  }
+} catch (e) { /* not a browser, or no storage */ }

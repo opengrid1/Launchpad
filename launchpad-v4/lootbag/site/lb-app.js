@@ -121,7 +121,8 @@
   const DRAFT = !!CFG.draft, LOCKED = !!CFG.liquidityLocked || DRAFT;
   function status() {
     const bar = $('.preview-bar');
-    if (bar) { const m = DRAFT ? 'Draft text for the next contracts. It is not what is live today.' : D.error ? "Can't reach Base right now. Retrying…" : D.paused ? "Lootbag's contracts are live on Base. Launches are not open yet." : ''; bar.textContent = m; bar.hidden = !m; }
+    if (bar && DRAFT) { bar.innerHTML = 'Draft text for the next contracts. It is not what is live today. <a href="/?draft=0" style="text-decoration:underline">Turn off</a>'; bar.hidden = false; }
+    else if (bar) { const m = D.error ? "Can't reach Base right now. Retrying…" : D.paused ? "Lootbag's contracts are live on Base. Launches are not open yet." : ''; bar.textContent = m; bar.hidden = !m; }
     const chip = $('.chip-price'), loot = D.coins.find((x) => x.official);
     if (chip) {
       chip.innerHTML = loot ? `<a href="#/loot"><b>$LOOT</b> <span class="px">${usd(loot.priceUsd)}</span></a><i class="sep"></i><button class="ca" data-copyloot>${short(loot.addr)}</button>` : `<a href="#/loot"><b>$LOOT</b> <span class="px mute">not launched yet</span></a>`;
