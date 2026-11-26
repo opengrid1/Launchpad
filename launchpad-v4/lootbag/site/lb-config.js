@@ -27,6 +27,8 @@ window.LB_CFG = {
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
   // where the USD prices of ETH and VVV are read: their pools against USDC
   pools: { ethUsdc: '0xb2cc224c1c9feE385f8ad6a55b4d94E92359DC59', vvvUsdc: '0x67A11022B7B6ed66f81233F6C8Ed6e48F7826530' },
+  // true only when the factory in use cannot withdraw a pool's liquidity. This one can (collect), so it is false.
+  liquidityLocked: false,
   // $LOOT's address, once it is launched (the Bags contract also reports it)
   loot: '',
   tokens: {
@@ -39,3 +41,5 @@ window.LB_CFG = {
 try {
   if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) { const t = JSON.parse(localStorage.getItem('lb-test') || 'null'); if (t) Object.assign(window.LB_CFG, t); }
 } catch (e) { /* no storage */ }
+// ?draft=1 shows the text written for the next contracts, under a strip that says so. It changes words only.
+try { if (typeof location !== 'undefined' && /[?&]draft=1\b/.test(location.search)) window.LB_CFG.draft = true; } catch (e) { /* not a browser */ }
