@@ -90,7 +90,7 @@
         <div class="tkl"><b>$${esc(c.ticker)}</b><span>${esc(c.name)}</span></div>
         <div class="mc">${usd(c.mcap)}</div>
         <div class="l1">${c.official ? 'Lootbag coin' : `Paired to ${tokenBadge(c.pair, 16)} <b>${esc(CRYPTO.includes(c.pair) ? c.pair : '$' + label(c.pair))}</b>`}</div>
-        <div class="l2">Pays ${esc(c.rewards.slice(0, 2).map((r) => (r === 'ETH' ? 'ETH' : '$' + label(r))).join(' · '))}${c.rewards.length > 2 ? ' +' + (c.rewards.length - 2) : ''}</div>
+        <div class="l2">Pays ${esc(c.rewards.slice(0, 2).map(payTok).join(' · '))}${c.rewards.length > 2 ? ' +' + (c.rewards.length - 2) : ''}</div>
       </span></a>`;
   }
   function drawGrid() { const g = $('#grid'); if (g) g.innerHTML = filtered().map(card).join('') || '<p class="mute">No coins match.</p>'; }
@@ -144,7 +144,7 @@
       $$('[data-st]').forEach((b) => b.classList.toggle('on', b.dataset.st === k));
       $('#st').innerHTML = k === 'trades' ? `<table class="t"><tr><th>Wallet</th><th>Side</th><th class="r">USD</th><th class="r">$${esc(c.ticker)}</th><th class="r">Age</th></tr>${c.trades.slice(0, 15).map((t) => `<tr><td class="mono">${short(t.wallet)}</td><td class="${t.buy ? 'up' : 'dn'}">${t.buy ? 'Buy' : 'Sell'}</td><td class="r">${usd(t.usd)}</td><td class="r">${num(t.tokens, 0)}</td><td class="r mute">${ago(t.ts)}</td></tr>`).join('')}</table>`
         : k === 'holders' ? `<table class="t"><tr><th>#</th><th>Wallet</th><th class="r">Share</th><th class="r">Earning</th></tr>${c.holderList.map((h, i) => `<tr><td class="mute">${i + 1}</td><td class="mono">${short(h.wallet)}</td><td class="r">${h.pct.toFixed(2)}%</td><td class="r up">${usd((c.paid24 * h.pct) / 100)}/day</td></tr>`).join('')}</table>`
-        : `<table class="t"><tr><th>Paid</th><th>Paid in</th><th class="r">Amount</th><th class="r">Wallets</th></tr>${c.payouts.map((p) => `<tr><td class="mute">${ago(p.ts)} ago</td><td>${tokenBadge(p.token, 18)} ${esc(p.token === 'ETH' ? 'ETH' : '$' + label(p.token))}</td><td class="r up">${usd(p.usd)}</td><td class="r">${num(p.wallets, 0)}</td></tr>`).join('')}</table>`;
+        : `<table class="t"><tr><th>Paid</th><th>Paid in</th><th class="r">Amount</th><th class="r">Wallets</th></tr>${c.payouts.map((p) => `<tr><td class="mute">${ago(p.ts)} ago</td><td>${tokenBadge(p.token, 18)} ${escpayTok(p.token)}</td><td class="r up">${usd(p.usd)}</td><td class="r">${num(p.wallets, 0)}</td></tr>`).join('')}</table>`;
     };
 
     every(1000, () => { tickCards(); const el = $('#cd'); if (el) el.textContent = mmss(c.nextPayout); });
