@@ -15,11 +15,34 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.26",
-    settings: {
-      optimizer: { enabled: true, runs: 400 },
-      viaIR: true,
-    },
+    compilers: [
+      {
+        version: "0.8.26",
+        settings: {
+          optimizer: { enabled: true, runs: 400 },
+          viaIR: true,
+        },
+      },
+    ],
+    // OpenZeppelin's ERC721 pulls in Strings -> Bytes, which uses MCOPY and so
+    // needs the Cancun EVM (Base runs it). Hardhat compiles every file in the
+    // import graph under its own settings, so the override lists the Basket
+    // NFT and the three library files on that path. Every other contract's
+    // bytecode is unchanged.
+    overrides: Object.fromEntries(
+      [
+        "contracts/v4/basket/BasketNFT.sol",
+        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
+        "@openzeppelin/contracts/utils/Strings.sol",
+        "@openzeppelin/contracts/utils/Bytes.sol",
+      ].map((file) => [
+        file,
+        {
+          version: "0.8.26",
+          settings: { optimizer: { enabled: true, runs: 400 }, viaIR: true, evmVersion: "cancun" },
+        },
+      ]),
+    ),
   },
   networks: {
     hardhat: {
