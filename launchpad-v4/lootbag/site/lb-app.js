@@ -48,7 +48,7 @@
   const copyLoot = $('[data-copyloot]'); if (copyLoot) copyLoot.onclick = () => { navigator.clipboard && navigator.clipboard.writeText('0x10070000000000000000000000000000000b4c'); toast('$LOOT address copied'); };
   $$('[data-connect]').forEach((b) => (b.onclick = () => toast(PREVIEW)));
 
-  const foot = () => `<footer class="foot"><div class="fr"><b>© ${new Date().getFullYear()} Lootbag</b><span><a href="#/how#contracts">Contracts</a><a href="#" data-pv>Terms</a><a href="#" data-pv>Privacy</a><a href="https://x.com" target="_blank" rel="noopener">X</a></span></div><p>Tokens on Lootbag are launched by their creators, not by Lootbag. They are highly risky and can lose all their value. Nothing here is financial advice.</p></footer>`;
+  const foot = () => `<footer class="foot"><div class="fr"><b>© ${new Date().getFullYear()} Lootbag</b><span><a href="#/how#contracts">Contracts</a><a href="#" data-pv>Terms</a><a href="#" data-pv>Privacy</a><a href="https://x.com/lootbag_fun" target="_blank" rel="noopener">X</a></span></div><p>Tokens on Lootbag are launched by their creators, not by Lootbag. They are highly risky and can lose all their value. Nothing here is financial advice.</p></footer>`;
   const hms = (s) => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm ' + (s % 60) + 's'; };
   let timers = [];
   const every = (ms, f) => timers.push(setInterval(f, ms));
