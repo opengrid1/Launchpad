@@ -24,4 +24,5 @@ contracts/deployments/localnet.json
 launchpad-v4/lootbag/lib/
 launchpad-v4/lootbag/out/
 launchpad-v4/lootbag/cache/
+launchpad-v4/lootbag/deployments/*.progress.json
 launchpad-v4/lootbag/site/.vercel/

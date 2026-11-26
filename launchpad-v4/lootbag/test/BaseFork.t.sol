@@ -164,7 +164,7 @@ contract BaseForkTest is Test {
         IERC20T(VVV).transfer(who, got);
     }
 
-    function test_launchOpensALockedPoolAndMakesTheDevBuy() public {
+    function test_launchOpensThePoolAndMakesTheDevBuy() public {
         (address coin, PoolKey memory key) = _launch("LOOT", 3 ether);
         LootbagToken t = LootbagToken(coin);
         uint256 dev = t.balanceOf(creator);

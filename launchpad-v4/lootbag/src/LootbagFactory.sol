@@ -257,7 +257,7 @@ contract LootbagFactory is IUnlockCallback {
         int24 tick = coinIs0 ? q.startTick : -q.startTick;
         poolManager.initialize(key, TickMath.getSqrtPriceAtTick(tick));
 
-        // the supply in, locked, and the dev buy, in one go
+        // the supply in, as the factory's own position, and the dev buy, in one go
         _pull(p.quote, msg.sender, p.devBuy);
         uint256 got =
             abi.decode(poolManager.unlock(abi.encode(uint8(0), abi.encode(key, coinIs0, tick, p.devBuy, msg.sender))), (uint256));
