@@ -345,4 +345,245 @@ contract BaseForkTest is Test {
         bags.withdraw(1, t);
         assertEq(IERC20T(VVV).balanceOf(alice) - b, 2.7 ether + (p * 5 / 100) / 2);
     }
+
+
+    // ================================================================== more cases
+
+    function _launchQ(address quote, string memory sym, uint256 devBuy, address[] memory rewards)
+        internal
+        returns (address coin, PoolKey memory key)
+    {
+        vm.startPrank(creator);
+        IERC20T(quote).approve(address(factory), devBuy);
+        coin = factory.launch{value: factory.launchFee(sym)}(
+            LootbagFactory.LaunchParams({name: "Coin", symbol: sym, quote: quote, rewards: rewards, devBuy: devBuy, minCoinsOut: 0})
+        );
+        vm.stopPrank();
+        key = factory.poolKey(coin);
+    }
+
+    function _swapRaw(address who, PoolKey memory key, address tokenIn, address tokenOut, int256 amountSpecified, uint256 fund)
+        internal
+        returns (uint256 paidIn, uint256 gotOut)
+    {
+        vm.prank(who);
+        IERC20T(tokenIn).transfer(address(router), fund);
+        uint256 o0 = IERC20T(tokenOut).balanceOf(address(this));
+        uint256 r0 = IERC20T(tokenIn).balanceOf(address(router));
+        router.swap(key, Currency.unwrap(key.currency0) == tokenIn, amountSpecified);
+        gotOut = IERC20T(tokenOut).balanceOf(address(this)) - o0;
+        paidIn = r0 - IERC20T(tokenIn).balanceOf(address(router));
+        IERC20T(tokenOut).transfer(who, gotOut);
+    }
+
+    function _fees() internal view returns (uint256) {
+        return hook.owed(VVV) + hook.owedHolders(VVV);
+    }
+
+    function test_exactOutBuyAndSellAlsoPayTwoPercent() public {
+        (address coin, PoolKey memory key) = _launch("LOOT", 3 ether);
+        vm.roll(block.number + 1);
+        // exact-out buy: ask for 1M coins, the fee is 2% of the VVV paid on top
+        uint256 f0 = _fees();
+        (uint256 paid,) = _swapRaw(alice, key, VVV, coin, int256(1_000_000e18), 50 ether);
+        uint256 fee = _fees() - f0;
+        assertApproxEqRel(fee, (paid - fee) * 2 / 100, 1e14, "exact-out buy");
+        assertEq(LootbagToken(coin).balanceOf(alice), 1_000_000e18);
+        // exact-out sell: ask for 0.05 VVV, the seller gets exactly that and the fee is 2% of the gross
+        f0 = _fees();
+        uint256 v0 = IERC20T(VVV).balanceOf(alice);
+        _swapRaw(alice, key, coin, VVV, int256(0.05 ether), 1_000_000e18);
+        assertEq(IERC20T(VVV).balanceOf(alice) - v0, 0.05 ether);
+        assertApproxEqRel(_fees() - f0, uint256(0.05 ether) * 200 / 9800, 1e12, "exact-out sell");
+    }
+
+    function test_bothTokenOrdersWork() public {
+        bool seen0;
+        bool seen1;
+        for (uint256 i; i < 12 && !(seen0 && seen1); i++) {
+            string memory sym = string(abi.encodePacked("C", vm.toString(i)));
+            (address coin, PoolKey memory key) = _launch(sym, 1 ether);
+            bool coinIs0 = Currency.unwrap(key.currency0) == coin;
+            if (coinIs0) seen0 = true;
+            else seen1 = true;
+            vm.roll(block.number + 1);
+            uint256 got = _buy(alice, key, coin, 10 ether);
+            assertGt(got, 0);
+            uint256 back = _sell(alice, key, coin, got);
+            // a round trip loses the two 2% fees and a hair of price impact, nothing more
+            assertApproxEqRel(back, 10 ether * 96 / 100, 0.01e18);
+        }
+        assertTrue(seen0 && seen1, "both orders launched");
+    }
+
+    function test_usdcAndWethPairs() public {
+        vm.startPrank(owner);
+        factory.setQuote(USDC, true, -398_400, 1e6); // about $5K
+        factory.setQuote(WETH, true, -149_600, 0.0005 ether); // about $5K at ETH near $1,700
+        vm.stopPrank();
+        deal(USDC, creator, 1_000e6);
+        deal(WETH, creator, 1 ether);
+        deal(USDC, alice, 1_000e6);
+        deal(WETH, alice, 1 ether);
+        address[] memory r = new address[](1);
+
+        r[0] = USDC;
+        (address cu, PoolKey memory ku) = _launchQ(USDC, "USDCOIN", 20e6, r);
+        uint256 devU = LootbagToken(cu).balanceOf(creator);
+        emit log_named_uint("USDC pair: $20 dev buy gets coins (M)", devU / 1e24);
+        // $20 less the 2% fee is 0.392% of a $5K market cap
+        assertApproxEqRel(devU, 1e27 * 392 / 100_000, 0.05e18, "opening near $5K");
+        vm.roll(block.number + 1);
+        uint256 h0 = hook.owedHolders(USDC);
+        _swapRaw(alice, ku, USDC, cu, -int256(100e6), 100e6);
+        assertEq(hook.owedHolders(USDC) - h0, 0.5e6, "0.5% of $100 to holders, in USDC");
+
+        r[0] = WETH;
+        (address cw, PoolKey memory kw) = _launchQ(WETH, "WETHCOIN", 0.01 ether, r);
+        assertGt(LootbagToken(cw).balanceOf(creator), 0);
+        vm.roll(block.number + 2);
+        uint256 w0 = hook.owed(WETH) + hook.owedHolders(WETH); // the dev buy paid its 2% too
+        _swapRaw(alice, kw, WETH, cw, -int256(0.1 ether), 0.1 ether);
+        assertEq(hook.owed(WETH) + hook.owedHolders(WETH) - w0, 0.002 ether);
+    }
+
+    function test_strangersCannotUseTheHookOrTouchLiquidity() public {
+        (address coin, PoolKey memory key) = _launch("LOOT", 3 ether);
+        // a pool with our hook that the factory didn't make can't be created
+        PoolKey memory k2 = key;
+        k2.tickSpacing = 60;
+        vm.expectRevert();
+        PM.initialize(k2, TickMath.getSqrtPriceAtTick(0));
+        // nobody else adds liquidity (it would dodge nothing, but the pools are the factory's alone)
+        vm.prank(alice);
+        vm.expectRevert();
+        router.removeLiquidity(key, -887200, 887200, -1);
+        // the hook's entry points answer the PoolManager only
+        vm.expectRevert(LootbagHook.NotPoolManager.selector);
+        hook.beforeSwap(address(this), key, SwapParams(true, -1, 0), "");
+        vm.expectRevert(LootbagHook.NotFactory.selector);
+        hook.register(key.toId(), coin, VVV);
+        // the payout books only what the hook sends
+        vm.expectRevert(LootbagPayout.NotHook.selector);
+        payout.credit(coin, 1 ether);
+        // a token's rewards move only through the payout contract
+        vm.expectRevert(LootbagToken.NotPayout.selector);
+        LootbagToken(coin).take(alice);
+    }
+
+    function test_factoryRejectsBadLaunches() public {
+        address[] memory r = new address[](1);
+        r[0] = VVV;
+        vm.startPrank(creator);
+        IERC20T(VVV).approve(address(factory), 100 ether);
+        LootbagFactory.LaunchParams memory p =
+            LootbagFactory.LaunchParams({name: "Good", symbol: "GOOD", quote: VVV, rewards: r, devBuy: 1 ether, minCoinsOut: 0});
+        p.symbol = "A";
+        vm.expectRevert(LootbagFactory.BadSymbol.selector);
+        factory.launch{value: 0.001 ether}(p);
+        p.symbol = "BAD-1";
+        vm.expectRevert(LootbagFactory.BadSymbol.selector);
+        factory.launch{value: 0.001 ether}(p);
+        p.symbol = "GOOD";
+        p.name = "";
+        vm.expectRevert(LootbagFactory.BadName.selector);
+        factory.launch{value: 0.001 ether}(p);
+        p.name = "Good";
+        p.quote = USDC; // not listed in this test
+        vm.expectRevert(LootbagFactory.BadQuote.selector);
+        factory.launch{value: 0.001 ether}(p);
+        p.quote = VVV;
+        address[] memory bad = new address[](1);
+        bad[0] = USDC; // not a listed reward
+        p.rewards = bad;
+        vm.expectRevert(LootbagFactory.BadRewards.selector);
+        factory.launch{value: 0.001 ether}(p);
+        p.rewards = new address[](0);
+        vm.expectRevert(LootbagFactory.BadRewards.selector);
+        factory.launch{value: 0.001 ether}(p);
+        p.rewards = r;
+        p.devBuy = 0.01 ether; // under the minimum
+        vm.expectRevert(LootbagFactory.DevBuyTooSmall.selector);
+        factory.launch{value: 0.001 ether}(p);
+        p.devBuy = 1 ether;
+        vm.expectRevert(LootbagFactory.BadFee.selector);
+        factory.launch{value: 0}(p);
+        p.minCoinsOut = 900_000_000e18;
+        vm.expectRevert();
+        factory.launch{value: 0.001 ether}(p);
+        vm.stopPrank();
+        vm.prank(owner);
+        factory.setPaused(true);
+        p.minCoinsOut = 0;
+        vm.prank(creator);
+        vm.expectRevert(LootbagFactory.Paused.selector);
+        factory.launch{value: 0.001 ether}(p);
+        // only the owner sets things
+        vm.expectRevert(LootbagFactory.NotOwner.selector);
+        factory.setPaused(false);
+        vm.expectRevert(LootbagHook.NotOwner.selector);
+        hook.setWallets(alice, alice, alice);
+    }
+
+    function test_payoutInBatchesAndNothingIsLost() public {
+        (address coin, PoolKey memory key) = _launch("LOOT", 3 ether);
+        vm.roll(block.number + 1);
+        address[] memory ws = new address[](6);
+        for (uint256 i; i < 6; i++) {
+            ws[i] = makeAddr(string(abi.encodePacked("lootbag.test.h", vm.toString(i))));
+            deal(VVV, ws[i], 100 ether);
+            _buy(ws[i], key, coin, 20 ether + i * 5 ether);
+        }
+        uint256 held0 = payout.held(coin);
+        address[] memory b1 = new address[](3);
+        address[] memory b2 = new address[](3);
+        for (uint256 i; i < 3; i++) {
+            b1[i] = ws[i];
+            b2[i] = ws[i + 3];
+        }
+        uint256 sumEarned;
+        for (uint256 i; i < 6; i++) sumEarned += LootbagToken(coin).earned(ws[i]);
+        vm.startPrank(keeper);
+        uint256 o1 = payout.pay(coin, b1, 0);
+        uint256 o2 = payout.pay(coin, b2, 0);
+        vm.stopPrank();
+        assertEq(o1 + o2, sumEarned, "every holder's part paid, in two batches of one round");
+        assertEq(payout.held(coin), held0 - sumEarned);
+        // the payout contract really holds what it still owes (after a flush)
+        hook.flush(VVV);
+        assertGe(IERC20T(VVV).balanceOf(address(payout)), payout.held(coin));
+    }
+
+    function test_swapperRouteChangesWait48Hours() public {
+        LootbagSwapper.Hop[] memory hops = new LootbagSwapper.Hop[](1);
+        hops[0].kind = 0;
+        hops[0].pool = 0x1D2bdB7117a5A7D7fE4c1d95681a92e4Df13bB69; // VVV/WETH Uniswap v3 1%
+        vm.prank(owner);
+        swapper.queueRoute(VVV, WETH, hops);
+        assertEq(swapper.route(VVV, WETH)[0].pool, VVV_USDC_UNI, "the old route stays for now");
+        vm.expectRevert(LootbagSwapper.TooEarly.selector);
+        swapper.applyRoute(VVV, WETH);
+        vm.warp(block.timestamp + 48 hours);
+        swapper.applyRoute(VVV, WETH);
+        assertEq(swapper.route(VVV, WETH)[0].pool, hops[0].pool);
+        // a pool that isn't mid-swap can't call back for tokens
+        vm.prank(VVV_USDC_UNI);
+        vm.expectRevert(LootbagSwapper.BadCallback.selector);
+        swapper.uniswapV3SwapCallback(1, 1, abi.encode(VVV));
+        // a swap that returns less than asked reverts
+        deal(VVV, address(this), 10 ether);
+        IERC20T(VVV).approve(address(swapper), 10 ether);
+        vm.expectRevert();
+        swapper.swap(VVV, WETH, 10 ether, 1_000 ether, address(this));
+    }
+
+    function test_gas() public {
+        (address coin, PoolKey memory key) = _launch("LOOT", 3 ether);
+        vm.roll(block.number + 1);
+        vm.prank(alice);
+        IERC20T(VVV).transfer(address(router), 10 ether);
+        uint256 g = gasleft();
+        router.swap(key, Currency.unwrap(key.currency0) == VVV, -int256(10 ether));
+        emit log_named_uint("gas: a buy through the hook", g - gasleft());
+    }
 }
