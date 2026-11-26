@@ -14,9 +14,17 @@
   const PREVIEW = 'Preview: launches and trades open when Lootbag goes live.';
 
   // ---------- marks: coin avatars and stock badges are drawn, not fetched
-  const av = (c, size = 44) => `<span class="av" style="width:${size}px;height:${size}px;background:${c.official ? '#16306b' : `linear-gradient(140deg,hsl(${c.hue} 70% 62%),hsl(${(c.hue + 40) % 360} 65% 44%))`};font-size:${Math.round(size * 0.34)}px">${c.official ? `<img src="/img/logo.svg" style="width:64%;height:64%">` : esc(c.ticker.slice(0, 2))}</span>`;
+  // a coin's picture: its uploaded image when it has one, otherwise a pixel sack drawn from its address
+  const av = (c, size = 44) => `<span class="av${c.official ? '' : ' art'}" style="width:${size}px;height:${size}px;${c.official ? 'background:#16306b' : ''}">${c.official ? `<img src="/img/logo.svg" alt="" style="width:64%;height:64%">` : c.img ? `<img src="${esc(c.img)}" alt="">` : bagArt(2000 + parseInt(c.addr.slice(2, 9), 16) % 100000)}</span>`;
   const stkHue = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
-  const tokenBadge = (s, size = 20) => s === 'ETH' ? `<span class="stk" style="width:${size}px;height:${size}px;background:#627eea">Ξ</span>` : s === 'USDG' ? `<span class="stk" style="width:${size}px;height:${size}px;background:#1d9e6b">$</span>` : s === 'LOOT' ? `<img src="/img/logo.svg" style="width:${size}px;height:${size}px;border-radius:6px">` : `<span class="stk" style="width:${size}px;height:${size}px;background:hsl(${stkHue(s)} 55% 42%)">${esc(s.slice(0, 4))}</span>`;
+  const STK_LOGO = new Set(['AAOI', 'AAPL', 'AMAT', 'AMD', 'AMZN', 'ASML', 'AVGO', 'BA', 'CCL', 'COIN', 'COST', 'DDOG', 'DELL', 'ETH', 'F', 'GME', 'GOOGL', 'INTC', 'IONQ', 'LLY', 'META', 'MRVL', 'MSFT', 'MSTR', 'MU', 'NFLX', 'NU', 'NVDA', 'PLTR', 'POET', 'QQQ', 'QUBT', 'RBLX', 'RDDT', 'RIVN', 'RKLB', 'SGOV', 'SLV', 'SNDK', 'SOFI', 'SOXX', 'SPCX', 'SPY', 'TSLA', 'TSM', 'TTWO', 'UMC', 'UPS', 'USAR', 'USO', 'XLK']), STK_LIGHT = new Set(['TTWO', 'UMC', 'USO']);
+  const tokenBadge = (s, size = 20) => {
+    const z = `width:${size}px;height:${size}px`;
+    if (s === 'LOOT') return `<img class="tkl" src="/img/logo.svg" alt="" style="${z};border-radius:50%;background:#16306b;padding:${Math.round(size * 0.14)}px">`;
+    if (s === 'USDG') return `<img class="tkl" src="/img/stk/USDG.svg" alt="" style="${z}">`;
+    if (STK_LOGO.has(s)) return `<span class="stk lg${STK_LIGHT.has(s) ? ' lt' : ''}" style="${z}" title="${esc(s)}"><img src="/img/stk/${esc(s)}.png" alt="" loading="lazy"></span>`;
+    return `<span class="stk" style="${z};background:hsl(${stkHue(s)} 55% 42%);font-size:${Math.max(7, Math.round(size * 0.3))}px">${esc(s.slice(0, 4))}</span>`;
+  };
   const stack = (list, n = 4) => `<span class="stack">${list.slice(0, n).map((s) => tokenBadge(s)).join('')}</span>${list.length > n ? ` <span class="dim">+${list.length - n}</span>` : ''}`;
   const label = (s) => s;
   const pays = (c) => c.rewards.map(label).join(', ');
