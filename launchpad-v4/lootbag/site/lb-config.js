@@ -1,5 +1,4 @@
-/* Lootbag deployment config, read by the admin page and the wallet connection (and by the live site once it reads
-   the chain). Addresses are the Base mainnet deployment recorded in deployments/lootbag-base.json. */
+/* Lootbag deployment config, read by the site, the admin page and the wallet connection. Addresses are the Base mainnet deployment recorded in deployments/lootbag-base.json. */
 window.LB_CFG = {
   chainId: 8453,
   chainName: 'Base',
@@ -24,9 +23,17 @@ window.LB_CFG = {
     poolManager: '0x498581fF718922c3f8e6A244956aF099B2652b2b',
   },
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
+  // where the USD prices of ETH and VVV are read: their pools against USDC
+  pools: { ethUsdc: '0xb2cc224c1c9feE385f8ad6a55b4d94E92359DC59', vvvUsdc: '0x67A11022B7B6ed66f81233F6C8Ed6e48F7826530' },
+  // $LOOT's address, once it is launched (the Bags contract also reports it)
+  loot: '',
   tokens: {
     VVV: ['0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf', 18],
     WETH: ['0x4200000000000000000000000000000000000006', 18],
     USDC: ['0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', 6],
   },
 };
+// Testing against a local fork: on localhost only, localStorage 'lb-test' (JSON) overrides fields of this config.
+try {
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) { const t = JSON.parse(localStorage.getItem('lb-test') || 'null'); if (t) Object.assign(window.LB_CFG, t); }
+} catch (e) { /* no storage */ }

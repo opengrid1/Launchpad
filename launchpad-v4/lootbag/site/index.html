@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lootbag | Coins that pay their holders</title>
-<meta name="description" content="Launch a coin whose every trade drops ETH or tokenized stocks into its holders' wallets, every five minutes. No claim.">
+<meta name="description" content="Launch a coin on Base whose every trade earns its holders ETH, VVV or tokenized stocks.">
 <meta name="theme-color" content="#0b0906">
 <link rel="icon" href="/img/favicon.svg?v=3" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/img/apple-icon.png?v=3">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Lootbag | Coins that pay their holders">
-<meta property="og:description" content="Launch a coin on Base. Every trade pays its holders in tokenized stocks, every five minutes.">
+<meta property="og:description" content="Launch a coin on Base. Every trade pays its holders in ETH, VVV or tokenized stocks.">
 <meta property="og:image" content="https://lootbag-nu.vercel.app/img/og.png?v=3">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -18,7 +18,7 @@
 <meta name="twitter:image" content="https://lootbag-nu.vercel.app/img/og.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="/lb.css?v=18">
+<link rel="stylesheet" href="/lb.css?v=20">
 </head>
 <body>
 <div class="app">
@@ -29,14 +29,14 @@
     <div class="acts"><a class="btn blue" href="#/create"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Create coin</a><button class="btn" data-connect>Connect wallet</button></div>
   </aside>
   <div class="main">
-    <div class="preview-bar">Preview with sample coins. Nothing here is a real market yet.</div>
+    <div class="preview-bar" hidden></div>
     <header class="top">
       <a href="#/"><img class="mlogo" src="/img/logo.svg?v=3" alt="Lootbag"></a>
       <button class="msearch" id="msearch" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
       <div class="search" id="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Search coins, tickers or addresses" autocomplete="off" spellcheck="false"><kbd>/</kbd><div class="sres" id="sres" hidden></div></div>
       <button class="scancel" id="scancel">Cancel</button>
       <div class="sp"></div>
-      <div class="chip-price"><a href="#/loot"><b>$LOOT</b> <span class="px" id="loot-px">$0.00124</span></a><i class="sep"></i><button class="ca" data-copyloot>0x1007…0b4c <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button></div>
+      <div class="chip-price"></div>
       <a class="x" href="https://x.com/lootbag_fun" target="_blank" rel="noopener" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.3l-4.9-6.4L5.2 21H2.1l7.3-8.3L2 3h6.4l4.4 5.9zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg></a>
       <button class="btn mconnect" data-connect>Connect wallet</button>
     </header>
@@ -45,8 +45,9 @@
 </div>
 <nav class="tabbar" id="tabbar"></nav>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-<script src="/lb-config.js?v=4"></script>
-<script src="/lb-data.js?v=14"></script>
-<script src="/lb-app.js?v=27"></script>
+<script src="/vendor/ethers.umd.min.js?v=6.17.0"></script>
+<script src="/lb-config.js?v=5"></script>
+<script src="/lb-live.js?v=1"></script>
+<script src="/lb-app.js?v=28"></script>
 </body>
 </html>
