@@ -62,10 +62,9 @@ interface IWrappedNativeMinimal {
 ///           - The configured swap fee is capped at {MAX_FEE_BPS}. The one
 ///             further bounded exception a creator can opt into is anti-snipe
 ///             (launch-window only, <= {MAX_SNIPE_BPS}, decaying, buys only).
-///           - Liquidity lives here; holders and creators can never pull it.
-///             The one disclosed exception is the factory admin's collect
-///             (see the factory); every collect emits an event naming the
-///             coin, the share and the recipient.
+///           - Liquidity lives here permanently; no one, not holders, creators
+///             or the admin, can ever pull it. There is no collect or withdraw
+///             path in the hook or the factory.
 ///
 ///         The instincts (chosen per coin at launch, immutable afterwards):
 ///           - Fee engine: flat; dynamic (the fee widens while swaps cluster
@@ -190,7 +189,6 @@ contract LootHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     event PoolRegistered(address indexed token, address indexed pair, PoolId indexed id, address creator);
     event FeeTaken(address indexed token, uint256 fee, uint16 bps);
     event FactorySet(address indexed factory);
-    event Collected(address indexed token, uint256 coins, uint256 pair, address indexed to);
     event CreatorPaid(address indexed token, address indexed to, uint256 amount);
     event PlatformPaid(address indexed token, address indexed to, uint256 amount);
     event BuybackBurned(address indexed token, uint256 pairIn, uint256 coinsBurned);
@@ -323,18 +321,6 @@ contract LootHook is BaseHook, IUnlockCallback, ReentrancyGuard {
         emit DividendsPushed(token, amount);
     }
 
-    /// @notice Pull `bps` of the position the hook holds for `token` out of
-    ///         the pool to `recipient`. Factory (admin) only.
-    function collect(address token, uint16 bps, address recipient) external nonReentrant returns (uint256 coins, uint256 pair) {
-        if (msg.sender != factory) revert NotFactory();
-        if (bps == 0 || bps > BPS || recipient == address(0)) revert InvalidParams();
-        PoolConfig storage c = _mustBeRegistered(token);
-        (coins, pair) = abi.decode(poolManager.unlock(abi.encode(uint8(2), abi.encode(_poolOf[token], bps))), (uint256, uint256));
-        if (coins != 0) IERC20(token).safeTransfer(recipient, coins);
-        if (pair != 0) IERC20(c.pair).safeTransfer(recipient, pair);
-        emit Collected(token, coins, pair, recipient);
-    }
-
     // ---------------------------------------------------------------------
     // Views
     // ---------------------------------------------------------------------
@@ -447,7 +433,7 @@ contract LootHook is BaseHook, IUnlockCallback, ReentrancyGuard {
     }
 
     // ---------------------------------------------------------------------
-    // PoolManager callback: seed (0), pay claims (1), collect (2), buyback (3), dividends (4)
+    // PoolManager callback: seed (0), pay claims (1), buyback (3), dividends (4)
     // ---------------------------------------------------------------------
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
@@ -466,10 +452,6 @@ contract LootHook is BaseHook, IUnlockCallback, ReentrancyGuard {
             poolManager.take(cur, address(this), amount);
             _payPair(pair, to, amount);
             return "";
-        }
-        if (action == 2) {
-            (PoolId cid, uint16 bps) = abi.decode(payload, (PoolId, uint16));
-            return _collect(cid, bps);
         }
         if (action == 3) {
             PoolId bid = abi.decode(payload, (PoolId));
@@ -527,21 +509,6 @@ contract LootHook is BaseHook, IUnlockCallback, ReentrancyGuard {
             c.surgeBlock = uint64(block.number);
             emit Evolved(c.token, uint8(next), sqrtP);
         }
-    }
-
-    /// @dev Admin collect: `bps` of the position's liquidity, to the hook. Returns (coins, pair) taken.
-    function _collect(PoolId id, uint16 bps) internal returns (bytes memory) {
-        Position storage p = _position[id];
-        PoolConfig storage c = _config[id];
-        uint256 coinsBefore = IERC20(c.token).balanceOf(address(this));
-        uint256 pairBefore = IERC20(c.pair).balanceOf(address(this));
-        uint128 part = uint128((uint256(p.liquidity) * bps) / BPS);
-        if (part != 0) {
-            _modify(id, p.tickLower, p.tickUpper, -int256(uint256(part)));
-            p.liquidity -= part;
-        }
-        _settleAll(id);
-        return abi.encode(IERC20(c.token).balanceOf(address(this)) - coinsBefore, IERC20(c.pair).balanceOf(address(this)) - pairBefore);
     }
 
     function _modify(PoolId id, int24 lower, int24 upper, int256 delta) internal {

@@ -37,8 +37,8 @@ interface ILootPairRouter {
 ///         Ownership (setup rights) is renounced after deploy; the immutable
 ///         `admin` keeps: pause, listing visibility, metadata edits (stored
 ///         here; the coin stays immutable), token blocking, the fee recipient,
-///         the start cap, and collecting from a coin's pool liquidity (a
-///         disclosed power; see the docs). The admin cannot mint, change a
+///         and the start cap. The admin cannot withdraw pool liquidity (there is
+///         no collect path; launch liquidity is locked for good), mint, change a
 ///         coin's fee or instincts, freeze transfers, move anyone's coins, or
 ///         touch the fee pots owed to creators, buybacks and dividends.
 contract LootFactory is ReentrancyGuard, IUnlockCallback {
@@ -108,7 +108,6 @@ contract LootFactory is ReentrancyGuard, IUnlockCallback {
     event OwnershipRenounced();
     event TokenBlocked(address indexed token, bool blocked);
     event StartCapSet(uint256 usd8);
-    event Collected(address indexed token, uint16 bps, uint256 coins, uint256 pair, address indexed to);
 
     error LaunchesPaused();
     error InvalidParams();
@@ -204,14 +203,6 @@ contract LootFactory is ReentrancyGuard, IUnlockCallback {
         if (msg.sender != owner) revert NotAdmin();
         owner = address(0);
         emit OwnershipRenounced();
-    }
-
-    /// @notice Pull `bps` of a coin's pool liquidity (the position the hook
-    ///         holds for it) out to `recipient`. The fee pots are never touched.
-    function collect(address token, uint16 bps, address recipient) external onlyAdmin nonReentrant returns (uint256 coins, uint256 pair) {
-        if (listings[token].createdAt == 0) revert InvalidParams();
-        (coins, pair) = hook.collect(token, bps, recipient);
-        emit Collected(token, bps, coins, pair, recipient);
     }
 
     /// @notice Push the platform's fee share on `tokens` to the fee recipient. Anyone.
