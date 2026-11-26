@@ -1,0 +1,65 @@
+/* Inkypump docs: palette and fonts over the Mintlify layout (dark only, like o1) */
+:root {
+  --primary: 255 79 163;
+  --primary-light: 255 111 181;
+  --primary-dark: 255 79 163;
+  --tooltip-foreground: 255 255 255;
+  --background-light: 255 255 255;
+  --background-dark: 14 17 23;
+  --gray-50: 250 251 253;
+  --gray-100: 243 245 249;
+  --gray-200: 232 235 241;
+  --gray-300: 195 201 214;
+  --gray-400: 124 132 152;
+  --gray-500: 100 108 128;
+  --gray-600: 72 80 98;
+  --gray-700: 50 56 70;
+  --gray-800: 30 36 48;
+  --gray-900: 22 26 35;
+  --gray-950: 14 17 23;
+  --banner-height: 0px !important;
+  --topbar-tabs-height: 3rem;
+}
+html { color-scheme: dark; --font-inter: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; --font-paper-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+html, body { background: rgb(var(--background-dark)); font-family: var(--font-inter); }
+/* callouts in our accent instead of blue */
+.callout[data-callout-type="note"] { border-color: rgba(255, 79, 163, .3) !important; background: rgba(255, 79, 163, .08) !important; }
+.callout[data-callout-type="note"] [data-component-part="callout-content"] { color: #ffb3d6 !important; }
+.callout[data-callout-type="note"] [data-component-part="callout-icon"] { color: #ff6fb5; }
+.callout[data-callout-type="warning"] [data-component-part="callout-icon"] { color: #f59e0b; }
+/* tables and headings */
+.mdx-content table th, .mdx-content table td { padding-left: .75rem !important; padding-right: .75rem !important; }
+.mdx-content table a[href*="/address/"] { white-space: nowrap; }
+.mdx-content h2[id], .mdx-content h3[id] { scroll-margin-top: 8rem; }
+/* code blocks (ours) */
+.ip-code { position: relative; margin: 1.25em 0; border-radius: 1rem; border: 1px solid rgba(255,255,255,.08); background: rgb(var(--gray-900)); overflow: hidden; }
+.ip-code pre { margin: 0; padding: 1rem 3rem 1rem 1.25rem; overflow-x: auto; font-family: var(--font-paper-mono); font-size: .8125rem; line-height: 1.6; color: rgb(var(--gray-200)); }
+.ip-code code { font-family: inherit; background: none; padding: 0; }
+.ip-copy { position: absolute; top: .55rem; right: .55rem; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: .5rem; color: rgb(var(--gray-400)); border: 1px solid rgba(255,255,255,.08); background: rgb(var(--gray-950)); cursor: pointer; }
+.ip-copy:hover { color: rgb(var(--gray-100)); }
+.mdx-content :not(pre) > code { font-family: var(--font-paper-mono); }
+/* mobile sidebar drawer + search (not part of the compiled Mintlify CSS) */
+.ip-ov { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.6); display: none; }
+.ip-ov.open { display: block; }
+.ip-drawer { position: absolute; left: 0; top: 0; bottom: 0; width: 18rem; max-width: 86vw; background: rgb(var(--background-dark)); border-right: 1px solid rgba(255,255,255,.07); padding: 1rem 1rem 2rem 0; overflow-y: auto; font-size: .9375rem; line-height: 1.6; transform: translateX(-100%); transition: transform .22s ease; }
+.ip-ov.open .ip-drawer { transform: none; }
+.ip-drawer .ip-dh { display: flex; align-items: center; justify-content: space-between; padding: 0 0 .75rem 1rem; margin-bottom: .5rem; border-bottom: 1px solid rgba(255,255,255,.07); }
+.ip-drawer .ip-dh img { height: 1.6rem; }
+.ip-drawer .ip-x { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .5rem; color: rgb(var(--gray-400)); }
+.ip-drawer .ip-tabs { display: flex; gap: 1rem; padding: 0 0 .75rem 1rem; font-size: .875rem; font-weight: 500; color: rgb(var(--gray-400)); }
+.ip-drawer .ip-tabs a[data-active] { color: rgb(var(--gray-200)); border-bottom: 1.5px solid rgb(var(--primary)); }
+.ip-search { position: fixed; inset: 0; z-index: 70; display: none; align-items: flex-start; justify-content: center; padding: 10vh 1rem 0; background: rgba(0,0,0,.6); }
+.ip-search.open { display: flex; }
+.ip-search .ip-box { width: 100%; max-width: 36rem; border-radius: 1rem; background: rgb(var(--background-dark)); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 30px 80px rgba(0,0,0,.5); overflow: hidden; }
+.ip-search input { width: 100%; height: 3.25rem; padding: 0 1.25rem; background: transparent; border: 0; outline: 0; color: rgb(var(--gray-100)); font: inherit; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+.ip-search ul { list-style: none; margin: 0; padding: .5rem; max-height: 50vh; overflow-y: auto; }
+.ip-search li a { display: block; padding: .6rem .85rem; border-radius: .6rem; color: rgb(var(--gray-200)); text-decoration: none; }
+.ip-search li a small { display: block; color: rgb(var(--gray-400)); font-size: .8125rem; }
+.ip-search li a:hover, .ip-search li a[data-sel] { background: rgba(255,79,163,.1); color: rgb(var(--primary-light)); }
+.ip-search .ip-empty { padding: 1rem; color: rgb(var(--gray-400)); font-size: .875rem; }
+
+#sidebar .sticky.top-0.h-8{display:none}
+.ip-drawer .ip-nav{font-size:.875rem;line-height:1.5}
+
+.callout[data-callout-type="warning"]{background:rgba(245,158,11,.1)!important;border-color:rgba(245,158,11,.35)!important}
+.callout[data-callout-type="warning"] [data-component-part="callout-content"]{color:#fcd34d!important}

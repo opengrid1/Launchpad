@@ -6,20 +6,30 @@ import { client, v4Client } from "../lib/client";
 import { fmtUsd, compact } from "../lib/format";
 import { BASE_USDC, BASE_WETH, baseStockUsd } from "../lib/base/routes";
 import { baseStockOf } from "../lib/base/stocks";
+import { IS_HYPER, IS_INK } from "../lib/brand";
+import { env } from "../lib/env";
 import { ensureSdkWallet, errorText, useWallet } from "../lib/useWallet";
 import { useUi } from "../store";
 import { TokenLogo } from "./TokenLogo";
 
 type Side = "buy" | "sell";
-type Pair = { address: Address; symbol: string; decimals: number };
+/** `usd`/`isNative` come from clients that resolve them on-chain (stable-v3);
+ *  the Base V4 client omits them and the curated lookups below fill in. */
+type Pair = { address: Address; symbol: string; decimals: number; usd?: number; isNative?: boolean };
 
 const isWeth = (addr: string) => addr.toLowerCase() === BASE_WETH.toLowerCase();
-/** Display label for a pair token: WETH shows as ETH, the "c"/"wt" suffixes drop. */
-const disp = (addr: string, sym: string) => (isWeth(addr) ? "ETH" : sym.replace(/^wt/, "").replace(/c$/, ""));
+/** Paid as the chain's native currency (the router wraps): flagged by the
+ *  client, or Base's WETH. */
+const isNativePair = (p: Pair) => p.isNative ?? isWeth(p.address);
+/** Display label for a pair token: a native pair shows the chain's native
+ *  symbol; stock wrappers drop their "c"/"wt" suffixes. */
+const disp = (p: Pair) => (isNativePair(p) ? env.nativeSymbol : p.symbol.replace(/^wt/, "").replace(/c$/, ""));
 
-/** USD price of a coin's pair token: $1 for USDC, ETH snapshot for WETH, else
- *  the curated stock price. */
+/** USD price of a coin's pair token: the client's on-chain rate when it
+ *  provides one, else $1 for USDC, ETH snapshot for WETH, else the curated
+ *  stock price. */
 function pairUsdOf(pair: Pair): number {
+  if (pair.usd && pair.usd > 0) return pair.usd;
   if (pair.address.toLowerCase() === BASE_USDC.toLowerCase()) return 1;
   if (isWeth(pair.address)) return baseStockUsd(BASE_WETH);
   return baseStockOf(pair.address)?.usd ?? 0;
@@ -39,7 +49,14 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
 
   const [side, setSide] = useState<Side>(initialSide ?? "buy");
   const [amount, setAmount] = useState("");
+  // squidpad's amount-first desk lets the big field be typed in dollars or in
+  // the pay token; `field` is the raw string shown, `denom` which unit it means.
+  const [denom, setDenom] = useState<"usd" | "tok">("usd");
+  const [field, setField] = useState("");
   const [slip, setSlip] = useState(8);
+  // Impact-aware output from the pool's real reserves (null = fall back to the
+  // spot estimate). Prevents large buys on a thin pool from reverting.
+  const [impactOutWei, setImpactOutWei] = useState<bigint | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pair, setPair] = useState<Pair | null>(null);
@@ -55,9 +72,10 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
   const refresh = async () => {
     if (!address || !pair) { setPairBal(null); setCoinBal(null); return; }
     try {
-      // A WETH pair is paid as native ETH (the router wraps), so show ETH balance.
+      // A native pair is paid as native currency (the router wraps), so show
+      // the native balance.
       const [pb, cb] = await Promise.all([
-        isWeth(pair.address)
+        isNativePair(pair)
           ? client.publicClient.getBalance({ address })
           : client.publicClient.readContract({ address: pair.address, abi: launchTokenAbi, functionName: "balanceOf", args: [address] }),
         client.publicClient.readContract({ address: token.address, abi: launchTokenAbi, functionName: "balanceOf", args: [address] }),
@@ -83,14 +101,14 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
       return { out: coinsOut, symbol: token.symbol, usd: amtNum * pUsd };
     }
     const pairOut = (amtNum * priceUsd / pUsd) * (1 - feeRate);
-    return { out: pairOut, symbol: disp(pair.address, pair.symbol), usd: amtNum * priceUsd };
+    return { out: pairOut, symbol: disp(pair), usd: amtNum * priceUsd };
   }, [amtNum, side, pair, priceUsd, pUsd, feeRate, token.symbol]);
 
   const payBal = side === "buy" ? pairBal : coinBal;
   const payDecimals = side === "buy" ? (pair?.decimals ?? 18) : 18;
   const payUsd = side === "buy" ? pUsd : priceUsd;
-  const paySymbol = side === "buy" ? (pair ? disp(pair.address, pair.symbol) : "…") : token.symbol;
-  const recvSymbol = side === "buy" ? token.symbol : (pair ? disp(pair.address, pair.symbol) : "…");
+  const paySymbol = side === "buy" ? (pair ? disp(pair) : "…") : token.symbol;
+  const recvSymbol = side === "buy" ? token.symbol : (pair ? disp(pair) : "…");
 
   // Position readout for the Balance / Value / PnL block (this coin's holding).
   const coinHeld = coinBal != null ? Number(formatUnits(coinBal, 18)) : null;
@@ -122,15 +140,37 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
 
   const insufficient = parsed != null && payBal != null && parsed > payBal;
 
+  // Quote the swap against the pool's real reserves so the "you receive" and
+  // the slippage floor reflect price impact, not a naive spot price. Debounced.
+  const recvDec = side === "buy" ? 18 : (pair?.decimals ?? 18);
+  useEffect(() => {
+    let alive = true;
+    if (!parsed || parsed === 0n || !pair) { setImpactOutWei(null); return; }
+    const t = setTimeout(async () => {
+      const out = await (v4Client as any).previewSwapOut(token.address as Address, side, parsed).catch(() => null);
+      if (alive) setImpactOutWei(out);
+    }, 220);
+    return () => { alive = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsed?.toString(), side, pair?.address, token.address]);
+
+  // Displayed receive amount: impact-aware when available, else the spot est.
+  const recvOut = impactOutWei != null ? Number(formatUnits(impactOutWei, recvDec)) : (est?.out ?? null);
+  // Price impact vs the spot estimate, for a heads-up on thin pools.
+  const impactPct = impactOutWei != null && est && est.out > 0 ? Math.max(0, (1 - recvOut! / est.out) * 100) : null;
+
   const submit = async () => {
     if (!parsed || parsed === 0n || !pair) return;
     setBusy(true);
     try {
       if (!(await ensureSdkWallet())) throw new Error("Wallet session expired. Reconnect and try again.");
-      // Slippage floor in the receive token's units.
+      // Slippage floor in the receive token's units. Prefer the impact-aware
+      // pool quote so large buys on a thin pool don't revert on a spot floor.
       let minOut = 0n;
-      if (est) {
-        const recvDec = side === "buy" ? 18 : pair.decimals;
+      const slipBps = BigInt(Math.round(Math.max(0, 1 - slip / 100) * 10_000));
+      if (impactOutWei != null) {
+        minOut = (impactOutWei * slipBps) / 10_000n;
+      } else if (est) {
         const floor = est.out * Math.max(0, 1 - slip / 100);
         minOut = BigInt(Math.max(0, Math.floor(floor * 10 ** recvDec)));
       }
@@ -150,6 +190,77 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
   };
 
   const dollarPresets = side === "buy" ? [10, 25, 50, 100] : null;
+
+  // ---- squidpad amount-first desk ----
+  const trimNum = (n: number) => (n <= 0 || !isFinite(n) ? "" : (n < 1 ? n.toPrecision(4) : n.toFixed(n < 1000 ? 4 : 2)).replace(/\.?0+$/, ""));
+  const switchSide = (s: Side) => { setSide(s); setAmount(""); setField(""); setDenom("usd"); };
+  const onField = (v: string) => {
+    const s = v.replace(/[^0-9.]/g, "");
+    setField(s);
+    const n = Number(s) || 0;
+    setAmount(denom === "usd" ? (payUsd > 0 ? String(n / payUsd) : "") : s);
+  };
+  const toggleDenom = () => {
+    const n = Number(field) || 0;
+    if (denom === "usd") { setDenom("tok"); setField(trimNum(payUsd > 0 ? n / payUsd : 0)); }
+    else { setDenom("usd"); setField(trimNum(n * payUsd)); }
+  };
+  const pickUsd = (d: number) => { setDenom("usd"); setField(String(d)); setAmount(payUsd > 0 ? String(d / payUsd) : ""); };
+  const pickPct = (p: number) => {
+    if (payBal == null) return;
+    const usable = p === 100 ? (payBal * 99n) / 100n : (payBal * BigInt(p)) / 100n;
+    const tok = formatUnits(usable, payDecimals);
+    setDenom("tok"); setField(trimNum(Number(tok))); setAmount(tok);
+  };
+  const earnsSym = pair && !isNativePair(pair) ? disp(pair) : null;
+  const payBalNum = payBal != null ? Number(formatUnits(payBal, payDecimals)) : null;
+
+  if (IS_INK) {
+    return (
+      <div className="sqbuy">
+        <div className="sqbuy-seg">
+          <button className={`buy ${side === "buy" ? "on" : ""}`} onClick={() => switchSide("buy")}>Buy</button>
+          <button className={`sell ${side === "sell" ? "on" : ""}`} onClick={() => switchSide("sell")}>Sell</button>
+        </div>
+
+        <div className="sqbuy-amt">
+          {denom === "usd" ? <span className="cur">$</span> : null}
+          <input value={field} onChange={(e) => onField(e.target.value)} placeholder="0" inputMode="decimal" aria-label="Amount" size={Math.max(1, (field || "0").length)} />
+        </div>
+
+        <div className="sqbuy-denom">
+          <button className={denom === "usd" ? "on" : ""} onClick={() => denom !== "usd" && toggleDenom()}>USD</button>
+          <button className={denom === "tok" ? "on" : ""} onClick={() => denom !== "tok" && toggleDenom()}>{paySymbol}</button>
+        </div>
+
+        <div className="sqbuy-recv">≈ {recvOut != null ? `${compact(recvOut)} ${recvSymbol}` : `0 ${recvSymbol}`}{impactPct != null && impactPct >= 1 ? ` · impact ${impactPct.toFixed(impactPct >= 10 ? 0 : 1)}%` : ""}</div>
+
+        <div className="sqbuy-presets">
+          {side === "buy"
+            ? [10, 25, 50, 100].map((d) => (
+                <button key={d} className={denom === "usd" && Number(field) === d ? "on" : ""} onClick={() => pickUsd(d)}>${d}</button>
+              ))
+            : [25, 50, 75, 100].map((p, i) => (
+                <button key={p} onClick={() => pickPct(p)}>{["25%", "50%", "75%", "Max"][i]}</button>
+              ))}
+        </div>
+
+        <div className="sqbuy-meta">
+          <span>Balance {payBalNum != null ? `${compact(payBalNum)} ${paySymbol}` : "—"}</span>
+          {earnsSym ? <span> · earns {earnsSym}</span> : null}
+          <button className="sqbuy-slip" onClick={() => setSlip(slip === 3 ? 8 : slip === 8 ? 15 : 3)}>Slippage {slip}%</button>
+        </div>
+
+        {isConnected ? (
+          <button onClick={submit} disabled={busy || !parsed || parsed === 0n || Boolean(insufficient) || !pair} className={`sqbuy-cta ${side}`}>
+            {busy ? "Confirm in wallet" : insufficient ? "Insufficient balance" : side === "buy" ? `Buy ${token.symbol}` : `Sell ${token.symbol}`}
+          </button>
+        ) : (
+          <button onClick={connectFirst} className="sqbuy-cta buy">Connect to trade</button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="tp">
@@ -211,16 +322,16 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
           <span className="tp-paysel">
             {side === "sell"
               ? <TokenLogo token={token} size={18} />
-              : pair && !isWeth(pair.address)
+              : pair && !isNativePair(pair)
                 ? <StockDot sym={paySymbol} />
-                : <EthMark />}
+                : <NativeMark />}
             <span className="tp-paysym">{paySymbol}</span>
           </span>
         </div>
 
         <div className="tp-recvrow">
           <span className="tp-rowlabel">You receive</span>
-          <span className="tp-recvval">{est ? `${compact(est.out)} ${recvSymbol}` : "—"}</span>
+          <span className="tp-recvval">{recvOut != null ? `${compact(recvOut)} ${recvSymbol}` : "—"}</span>
         </div>
 
         {showSettings ? (
@@ -241,6 +352,31 @@ export function BaseTradePanel({ token, initialSide }: { token: TokenSummary; in
         ) : (
           <button onClick={connectFirst} className="tp-cta connect">Connect to trade</button>
         )}
+
+        {/* Stock-paired coin with no wrapped-native route yet: buying takes the
+            stock itself, which lives on the Hyperliquid Core spot market. Walk
+            the user through getting it instead of leaving a dead end. */}
+        {IS_HYPER && pair && !isNativePair(pair) && side === "buy" ? (
+          <div style={{
+            border: "1px solid var(--color-edge)", background: "var(--color-panel-2)",
+            borderRadius: 10, padding: "10px 12px", fontSize: 11.5, lineHeight: 1.55,
+            color: "var(--color-ink-2)",
+          }}>
+            <b style={{ color: "var(--color-accent-ink)" }}>Need {disp(pair)}?</b> This coin trades in{" "}
+            {disp(pair)}. Get it in two steps:
+            <span style={{ display: "block", marginTop: 4 }}>
+              1. Buy <b>{disp(pair)}</b> on the{" "}
+              <a href="https://app.hyperliquid.xyz/trade" target="_blank" rel="noreferrer"
+                style={{ color: "var(--color-accent-ink)", textDecoration: "underline" }}>
+                Hyperliquid spot market
+              </a>{" "}
+              (search “{disp(pair)}”).
+            </span>
+            <span style={{ display: "block" }}>
+              2. Transfer it from Hyperliquid to <b>EVM</b> (Portfolio, then Transfer to EVM), then trade here.
+            </span>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -252,6 +388,18 @@ function StockDot({ sym }: { sym: string }) {
     <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-[8px] font-extrabold"
       style={{ background: "var(--color-panel-2, #1a2233)", color: "var(--nb-blue, #4d7cff)" }}>
       {sym.slice(0, 2)}
+    </span>
+  );
+}
+
+/** Native-currency mark for the "Pay with" chip: the ETH diamond, or the
+ *  accent disc on the HYPE-native flavor. */
+function NativeMark() {
+  if (!IS_HYPER) return <EthMark />;
+  return (
+    <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-[8px] font-extrabold"
+      style={{ background: "var(--color-accent, #4fe0cb)", color: "var(--color-accent-fg, #04221e)" }}>
+      H
     </span>
   );
 }

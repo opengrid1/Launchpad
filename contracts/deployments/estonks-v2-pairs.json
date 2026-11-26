@@ -1,0 +1,119 @@
+{
+  "note": "Pair assets for Estonks v2: WETH plus stocks with a working ETH route and on-chain liquidity. Prices are launch-price seeds only; the admin can re-price.",
+  "stocks": [
+    {
+      "symbol": "TSLAon",
+      "address": "0xf6b1117ec07684d3958cad8beb1b302bfd21103f",
+      "usd": 1640.69,
+      "liqUsd": 355868,
+      "route": {
+        "kind": "v3",
+        "via": "USDC",
+        "fee": 10000
+      }
+    },
+    {
+      "symbol": "SLVon",
+      "address": "0xf3e4872e6a4cf365888d93b6146a2baa7348f1a4",
+      "usd": 59.62,
+      "liqUsd": 148169,
+      "route": {
+        "kind": "v3",
+        "via": "WETH",
+        "fee": 10000
+      }
+    },
+    {
+      "symbol": "NVDAon",
+      "address": "0x2d1f7226bd1f780af6b9a49dcc0ae00e8df4bdee",
+      "usd": 229.26,
+      "liqUsd": 73619,
+      "route": {
+        "kind": "v3",
+        "via": "USDC",
+        "fee": 3000
+      }
+    },
+    {
+      "symbol": "CRCLon",
+      "address": "0x3632dea96a953c11dac2f00b4a05a32cd1063fae",
+      "usd": 100.78,
+      "liqUsd": 54236,
+      "route": {
+        "kind": "v4",
+        "via": "USDC",
+        "fee": 9999,
+        "tickSpacing": 200,
+        "hooks": "0x0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "symbol": "SPYon",
+      "address": "0xfedc5f4a6c38211c1338aa411018dfaf26612c08",
+      "usd": 774.46,
+      "liqUsd": 44984,
+      "route": {
+        "kind": "v3",
+        "via": "USDC",
+        "fee": 3000
+      }
+    },
+    {
+      "symbol": "GOOGLon",
+      "address": "0xba47214edd2bb43099611b208f75e4b42fdcfedc",
+      "usd": 338.13,
+      "liqUsd": 19725,
+      "route": {
+        "kind": "v3",
+        "via": "USDC",
+        "fee": 10000
+      }
+    },
+    {
+      "symbol": "SPCXon",
+      "address": "0xc9eef266834730340a55b6cc24621b31baf55581",
+      "usd": 266.6,
+      "liqUsd": 17529,
+      "route": {
+        "kind": "v3",
+        "via": "USDC",
+        "fee": 10000
+      }
+    },
+    {
+      "symbol": "QQQon",
+      "address": "0x0e397938c1aa0680954093495b70a9f5e2249aba",
+      "usd": 714.47,
+      "liqUsd": 13482,
+      "route": {
+        "kind": "v4",
+        "via": "USDT",
+        "fee": 10000,
+        "tickSpacing": 200,
+        "hooks": "0x0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "symbol": "COPXon",
+      "address": "0x423a63dfe8d82cd9c6568c92210aa537d8ef6885",
+      "usd": 90.78,
+      "liqUsd": 3998,
+      "route": {
+        "kind": "v3",
+        "via": "USDC",
+        "fee": 10000
+      }
+    },
+    {
+      "symbol": "AAPLon",
+      "address": "0x14c3abf95cb9c93a8b82c1cdcb76d72cb87b2d4c",
+      "usd": 316.93,
+      "liqUsd": 3463,
+      "route": {
+        "kind": "v3",
+        "via": "USDC",
+        "fee": 10000
+      }
+    }
+  ]
+}

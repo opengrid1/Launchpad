@@ -1,0 +1,69 @@
+<!--{"title": "Launch a coin · OneHook", "nav": "launch", "scripts": ["launch.js"]}-->
+<div class="launchhead">
+  <h1>Launch a coin</h1>
+  <p class="muted">Give it instincts. Toggle one to add it, tune its parameters, and the preview updates live. One immutable hook enforces a constitution none of them can break.</p>
+</div>
+<div class="launch">
+  <div>
+    <div class="panel">
+      <div class="panel-h"><span class="no">1</span><h2>Identity</h2><span class="hint">on Ethereum, paired with ETH</span></div>
+      <div class="panel-b">
+        <div class="idrow">
+          <button type="button" class="imgpick" id="imgpick" aria-label="Upload a coin image">
+            <span class="imgpick-ph" id="imgpick-ph">+<br><span>image</span></span>
+            <img id="imgpick-img" alt="" hidden>
+          </button>
+          <input type="file" id="f-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+          <div class="idrow-f">
+            <div class="row2">
+              <div class="field"><label class="lbl" for="f-name">Name</label><input class="input" id="f-name" placeholder="Helix" maxlength="32" autocomplete="off"></div>
+              <div class="field"><label class="lbl" for="f-sym">Ticker</label><input class="input mono" id="f-sym" placeholder="HELIX" maxlength="10" autocomplete="off"></div>
+            </div>
+            <div class="field"><label class="lbl" for="f-desc">Description <span class="faint" id="desc-count">0/280</span></label><textarea class="input" id="f-desc" placeholder="What is this coin?" maxlength="280"></textarea></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label class="lbl" for="f-x">X / Twitter</label><input class="input mono" id="f-x" placeholder="@yourcoin (optional)" autocomplete="off"></div>
+          <div class="field"><label class="lbl" for="f-tg">Telegram</label><input class="input mono" id="f-tg" placeholder="t.me/yourcoin (optional)" autocomplete="off"></div>
+        </div>
+        <div class="field"><label class="lbl" for="f-web">Website</label><input class="input mono" id="f-web" placeholder="https://… (optional)" autocomplete="off"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="no">2</span><h2>Instincts</h2><span class="hint">toggle, then tune</span></div>
+      <div class="panel-b">
+        <div class="recipes" id="recipes"></div>
+        <div class="genepick" id="genepick"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="no">3</span><h2>First buy</h2><span class="hint">optional, anti-snipe shields it</span></div>
+      <div class="panel-b">
+        <div class="field"><label class="lbl" for="f-buy">Your opening buy (ETH)</label><input class="input mono" id="f-buy" placeholder="0.0" inputmode="decimal" autocomplete="off"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="lside">
+    <div class="panel">
+      <div class="panel-h"><h2>Live preview</h2><span class="hint">how it lands on the board</span></div>
+      <div class="panel-b">
+        <div class="helixwrap" id="helixwrap"></div>
+        <div id="preview-card"></div>
+        <div class="facts" style="margin:16px 0">
+          <div><span>Supply</span><b>1,000,000,000</b></div>
+          <div><span>Pair</span><b>ETH · Mainnet</b></div>
+          <div><span>Fee</span><b id="pv-fee">~1%</b></div>
+          <div><span>Instincts</span><b id="pv-genecount">1</b></div>
+        </div>
+        <div class="splitbar-wrap"><div class="lside-h">Fee split</div><div class="splitbar"><span class="s-creator" style="width:60%">Creator 60%</span><span class="s-platform" style="width:40%">Platform 40%</span></div></div>
+        <div class="lside-h" style="margin-top:16px">Always on (constitution)</div>
+        <div class="genes" id="pv-core" style="margin-bottom:16px"></div>
+        <button class="btn accent wide lg" id="launch-btn">Launch it</button>
+        <p class="faint" style="font-size:12px;margin:12px 0 0;text-align:center">No owner, no mint, locked liquidity. The hook is immutable.</p>
+      </div>
+    </div>
+  </aside>
+</div>

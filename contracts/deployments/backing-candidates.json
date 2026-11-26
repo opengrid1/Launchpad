@@ -1,0 +1,338 @@
+[
+ {
+  "symbol": "cbBTC",
+  "token": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0x15aA01580ae866f9FF4DBe45E06e307941d90C7b",
+    "label": "V3 WETH 3000",
+    "depth": 320363.905797139
+   },
+   {
+    "dex": 2,
+    "pool": "0x4548280AC92507C9092a511C7396Cbea78FA9E49",
+    "label": "V3 USDC 3000",
+    "depth": 89715.084484
+   },
+   {
+    "dex": 2,
+    "pool": "0x66DD1ACc5da42502ddD469277aed509D1de22b69",
+    "label": "V3 WETH 500",
+    "depth": 25780.55035284821
+   }
+  ]
+ },
+ {
+  "symbol": "wstETH",
+  "token": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0x109830a1AAaD605BbF02a9dFA7B0B92EC2FB7dAa",
+    "label": "V3 WETH 100",
+    "depth": 5372567.502775878
+   },
+   {
+    "dex": 2,
+    "pool": "0x4622Df6fB2d9Bee0DCDaCF545aCDB6a2b2f4f863",
+    "label": "V3 USDC 500",
+    "depth": 9850.159982
+   },
+   {
+    "dex": 2,
+    "pool": "0xD340B57AAcDD10F96FC1CF10e15921936F41E29c",
+    "label": "V3 WETH 500",
+    "depth": 4131.21329697255
+   }
+  ]
+ },
+ {
+  "symbol": "DAI",
+  "token": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+  "cands": [
+   {
+    "dex": 1,
+    "pool": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
+    "label": "V2 WETH",
+    "depth": 4646794.107459156
+   },
+   {
+    "dex": 2,
+    "pool": "0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8",
+    "label": "V3 WETH 3000",
+    "depth": 1626405.4294203643
+   },
+   {
+    "dex": 2,
+    "pool": "0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168",
+    "label": "V3 USDC 100",
+    "depth": 867936.251216
+   }
+  ]
+ },
+ {
+  "symbol": "USDe",
+  "token": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0xE6D7EbB9f1a9519dc06D557e03C522d53520e76A",
+    "label": "V3 USDC 100",
+    "depth": 495471.736269
+   },
+   {
+    "dex": 1,
+    "pool": "0x1E496FaE4613b4e9C4f8Fc31826812cDcbD03A90",
+    "label": "V2 USDC",
+    "depth": 25288.822699
+   },
+   {
+    "dex": 1,
+    "pool": "0xb7520724abb3f1DD06c2338cA56d68BB3A58Cbf2",
+    "label": "V2 WETH",
+    "depth": 0.0000367885651503
+   }
+  ]
+ },
+ {
+  "symbol": "PAXG",
+  "token": "0x45804880De22913dAFE09f4980848ECE6EcbAf78",
+  "cands": [
+   {
+    "dex": 1,
+    "pool": "0x9C4Fe5FFD9A9fC5678cFBd93Aa2D4FD684b67C4C",
+    "label": "V2 WETH",
+    "depth": 7852734.373182907
+   },
+   {
+    "dex": 2,
+    "pool": "0x5aE13BAAEF0620FdaE1D355495Dc51a17adb4082",
+    "label": "V3 USDC 500",
+    "depth": 395185.697568
+   },
+   {
+    "dex": 2,
+    "pool": "0xB431c70f800100D87554ac1142c4A94C5Fe4C0C4",
+    "label": "V3 USDC 3000",
+    "depth": 203248.079364
+   }
+  ]
+ },
+ {
+  "symbol": "XAUt",
+  "token": "0x68749665FF8D2d112Fa859AA293F07A622782F38",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0xC5C7c21F4e60770CA5991a8832127A40f5236f73",
+    "label": "V3 WETH 3000",
+    "depth": 46818.08793011751
+   },
+   {
+    "dex": 2,
+    "pool": "0x841ea2475A989eECCD27Fe39967c19CB097357A3",
+    "label": "V3 USDC 3000",
+    "depth": 39452.511611
+   },
+   {
+    "dex": 2,
+    "pool": "0x3E04d683f7187BC0293e05006203AcCB29311767",
+    "label": "V3 WETH 10000",
+    "depth": 22073.045943553945
+   }
+  ]
+ },
+ {
+  "symbol": "ONDO",
+  "token": "0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0x7b1E5D984A43eE732de195628d20d05CFaBc3cC7",
+    "label": "V3 WETH 3000",
+    "depth": 611715.4272041267
+   },
+   {
+    "dex": 2,
+    "pool": "0xA8e8C91fAA15149F5f6E4A37846DCd58B88b3EC7",
+    "label": "V3 USDC 3000",
+    "depth": 216.239224
+   },
+   {
+    "dex": 2,
+    "pool": "0xD0F292Fa6fe694892Bcf52B55ca0F3E277be17c0",
+    "label": "V3 WETH 10000",
+    "depth": 51.043300479831856
+   }
+  ]
+ },
+ {
+  "symbol": "SPX",
+  "token": "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+  "cands": [
+   {
+    "dex": 1,
+    "pool": "0x52c77b0CB827aFbAD022E6d6CAF2C44452eDbc39",
+    "label": "V2 WETH",
+    "depth": 5767093.998876692
+   },
+   {
+    "dex": 2,
+    "pool": "0x7C706586679Af2BA6D1A9fC2DA9C6aF59883fdD3",
+    "label": "V3 WETH 3000",
+    "depth": 64269.5435269408
+   },
+   {
+    "dex": 2,
+    "pool": "0xa1532d04697cCB522E4EFC8FBa5daa75A412f7b8",
+    "label": "V3 USDC 10000",
+    "depth": 1682.778544
+   }
+  ]
+ },
+ {
+  "symbol": "SHIB",
+  "token": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE",
+  "cands": [
+   {
+    "dex": 1,
+    "pool": "0x811beEd0119b4AfCE20D2583EB608C6F7AF1954f",
+    "label": "V2 WETH",
+    "depth": 304591.85251688014
+   },
+   {
+    "dex": 2,
+    "pool": "0x5764a6F2212D502bC5970f9f129fFcd61e5D7563",
+    "label": "V3 WETH 10000",
+    "depth": 120529.85182530894
+   },
+   {
+    "dex": 2,
+    "pool": "0x2F62f2B4c5fcd7570a709DeC05D68EA19c82A9ec",
+    "label": "V3 WETH 3000",
+    "depth": 59393.54353061143
+   }
+  ]
+ },
+ {
+  "symbol": "MOG",
+  "token": "0xaaeE1A9723aaDB7afA2810263653A34bA2C21C7a",
+  "cands": [
+   {
+    "dex": 1,
+    "pool": "0xc2eaB7d33d3cB97692eCB231A5D0e4A649Cb539d",
+    "label": "V2 WETH",
+    "depth": 2820710.802010622
+   },
+   {
+    "dex": 2,
+    "pool": "0x7832310Cd0de39c4cE0A635F34d9a4B5b47fd434",
+    "label": "V3 WETH 10000",
+    "depth": 5216.494932497866
+   },
+   {
+    "dex": 2,
+    "pool": "0xE7f05308e67C33D1041438aDCbBb4405e6430E62",
+    "label": "V3 USDC 10000",
+    "depth": 3.426403
+   }
+  ]
+ },
+ {
+  "symbol": "LINK",
+  "token": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0xa6Cc3C2531FdaA6Ae1A3CA84c2855806728693e8",
+    "label": "V3 WETH 3000",
+    "depth": 6342277.347825206
+   },
+   {
+    "dex": 1,
+    "pool": "0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974",
+    "label": "V2 WETH",
+    "depth": 748892.5981889182
+   },
+   {
+    "dex": 2,
+    "pool": "0xFAD57d2039C21811C8F2B5D5B65308aa99D31559",
+    "label": "V3 USDC 3000",
+    "depth": 503051.099852
+   }
+  ]
+ },
+ {
+  "symbol": "UNI",
+  "token": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0x1d42064Fc4Beb5F8aAF85F4617AE8b3b5B8Bd801",
+    "label": "V3 WETH 3000",
+    "depth": 3193882.1008220343
+   },
+   {
+    "dex": 1,
+    "pool": "0xd3d2E2692501A5c9Ca623199D38826e513033a17",
+    "label": "V2 WETH",
+    "depth": 2038505.347405852
+   },
+   {
+    "dex": 2,
+    "pool": "0xfaA318479b7755b2dBfDD34dC306cb28B420Ad12",
+    "label": "V3 WETH 500",
+    "depth": 77748.53644188786
+   }
+  ]
+ },
+ {
+  "symbol": "AAVE",
+  "token": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0x5aB53EE1d50eeF2C1DD3d5402789cd27bB52c1bB",
+    "label": "V3 WETH 3000",
+    "depth": 9142991.056677595
+   },
+   {
+    "dex": 2,
+    "pool": "0x4674abc5796e1334B5075326b39B748bee9EaA34",
+    "label": "V3 WETH 500",
+    "depth": 117706.95447000478
+   },
+   {
+    "dex": 2,
+    "pool": "0xdceaf5d0E5E0dB9596A47C0c4120654e80B1d706",
+    "label": "V3 USDC 3000",
+    "depth": 74732.92578
+   }
+  ]
+ },
+ {
+  "symbol": "ENA",
+  "token": "0x57e114B691Db790C35207b2e685D4A43181e6061",
+  "cands": [
+   {
+    "dex": 2,
+    "pool": "0xc3Db44ADC1fCdFd5671f555236eae49f4A8EEa18",
+    "label": "V3 WETH 3000",
+    "depth": 1331336.2889874608
+   },
+   {
+    "dex": 2,
+    "pool": "0xAe4045ffeDdF61D570E6d1fE2D71DED1A2E85a88",
+    "label": "V3 WETH 500",
+    "depth": 14181.652054957814
+   },
+   {
+    "dex": 2,
+    "pool": "0x08B8cebfcA0f49A9303bab1cC4e2C25D280f2c00",
+    "label": "V3 WETH 10000",
+    "depth": 1258.6112141379738
+   }
+  ]
+ }
+]

@@ -10,6 +10,13 @@ import { env } from "./env";
 // same address can exist on two chains as two different tokens (hiding the
 // old Stable STEADY silently hid the first Robinhood launch too).
 const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
+  // HyperEVM (999), hyperstock: deployer test launches. CHIPCAT is also
+  // paired with the defunct Ondo NVDAon, which has no market anywhere.
+  "999:0xccbf9a19c00a0ecfe38d68c42e2a727faea51b95", // LIQCAT (test launch, pre-rewards factory)
+  "999:0x2b7d07005a8eb5b97d260bba838469364cc7dd5c", // CHIPCAT (test launch, dead Ondo pair)
+  "999:0x939640e6ac3e16c7eb26c72002be184c9212d835", // LOQCAT (name typo; relaunched as LIQCAT)
+  "999:0xdb1cf34b446e3ec9284f974492ba8d1caf1f3754", // STOCK (official token, hidden until the public reveal)
+
   // Robinhood Chain (4663), Hood factory: superseded official launches
   "4663:0x9e73a554968a9b3b69ab71f6ef43ca7f3720518b", // COPAIR (pre-toebeans official)
   "4663:0x5fcb2390cb05d92e3e29e892c606cda027ec0259", // BEANS (deployer launch; the user relaunches the official)
@@ -49,6 +56,9 @@ const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   // launches by anyone are NOT listed here, so they appear on Explore normally.
   "8453:0xb20000000000000000000002da484bdfa643272a", // KOIT (test launch)
   "8453:0xb20000000000000000000041e15f9275f02f383c", // KOIT (test launch)
+  "8453:0xb200000000000000000000838e5d8f9ca4c6fffe", // STONK (name typo "basestonk.fun"; relaunched)
+  // Ink (57073), squidpad
+  "57073:0xcbab433f6fb5b0b71a8d33a4d6cbae957e55eb90", // SQUID (wNVDAx-paired; relaunched ETH-paired)
 ]);
 
 export function isHidden(address: string): boolean {

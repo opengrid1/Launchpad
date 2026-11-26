@@ -1,0 +1,172 @@
+{
+  "factory": "0xd078ef6FB94AEcd8959212c5E8498bEa26f2c628",
+  "owner": "0x77002c2e21575F0450D28C2E71C0707ba0F5995A",
+  "whype": {
+    "address": "0x5555555555555555555555555555555555555555",
+    "approved": true,
+    "usd8": "8156000000"
+  },
+  "plan": [
+    {
+      "ticker": "QQQ",
+      "evm": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "px": 795.815,
+      "usd8": "79581500000",
+      "approved": false
+    },
+    {
+      "ticker": "GLD",
+      "evm": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "px": 465.085,
+      "usd8": "46508500000",
+      "approved": false
+    },
+    {
+      "ticker": "HOOD",
+      "evm": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "px": 81.3955,
+      "usd8": "8139550000",
+      "approved": false
+    },
+    {
+      "ticker": "MU",
+      "evm": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "px": 0.0857,
+      "usd8": "8570000",
+      "approved": false
+    },
+    {
+      "ticker": "SPY",
+      "evm": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "px": 87.4405,
+      "usd8": "8744050000",
+      "approved": false
+    },
+    {
+      "ticker": "META",
+      "evm": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "px": 113.435,
+      "usd8": "11343500000",
+      "approved": false
+    },
+    {
+      "ticker": "CRCL",
+      "evm": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "px": 0.03458,
+      "usd8": "3458000",
+      "approved": false
+    },
+    {
+      "ticker": "TSLA",
+      "evm": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "px": 106.5505,
+      "usd8": "10655050000",
+      "approved": false
+    },
+    {
+      "ticker": "SLV",
+      "evm": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "px": 0.0099,
+      "usd8": "990000",
+      "approved": false
+    },
+    {
+      "ticker": "GOOGL",
+      "evm": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "px": 65.6,
+      "usd8": "6560000000",
+      "approved": false
+    },
+    {
+      "ticker": "AAPL",
+      "evm": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "px": 0.057843,
+      "usd8": "5784300",
+      "approved": false
+    },
+    {
+      "ticker": "BNB1",
+      "evm": "0xfd6f06d323f6cb08ee9eeb2d201e9ec0e9112c88",
+      "px": 0.775025,
+      "usd8": "77502500",
+      "approved": false
+    },
+    {
+      "ticker": "AMZN",
+      "evm": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "px": 1580,
+      "usd8": "158000000000",
+      "approved": false
+    },
+    {
+      "ticker": "MSFT",
+      "evm": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "px": 78,
+      "usd8": "7800000000",
+      "approved": false
+    },
+    {
+      "ticker": "ORCL",
+      "evm": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "px": 0.010355,
+      "usd8": "1035500",
+      "approved": false
+    },
+    {
+      "ticker": "AVGO",
+      "evm": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "px": 0.008211,
+      "usd8": "821100",
+      "approved": false
+    },
+    {
+      "ticker": "DIME",
+      "evm": "0xa72ae85ca2340ff74cc45c423f2a85a062a4fb4c",
+      "px": 0.055753,
+      "usd8": "5575300",
+      "approved": false
+    },
+    {
+      "ticker": "SPCX",
+      "evm": "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d",
+      "px": null,
+      "usd8": null,
+      "approved": false
+    },
+    {
+      "ticker": "NVDAX",
+      "evm": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "px": null,
+      "usd8": null,
+      "approved": false
+    },
+    {
+      "ticker": "SPYX",
+      "evm": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "px": null,
+      "usd8": null,
+      "approved": false
+    },
+    {
+      "ticker": "QQQX",
+      "evm": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "px": null,
+      "usd8": null,
+      "approved": false
+    },
+    {
+      "ticker": "SKHYX",
+      "evm": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "px": null,
+      "usd8": null,
+      "approved": false
+    },
+    {
+      "ticker": "MUX",
+      "evm": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "px": null,
+      "usd8": null,
+      "approved": false
+    }
+  ]
+}

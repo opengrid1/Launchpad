@@ -1,0 +1,104 @@
+<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8 pb-10 pt-5 md:pt-7 lf" id="launchPage">
+  <h1 class="lf-h1">Launch a token</h1>
+  <p class="lf-sub">Mint a fixed-supply launch token and seed its locked Uniswap v4 pool in one transaction.</p>
+
+  <div class="lf-grid">
+    <div class="lf-form">
+
+      <div class="lf-sec first"><span class="lf-num">01</span><h2>Token identity</h2></div>
+      <div class="lf-idrow">
+        <label class="lf-logo" id="drop"><input type="file" id="fLogo" accept="image/*" hidden><span class="lf-logo-in" id="pLogo">__IMGPLUS__<span>Logo</span></span></label>
+        <div class="lf-fields">
+          <div class="lf-label">Token name <i>*</i> __INFO__</div>
+          <input class="lf-in" id="fName" placeholder="Token name" maxlength="32" autocomplete="off">
+          <span class="lf-err" id="nMsg"></span>
+          <div class="lf-label">Token symbol <i>*</i> __INFO__</div>
+          <input class="lf-in lf-up" id="fTick" placeholder="TOKEN" maxlength="10" autocomplete="off">
+          <span class="lf-err" id="tMsg"></span>
+        </div>
+      </div>
+
+      <div class="lf-label">Paired asset <i>*</i> __INFO__</div>
+      <button type="button" class="lf-row" id="pairBtn"><span class="lf-row-l" id="pairCur"><img src="img/eth.png" alt="" class="lf-coin">ETH</span><span class="lf-row-r"><span class="lf-pill">10 assets</span>__CHEV__</span></button>
+      <div class="lf-pairs" id="pairMenu"></div>
+      <button type="button" class="lf-row" id="mktBtn"><span class="lf-row-l">Market details</span><span class="lf-row-r"><span class="lf-pill ok">Enabled</span>__CHEV__</span></button>
+      <div class="lf-mkt" id="mkt">
+        <div><span>Supply</span><b>1,000,000,000 · all in the pool</b></div>
+        <div><span>Pool</span><b id="mktPool">Uniswap V4 · ETH · Ink</b></div>
+        <div><span>Trading fee</span><b id="mktFee">2.00% · 0.7 creator · 0.5 holders · 0.8 platform</b></div>
+        <div><span>Liquidity</span><b class="ok">Locked forever</b></div>
+      </div>
+      <div class="lf-fee"><span>Creation fee</span><b>0 ETH <small>gas only</small></b></div>
+
+      <div class="lf-label mt24">Description __INFO__</div>
+      <textarea class="lf-ta" id="fDesc" placeholder="What is this token about?" maxlength="280"></textarea>
+
+      <div class="lf-label">Links (optional) __INFO__</div>
+      <div class="lf-links">
+        <input class="lf-in" id="fWeb" placeholder="https://yourproject.xyz" autocomplete="off">
+        <input class="lf-in" id="fX" placeholder="https://x.com/yourproject" autocomplete="off">
+        <input class="lf-in" id="fTg" placeholder="https://t.me/yourproject" autocomplete="off">
+      </div>
+
+
+      <div class="lf-sec"><span class="lf-num">02</span><h2>Holder rewards</h2></div>
+      <div class="lf-opt rew"><div class="lf-opt-h"><button type="button" class="lf-sw on" id="swRew" aria-checked="true"></button><b>Share fees with holders __INFO__</b></div><p id="rewNote">On: 0.5% of every trade goes to holders, paid in the basket below. Off: that 0.5% goes to you, so the creator earns 1.2% of every trade. Fixed at launch.</p></div>
+      <div id="rewBox">
+      <p class="lf-para" id="bkPara">Holders claim their rewards as equal shares of the stocks you pick here. Pick one to four wrapped xStocks. The basket is fixed at launch; holders can always claim as ETH instead.</p>
+      <div class="lf-cards" id="pick"></div>
+      <div class="lf-alloc">
+        <div class="lf-donut"><svg viewBox="0 0 120 120" id="donut"></svg><div class="lf-dc"><b id="allocPct">50%</b><span>per stock</span></div><div class="lf-dl" id="allocLeft">2 of 4 picked</div><div class="lf-legend" id="allocLegend"></div></div>
+        <div class="lf-split">
+          <div class="lf-split-h">Fee split <span>fixed · 2.00% per trade, taken in ETH</span></div>
+          <div class="lf-srow"><span class="dot" style="background:var(--color-accent)"></span><span>Creator</span><b id="spCreator">0.70%</b></div>
+          <div class="lf-srow"><span class="dot" style="background:var(--color-success)"></span><span id="spHoldL">Holders · in the basket</span><b id="spHolder">0.50%</b></div>
+          <div class="lf-srow"><span class="dot" style="background:var(--color-text-muted)"></span><span>Platform · funds the 3-day leaderboard</span><b>0.80%</b></div>
+          <p>Fees are charged by the pool's hook, so they are the same wherever the token is traded.</p>
+        </div>
+      </div>
+      </div>
+      <span class="lf-err" id="pkMsg"></span>
+
+      <div class="lf-sec"><span class="lf-num">03</span><h2>Launch options</h2></div>
+      <div class="lf-opt"><div class="lf-opt-h"><button type="button" class="lf-sw" id="swDev" aria-checked="false"></button><b>Include Dev Buy __INFO__</b></div><p>Buy tokens as part of the launch, in the same transaction. Up to 0.5 ETH at the floor price, shown publicly on the token page.</p>
+        <div class="lf-dev" id="devBox"><input class="lf-in" id="fCommit" value="0.1" inputmode="decimal" placeholder="0"><span class="lf-unit">ETH</span><span class="lf-devout">≈ <b id="fbOut">45.2M</b> tokens</span></div><span class="lf-err" id="cMsg"></span></div>
+      <div class="lf-opt"><div class="lf-opt-h"><button type="button" class="lf-sw on" id="swSnipe" aria-checked="true" disabled></button><b>Enable anti-sniping __INFO__</b></div><p>Trading fees start higher and decrease over 20 seconds. Dev Buy skips this extra charge but still pays normal fees.</p></div>
+
+      <ul class="lf-bullets">
+        <li>The token and its Uniswap V4 market go live together, priced in the asset you pair it with: ETH or any wrapped xStock.</li>
+        <li>The market starts with token-only liquidity that remains permanently locked.</li>
+        <li>The fixed launch supply is minted once and seeded into the permanently locked pool.</li>
+        <li>The 2% hook fee applies wherever the token trades, in the paired asset. With holder rewards on, 0.5% goes to holders (paid in the basket, or in the paired stock) and 0.7% to you; with them off, the full 1.2% is yours. The platform keeps 0.8% either way.</li>
+        <li>Name, symbol, logo, description and basket are written on-chain at launch and never change.</li>
+      </ul>
+    </div>
+
+    <aside class="lf-side">
+      <div class="lf-card">
+        <div class="lf-card-l">Live preview</div>
+        <div class="lf-pv-h"><span class="lf-pv-av" id="pLogo2"><span id="pLetter">T</span></span><div class="lf-pv-n"><b id="pName">Your token</b><span><span id="pTick">TOKEN</span>/<span id="pPair">ETH</span></span></div><span class="lf-new">NEW</span></div>
+        <p class="lf-pv-d" id="pDesc">Fixed-supply token trading on a locked Uniswap V4 pool.</p>
+        <div class="lf-kv"><span>Start price</span><b>≈ $0.0₅3</b><small id="pvPrice">0.0₈12 ETH at the current ETH price.</small></div>
+        <div class="lf-kv2">
+          <div class="lf-kv"><span>Launch cap</span><b>≈ $3.00K</b><small id="pvCap">1.23 ETH at the current ETH price.</small></div>
+          <div class="lf-kv"><span>Fixed supply</span><b>1B</b><small>Set by the factory for future launches.</small></div>
+        </div>
+        <div class="lf-tags"><span class="lf-tag" id="pPairTag"><img src="img/eth.png" alt="">ETH</span><span class="lf-tag ok">Immutable</span><span class="lf-tag" id="pBasket"></span></div>
+      </div>
+      <div class="lf-card">
+        <div class="lf-sum"><div><span>Fixed supply</span><b>1B</b></div><div><span>Pool model</span><b>Locked pool</b></div><div><span>Launch market cap</span><b>≈ $3.00K</b></div><div><span>Creation fee</span><b>0 ETH</b></div><div><span>Paired asset</span><b id="sumPair">ETH</b></div><div><span>Holder rewards</span><b id="sumRew">0.5% · NVDAx, SPYx</b></div><div><span>Creator share</span><b id="sumCreator">0.7% of every trade</b></div><div id="sumDevRow"><span>Dev buy</span><b id="sumDev">0.1 ETH</b></div></div>
+        <button type="button" class="lf-cta" id="deploy">Connect Wallet</button>
+        <p class="lf-note">You'll confirm the transaction in your wallet. Nothing is minted until you submit.</p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="lf-done hidden" id="doneBox">
+    <div class="lf-card">
+      <span class="lf-tag ok" id="dBlock">__CHECK__Deployed</span>
+      <div class="lf-pv-h" style="margin-top:14px"><span class="lf-pv-av" id="pLogo4"><span>T</span></span><div class="lf-pv-n"><b><span id="dName">Your token</span> is live on Ink</b><span><button type="button" class="lf-ca" data-copy="" id="dAddr"><span id="dAddrT">0x…</span> __COPY__</button></span></div></div>
+      <div class="lf-sum" style="margin-top:14px"><div><span>Holder rewards</span><b id="dBasket">0.5% · NVDAx, SPYx</b></div><div><span>Your dev buy</span><b id="dBuy">45.2M tokens</b></div><div><span>Pool</span><b id="dPool">Uniswap V4 · ETH · locked</b></div><div><span>Creator share</span><b id="dCreator">0.7% of every trade</b></div></div>
+      <div class="lf-done-acts"><a class="lf-cta" href="/" id="dOpen">Open token page</a><button type="button" class="lf-ghost" id="shareX">Share on X</button></div>
+    </div>
+  </section>
+</div>

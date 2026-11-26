@@ -1,0 +1,93 @@
+{
+  "OneHookFactory": [
+    "function totalTokens() view returns (uint256)",
+    "function allTokens(uint256) view returns (address)",
+    "function listings(address token) view returns (address creator, address pair, uint64 createdAt, bytes32 poolId)",
+    "function hidden(address token) view returns (bool)",
+    "function blocked(address token) view returns (bool)",
+    "function metadataOf(address token) view returns (string)",
+    "function pairUsdPrice(address pair) view returns (uint256)",
+    "function startCapUsd8() view returns (uint256)",
+    "function feeRecipient() view returns (address)",
+    "function admin() view returns (address)",
+    "function owner() view returns (address)",
+    "function oracle() view returns (address)",
+    "function converter() view returns (address)",
+    "function launchesPaused() view returns (bool)",
+    "function genesOf(address token) view returns (tuple(uint8 feeMode, uint16 feeBps, uint16 snipeBps, uint32 snipeBlocks, uint16 buybackShareBps, uint16 divShareBps, uint16 maxWalletBps, uint32 maxWalletSecs, uint128 buybackThreshold))",
+    "function stagesOf(address token) view returns (tuple(uint160 sqrtThreshold, uint64 mcapUsd8, tuple(uint8 feeMode, uint16 feeBps, uint16 snipeBps, uint32 snipeBlocks, uint16 buybackShareBps, uint16 divShareBps, uint16 maxWalletBps, uint32 maxWalletSecs, uint128 buybackThreshold) genes)[])",
+    "function launch(tuple(string name, string symbol, string metadataURI, address pair, uint256 minPairOut, tuple(uint8 feeMode, uint16 feeBps, uint16 snipeBps, uint32 snipeBlocks, uint16 buybackShareBps, uint16 divShareBps, uint16 maxWalletBps, uint32 maxWalletSecs, uint128 buybackThreshold) genes, tuple(uint64 mcapUsd8, tuple(uint8 feeMode, uint16 feeBps, uint16 snipeBps, uint32 snipeBlocks, uint16 buybackShareBps, uint16 divShareBps, uint16 maxWalletBps, uint32 maxWalletSecs, uint128 buybackThreshold) genes)[] stages) p, bytes32 salt, bytes route) payable returns (address token, bytes32 poolId)",
+    "function setHidden(address token, bool hidden_)",
+    "function setCoinMetadata(address token, string uri)",
+    "function setFeeRecipient(address recipient)",
+    "function setTokenBlocked(address token, bool blocked_)",
+    "function setStartCap(uint256 usd8)",
+    "function pause()",
+    "function resume()",
+    "function collect(address token, uint16 bps, address recipient) returns (uint256 coins, uint256 pair)",
+    "function pushPlatformFees(address[] tokens)",
+    "function renounceOwnership()",
+    "event Launched(address indexed token, address indexed creator, address indexed pair, bytes32 poolId, uint256 pairUsdPrice)"
+  ],
+  "OneHookHook": [
+    "function poolOf(address token) view returns (bytes32)",
+    "function config(bytes32 id) view returns (tuple(address token, address pair, address creator, uint64 launchTime, uint64 launchBlock, bool registered, uint8 currentStage, uint8 stageCount, uint32 surgeBps, uint64 surgeBlock, tuple(uint8 feeMode, uint16 feeBps, uint16 snipeBps, uint32 snipeBlocks, uint16 buybackShareBps, uint16 divShareBps, uint16 maxWalletBps, uint32 maxWalletSecs, uint128 buybackThreshold) genes))",
+    "function genesOf(address token) view returns (tuple(uint8 feeMode, uint16 feeBps, uint16 snipeBps, uint32 snipeBlocks, uint16 buybackShareBps, uint16 divShareBps, uint16 maxWalletBps, uint32 maxWalletSecs, uint128 buybackThreshold))",
+    "function stagesOf(address token) view returns (tuple(uint160 sqrtThreshold, uint64 mcapUsd8, tuple(uint8 feeMode, uint16 feeBps, uint16 snipeBps, uint32 snipeBlocks, uint16 buybackShareBps, uint16 divShareBps, uint16 maxWalletBps, uint32 maxWalletSecs, uint128 buybackThreshold) genes)[])",
+    "function positionOf(address token) view returns (tuple(int24 tickLower, int24 tickUpper, uint128 liquidity))",
+    "function feeBpsNow(address token, bool isBuy) view returns (uint256 fee)",
+    "function creatorOwed(address token) view returns (uint256)",
+    "function platformOwed(address token) view returns (uint256)",
+    "function buybackPot(address token) view returns (uint256)",
+    "function dividendPot(address token) view returns (uint256)",
+    "function payCreator(address token) returns (uint256 amount)",
+    "function pushPlatform(address[] tokens)",
+    "function buybackBurn(address token) returns (uint256 burned)",
+    "function pushDividends(address token) returns (uint256 amount)",
+    "event FeeTaken(address indexed token, uint256 fee, uint16 bps)",
+    "event Evolved(address indexed token, uint8 indexed stage, uint160 sqrtPriceX96)"
+  ],
+  "OneRouter": [
+    "function buy(address coin, bytes route, uint256 minCoinOut) payable returns (uint256 coinOut)",
+    "function sell(address coin, uint256 amountIn, bytes route, uint256 minEthOut) returns (uint256 ethOut)",
+    "function buyWithPair(address coin, uint256 pairIn, uint256 minCoinOut) returns (uint256 coinOut)",
+    "function sellForPair(address coin, uint256 amountIn, uint256 minPairOut) returns (uint256 pairOut)",
+    "event Bought(address indexed coin, address indexed buyer, uint256 ethIn, uint256 pairIn, uint256 coinOut)",
+    "event Sold(address indexed coin, address indexed seller, uint256 coinIn, uint256 pairOut, uint256 ethOut)"
+  ],
+  "OneToken": [
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function decimals() view returns (uint8)",
+    "function totalSupply() view returns (uint256)",
+    "function balanceOf(address) view returns (uint256)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function approve(address spender, uint256 value) returns (bool)",
+    "function transfer(address to, uint256 value) returns (bool)",
+    "function metadataURI() view returns (string)",
+    "function owner() view returns (address)"
+  ],
+  "OneDivToken": [
+    "function pairAsset() view returns (address)",
+    "function totalShares() view returns (uint256)",
+    "function totalDividends() view returns (uint256)",
+    "function withdrawableDividends(address a) view returns (uint256)",
+    "function claimDividends() returns (uint256 amount)",
+    "event DividendsClaimed(address indexed holder, uint256 amount)"
+  ],
+  "Oracle": [
+    "function price(address token) view returns (uint256)"
+  ],
+  "PoolManager": [
+    "function extsload(bytes32) view returns (bytes32)"
+  ],
+  "ERC20": [
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function decimals() view returns (uint8)",
+    "function balanceOf(address) view returns (uint256)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function approve(address spender, uint256 value) returns (bool)",
+    "function transfer(address to, uint256 value) returns (bool)"
+  ]
+}

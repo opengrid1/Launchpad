@@ -1,0 +1,79 @@
+{
+  "chainId": 56,
+  "deployedAt": "2026-10-01T05:32:16.955Z",
+  "deployBlock": 125045040,
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "owner": "0x77982b993f2012e97Cdcd06775F9491DbC47A470",
+  "genesis": 1790832900,
+  "startTick": 191000,
+  "tipWei": "1000000000000000",
+  "infinity": {
+    "vault": "0x238a358808379702088667322f80aC48bAd5e6c4",
+    "clPoolManager": "0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b",
+    "wbnb": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    "v3SmartRouter": "0x13f4EA83D0bd40E75C8222255bc855a974568Dd4"
+  },
+  "contracts": {
+    "arena": "0x18B8ad90d4C767BdA953909b132311069C9CBA34",
+    "hook": "0x97c549177B98782aBe0b9335Ca8cab469cD263B4",
+    "router": "0x8fBB324880714747548C98C552db4C278BdB758b",
+    "redeemer": "0x82193432d7cB5F742acC8DCBDf8c658E21884C24",
+    "tokenDeployer": "0x8DC501Edc6d762A71186F3D64d24311EF51cbC04"
+  },
+  "armies": [
+    {
+      "id": 0,
+      "name": "NVDA",
+      "stock": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436"
+    },
+    {
+      "id": 1,
+      "name": "QQQ",
+      "stock": "0x205812CdBed920aFf76C6580abD681a46D11efc7"
+    },
+    {
+      "id": 2,
+      "name": "TSLA",
+      "stock": "0x5b1910eAaD6450E50f816082Aa078C41F10C292f"
+    },
+    {
+      "id": 3,
+      "name": "GOOGL",
+      "stock": "0x3F53De71c126BdaBAe20f9cD64848d317f6C3238"
+    },
+    {
+      "id": 4,
+      "name": "BABA",
+      "stock": "0x4eF9d3062c7F6ebA4AAE4990c5036598C6eff4ec"
+    },
+    {
+      "id": 5,
+      "name": "AAPL",
+      "stock": "0x431a3BEE82E2ca41e49895CbECE5bB0F76A89b7A"
+    },
+    {
+      "id": 6,
+      "name": "CRCL",
+      "stock": "0x80f3D493EBCe97e343c53D29a137942416B4ffC0"
+    },
+    {
+      "id": 7,
+      "name": "SPY",
+      "stock": "0x7138b48df7D98D7e3cc221BfE7192D0a178182D8"
+    }
+  ],
+  "smokeCoin": {
+    "symbol": "JWTEST",
+    "address": "0x558eFb29D8B84D73415c63D10E0C81150fb90c41",
+    "round": 0,
+    "launchTx": "0x3b69a0771ff9f8def436b4e389b230b85ba3ec0546e0c14498f9a5f49791ed70"
+  },
+  "officialToken": {
+    "name": "Jeetwars.fun",
+    "symbol": "JEETWARS",
+    "address": "0x438A865700AC1CE2ea2dF8D7b1881DE883014D43",
+    "round": 1,
+    "forwarder": "0xf15dDaF45eB871C5Bc691001FB4b190972F213d5",
+    "launchTx": "0xe60a0533324fb7c1a69b0bc9a675beb60e7ea02ed12b6f42b738fb8cd09a03d9"
+  }
+}

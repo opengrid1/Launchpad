@@ -1,0 +1,67 @@
+<div class="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-8 pb-10 pt-5 md:pt-7" id="swapPage">
+  <div class="sw-wrap">
+    <div class="sw-main">
+      <div class="rounded-[20px] bg-bg-card p-1.5" id="swapcard">
+        <div class="min-w-0 px-3 py-4">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <div><h2 class="flex items-center gap-1.5 text-lg font-bold text-text-primary"><span>Swap</span><span class="cursor-help inline-flex items-center" title="0.3% fee per swap: 0.25% to liquidity providers, 0.05% to $INKY stakers">__INFO__</span></h2></div>
+            <div class="relative"><button aria-label="Trade settings" class="inline-flex cursor-pointer items-center justify-center gap-1 rounded-md px-1 py-1 text-text-muted transition-colors hover:text-text-primary" type="button" id="swSettings">__SETTINGS__<span class="text-sm font-medium leading-none" id="slipLabel">Auto</span></button></div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-col">
+              <div class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5 transition-colors">
+                <span class="text-[14px] font-medium leading-none text-text-muted">You pay</span>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="min-w-0 flex-1"><input autocomplete="off" class="w-full min-w-0 border-0 bg-transparent p-0 text-[36px] font-semibold leading-10 tracking-[-0.02em] text-text-primary tabular-nums outline-none placeholder:text-text-disabled" id="amtIn" inputmode="decimal" placeholder="0" type="text" value=""><div class="mt-0.5 h-4 text-[12px] font-medium leading-4 text-text-muted" id="usdIn"></div></div>
+                  <div class="relative shrink-0"><button class="sw-asset" id="assetIn" type="button" data-side="in"><span class="relative flex shrink-0 size-8"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-full rounded-full" data-av="in"><img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/eth.png"></span><span class="absolute -bottom-0.5 -right-0.5 flex size-3 overflow-hidden rounded-[3px] border-2 border-bg-elevated bg-bg-elevated"><img alt="Ink" class="size-full object-cover" src="img/ink.png"></span></span><span class="flex min-w-0 flex-1 flex-col leading-tight"><span class="truncate text-[16px] font-bold text-text-primary" data-sym="in">ETH</span><span class="truncate text-[12px] font-medium text-text-muted">Ink</span></span>__CHEV__</button></div>
+                </div>
+                <div class="flex min-h-6 items-center justify-between gap-2"><span class="truncate text-[12px] font-medium text-text-muted" id="balIn">Balance: 0</span><span class="flex shrink-0 items-center gap-1"><button class="sw-q" data-q="25%">25%</button><button class="sw-q" data-q="50%">50%</button><button class="sw-q" data-q="MAX">MAX</button></span></div>
+              </div>
+              <div class="relative z-10 h-0"><div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2"><div class="flex justify-center pointer-events-none"><button aria-label="Switch pay and receive" class="pointer-events-auto flex size-10 items-center justify-center rounded-[12px] border-4 border-bg-card bg-bg-elevated text-text-secondary transition-[background-color,color] duration-[250ms] cursor-pointer hover:bg-bg-selector-hover hover:text-text-primary active:scale-[0.98]" id="flip" type="button">__FLIP__</button></div></div></div>
+              <div class="flex flex-col gap-2.5 rounded-[16px] bg-bg-input px-4 py-3.5 transition-colors">
+                <span class="text-[14px] font-medium leading-none text-text-muted">You receive</span>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="min-w-0 flex-1"><input class="w-full min-w-0 border-0 bg-transparent p-0 text-[36px] font-semibold leading-10 tracking-[-0.02em] text-text-primary tabular-nums outline-none placeholder:text-text-disabled read-only:cursor-default" id="amtOut" placeholder="0" readonly type="text" value=""><div class="mt-0.5 h-4 text-[12px] font-medium leading-4 text-text-muted" id="usdOut"></div></div>
+                  <div class="relative shrink-0"><button class="sw-asset" id="assetOut" type="button" data-side="out"><span class="relative flex shrink-0 size-8"><span class="relative flex shrink-0 overflow-hidden bg-avatar-gradient ring-1 ring-inset ring-text-primary/10 size-full rounded-full" data-av="out"><img alt="" class="absolute inset-0 size-full rounded-md object-cover" src="img/pfp.png"></span><span class="absolute -bottom-0.5 -right-0.5 flex size-3 overflow-hidden rounded-[3px] border-2 border-bg-elevated bg-bg-elevated"><img alt="Ink" class="size-full object-cover" src="img/ink.png"></span></span><span class="flex min-w-0 flex-1 flex-col leading-tight"><span class="truncate text-[16px] font-bold text-text-primary" data-sym="out">INKY</span><span class="truncate text-[12px] font-medium text-text-muted">Ink</span></span>__CHEV__</button></div>
+                </div>
+                <div class="flex min-h-6 items-center justify-between gap-2"><span class="truncate text-[12px] font-medium text-text-muted" id="balOut">Balance: 0</span><span class="truncate text-[12px] font-medium text-text-muted" id="rate"></span></div>
+              </div>
+            </div>
+            <div class="relative flex flex-col rounded-[16px] bg-bg-input">
+              <div class="flex items-center justify-between px-3 pb-0 pt-3"><span class="flex items-center gap-1.5 text-sm font-medium text-text-muted"><span>Max Slippage</span></span><div class="flex items-center gap-2"><button aria-pressed="true" class="inline-flex cursor-pointer items-center rounded-full px-2.5 py-1.5 text-[12px] font-semibold leading-none transition-colors bg-bg-elevated text-text-primary" id="slipAuto" type="button">Auto</button><div class="relative flex h-6 items-center rounded-md bg-bg-elevated transition-shadow focus-within:shadow-[inset_0_0_0_1.5px_var(--color-accent)]"><input aria-label="Max slippage percent" class="h-full w-[4.25rem] bg-transparent px-1.5 pr-5 text-right text-sm font-medium tabular-nums text-text-primary outline-none" id="slip" inputmode="decimal" type="text" value="0.5"><span class="pointer-events-none absolute right-1.5 text-sm font-medium text-text-muted">%</span></div></div></div>
+              <button class="flex w-full cursor-pointer flex-col px-3 pb-3 pt-2 text-left" id="detBtn" type="button" aria-expanded="false"><span class="flex items-center justify-between"><span class="text-sm font-semibold text-text-primary">Trade details</span>__CHEV__</span></button>
+              <div class="sw-det" id="detBody">
+                <div class="flex items-center justify-between"><span class="text-text-muted">Minimum received</span><span class="truncate" id="d_minr">—</span></div>
+                <div class="flex items-center justify-between"><span class="text-text-muted">Route</span><span class="truncate" id="d_route">—</span></div>
+                <div class="flex items-center justify-between"><span class="text-text-muted">Swap fee</span><span class="truncate" id="d_fee">0.30%</span></div>
+                <div class="flex items-center justify-between"><span class="text-text-muted">Price impact</span><span class="truncate" id="d_impact">—</span></div>
+              </div>
+            </div>
+            <button class="inline-flex items-center justify-center whitespace-nowrap transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-text-muted disabled:opacity-100 bg-accent text-accent-ink hover:bg-accent-hover gap-2 px-5 text-base font-bold shadow-cta h-14 w-full rounded-full" id="cta">Connect Wallet</button>
+          </div>
+          <p class="mt-4 border-t border-border-default pt-3 text-center text-xs leading-relaxed text-text-muted"><span class="font-medium">0.3% per swap.</span> 0.25% stays with liquidity providers, 0.05% goes to <a class="inline-flex items-center gap-1 font-medium text-text-primary transition-colors hover:text-accent" href="stake.html">$INKY stakers</a>. Coins from the launchpad trade here with their hook fee on top.</p>
+        </div>
+      </div>
+    </div>
+    <aside class="sw-side">
+      <div class="sw-stats">
+        <div class="sw-stat"><span>Total value locked</span><b id="stTvl">—</b></div>
+        <div class="sw-stat"><span>Volume 24h</span><b id="stVol">—</b></div>
+        <div class="sw-stat"><span>Paid to stakers 24h</span><b id="stFees">—</b></div>
+        <div class="sw-stat"><span>Pools</span><b id="stPools">—</b></div>
+      </div>
+      <div class="sw-card sw-soon" id="soonCard">
+        <img src="img/inky-anim.svg" alt="" class="sw-inky" width="140" height="144">
+        <div><h3>Opens after the audit</h3><p>The contracts are written and being audited. Swaps, pools and staking go live together when it clears. The first pool will be INKY/ETH; every launchpad coin can list the moment its creator adds liquidity.</p><a class="sw-link" href="https://www.inkypump.fun" target="_blank" rel="noopener noreferrer">Trade on the launchpad meanwhile __EXT__</a></div>
+      </div>
+      <div class="sw-card">
+        <h3>How fees flow</h3>
+        <ol class="sw-steps">
+          <li><b>0.30%</b> charged on every swap, in the pool.</li>
+          <li><b>0.25%</b> stays in the pool for liquidity providers.</li>
+          <li><b>0.05%</b> is collected, swapped to ETH and sent to $INKY stakers. Anyone can trigger the collection.</li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+</div>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- Anypair mark: an A whose crossbar is a pair of linked rings. Base blue, shaded, navy outline. -->
+<defs>
+  <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f7dff"/><stop offset="1" stop-color="#0041d1"/></linearGradient>
+  <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9c8ff"/><stop offset="1" stop-color="#5590ff"/></linearGradient>
+  <linearGradient id="gw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d6e4ff"/></linearGradient>
+  <linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a86ff"/><stop offset="1" stop-color="#0046e0"/></linearGradient>
+  <radialGradient id="sh" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#001a66" stop-opacity=".35"/><stop offset="1" stop-color="#001a66" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="64" cy="112" rx="46" ry="7" fill="url(#sh)"/>
+<g transform="rotate(-4 64 64)">
+  <!-- legs -->
+  <path d="M31 102 64 24l33 78" fill="none" stroke="#0a1b4d" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M97 102 64 24" fill="none" stroke="url(#gr)" stroke-width="16" stroke-linecap="round"/>
+  <path d="M31 102 64 24" fill="none" stroke="url(#gl)" stroke-width="16" stroke-linecap="round"/>
+  <!-- light along the left leg, a soft shade down the right one -->
+  <path d="M45 60l12-29" fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+  <path d="M38 89l3-7" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>
+  <path d="M73 40l17 41" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+  <!-- linked rings -->
+  <g transform="translate(64 79)" fill="none" stroke-linecap="round">
+    <rect x="-27" y="-10" width="30" height="20" rx="10" stroke="#0a1b4d" stroke-width="12.5"/>
+    <rect x="-3" y="-10" width="30" height="20" rx="10" stroke="#0a1b4d" stroke-width="12.5"/>
+    <rect x="-27" y="-10" width="30" height="20" rx="10" stroke="url(#gw)" stroke-width="5.5"/>
+    <rect x="-3" y="-10" width="30" height="20" rx="10" stroke="url(#gb)" stroke-width="5.5"/>
+    <!-- chain: the white link passes over the blue one at the top crossing (and under it at the bottom) -->
+    <path d="M-3.58 -9.4A10 10 0 0 1 2.4 -3.42" stroke="#0a1b4d" stroke-width="12.5" stroke-linecap="butt"/>
+    <path d="M-3.58 -9.4A10 10 0 0 1 2.4 -3.42" stroke="#f1f6ff" stroke-width="5.5" stroke-linecap="butt"/>
+    <!-- glints -->
+    <path d="M-20 -10h7" stroke="#ffffff" stroke-width="2" stroke-opacity=".9"/>
+    <path d="M6 -10h6" stroke="#cfe0ff" stroke-width="2" stroke-opacity=".9"/>
+  </g>
+</g>
+</svg>

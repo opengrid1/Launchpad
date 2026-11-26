@@ -1,0 +1,14 @@
+{
+  "network": "arc",
+  "chainId": 5042,
+  "deployer": "0x3a015b789d864BcBf1C40949d21056D08203bB23",
+  "owner": "0x5dddea56774f01fc9d207bbd7b7633596a2f4a0b",
+  "timestamp": "2026-09-16T05:07:58.361Z",
+  "startBlock": 21105124,
+  "dyorV3Factory": "0xf0db7b58379503491d857dB50AC9ece64c653918",
+  "quoteNative": "0x3600000000000000000000000000000000000000",
+  "tokenDeployer": "0xb4eD32D72793Abd14ea036E245d9aFbf4860591B",
+  "factory": "0xE77c6b80cE7C5eDa900c31D9A225F3D918fAfdCf",
+  "swapRouter": "0x2577144ff1a0A79F895237b84921738B338f67BD",
+  "poolFeeTier": 10000
+}

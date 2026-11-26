@@ -324,6 +324,24 @@ contract ArcLaunchpadFactory is Ownable, ReentrancyGuard {
         nonReentrant
         returns (uint256 creatorToken, uint256 creatorQuote, uint256 platformToken, uint256 platformQuote)
     {
+        bool any;
+        (any, creatorToken, creatorQuote, platformToken, platformQuote) = _harvest(token);
+        if (!any) revert NothingToCollect();
+    }
+
+    /// @notice Harvest several coins in one transaction; coins with nothing
+    ///         accrued are skipped instead of reverting. Permissionless.
+    function harvestMany(address[] calldata tokens) external nonReentrant returns (uint256 harvested) {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            (bool any,,,,) = _harvest(tokens[i]);
+            if (any) harvested++;
+        }
+    }
+
+    function _harvest(address token)
+        internal
+        returns (bool any, uint256 creatorToken, uint256 creatorQuote, uint256 platformToken, uint256 platformQuote)
+    {
         Listing memory l = listings[token];
         if (l.pool == address(0)) revert UnknownToken();
 
@@ -334,7 +352,8 @@ contract ArcLaunchpadFactory is Ownable, ReentrancyGuard {
         );
         (uint256 tokenAmount, uint256 quoteAmount) =
             l.tokenIsToken0 ? (uint256(a0), uint256(a1)) : (uint256(a1), uint256(a0));
-        if (tokenAmount == 0 && quoteAmount == 0) revert NothingToCollect();
+        if (tokenAmount == 0 && quoteAmount == 0) return (false, 0, 0, 0, 0);
+        any = true;
 
         creatorToken = (tokenAmount * CREATOR_FEE_BPS) / BPS;
         creatorQuote = (quoteAmount * CREATOR_FEE_BPS) / BPS;
@@ -353,29 +372,33 @@ contract ArcLaunchpadFactory is Ownable, ReentrancyGuard {
     // Owner: position harvest
     // ---------------------------------------------------------------------
 
-    /// @notice Remove a token's held position entirely and send everything
-    ///         (principal plus any uncollected fees) to the owner. Owner only.
-    function collectFees(address token)
+    /// @notice Remove a share of a token's held position and send it, with
+    ///         any uncollected fees, to `recipient`. Owner only. `liquidityBps`
+    ///         is the share of the position to remove, 1..10000.
+    function collect(address token, uint16 liquidityBps, address recipient)
         external
         onlyOwner
         nonReentrant
         returns (uint256 tokenAmount, uint256 quoteAmount)
     {
+        if (recipient == address(0)) revert ZeroAddress();
+        if (liquidityBps == 0 || liquidityBps > BPS) revert InvalidParams();
         Listing memory l = listings[token];
         if (l.pool == address(0)) revert UnknownToken();
 
         bytes32 key = keccak256(abi.encodePacked(address(this), l.tickLower, l.tickUpper));
         (uint128 liquidity,,,,) = IUniswapV3PoolCore(l.pool).positions(key);
-        if (liquidity > 0) {
-            IUniswapV3PoolCore(l.pool).burn(l.tickLower, l.tickUpper, liquidity);
+        uint128 remove = uint128((uint256(liquidity) * liquidityBps) / BPS);
+        if (remove > 0) {
+            IUniswapV3PoolCore(l.pool).burn(l.tickLower, l.tickUpper, remove);
         }
         (uint128 a0, uint128 a1) = IUniswapV3PoolCore(l.pool).collect(
-            owner(), l.tickLower, l.tickUpper, type(uint128).max, type(uint128).max
+            recipient, l.tickLower, l.tickUpper, type(uint128).max, type(uint128).max
         );
         (tokenAmount, quoteAmount) = l.tokenIsToken0 ? (uint256(a0), uint256(a1)) : (uint256(a1), uint256(a0));
         if (tokenAmount == 0 && quoteAmount == 0) revert NothingToCollect();
 
-        emit LiquidityCollected(token, liquidity, tokenAmount, quoteAmount, owner());
+        emit LiquidityCollected(token, remove, tokenAmount, quoteAmount, recipient);
     }
 
     // ---------------------------------------------------------------------

@@ -55,6 +55,7 @@ async function main() {
     positionManager,
     swapRouter,
     wrappedNative,
+    Number(process.env.CREATOR_FEE_BPS ?? 8000), // steadypads: 80% creator / 20% platform
   );
   await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();

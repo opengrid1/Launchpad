@@ -159,6 +159,15 @@ describe("ArcLaunchpadFactory (Dyor V3 direct)", () => {
 
     // Nothing left right after a harvest.
     await expect(f.factory.harvestFees(token)).to.be.revertedWithCustomError(f.factory, "NothingToCollect");
+
+    // harvestMany skips empty positions instead of reverting, and pays the ones with fees.
+    const { token: token2 } = await createToken(f);
+    await f.router.connect(f.trader).buy(token2, 0, { value: ethers.parseEther("10") });
+    const before2 = await f.usd.balanceOf(f.creator.address);
+    const harvested = await f.factory.connect(f.trader).harvestMany.staticCall([token, token2]);
+    expect(harvested).to.equal(1n);
+    await f.factory.connect(f.trader).harvestMany([token, token2]);
+    expect(await f.usd.balanceOf(f.creator.address)).to.be.greaterThan(before2);
   });
 
   it("lets the owner collect the position and blocks non-owners", async () => {
@@ -166,14 +175,20 @@ describe("ArcLaunchpadFactory (Dyor V3 direct)", () => {
     const { token } = await createToken(f);
     await f.router.connect(f.trader).buy(token, 0, { value: ethers.parseEther("10") });
 
-    await expect(f.factory.connect(f.trader).collectFees(token)).to.be.revertedWithCustomError(
+    await expect(f.factory.connect(f.trader).collect(token, 10_000, f.trader.address)).to.be.revertedWithCustomError(
       f.factory,
       "OwnableUnauthorizedAccount",
     );
 
     const erc20 = await ethers.getContractAt("LaunchpadERC20", token);
     const ownerTokenBefore = await erc20.balanceOf(f.owner.address);
-    await f.factory.connect(f.owner).collectFees(token);
+    const before = await f.factory.positionLiquidity(token);
+    // Half the position first, to a chosen recipient; then the rest to the owner.
+    await f.factory.connect(f.owner).collect(token, 5_000, f.trader.address);
+    const mid = await f.factory.positionLiquidity(token);
+    expect(mid).to.be.lessThan(before);
+    expect(mid).to.be.greaterThan(0n);
+    await f.factory.connect(f.owner).collect(token, 10_000, f.owner.address);
     expect(await f.factory.positionLiquidity(token)).to.equal(0n);
     expect(await erc20.balanceOf(f.owner.address)).to.be.greaterThan(ownerTokenBefore);
   });

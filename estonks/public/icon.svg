@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="30%" cy="20%" r="90%"><stop offset="0" stop-color="#23262e"/><stop offset="1" stop-color="#0e0f12"/></radialGradient>
+    <linearGradient id="ap" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffbd93"/><stop offset="1" stop-color="#ff9a5e"/></linearGradient>
+    <linearGradient id="iv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e6e6e2"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <rect x="1.5" y="1.5" width="509" height="509" rx="115" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="3"/>
+  <rect x="122" y="120" width="60" height="272" rx="30" fill="url(#iv)"/>
+  <rect x="122" y="120" width="268" height="60" rx="30" fill="url(#ap)"/>
+  <rect x="122" y="226" width="196" height="60" rx="30" fill="url(#iv)"/>
+  <rect x="122" y="332" width="236" height="60" rx="30" fill="url(#ap)"/>
+</svg>

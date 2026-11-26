@@ -56,7 +56,8 @@ async function main() {
     swapRouter: await router.getAddress(),
     poolFeeTier: 10000,
   };
-  const out = path.join(__dirname, "..", "deployments", "arc-v3-launchpad.json");
+  // OUT_NAME keeps a fresh deployment from overwriting an earlier record.
+  const out = path.join(__dirname, "..", "deployments", process.env.OUT_NAME ?? "arc-v3-launchpad.json");
   fs.writeFileSync(out, JSON.stringify(record, null, 2) + "\n");
   console.log("saved", out);
 

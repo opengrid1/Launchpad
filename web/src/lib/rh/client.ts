@@ -119,12 +119,19 @@ export class RhClient {
   // B-20 tokens carry no on-chain metadataURI, so metadata is read from the
   // factory's registry, and launches keep the creator-chosen pair + tax.
   private readonly baseStock: boolean;
+  // Stock-pair mode (stockpad on Uniswap V4): the default V4 model — coins keep
+  // the creator's chosen stock/WETH pair and pay holders in it via the token's
+  // own accumulator (pendingRewards/claim), with the 1% tax skimmed in the hook.
+  // Differs from the plain default only in that launches do NOT force a WETH
+  // pair, so this reuses the whole default read/trade path unchanged.
+  private readonly stockPair: boolean;
 
-  constructor(publicClient: PublicClient, v4: V4Addresses, startBlock: bigint, opts?: { baseStock?: boolean }) {
+  constructor(publicClient: PublicClient, v4: V4Addresses, startBlock: bigint, opts?: { baseStock?: boolean; stockPair?: boolean }) {
     this.publicClient = publicClient;
     this.v4 = v4;
     this.startBlock = startBlock;
     this.baseStock = opts?.baseStock ?? false;
+    this.stockPair = opts?.stockPair ?? false;
     this.addresses = { factory: v4.factory, tokenDeployer: v4.factory, weth: v4.weth };
   }
 
@@ -172,14 +179,23 @@ export class RhClient {
     // expose the same data through plain view calls, so skip the doomed (and
     // slow, retried) log scan entirely while the method is parked.
     if (Date.now() < this.logsBrokenUntil) return this.loadCoresFromViews(latest);
-    let logs: any[];
+    let logs: any[] = [];
     try {
-      logs = (await this.publicClient.getLogs({
-        address: this.v4.factory,
-        event: factoryAbi[0] as any,
-        fromBlock: this.coresUpTo === 0n ? this.startBlock : this.coresUpTo + 1n,
-        toBlock: latest,
-      })) as any[];
+      // Chunk to <=9k blocks: public Base RPCs cap eth_getLogs at a 10k range,
+      // so a single scan over the whole deployment fails and would park logs
+      // globally — which also disables the swap-log scan and blanks charts.
+      const CHUNK = 9000n;
+      const from0 = this.coresUpTo === 0n ? this.startBlock : this.coresUpTo + 1n;
+      for (let from = from0; from <= latest; from += CHUNK + 1n) {
+        const to = from + CHUNK > latest ? latest : from + CHUNK;
+        const part = (await this.publicClient.getLogs({
+          address: this.v4.factory,
+          event: factoryAbi[0] as any,
+          fromBlock: from,
+          toBlock: to,
+        })) as any[];
+        if (part.length) logs.push(...part);
+      }
     } catch {
       this.parkLogs();
       return this.loadCoresFromViews(latest);
@@ -444,13 +460,23 @@ export class RhClient {
   ): Promise<{ logs: any[]; upTo: bigint }> {
     if (Date.now() >= this.logsBrokenUntil) {
       try {
-        const logs = (await this.publicClient.getLogs({
-          address: this.v4.poolManager,
-          event: poolSwapEvent as any,
-          args: { id: core.poolId },
-          fromBlock,
-          toBlock: latest,
-        })) as any[];
+        // Chunk to <=9k blocks: public Base RPCs cap eth_getLogs at a 10k range,
+        // and a coin discovered via the log-free views path carries the whole
+        // deployment as its scan range. Filtered by pool id, each chunk's
+        // response is small, so this stays cheap.
+        const CHUNK = 9000n;
+        const logs: any[] = [];
+        for (let from = fromBlock; from <= latest; from += CHUNK + 1n) {
+          const to = from + CHUNK > latest ? latest : from + CHUNK;
+          const part = (await this.publicClient.getLogs({
+            address: this.v4.poolManager,
+            event: poolSwapEvent as any,
+            args: { id: core.poolId },
+            fromBlock: from,
+            toBlock: to,
+          })) as any[];
+          if (part.length) logs.push(...part);
+        }
         return { logs, upTo: latest };
       } catch {
         this.parkLogs();
@@ -680,7 +706,12 @@ export class RhClient {
     // a tradeless non-WETH pool would otherwise read as a fraction of a cent.
     const STARTING_MCAP = 4000;
     const computed = priceUsdPerToken * supplyWhole;
-    const mcapUsd = trades.length > 0 && computed > 0 ? computed : STARTING_MCAP;
+    // For an 18-decimal pair (ETH/WETH) the pool read is already correct, so a
+    // freshly launched coin shows its real live market cap from the pool price
+    // even before the first indexed trade. Only non-WETH pairs (6/8-dec) fall
+    // back to the starting cap until a trade lets us price them safely.
+    const pairIsWeth = core.stock.toLowerCase() === this.v4.weth.toLowerCase();
+    const mcapUsd = computed > 0 && (trades.length > 0 || pairIsWeth) ? computed : STARTING_MCAP;
     // ETH-per-coin equivalent for the trade ticket: buys pay ETH and sells
     // receive ETH (the router auto-routes through the pair), so quotes and
     // minOut must be in native units, not pair units.
@@ -1266,9 +1297,11 @@ export class RhClient {
   }): Promise<`0x${string}`> {
     const wc = this.requireWallet();
     const creator = this.account();
-    // Base-stock model keeps the creator's chosen stock + tax. The Hood model
-    // instead forces every coin to pair WETH at a flat 1% fee.
-    if (!this.baseStock) params = { ...params, stock: this.v4.weth, taxBps: 100 };
+    // Base-stock and stock-pair models keep the creator's chosen stock + tax.
+    // The Hood model instead forces every coin to pair WETH at a flat 1% fee.
+    if (!this.baseStock && !this.stockPair) params = { ...params, stock: this.v4.weth, taxBps: 100 };
+    // Stock-pair: keep the creator's pair; default the tax to 1% when unset.
+    if (this.stockPair && !params.taxBps) params = { ...params, taxBps: 100 };
     const metadataURI = params.metadataURI ?? "";
     // Size the start market cap from the pair token's USD price. Never launch on
     // a bad price (it would mis-size the starting market cap), so require > 0.
@@ -1314,9 +1347,10 @@ export class RhClient {
         { name: params.name, symbol: params.symbol, metadataURI, pair: params.stock, taxBps: params.taxBps, pairUsdPrice8 },
         salt,
       ],
-      // Atomic dev buy: ETH sent with launch is swapped into the new coin in
-      // the same transaction, sniper-tax-exempt, before anyone else can trade.
-      value: params.devBuyWei ?? 0n,
+      // Stock-pair launch() is non-payable (dev buy is a separate on-chain
+      // entry point), so never attach value in that mode. The Hood model's
+      // payable launch takes the ETH dev buy inline.
+      value: this.stockPair ? 0n : (params.devBuyWei ?? 0n),
     });
   }
 

@@ -1,0 +1,32 @@
+/* Inkypump theme for TradingView Advanced Charts (loaded inside the chart iframe) */
+:root{
+  --tv-color-platform-background:#0e1117;
+  --tv-color-pane-background:#0e1117;
+  --tv-color-toolbar-button-background-hover:#161b25;
+  --tv-color-toolbar-button-background-secondary-hover:#161b25;
+  --tv-color-toolbar-button-background-expanded:#1a1f2a;
+  --tv-color-toolbar-button-text:#7c8498;
+  --tv-color-toolbar-button-text-hover:#f3f5f9;
+  --tv-color-toolbar-button-text-active:#c3c9d6;
+  --tv-color-toolbar-button-text-active-hover:#f3f5f9;
+  --tv-color-item-active-text:#ff4fa3;
+  --tv-color-toolbar-toggle-button-background-active:#ff4fa3;
+  --tv-color-toolbar-toggle-button-background-active-hover:#ff6fb5;
+  --tv-color-toolbar-divider-background:#1e2430;
+  --tv-color-toolbar-save-layout-loader:#7c8498;
+  --tv-color-popup-background:#0e1117;
+  --tv-color-popup-element-text:#f3f5f9;
+  --tv-color-popup-element-text-hover:#f3f5f9;
+  --tv-color-popup-element-background-hover:#161b25;
+  --tv-color-popup-element-divider-background:#1e2430;
+  --tv-color-popup-element-secondary-text:#7c8498;
+  --tv-color-popup-element-hint-text:#7c8498;
+  --tv-color-popup-element-text-active:#ff4fa3;
+  --tv-color-popup-element-background-active:#1a1f2a;
+  --tv-color-popup-element-toolbox-text:#7c8498;
+  --tv-color-popup-element-toolbox-text-hover:#f3f5f9;
+  --tv-color-popup-element-toolbox-text-active-hover:#ff6fb5;
+  --tv-color-popup-element-toolbox-background-hover:#161b25;
+  --tv-color-popup-element-toolbox-background-active-hover:#1a1f2a;
+}
+html, body { font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }

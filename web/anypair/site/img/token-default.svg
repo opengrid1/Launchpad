@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- default logo for coins and tokens without their own: two linked rings on Base blue -->
+<defs><linearGradient id="td" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3f7dff"/><stop offset="1" stop-color="#0040d1"/></linearGradient></defs>
+<rect width="128" height="128" fill="url(#td)"/>
+<circle cx="18" cy="20" r="34" fill="#ffffff" opacity=".07"/>
+<g transform="translate(64 64) rotate(-30)" fill="none" stroke-linecap="round">
+  <rect x="-40" y="-15" width="46" height="30" rx="15" stroke="#ffffff" stroke-width="9"/>
+  <rect x="-6" y="-15" width="46" height="30" rx="15" stroke="#a9c8ff" stroke-width="9"/>
+  <path d="M-3.7 -13.6A15 15 0 0 1 4.6 -6.6" stroke="#ffffff" stroke-width="9" stroke-linecap="butt"/>
+</g>
+</svg>

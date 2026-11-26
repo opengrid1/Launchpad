@@ -1,0 +1,428 @@
+{
+  "checkedAt": "2026-09-04T10:02:08.553Z",
+  "rows": [
+    {
+      "ticker": "QQQ",
+      "full": "Invesco QQQ (dStock)",
+      "evm": "0x499e347174f237ad28687b947b94c0d49570d1b7",
+      "evmName": "Invesco QQQ (dStock)",
+      "pair": "QQQ/USDC",
+      "mid": 1017,
+      "vol": 25566390.425854
+    },
+    {
+      "ticker": "GLD",
+      "full": "SPDR Gold Shares (dStock)",
+      "evm": "0x08be08c37d93e689518ced744a89f113b4afaad4",
+      "evmName": "SPDR Gold Shares (dStock)",
+      "pair": "GLD/USDC",
+      "mid": 545.215,
+      "vol": 14160295.064999998
+    },
+    {
+      "ticker": "TAO1",
+      "full": "TAO - Wagyu.xyz",
+      "evm": null,
+      "evmName": null,
+      "pair": "TAO1/USDC",
+      "mid": 0.048744,
+      "vol": 110832.81782869
+    },
+    {
+      "ticker": "HOOD",
+      "full": "Robinhood Markets (dStock)",
+      "evm": "0xc304a9d52cf9165024ebc7814250ef3a5013f924",
+      "evmName": "Robinhood Markets (dStock)",
+      "pair": "HOOD/USDC",
+      "mid": 87.0595,
+      "vol": 83033.47414
+    },
+    {
+      "ticker": "SPCX",
+      "full": "SpaceX (dStock)",
+      "evm": "0xe8c8afdf7e80be51e91afa28b6ac44404d270b5d",
+      "evmName": "SpaceX (dStock)",
+      "pair": "SPCX/USDC",
+      "mid": 0.0696225,
+      "vol": 65571.8289371
+    },
+    {
+      "ticker": "MU",
+      "full": "Micron Technology (dStock)",
+      "evm": "0x173c83a71c1a9e254721a86b7512cd65bf92648d",
+      "evmName": "Micron Technology (dStock)",
+      "pair": "MU/USDC",
+      "mid": 0.073586,
+      "vol": 17394.95596945
+    },
+    {
+      "ticker": "TRX1",
+      "full": "TRX - Wagyu.xyz",
+      "evm": null,
+      "evmName": null,
+      "pair": "TRX1/USDC",
+      "mid": 0.052446,
+      "vol": 6432.47194517
+    },
+    {
+      "ticker": "META",
+      "full": "Meta Platforms (dStock)",
+      "evm": "0x5a9d2deee7d8782011695623f1c453f46b2b566e",
+      "evmName": "Meta Platforms (dStock)",
+      "pair": "META/USDC",
+      "mid": 107.8905,
+      "vol": 5885.326795
+    },
+    {
+      "ticker": "SPCXD",
+      "full": "Space Exploration Technologies Corp.",
+      "evm": "0x95687557c66bc799a850ba7037673528238ae763",
+      "evmName": "Wrapped Space Exploration Technologies Corp.",
+      "pair": "SPCXD/USDC",
+      "mid": 0.003665,
+      "vol": 693.91724888
+    },
+    {
+      "ticker": "SPY",
+      "full": "SPDR S&P 500 ETF (dStock)",
+      "evm": "0xb7bf37783db41a2851b77c6917280c56312c833a",
+      "evmName": "SPDR S&P 500 ETF (dStock)",
+      "pair": "SPY/USDC",
+      "mid": 97.8375,
+      "vol": 624.9416
+    },
+    {
+      "ticker": "TSLA",
+      "full": "Tesla - Wagyu.xyz",
+      "evm": "0x3727c797073840936e3c18b4088f3574cd1a72a3",
+      "evmName": "Tesla - Wagyu.xyz",
+      "pair": "TSLA/USDC",
+      "mid": 89.2,
+      "vol": 2.6796
+    },
+    {
+      "ticker": "AAPL",
+      "full": "Apple (dStock)",
+      "evm": "0x7374dc1894fbd1bc6c42f6ebbc50b78c211a8606",
+      "evmName": "Apple (dStock)",
+      "pair": "AAPL/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "AAPLX",
+      "full": "Wrapped Apple xStock",
+      "evm": null,
+      "evmName": null,
+      "pair": "AAPLX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "AMZN",
+      "full": "Amazon (dStock)",
+      "evm": "0x4f2164c12d2d450a8b1d430492ef6670fe4cad8e",
+      "evmName": "Amazon (dStock)",
+      "pair": "AMZN/USDC",
+      "mid": 1580,
+      "vol": 0
+    },
+    {
+      "ticker": "AVGO",
+      "full": "Broadcom (dStock)",
+      "evm": "0xc2785563af80c05177fff006e3b380ac5d172602",
+      "evmName": "Broadcom (dStock)",
+      "pair": "AVGO/USDC",
+      "mid": 0.010069,
+      "vol": 0
+    },
+    {
+      "ticker": "BNB1",
+      "full": "BNB (dStock)",
+      "evm": "0xfd6f06d323f6cb08ee9eeb2d201e9ec0e9112c88",
+      "evmName": "BNB (dStock)",
+      "pair": "BNB1/USDC",
+      "mid": 0.775045,
+      "vol": 0
+    },
+    {
+      "ticker": "CRCL",
+      "full": "Circle Internet Group (dStock)",
+      "evm": "0xe74aa6c4050a15790525eb11cc4562c664dc67c9",
+      "evmName": "Circle Internet Group (dStock)",
+      "pair": "CRCL/USDC",
+      "mid": 0.033862,
+      "vol": 0
+    },
+    {
+      "ticker": "CRCLX",
+      "full": "Wrapped Circle xStock",
+      "evm": null,
+      "evmName": null,
+      "pair": "CRCLX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "DNDX",
+      "full": "Decentralized Nasdaq",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQAAPL",
+      "full": "EQX Tokenized AAPL",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQAMZN",
+      "full": "EQX Tokenized AMZN",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQGOOG",
+      "full": "EQX Tokenized GOOGL",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQMETA",
+      "full": "EQX Tokenized META",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQMSFT",
+      "full": "EQX Tokenized MSFT",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQMU",
+      "full": "EQX Tokenized MU",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQNVDA",
+      "full": "EQX Tokenized NVDA",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQQQQ",
+      "full": "EQX Tokenized QQQ",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQSPCX",
+      "full": "EQX Tokenized SPCX",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQSPY",
+      "full": "EQX Tokenized SPY",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "EQTSLA",
+      "full": "EQX Tokenized TSLA",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "GOOGL",
+      "full": "Alphabet Class A (dStock)",
+      "evm": "0x35eeda03e55ff217a013892e9e2e37e792b264ea",
+      "evmName": "Alphabet Class A (dStock)",
+      "pair": "GOOGL/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "MSFT",
+      "full": "Microsoft (dStock)",
+      "evm": "0x66520d8fd614487214a25af7babf27584f59f76b",
+      "evmName": "Microsoft (dStock)",
+      "pair": "MSFT/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "MUX",
+      "full": "Wrapped Micron Technology xStock",
+      "evm": "0xe2047ee3bddb5c99ae428ab83df63f8730698e30",
+      "evmName": "Wrapped Micron Technology xStock",
+      "pair": "MUX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "NVDA",
+      "full": "Nvidia - Wagyu.xyz",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "NVDAX",
+      "full": "Wrapped NVIDIA xStock",
+      "evm": "0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+      "evmName": "Wrapped NVIDIA xStock",
+      "pair": "NVDAX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "ORCL",
+      "full": "Oracle (dStock)",
+      "evm": "0xca2156522638f597ffb3705857ffdc356efabe50",
+      "evmName": "Oracle (dStock)",
+      "pair": "ORCL/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "QQQX",
+      "full": "Wrapped Nasdaq xStock",
+      "evm": "0x4c1ae29c159838fc1b224636e28e086eb69101f7",
+      "evmName": "Wrapped Nasdaq xStock",
+      "pair": "QQQX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "SKHYX",
+      "full": "Wrapped SK hynix xStock",
+      "evm": "0x6215a58ed045d71f2561aaabe54f4c885c522998",
+      "evmName": "Wrapped SK hynix xStock",
+      "pair": "SKHYX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "SLV",
+      "full": "iShares Silver Trust (dStock)",
+      "evm": "0x7ef4eba0c0200957e357627ced1884d6cb63e961",
+      "evmName": "iShares Silver Trust (dStock)",
+      "pair": "SLV/USDC",
+      "mid": 0.0099,
+      "vol": 0
+    },
+    {
+      "ticker": "SNDKX",
+      "full": "Wrapped Sandisk Corporation xStock",
+      "evm": null,
+      "evmName": null,
+      "pair": "SNDKX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "SPACEX",
+      "full": "SPACEX - Wagyu.xyz",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "SPCXX",
+      "full": "Wrapped SpaceX xStock",
+      "evm": null,
+      "evmName": null,
+      "pair": "SPCXX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "SPYX",
+      "full": "Wrapped SP500 xStock",
+      "evm": "0xe7e553cd128f0011777323a0b44a7b96ea1cb540",
+      "evmName": "Wrapped SP500 xStock",
+      "pair": "SPYX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "THLP",
+      "full": "Tokenized Hyperliquidity Provider",
+      "evm": null,
+      "evmName": null,
+      "pair": null,
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "TSLAX",
+      "full": "Wrapped Tesla xStock",
+      "evm": null,
+      "evmName": null,
+      "pair": "TSLAX/USDC",
+      "mid": 0,
+      "vol": 0
+    },
+    {
+      "ticker": "USPYX",
+      "full": "Unit SP500 xStock",
+      "evm": null,
+      "evmName": null,
+      "pair": "USPYX/USDC",
+      "mid": 0.967595,
+      "vol": 0
+    },
+    {
+      "ticker": "XMR1",
+      "full": "XMR - Wagyu.xyz",
+      "evm": null,
+      "evmName": null,
+      "pair": "XMR1/USDC",
+      "mid": 0.000919,
+      "vol": 0
+    }
+  ]
+}

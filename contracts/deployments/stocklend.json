@@ -1,0 +1,53 @@
+{
+  "chainId": 4663,
+  "oracle": "0x1e779b64A0D6C83BedA478bffF71A93eb6F45A40",
+  "market": "0x5E07b6663e40e973F5Ef304D9f095b6a18d498E7",
+  "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+  "admin": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "feeRecipient": "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b",
+  "twapWindow": 1800,
+  "rate": {
+    "baseRateBps": 200,
+    "slope1Bps": 1000,
+    "slope2Bps": 5000,
+    "kinkBps": 8000
+  },
+  "risk": {
+    "ltvBps": 5000,
+    "liqThresholdBps": 6500,
+    "liqBonusBps": 800,
+    "reserveFactorBps": 1500
+  },
+  "markets": [
+    {
+      "sym": "TSLA",
+      "stock": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "pool": "0xf4ACdAEEB7022862A763C9B1B885e11191c889E3",
+      "borrowCap": 500,
+      "supplyCap": 1500
+    },
+    {
+      "sym": "AAPL",
+      "stock": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "pool": "0xAae0d815EE56e4092a5E5C2911E676Fea50B2d6D",
+      "borrowCap": 500,
+      "supplyCap": 1500
+    },
+    {
+      "sym": "NVDA",
+      "stock": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "pool": "0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3",
+      "borrowCap": 2000,
+      "supplyCap": 6000
+    },
+    {
+      "sym": "AMZN",
+      "stock": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "pool": "0x8AC92DA74AB5F3b1d024Dc1943Ad7e15Dc4179Ef",
+      "borrowCap": 300,
+      "supplyCap": 900
+    }
+  ],
+  "deployedAt": "2026-09-03T14:02:03.332Z",
+  "deployBlock": 53471581
+}
