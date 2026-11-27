@@ -1,0 +1,7 @@
+$KINEX is live on Elysium.
+
+The official token of Kinex, paired with HYPE on Uniswap v4. Protocol fees from every trade on Kinex buy $KINEX back and burn it.
+
+CA: 0xAF1ED5161118B252042Eca5a49FFf671F86Ae3BE
+
+Trade: https://kinex.fun/#/token/0xAF1ED5161118B252042Eca5a49FFf671F86Ae3BE

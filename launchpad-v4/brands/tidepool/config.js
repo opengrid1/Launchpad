@@ -16,9 +16,9 @@ window.CFG = {
       contracts: { factory: '0x0B3a2fAB5DE60128EEBF8783fACB46aeb17a934F', hook: '0xFb9008313CCBe0EDf42E0eEbeCd2d8Ed5C716044', locker: '0xA30e059e87e4987E88578f517eE3258BBEf80033', escrow: '0xbD8DEAe371D83DABcc0fB1be7C31610809C1D907', vault: '0x254fB4D89a5DFCC5a76b4663697E732C05f5C822', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', positionManager: '0x114ee1499242a273ef8DD8Ec6c5462fD91Cb68e2', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11', router: '0xA13f7611115752DEB2B13813BDDE16A5073e4b45', quoter: '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5' } },
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
-  official: ['0x4c639097d3697f3713b82c0a5e478a250a3ace23'], // $KINEX (relaunched 2026-11-27, paired with HYPE; hidden since the second fresh start that day)
-  // A fresh start (2026-11-27, done twice that day): the four tokens launched before it ($KCHAN, $KCAT, the first
-  // $KINEX and the $KINEX relaunched that day) are left off the board, the ticker, the tape and search (their pages
+  official: ['0xaf1ed5161118b252042eca5a49fff671f86ae3be'], // $KINEX (launched 2026-11-27 after the second fresh start, paired with HYPE), shown with an Official tag
+  // A fresh start (2026-11-27, done twice that day): the four tokens launched before it ($KCHAN, $KCAT and the first
+  // two $KINEX) are left off the board, the ticker, the tape and search (their pages
   // still open by link), and the flywheel counts from flyBase: its totals as they stood then. Tokens launched from
   // now on are listed and counted as usual.
   hidden: ['0xf99726e6159ed13c6d36e846d63eae1c82f88b2b', '0xe9f03e779b359dd3c2346847e09bc019c2f03cf6', '0x8b936972abc2be2bee3962e0c00783a984b78429', '0x4c639097d3697f3713b82c0a5e478a250a3ace23'],
@@ -46,7 +46,7 @@ window.CFG = {
     arbSys: '0x0000000000000000000000000000000000000064', nodeInterface: '0x00000000000000000000000000000000000000C8',
     claimDays: '6 to 7', anyChain: { coins: ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB'], note: 'Send from any wallet or exchange; it arrives as HYPE on HyperEVM, one click away from Elysium.' },
   },
-  stake: { splitter: '0xc69A9cc1d7FdC59997C7831a9D0b70A93d09A8BC', staking: '', token: '0x4c639097d3697F3713B82C0A5e478a250a3acE23', symbol: 'KINEX', stakingBps: 0, burnBps: 5000, farmBps: 0, durationDays: 7 },
+  stake: { splitter: '0xc69A9cc1d7FdC59997C7831a9D0b70A93d09A8BC', staking: '', token: '0xAF1ED5161118B252042Eca5a49FFf671F86Ae3BE', symbol: 'KINEX', stakingBps: 0, burnBps: 5000, farmBps: 0, durationDays: 7 },
   /* the AMM: our own pools for any two tokens (LP shares, 0.25% to LPs + 0.05% to the splitter per swap), and the farm
      that pays LP stakers the splitter's farm share in HYPE. Native HYPE is wrapped by the router. */
   amm: { factory: '0x9681e80f62b387FC4a411974f0191B69c66E1b26', router: '0x122c1f4B71c71DD19aFE3ba9f3166534D9E1eDFc', farm: '0x679a5e24226542ea7bf96e79dF5579aaC6E13577', wnative: '0xba876237b0f021a6c6d852d6c26e107997cc5e81', lpFeeBps: 25, protocolFeeBps: 5 },
