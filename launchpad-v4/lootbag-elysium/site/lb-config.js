@@ -45,10 +45,11 @@ window.LB_CFG = {
   prices: { api: 'https://api.hyperliquid.xyz/info', hype: 'HYPE', kntq: '@334', kntqPoolId: '0xa3f234a829d1c4a980e9776ccddf4b0c12070e03a0558d1eed2e9c0090d3cd7a' },
   // true only when the factory in use cannot withdraw a pool's liquidity. This one can (collect), so it is false.
   liquidityLocked: false,
-  // KinetiqPump's own coin on Elysium, $KPUMP (kinetiqpump.fun), paired with KNTQ: shown as official
-  loot: '0x56bc3848551F532DacD85751Acaf66Dc1b93766a',
+  // KinetiqPump's own coin on Elysium, shown as official once its address is put here. The first $KPUMP was paired
+  // with KNTQ and is withdrawn (hidden below); the official coin is to be paired with HYPE.
+  loot: '',
   // coins left off the board, the coin lists and search; their own page still opens from a direct link
-  hidden: [],
+  hidden: ['0x56bc3848551f532dacd85751acaf66dc1b93766a'],
   // what a coin can be paired with or pay, besides KinetiqPump coins: [address, decimals, name]. HYPE is WHYPE on-chain:
   // buyers pay and receive HYPE itself, and holders paid in it receive HYPE itself.
   tokens: {

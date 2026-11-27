@@ -1,7 +1,7 @@
 $KPUMP is live on Elysium.
 
-The official coin of KinetiqPump, paired with $KNTQ. Every trade pays its holders in KNTQ or HYPE, sent straight to their wallets. Nothing to claim.
+The official coin of KinetiqPump, paired with $HYPE. Every trade pays its holders in KNTQ or HYPE, sent straight to their wallets. Nothing to claim.
 
-CA: 0x56bc3848551F532DacD85751Acaf66Dc1b93766a
+CA: PASTE_CA_HERE
 
-Trade: https://kinetiqpump.fun/#/coin/0x56bc3848551F532DacD85751Acaf66Dc1b93766a
+Trade: https://kinetiqpump.fun/#/coin/PASTE_CA_HERE
