@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import {Test} from "forge-std/Test.sol";
-import {KinetiqPumpToken} from "../src/KinetiqPumpToken.sol";
+import {LootbagToken} from "../src/LootbagToken.sol";
 
 /// EIP-1167 minimal proxy, as the factory will deploy them
 library Clones {
@@ -17,9 +17,9 @@ library Clones {
 }
 
 /// The token on its own: this test is the factory (it deploys the implementation) and plays the payout contract.
-contract KinetiqPumpTokenTest is Test {
-    KinetiqPumpToken impl;
-    KinetiqPumpToken t;
+contract LootbagTokenTest is Test {
+    LootbagToken impl;
+    LootbagToken t;
     address payout = makeAddr("payout");
     address creator = makeAddr("creator");
     address pm = makeAddr("poolManager");
@@ -29,8 +29,8 @@ contract KinetiqPumpTokenTest is Test {
     uint256 constant SUPPLY = 1_000_000_000e18;
 
     function setUp() public {
-        impl = new KinetiqPumpToken();
-        t = KinetiqPumpToken(Clones.clone(address(impl)));
+        impl = new LootbagToken();
+        t = LootbagToken(Clones.clone(address(impl)));
         t.initialize("Loot", "LOOT", SUPPLY, payout, creator);
         t.exclude(pm);
         t.transfer(pm, SUPPLY); // the factory puts the supply in the pool (the launch transaction)
@@ -75,7 +75,7 @@ contract KinetiqPumpTokenTest is Test {
     }
 
     function test_launchBlockBuyersNeverEarn() public {
-        KinetiqPumpToken t2 = KinetiqPumpToken(Clones.clone(address(impl)));
+        LootbagToken t2 = LootbagToken(Clones.clone(address(impl)));
         t2.initialize("Snipe", "SNP", SUPPLY, payout, creator);
         t2.transfer(pm, SUPPLY);
         vm.prank(pm);
@@ -117,19 +117,19 @@ contract KinetiqPumpTokenTest is Test {
     function test_takeZeroesAndOnlyPayout() public {
         _buy(alice, 10e18);
         _reward(1 ether);
-        vm.expectRevert(KinetiqPumpToken.NotPayout.selector);
+        vm.expectRevert(LootbagToken.NotPayout.selector);
         t.take(alice);
         vm.prank(payout);
         assertEq(t.take(alice), 1 ether);
         assertEq(t.earned(alice), 0);
-        vm.expectRevert(KinetiqPumpToken.NotPayout.selector);
+        vm.expectRevert(LootbagToken.NotPayout.selector);
         t.addReward(1);
     }
 
     function test_cannotReinitializeOrInitImplementation() public {
-        vm.expectRevert(KinetiqPumpToken.AlreadyInitialized.selector);
+        vm.expectRevert(LootbagToken.AlreadyInitialized.selector);
         t.initialize("x", "x", 1, payout, creator);
-        vm.expectRevert(KinetiqPumpToken.AlreadyInitialized.selector);
+        vm.expectRevert(LootbagToken.AlreadyInitialized.selector);
         impl.initialize("x", "x", 1, payout, creator);
     }
 

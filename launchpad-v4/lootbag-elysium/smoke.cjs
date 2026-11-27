@@ -7,14 +7,14 @@
 //   node smoke.cjs            (then delete deployments/kinetiqpump-elysium*.json: they describe the fork, not Elysium)
 const fs = require("fs"), path = require("path");
 const { ethers } = require(fs.existsSync(path.join(__dirname, "node_modules/ethers")) ? "ethers" : path.join(__dirname, "../node_modules/ethers"));
-const D = __dirname, dep = JSON.parse(fs.readFileSync(D + "/deployments/kinetiqpump-elysium.json", "utf8")), C = dep.contracts;
+const D = __dirname, dep = JSON.parse(fs.readFileSync(D + "/deployments/" + (process.env.DEPLOY_NAME || "kinetiqpump-elysium") + ".json", "utf8")), C = dep.contracts;
 const abi = (n) => JSON.parse(fs.readFileSync(`${D}/out/${n}.sol/${n}.json`, "utf8")).abi;
 (async () => {
   if (dep.chainId === 99901) throw new Error("this deployment record is Elysium's own: the smoke test runs on a local fork only");
   const P = new ethers.JsonRpcProvider(process.env.FORK_RPC || "http://127.0.0.1:8547", undefined, { staticNetwork: true, cacheTimeout: -1 });
   const as = async (addr) => { await P.send("anvil_impersonateAccount", [addr]); await P.send("anvil_setBalance", [addr, "0x" + (10n ** 21n).toString(16)]); return P.getSigner(addr); };
   const owner = await as(dep.owner), alice = await as("0x00000000000000000000000000000000000a11ce"), bob = await as("0x0000000000000000000000000000000000000b0b"), dev = await as("0x000000000000000000000000000000000000de11");
-  const f = new ethers.Contract(C.factory, abi("KinetiqPumpFactory"), P), hook = new ethers.Contract(C.hook, abi("KinetiqPumpHook"), P), payout = new ethers.Contract(C.payout, abi("KinetiqPumpPayout"), P), router = new ethers.Contract(C.router, abi("KinetiqPumpRouter"), P);
+  const f = new ethers.Contract(C.factory, abi("KinetiqPumpFactory"), P), hook = new ethers.Contract(C.hook, abi("LootbagHook"), P), payout = new ethers.Contract(C.payout, abi("KinetiqPumpPayout"), P), router = new ethers.Contract(C.router, abi("KinetiqPumpRouter"), P);
   const erc = (a) => new ethers.Contract(a, ["function balanceOf(address) view returns (uint256)", "function approve(address,uint256) returns (bool)"], P);
   const K = dep.tokens.kntq, W = dep.tokens.whype, fmt = ethers.formatEther, ok = (c, m) => { if (!c) throw new Error("CHECK FAILED: " + m); console.log("  ok:", m); };
   for (const n of ["factory", "hook", "payout", "swapper", "bags", "airdrop"]) await (await new ethers.Contract(C[n], ["function acceptOwnership()", "function owner() view returns (address)"], owner).acceptOwnership()).wait();
@@ -34,7 +34,7 @@ const abi = (n) => JSON.parse(fs.readFileSync(`${D}/out/${n}.sol/${n}.json`, "ut
     const p = { name: "Smoke " + sym, symbol: sym, quote, rewards: [K, W], devBuy: 0, minCoinsOut: 1 }, fee = await f.launchFee(sym);
     const rc = await (await f.connect(dev).launchWithEth(p, ["", "smoke test", "", "", ""], 1, { value: fee + ethers.parseEther("0.5") })).wait();
     const coin = rc.logs.map((l) => { try { return f.interface.parseLog(l); } catch { return null; } }).find((e) => e && e.name === "Launched").args.coin;
-    const t = new ethers.Contract(coin, abi("KinetiqPumpToken"), P), devCoins = await t.balanceOf(dev.address);
+    const t = new ethers.Contract(coin, abi("LootbagToken"), P), devCoins = await t.balanceOf(dev.address);
     ok(devCoins > 0n && devCoins <= 20_000_000n * 10n ** 18n, `${sym} launched with 0.5 HYPE: dev got ${(Number(devCoins) / 1e24).toFixed(2)}M coins (${(Number(devCoins) / 1e25).toFixed(2)}% of supply), gas ${rc.gasUsed}`);
     ok(await t.excluded(dev.address), "the creator is excluded from rewards");
     await P.send("evm_mine", []);
@@ -45,7 +45,7 @@ const abi = (n) => JSON.parse(fs.readFileSync(`${D}/out/${n}.sol/${n}.json`, "ut
     const earned = await t.earned(alice.address);
     ok(earned > 0n, `alice earned ${fmt(earned)} ${quote === K ? "KNTQ" : "WHYPE"} from bob's buy`);
     await (await t.connect(alice).approve(C.router, have / 2n)).wait();
-    const b0 = await P.getBalance(alice.address); const r2 = await (await router.connect(alice).sell(coin, have / 2n, 1, alice.address)).wait();
+    const b0 = await P.getBalance(alice.address); const r2 = await (await router.connect(alice).sell(coin, have / 2n, 1, alice.address, { gasLimit: 2_000_000 })).wait();
     ok((await P.getBalance(alice.address)) + r2.gasUsed * r2.gasPrice > b0, "alice sold half back for HYPE");
     // a KNTQ round arrives as KNTQ, a WHYPE round as HYPE itself; alice does nothing either way
     const reward = await payout.currentReward(coin), inHype = reward.toLowerCase() === W.toLowerCase();

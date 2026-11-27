@@ -1,5 +1,5 @@
 /* KinetiqPump on Elysium: deployment config, read by the site, the admin page, the log cache and the wallet connection.
-   The contract addresses come from deployments/kinetiqpump-elysium.json, written by deploy.cjs. With them empty the
+   The contract addresses come from deployments/kinetiqpump-elysium-v2.json, written by deploy.cjs. With them empty the
    site says that KinetiqPump is not live on Elysium yet and sends nothing. */
 window.LB_CFG = {
   // The name. It is an independent project named after the Kinetiq ecosystem it runs in, and is not Kinetiq's own:
@@ -27,16 +27,17 @@ window.LB_CFG = {
   // the project's allowlist in the Reown dashboard, or mobile wallets will refuse the connection.
   walletConnect: { projectId: 'e1bda672d5deb56579fe084dddfb9174' },
   // the block the contracts were deployed at: history is read from here
-  startBlock: 11729933,
-  // from deployments/kinetiqpump-elysium.json
+  startBlock: 11749620,
+  // The second deployment, from deployments/kinetiqpump-elysium-v2.json. Its coin (LootbagToken) and fee hook
+  // (LootbagHook) are Lootbag's own files, unchanged. The first deployment (kinetiqpump-elysium.json) is retired.
   contracts: {
-    factory: '0x97723998d192487F4615619E34253Ad754050bFB',
-    hook: '0x1bCD52feAFda10C6411768600C5F143E997BeacC',
-    payout: '0x24556E0DAF51e680FD43fF28D55569ff10E37E92',
-    swapper: '0x270d6775F9b6ed018C65C2E4c8C912d43d2d8972',
-    bags: '0xAEB640052a7F5b6731c1359A3f0D319bD5e77873', // the second Jars contract: the first had the withdrawn coin set on it
-    airdrop: '0x35cC2A6B4fE19c10F8Ccd2B63c19F88d3B46b210',
-    router: '0x0896Cb3b92C1E5Cbb6bbE263f16f346d4a993067',
+    factory: '0x5654EcA5d4aF5AF48d3BdAe603CBDe6845C014fE',
+    hook: '0xc247Fdf4a3Fe3C3b972456589DB537f1bCd06acc',
+    payout: '0x165E8dabF1f077FcA6A94B04d6CcBb99CF708252',
+    swapper: '0x36f970e327a4F9860673C2c883065771D5D96BBe',
+    bags: '0xCad3A556aFf45F0288e60e206eEC7f31321f3679',
+    airdrop: '0xcbBD750285E397089adC317cCcc5673CEd196d84',
+    router: '0x53EB3CF8F4fA0927F32Cd58B630bEDe046c58BAB',
     poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1',
   },
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
@@ -45,11 +46,11 @@ window.LB_CFG = {
   prices: { api: 'https://api.hyperliquid.xyz/info', hype: 'HYPE', kntq: '@334', kntqPoolId: '0xa3f234a829d1c4a980e9776ccddf4b0c12070e03a0558d1eed2e9c0090d3cd7a' },
   // true only when the factory in use cannot withdraw a pool's liquidity. This one can (collect), so it is false.
   liquidityLocked: false,
-  // KinetiqPump's own coin on Elysium, $KPUMP (kinetiqpump.fun), paired with HYPE: shown as official. The first
-  // $KPUMP was paired with KNTQ and is withdrawn (hidden below).
-  loot: '0x42b9A580CDfb289F5499eDca821149Ba1762DDf2',
+  // KinetiqPump's own coin on Elysium, shown as official once it has launched on this deployment and its address
+  // is put here
+  loot: '',
   // coins left off the board, the coin lists and search; their own page still opens from a direct link
-  hidden: ['0x56bc3848551f532dacd85751acaf66dc1b93766a'],
+  hidden: [],
   // what a coin can be paired with or pay, besides KinetiqPump coins: [address, decimals, name]. HYPE is WHYPE on-chain:
   // buyers pay and receive HYPE itself, and holders paid in it receive HYPE itself.
   tokens: {

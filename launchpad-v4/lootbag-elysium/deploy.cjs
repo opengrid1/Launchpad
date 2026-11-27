@@ -7,11 +7,12 @@
 //
 // What differs from the Base deployment: KNTQ stands where VVV stood (the Bag mint price, the Bag pot and the airdrop
 // pot), WHYPE is the hub and the wrapped native coin, the launch fee, copy fee and Bag mint price are set here in
-// HYPE and KNTQ and fixed in the contracts, and a coin's launch block is Elysium's own block number (ArbSys).
+// HYPE and KNTQ and fixed in the contracts. The coin (LootbagToken) and the fee hook (LootbagHook) are Lootbag's
+// own files, unchanged.
 //
 //   forge build --skip test
 //   node deploy.cjs                  dry run: prices, opening ticks, the plan and a gas estimate; sends nothing
-//   node deploy.cjs --send                 (the deployer key is read from .env.deployer.kinetiqpump here, or KEYFILE)
+//   node deploy.cjs --send                 (the deployer key is read from .env.deployer.kinetiqpump2 here, or KEYFILE)
 //
 // Elysium is an Arbitrum Orbit chain on HyperEVM. Its public RPC refuses large transactions ("parent gas estimate
 // exceeds cap"); those are posted to the rollup's Inbox on HyperEVM instead, paid in HYPE from the same address on
@@ -56,7 +57,7 @@ const TICK_SPACING = 200, SUPPLY_WHOLE = 1e9;
 // the Bag pot's day list at deploy; $KPUMP joins it once it has launched (bags.setDays)
 const BAG_DAYS = ['KNTQ', 'WHYPE'];
 // gas measured on a fork of Elysium, used only when the RPC will not estimate ("Live reader is not ready")
-const MEASURED = { KinetiqPumpSwapper: 1_628_221n, KinetiqPumpPayout: 1_123_822n, KinetiqPumpHook: 1_428_765n, KinetiqPumpFactory: 4_674_201n, KinetiqPumpBags: 2_259_932n, KinetiqPumpAirdrop: 964_848n, KinetiqPumpRouter: 1_036_271n, call: 230_000n };
+const MEASURED = { KinetiqPumpSwapper: 1_628_221n, KinetiqPumpPayout: 1_123_822n, LootbagHook: 1_428_765n, KinetiqPumpFactory: 4_674_201n, KinetiqPumpBags: 2_259_932n, KinetiqPumpAirdrop: 964_848n, KinetiqPumpRouter: 1_036_271n, call: 230_000n };
 
 const AC = ethers.AbiCoder.defaultAbiCoder();
 const eq = (a, b) => a.toLowerCase() === b.toLowerCase();
@@ -67,7 +68,10 @@ const art = (n) => {
   return { abi: j.abi, bytecode: j.bytecode.object, iface: new ethers.Interface(j.abi) };
 };
 const DEP = path.join(__dirname, 'deployments');
-const PROG = path.join(DEP, 'kinetiqpump-elysium.progress.json'), OUT = path.join(DEP, 'kinetiqpump-elysium.json');
+// DEPLOY_NAME names the record: a second deployment gets its own, and the first one's record is left as it is
+const NAME = process.env.DEPLOY_NAME || 'kinetiqpump-elysium';
+if (!/^[a-z0-9-]+$/.test(NAME)) throw new Error('DEPLOY_NAME takes lower-case letters, digits and dashes');
+const PROG = path.join(DEP, NAME + '.progress.json'), OUT = path.join(DEP, NAME + '.json');
 
 // The public Elysium RPC rate-limits and at times is "not ready"; such a request is tried again. A resent raw
 // transaction the node already has resolves to its own hash, so a send that was cut off is safe to repeat.
@@ -94,7 +98,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   }
 
   let w = null, me = OWNER;
-  const keyFile = process.env.KEYFILE || path.join(__dirname, '.env.deployer.kinetiqpump');
+  const keyFile = process.env.KEYFILE || path.join(__dirname, '.env.deployer.kinetiqpump2');
   if (SEND || fs.existsSync(keyFile)) {
     const m = fs.existsSync(keyFile) && fs.readFileSync(keyFile, 'utf8').match(/PRIVATE_KEY=(0x)?([0-9a-fA-F]{64})/);
     if (!m) throw new Error('no PRIVATE_KEY=... in ' + keyFile);
@@ -150,7 +154,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   console.log(`plan: 7 contracts, ${quotes.length} quotes, ${rewards.length} rewards, ${routes.length} routes${eq(me, OWNER) ? '' : ', 6 ownership offers'}`);
 
   // ---------------------------------------------------------------- contracts
-  const Swapper = art('KinetiqPumpSwapper'), Payout = art('KinetiqPumpPayout'), Hook = art('KinetiqPumpHook'), Factory = art('KinetiqPumpFactory'), Bags = art('KinetiqPumpBags'), Airdrop = art('KinetiqPumpAirdrop'), Router = art('KinetiqPumpRouter');
+  const Swapper = art('KinetiqPumpSwapper'), Payout = art('KinetiqPumpPayout'), Hook = art('LootbagHook'), Factory = art('KinetiqPumpFactory'), Bags = art('KinetiqPumpBags'), Airdrop = art('KinetiqPumpAirdrop'), Router = art('KinetiqPumpRouter');
   const init = (a, types, args) => a.bytecode + AC.encode(types, args).slice(2);
   const hookInit = init(Hook, ['address', 'address'], [A.pm, me]);
   if (!prog.hookSalt) {
@@ -169,7 +173,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
     for (const [n, data, to] of [
       ['KinetiqPumpSwapper', init(Swapper, ['address', 'address', 'address'], [A.pm, me, A.whype])],
       ['KinetiqPumpPayout', init(Payout, ['address'], [me])],
-      ['KinetiqPumpHook', prog.hookSalt + hookInit.slice(2), A.create2],
+      ['LootbagHook', prog.hookSalt + hookInit.slice(2), A.create2],
       ['KinetiqPumpAirdrop', init(Airdrop, ['address', 'address', 'address'], [A.kntq, A.multicall, me])],
     ]) {
       const est = await P.estimateGas({ from: me, to, data }).catch(() => MEASURED[n]);
@@ -246,7 +250,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
 
   const swapper = (await step('KinetiqPumpSwapper', { data: init(Swapper, ['address', 'address', 'address'], [A.pm, me, A.whype]) })).address;
   const payout = (await step('KinetiqPumpPayout', { data: init(Payout, ['address'], [me]) })).address;
-  await step('KinetiqPumpHook', { to: A.create2, data: prog.hookSalt + hookInit.slice(2) });
+  await step('LootbagHook', { to: A.create2, data: prog.hookSalt + hookInit.slice(2) });
   const hook = prog.hook;
   if ((await P.getCode(hook)) === '0x') throw new Error('the hook did not land at ' + hook);
   const factory = (await step('KinetiqPumpFactory', { data: init(Factory, ['address', 'address', 'address', 'address', 'address', 'address', 'address', 'uint256', 'uint256'], [A.pm, hook, payout, me, TREASURY, swapper, A.whype, LAUNCH_FEE, COPY_FEE]) })).address;
@@ -283,7 +287,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
     startBlock: prog.steps.KinetiqPumpFactory.block,
     launchesPaused: 'set by the owner from the admin page; read factory.paused() for the current value',
     liquidity: 'held by the factory; the owner can withdraw any share of a pool with collect(coin, bps, to)',
-    launchBlock: "a coin's launch block is Elysium's own block number, read from ArbSys",
+    launchBlock: "the coin is Lootbag's own, unchanged: its launch block is block.number, which on Elysium is HyperEVM's block number and stands still for some seconds",
     hub: A.whype,
     contracts: { factory, hook, payout, swapper, bags, airdrop, router, poolManager: A.pm },
     tokens: { kntq: A.kntq, whype: A.whype },

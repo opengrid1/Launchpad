@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-/// @title KinetiqPumpToken
-/// @notice The coin every KinetiqPump launch deploys (an EIP-1167 clone): a fixed-supply ERC-20 that keeps its holders'
+/// @title LootbagToken
+/// @notice The coin every Lootbag launch deploys (an EIP-1167 clone): a fixed-supply ERC-20 that keeps its holders'
 ///         rewards. Every trade's holder share (paid in the coin's quote currency) is added to a reward-per-token
 ///         accumulator, so each holder's share is exact and follows their balance through every transfer. The payout
 ///         contract then pays it out (in the coin's current reward token) without the holder claiming anything; a
@@ -12,10 +12,7 @@ pragma solidity 0.8.26;
 ///      and every wallet that received coins in the launch block (snipers and bundles: they keep their coins and
 ///      trade them like anyone, but never earn). Excluded balances don't count in the supply the rewards are
 ///      shared over. No owner, no mint after launch, no transfer tax, no blacklist.
-///      Elysium is an Arbitrum Orbit rollup: `block.number` there is the parent chain's (HyperEVM's) block number,
-///      which stands still for about 15 seconds and some 75 Elysium blocks at a time. The launch block is therefore
-///      Elysium's own block number, read from the ArbSys precompile, so the rule covers one Elysium block and no more.
-contract KinetiqPumpToken {
+contract LootbagToken {
     error AlreadyInitialized();
     error InsufficientBalance();
     error InsufficientAllowance();
@@ -34,11 +31,9 @@ contract KinetiqPumpToken {
 
     /// @dev rewards are kept per token in units of 1e-36 quote per coin, so tiny trades on a 1B supply still count
     uint256 private constant ACC = 1e36;
-    /// @dev the ArbSys precompile, which knows the rollup's own block number
-    address private constant ARB_SYS = address(100);
 
     uint8 public constant decimals = 18;
-    /// @notice the factory that launches every KinetiqPump coin (the same for every clone: it deployed the implementation)
+    /// @notice the factory that launches every Lootbag coin (the same for every clone: it deployed the implementation)
     address public immutable factory;
 
     string public name;
@@ -51,10 +46,8 @@ contract KinetiqPumpToken {
     address public payout;
     /// @notice the creator, who never earns from their own coin
     address public creator;
-    /// @notice the Elysium block the coin launched in: every wallet that receives coins in it never earns
+    /// @notice the block the coin launched in: every wallet that receives coins in it never earns
     uint64 public launchBlock;
-    /// @notice the second the coin launched in (a block later than this second can't be the launch block)
-    uint64 public launchTime;
 
     /// @notice holder rewards per coin, scaled by 1e36, in the quote currency
     uint256 public rewardPerToken;
@@ -84,8 +77,7 @@ contract KinetiqPumpToken {
         totalSupply = supply;
         payout = payout_;
         creator = creator_;
-        launchBlock = uint64(_blockNumber());
-        launchTime = uint64(block.timestamp);
+        launchBlock = uint64(block.number);
         // the factory holds the supply only for this transaction; it is excluded so it never counts
         _exclude(msg.sender);
         _exclude(creator_);
@@ -128,7 +120,7 @@ contract KinetiqPumpToken {
     function _transfer(address from, address to, uint256 value) internal {
         if (to == address(0)) revert ZeroAddress();
         // a wallet that receives coins in the launch block never earns (the dev buy goes to the excluded creator)
-        if (!excluded[to] && _inLaunchBlock()) _exclude(to);
+        if (block.number == launchBlock && !excluded[to]) _exclude(to);
         _settle(from);
         _settle(to);
         uint256 b = balanceOf[from];
@@ -188,18 +180,6 @@ contract KinetiqPumpToken {
         if (paid == r) return;
         if (!excluded[account]) _accrued[account] += (balanceOf[account] * (r - paid)) / ACC;
         _paidPerToken[account] = r;
-    }
-
-    /// @dev True in the launch block only. The second is checked first, so the precompile is read only during the
-    ///      launch second and every later transfer pays nothing for the rule.
-    function _inLaunchBlock() internal view returns (bool) {
-        return block.timestamp == launchTime && _blockNumber() == launchBlock;
-    }
-
-    /// @dev Elysium's own block number, from ArbSys. Where there is no ArbSys (a test chain) it is `block.number`.
-    function _blockNumber() internal view returns (uint256 n) {
-        (bool ok, bytes memory r) = ARB_SYS.staticcall{gas: 50_000}(abi.encodeWithSignature("arbBlockNumber()"));
-        return ok && r.length == 32 ? abi.decode(r, (uint256)) : block.number;
     }
 
     function _exclude(address account) internal {

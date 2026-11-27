@@ -1,0 +1,20 @@
+{
+ "chainId": 99901,
+ "name": "KinetiqPump Test",
+ "symbol": "KTEST",
+ "coin": "0x104F13f9046ec5b7321aea1b964626b5d7eAb020",
+ "factory": "0x5654EcA5d4aF5AF48d3BdAe603CBDe6845C014fE",
+ "pair": "HYPE",
+ "rewards": [
+  "HYPE",
+  "KNTQ"
+ ],
+ "creator": "0x3E09AaDfc09a4fe29f13B8D9Bf7c797B905AB8bD",
+ "tx": "0xf0ac2980419498e0eb8e98dd0ca7a92558f5acc4050f7a09df6f9263b5c4b53b",
+ "block": 11750464,
+ "feeHype": "0.025",
+ "copyFeeHeld": false,
+ "devBuyHype": "0.13",
+ "devCoins": "1618707.419847911364578075",
+ "gasUsed": "1359494"
+}

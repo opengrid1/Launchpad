@@ -5,20 +5,22 @@
 //   node launch-official.cjs <file holding the picture as a data: URI>            dry run: simulates, sends nothing
 //   node launch-official.cjs <picture file> --send
 // Env: PAIR (HYPE, the default, or KNTQ), DEV_BUY (HYPE, default 0.15). The key is read from
-// .env.deployer.kinetiqpump here, or KEYFILE. Elysium's public RPC refuses transactions much over 6,000 bytes, so the
+// .env.deployer.kinetiqpump2 here, or KEYFILE. Elysium's public RPC refuses transactions much over 6,000 bytes, so the
 // picture has to be a small one.
 const fs = require('fs'), path = require('path');
 const { ethers } = require(path.join(__dirname, '../node_modules/ethers'));
-const dep = JSON.parse(fs.readFileSync(path.join(__dirname, 'deployments/kinetiqpump-elysium.json'), 'utf8'));
+// DEPLOY_NAME names the deployment record to launch on (the default is the first deployment's)
+const dep = JSON.parse(fs.readFileSync(path.join(__dirname, 'deployments', (process.env.DEPLOY_NAME || 'kinetiqpump-elysium') + '.json'), 'utf8'));
 const abi = JSON.parse(fs.readFileSync(path.join(__dirname, 'out/KinetiqPumpFactory.sol/KinetiqPumpFactory.json'), 'utf8')).abi;
 const SEND = process.argv.includes('--send'), IMG = process.argv[2];
 const PAIR = (process.env.PAIR || 'HYPE').toUpperCase();
 if (PAIR !== 'HYPE' && PAIR !== 'KNTQ') throw new Error('PAIR is HYPE or KNTQ');
 const DEV = ethers.parseEther(process.env.DEV_BUY || '0.15');
-const NAME = 'kinetiqpump.fun', SYMBOL = 'KPUMP';
+// COIN_NAME and COIN_SYMBOL launch another coin with the same script (a test coin); its record is coin-<symbol>.json
+const NAME = process.env.COIN_NAME || 'kinetiqpump.fun', SYMBOL = (process.env.COIN_SYMBOL || 'KPUMP').toUpperCase(), OFFICIAL = SYMBOL === 'KPUMP';
 const META = {
   image: fs.readFileSync(IMG, 'utf8').trim(),
-  description: "The official coin of KinetiqPump, the launchpad on Elysium where every trade pays a coin's holders straight to their wallets.",
+  description: process.env.COIN_DESC || "The official coin of KinetiqPump, the launchpad on Elysium where every trade pays a coin's holders straight to their wallets.",
   x: 'https://x.com/kinetiqpump_fun', telegram: '', website: 'https://kinetiqpump.fun',
 };
 const retry = async (f) => { for (let i = 0; ; i++) { try { return await f(); } catch (e) { const m = (e.shortMessage || '') + (e.message || '') + JSON.stringify(e.info || ''); if (i >= 6 || !/not ready|rate.?limit|429|timeout|ECONNRESET|50[234]|invalid block height/i.test(m)) throw e; await new Promise((r) => setTimeout(r, 1500 * (i + 1))); } } };
@@ -26,7 +28,7 @@ const retry = async (f) => { for (let i = 0; ; i++) { try { return await f(); } 
 (async () => {
   if (!/^data:image\/(webp|png|jpeg);base64,/.test(META.image)) throw new Error('the picture file must hold a data:image URI');
   const P = new ethers.JsonRpcProvider('https://rpc.elysium.kinetiq.xyz', 99901, { staticNetwork: true, batchMaxCount: 1 });
-  const keyFile = process.env.KEYFILE || path.join(__dirname, '.env.deployer.kinetiqpump');
+  const keyFile = process.env.KEYFILE || path.join(__dirname, '.env.deployer.kinetiqpump2');
   const m = fs.readFileSync(keyFile, 'utf8').match(/PRIVATE_KEY=(0x)?([0-9a-fA-F]{64})/);
   if (!m) throw new Error('no PRIVATE_KEY=... in ' + keyFile);
   const w = new ethers.Wallet('0x' + m[2], P), f = new ethers.Contract(dep.contracts.factory, abi, w);
@@ -65,8 +67,8 @@ const retry = async (f) => { for (let i = 0; ; i++) { try { return await f(); } 
   const ev = rc.logs.filter((l) => l.address.toLowerCase() === dep.contracts.factory.toLowerCase()).map((l) => { try { return f.interface.parseLog(l); } catch (e) { return null; } }).find((x) => x && x.name === 'Launched');
   const addr = ev ? ev.args.coin : coin;
   const bal = await retry(() => new ethers.Contract(addr, ['function balanceOf(address) view returns (uint256)'], P).balanceOf(w.address));
-  const out = { chainId: 99901, name: NAME, symbol: SYMBOL, coin: addr, pair: PAIR, rewards: PAIR === 'HYPE' ? ['HYPE', 'KNTQ'] : ['KNTQ', 'HYPE'], creator: w.address, tx: sent.hash, block: rc.blockNumber, feeHype: ethers.formatEther(fee), copyFeeHeld: copy, devBuyHype: ethers.formatEther(DEV), devCoins: ethers.formatEther(bal), gasUsed: rc.gasUsed.toString() };
-  const file = path.join(__dirname, 'deployments/kpump-official.json');
+  const out = { chainId: 99901, name: NAME, symbol: SYMBOL, coin: addr, factory: dep.contracts.factory, pair: PAIR, rewards: PAIR === 'HYPE' ? ['HYPE', 'KNTQ'] : ['KNTQ', 'HYPE'], creator: w.address, tx: sent.hash, block: rc.blockNumber, feeHype: ethers.formatEther(fee), copyFeeHeld: copy, devBuyHype: ethers.formatEther(DEV), devCoins: ethers.formatEther(bal), gasUsed: rc.gasUsed.toString() };
+  const file = path.join(__dirname, 'deployments', OFFICIAL ? 'kpump-official.json' : 'coin-' + SYMBOL.toLowerCase() + '.json');
   // a record already there is an earlier, withdrawn launch: it is kept under `withdrawn`
   const prev = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
   if (prev && prev.coin && prev.coin !== addr) { const { withdrawn = [], ...old } = prev; out.withdrawn = [...withdrawn, old]; }

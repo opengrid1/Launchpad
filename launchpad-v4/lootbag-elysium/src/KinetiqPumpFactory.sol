@@ -12,7 +12,7 @@ import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/Pool
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-periphery/src/libraries/LiquidityAmounts.sol";
 
-import {KinetiqPumpToken} from "./KinetiqPumpToken.sol";
+import {LootbagToken} from "./LootbagToken.sol";
 import {Clones} from "./lib/Clones.sol";
 
 interface IHookReg {
@@ -113,7 +113,7 @@ contract KinetiqPumpFactory is IUnlockCallback {
     IPoolManager public immutable poolManager;
     IHooks public immutable hook;
     address public immutable payout;
-    KinetiqPumpToken public immutable implementation;
+    LootbagToken public immutable implementation;
     /// @notice the route swapper that turns a creator's wrapped HYPE into the quote for `launchWithEth`
     ISwapperF public immutable swapper;
     /// @notice the wrapped native coin: WHYPE on Elysium
@@ -175,7 +175,7 @@ contract KinetiqPumpFactory is IUnlockCallback {
         owner = owner_;
         treasury = treasury_;
         paused = true; // launches open only when the owner says so
-        implementation = new KinetiqPumpToken();
+        implementation = new LootbagToken();
     }
 
     // ------------------------------------------------------------------ owner
@@ -341,9 +341,9 @@ contract KinetiqPumpFactory is IUnlockCallback {
 
         // the coin
         coin = Clones.cloneDeterministic(address(implementation), keccak256(abi.encode(msg.sender, nonce++)));
-        KinetiqPumpToken(coin).initialize(p.name, p.symbol, SUPPLY, payout, msg.sender);
-        KinetiqPumpToken(coin).exclude(address(poolManager));
-        KinetiqPumpToken(coin).exclude(address(hook));
+        LootbagToken(coin).initialize(p.name, p.symbol, SUPPLY, payout, msg.sender);
+        LootbagToken(coin).exclude(address(poolManager));
+        LootbagToken(coin).exclude(address(hook));
         creatorOf[coin] = msg.sender;
 
         // its pool

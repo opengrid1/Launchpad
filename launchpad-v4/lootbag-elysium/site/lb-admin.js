@@ -309,7 +309,7 @@
     const stockQuotes = S.quotes.filter((q) => !isMain(q)), feeQuotes = S.quotes.filter((q) => isMain(q) || q.claims + q.owed + q.owedHolders > 0n);
     const coinOpts = S.coins.map((c) => `<option value="${c.addr}">${esc(c.name)} ($${esc(c.symbol)})</option>`).join('');
     const banner = !LIVE
-      ? `<div class="ad-banner"><b>Preview.</b> The KinetiqPump contracts are not deployed yet, so this page shows the deploy defaults and sends nothing. After the deploy, put the addresses from <span class="mono">deployments/kinetiqpump-elysium.json</span> into <span class="mono">lb-config.js</span>.</div>`
+      ? `<div class="ad-banner"><b>Preview.</b> The KinetiqPump contracts are not deployed yet, so this page shows the deploy defaults and sends nothing. After the deploy, put the addresses from <span class="mono">deployments/kinetiqpump-elysium-v2.json</span> into <span class="mono">lb-config.js</span>.</div>`
       : !me ? `<div class="ad-banner">Connect the owner wallet ${link(C.owner)} to use the controls. Reading works without a wallet.</div>`
         : anyPending ? `<div class="ad-banner"><b>Ownership is waiting for you.</b> This wallet has been offered ownership. Use "Accept all" under Ownership.</div>`
           : !owner ? `<div class="ad-banner bad"><b>This wallet does not own the contracts.</b> Owner and keeper controls are disabled. Sweeping fees still works for anyone.</div>` : '';
