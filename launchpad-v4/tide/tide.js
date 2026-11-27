@@ -437,7 +437,11 @@
   // ---- profile
   function profile(addr) {
     const w = low(addr || (APP.W.connected ? APP.W.address : '')); if (!w) { view.innerHTML = `<div class="page prof"><h1>Profile</h1><div class="empty"><button class="btn pri" id="pf-conn">Connect a wallet</button></div></div>`; $('#pf-conn').onclick = APP.W.connect; return; }
-    const wv = DATA.wallet(w), cr = DATA.creator(w), me = APP.W.connected && low(APP.W.address) === w, tab = state.ptab || ((cr.tokens || []).length ? 'fees' : 'holdings');
+    // hidden tokens are left out of the lists; the amount a creator can claim is not (it comes from the escrow)
+    const wv0 = DATA.wallet(w), cr0 = DATA.creator(w), life = (cr0.tokens || []).filter((t) => !HID(t.addr));
+    const wv = { ...wv0, holdings: wv0.holdings.filter((h) => h.native || !HID(h.token.addr)), activity: wv0.activity.filter((a) => !HID(a.token.addr)), launches: wv0.launches.filter((t) => !HID(t.addr)) };
+    const cr = { ...cr0, tokens: life, lifetime: life.reduce((n, t) => n + t.creatorFees, 0) };
+    const me = APP.W.connected && low(APP.W.address) === w, tab = state.ptab || ((cr.tokens || []).length ? 'fees' : 'holdings');
     const val = wv.holdings.reduce((s, h) => s + h.usd, 0);
     view.innerHTML = `<div class="page prof"><div class="head"><div><h1 title="${esc(w)}">${esc(shortAddr(w))}</h1><div class="mute" style="font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="num">${esc(w)}</span><button class="ib" style="width:26px;height:26px;border-radius:5px" data-copy="${w}">${ICON.copy}</button><a href="${APP.explorer('address', w)}" target="_blank" rel="noopener">${ICON.ext}</a>${wv.joined ? `<span>since ${new Date(wv.joined * 1000).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>` : ''}</div></div></div>
       <div class="grid4"><div class="stat"><span>Holdings</span><b>${fmtUsd(val)}</b><small>${wv.holdings.length} assets</small></div><div class="stat"><span>Launched</span><b>${wv.launches.length}</b><small>tokens created</small></div><div class="stat"><span>Creator fees</span><b>${usd(cr.lifetime)}</b><small>lifetime, ${usd(cr.pending)} claimable</small></div><div class="stat"><span>Trades</span><b>${wv.activity.filter((a) => a.kind !== 'launch').length}</b><small>all time</small></div></div>
