@@ -18,17 +18,17 @@ const stand = (cx, base, h, color) => box(cx - (h * 172) / 176 / 2, base - h, (h
 const pfp = (bg, fg) => page(bg, box(0, 0, 1000, 1000, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" style="display:block;width:100%;height:100%"><clipPath id="c"><circle cx="100" cy="100" r="88"/></clipPath><g clip-path="url(#c)">${legs(BANDS, fg)}</g></svg>`), 1000, 1000);
 const banners = {
   // 1: a range at dusk: summits of different heights along the lower edge, one of them gold, the name alone at the left
-  range: page(INK, [[650, 200], [886, 272], [1128, 212], [1368, 268]].map(([x, h], i) => stand(x, 500, h, () => (i === 2 ? SUN : PAPER))).join('') + `<div style="position:absolute;left:110px;top:150px;${WORD(112, PAPER)}">Ambrosia</div>`),
+  range: page(INK, [[650, 200], [886, 272], [1128, 212], [1368, 268]].map(([x, h], i) => stand(x, 500, h, () => (i === 2 ? SUN : PAPER))).join('') + `<div style="position:absolute;left:104px;top:150px;${WORD(74, PAPER)}">KinetiqPump</div>`),
   // 2: the bands so close they are only stripes of light, the thin ones gold
-  crop: page(INK, box(0, 0, 1500, 500, summit((i) => (i % 2 ? SUN : PAPER), '30 62 108 36')) + `<div style="position:absolute;left:104px;top:64px;${WORD(52, PAPER)}">Ambrosia</div>`),
+  crop: page(INK, box(0, 0, 1500, 500, summit((i) => (i % 2 ? SUN : PAPER), '30 62 108 36')) + `<div style="position:absolute;left:104px;top:64px;${WORD(52, PAPER)}">KinetiqPump</div>`),
   // 3: the mark and the name, nothing else
-  name: page(PAPER, `<div style="position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:34px;white-space:nowrap"><div style="width:190px;height:190px">${mark()}</div><div style="${WORD(150, INK)}">Ambrosia</div></div>`),
+  name: page(PAPER, `<div style="position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:30px;white-space:nowrap"><div style="width:168px;height:168px">${mark()}</div><div style="${WORD(124, INK)}">KinetiqPump</div></div>`),
   // 4: the same, on ink
-  'name-dark': page(INK, `<div style="position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:34px;white-space:nowrap"><div style="width:190px;height:190px">${mark({ ink: PAPER, paper: INK })}</div><div style="${WORD(150, PAPER)}">Ambrosia</div></div>`),
+  'name-dark': page(INK, `<div style="position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:30px;white-space:nowrap"><div style="width:168px;height:168px">${mark({ ink: PAPER, paper: INK })}</div><div style="${WORD(124, PAPER)}">KinetiqPump</div></div>`),
   // 5: the summit alone, half on ink and half on gold, no words at all
   split: page(SUN, `<div style="position:absolute;left:0;top:0;width:750px;height:500px;background:${INK}"></div>` + box(750 - 215, 60, 430, 440, `<div style="position:absolute;inset:0;clip-path:inset(0 50% 0 0)">${summit(() => PAPER)}</div><div style="position:absolute;inset:0;clip-path:inset(0 0 0 50%)">${summit(() => INK)}</div>`)),
   // 6: one great summit rising off the right edge, the name small beside it
-  rise: page(PAPER, box(820, 30, 760, 778, summit(() => INK)) + `<div style="position:absolute;left:110px;top:176px;${WORD(104, INK)}">Ambrosia</div>`),
+  rise: page(PAPER, box(820, 30, 760, 778, summit(() => INK)) + `<div style="position:absolute;left:104px;top:186px;${WORD(88, INK)}">KinetiqPump</div>`),
 };
 (async () => {
   const b = await chromium.launch(process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY } } : {});

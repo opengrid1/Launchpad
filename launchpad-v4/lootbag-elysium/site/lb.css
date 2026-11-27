@@ -1,4 +1,4 @@
-/* Ambrosia: cream paper, ink outlines, hard shadows, one tangerine accent, mint for buys. Bricolage Grotesque for
+/* KinetiqPump: cream paper, ink outlines, hard shadows, one tangerine accent, mint for buys. Bricolage Grotesque for
    headlines, DM Sans for everything else. A top bar on desktop, a tab bar on phones. */
 :root {
   --bg: #fff5e4; --card: #ffffff; --card2: #fff0d6; --panel: #ffffff; --card-a: #ffffff;
@@ -455,7 +455,7 @@ img.tkl { flex: none; display: inline-block; vertical-align: middle; box-sizing:
 .caddr a:hover { color: var(--ink); text-decoration: underline; }
 @media (max-width: 520px) { .caddr { grid-template-columns: minmax(0, 1fr); } }
 
-/* ---- Ambrosia's own look for the inner pages: ink outlines, flat colour, display type on every heading ---- */
+/* ---- KinetiqPump's own look for the inner pages: ink outlines, flat colour, display type on every heading ---- */
 h1, h2, h3, .chead h1, .ph1 h1, .cform .ch h1, .doc h2, .lh h3, .panel h3, .yours h3, .how3 h3 { font-family: var(--fd); letter-spacing: -.02em; }
 .ph1 h1 { font-weight: 800; font-size: 44px; line-height: 1.02; }
 .ph1 p { font-size: 15.5px; }

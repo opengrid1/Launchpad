@@ -1,11 +1,11 @@
-/* Ambrosia log cache (a Vercel function). The site reads coins, trades and payouts from the contracts' logs, and a
+/* KinetiqPump log cache (a Vercel function). The site reads coins, trades and payouts from the contracts' logs, and a
    public RPC only serves them a few hours of blocks at a time. This function serves one fixed window of blocks that
    is already in the past, and the CDN in front of it keeps the answer for good, so a visitor reads a long history
    in a few cached requests instead of hundreds of RPC calls. It holds no state and no keys.
 
    GET /api/logs?kind=platform&from=<block>&size=<one span | ten spans>   (LB_CFG.logSpan blocks: 450,000 on Elysium)
-   GET /api/logs?kind=swaps&id=<pool id>&from=...&size=...     a Ambrosia coin's pool: its swaps in the PoolManager
-   GET /api/logs?kind=xfers&id=<coin address>&from=...&size=... a Ambrosia coin: its transfers
+   GET /api/logs?kind=swaps&id=<pool id>&from=...&size=...     a KinetiqPump coin's pool: its swaps in the PoolManager
+   GET /api/logs?kind=xfers&id=<coin address>&from=...&size=... a KinetiqPump coin: its transfers
 
    Windows are aligned (from is a multiple of size) and must be closed (well behind the chain head), so an answer can
    never change. Anything else is refused. The site falls back to the RPC itself whenever this does not answer. */
@@ -40,7 +40,7 @@ const FOREVER = 'public, max-age=86400, s-maxage=31536000, immutable', NEVER = '
 
 module.exports = async (req, res) => {
   try {
-    if (!K.factory) return send(res, 404, { error: 'Ambrosia is not deployed on this chain yet' }, NEVER);
+    if (!K.factory) return send(res, 404, { error: 'KinetiqPump is not deployed on this chain yet' }, NEVER);
     const q = req.query || {}, kind = String(q.kind || ''), id = String(q.id || '').toLowerCase(), from = Number(q.from), size = Number(q.size);
     if (!SIZES.includes(size) || !Number.isSafeInteger(from) || from < 0 || from % size !== 0 || from + size <= (C.startBlock || 0)) return send(res, 400, { error: 'bad window' }, NEVER);
     const to = from + size - 1;
@@ -50,16 +50,16 @@ module.exports = async (req, res) => {
     let filter;
     if (kind === 'platform') filter = { address: [K.factory, K.hook, K.payout, K.router, K.airdrop, K.bags] };
     else if (kind === 'swaps') {
-      // only the pool of a Ambrosia coin: the hook knows it
+      // only the pool of a KinetiqPump coin: the hook knows it
       if (!/^0x[0-9a-f]{64}$/.test(id)) return send(res, 400, { error: 'bad pool id' }, NEVER);
       const pool = await rpc('eth_call', [{ to: K.hook, data: '0xb5217bb4' + id.slice(2) }, 'latest']);
-      if (!pool || /^0x0{64}/.test(pool)) return send(res, 404, { error: 'not a Ambrosia pool' }, NEVER);
+      if (!pool || /^0x0{64}/.test(pool)) return send(res, 404, { error: 'not a KinetiqPump pool' }, NEVER);
       filter = { address: K.poolManager, topics: [SWAP, id] };
     } else if (kind === 'xfers') {
       // only a coin the factory launched
       if (!/^0x[0-9a-f]{40}$/.test(id)) return send(res, 400, { error: 'bad coin' }, NEVER);
       const creator = await rpc('eth_call', [{ to: K.factory, data: '0xdea5c2e0' + id.slice(2).padStart(64, '0') }, 'latest']);
-      if (!creator || /^0x0{64}$/.test(creator)) return send(res, 404, { error: 'not a Ambrosia coin' }, NEVER);
+      if (!creator || /^0x0{64}$/.test(creator)) return send(res, 404, { error: 'not a KinetiqPump coin' }, NEVER);
       filter = { address: id, topics: [TRANSFER] };
     } else return send(res, 400, { error: 'bad kind' }, NEVER);
 

@@ -52,8 +52,8 @@ contract LootbagBags {
     event Withdrawn(uint256 indexed id, address indexed token, address indexed to, uint256 amount);
     event Converted(address indexed token, uint256 amountIn, uint256 kntqOut);
 
-    string public constant name = "Lootbag Bags";
-    string public constant symbol = "BAG";
+    string public constant name = "KinetiqPump Jars";
+    string public constant symbol = "JAR";
     uint256 public constant MAX = 1000;
     uint256 public constant MINT_LOOT = 100_000e18;
     /// @notice what a mint costs in KNTQ, and the part of it (90%) that goes into the existing Bags' vaults

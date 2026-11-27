@@ -1,4 +1,4 @@
-/* Ambrosia live data and wallet actions, on Elysium. Builds window.LB_DATA from the Ambrosia contracts (LB_CFG), in
+/* KinetiqPump live data and wallet actions, on Elysium. Builds window.LB_DATA from the KinetiqPump contracts (LB_CFG), in
    the shape the pages read, and exposes window.LB_LIVE for everything a wallet does: buy, sell, launch, claim, Jars.
    There is no server: coins, trades, fees and payouts are read from the contracts' own logs through public RPCs.
    HYPE's dollar price is Hyperliquid's; KNTQ's comes from the WHYPE/KNTQ pool. Reads are grouped through Multicall3.
@@ -74,7 +74,7 @@
     Paused: 'Launches are not open yet.', BadName: 'The name must be 1 to 32 characters.', BadSymbol: 'The ticker must be 2 to 10 letters or digits.', BadQuote: 'That pair is not available.',
     BadRewards: 'One of the rewards is not available.', DevBuyTooSmall: 'The dev buy is too small. Raise it a little.', DevBuyTooBig: 'The dev buy would be more than 2% of the supply. Lower it.',
     DevBuyShort: 'The dev buy came out smaller than expected. Try again.', NoEthForDevBuy: 'Add a dev buy on top of the launch fee.', MetaTooLong: 'The picture, description or a link is too long.',
-    TooLittle: 'The price moved more than the slippage allows. Try again.', PoolTooThin: "The pool can't fill this trade. Try a smaller amount.", UnknownCoin: 'This coin is not a Ambrosia coin.',
+    TooLittle: 'The price moved more than the slippage allows. Try again.', PoolTooThin: "The pool can't fill this trade. Try a smaller amount.", UnknownCoin: 'This coin is not a KinetiqPump coin.',
     ZeroAmount: 'Enter an amount.', NoRoute: 'There is no route for this pair yet.', InsufficientBalance: "You don't hold that many coins.", SoldOut: 'All Jars are minted.', NotHolder: 'This wallet does not hold that Jar.',
   };
   /** A sentence a person can act on, from whatever a wallet or an RPC threw. */
@@ -160,7 +160,7 @@
   }
 
   // ---------------------------------------------------------------- tokens and prices
-  // symbol and decimals of everything a coin can be paired with or pay: HYPE (WHYPE on-chain), KNTQ, Ambrosia coins
+  // symbol and decimals of everything a coin can be paired with or pay: HYPE (WHYPE on-chain), KNTQ, KinetiqPump coins
   const TOK = new Map(Object.entries(C.tokens).map(([s, [a, d]]) => [lc(a), { sym: s, dec: d }]));
   const S = { head: { bn: 0, ts: 0 }, scanned: (C.startBlock || 1) - 1, coins: new Map(), reg: new Map(), fees: [], trades: [], paid: [], drops: [], posted: [], minted: 0, pricesAt: 0, sqrt: {}, listed: null };
   const sym = (a) => { if (LB.loot && eq(a, LB.loot)) return OWN; const t = TOK.get(lc(a)); if (t) return t.sym; const c = S.coins.get(lc(a)); return c ? c.ticker : String(a).slice(0, 6) + '…' + String(a).slice(-4); };
@@ -245,7 +245,7 @@
     await mids();
     const slotK = C.prices && C.prices.kntqPoolId ? [[K.poolManager, 'pm', 'extsload', [slot0Of(C.prices.kntqPoolId)]]] : [];
     if (!DEPLOYED) {
-      // nothing of Ambrosia's to read yet: prices only, so the pages can still show what things will cost
+      // nothing of KinetiqPump's to read yet: prices only, so the pages can still show what things will cost
       const r0 = slotK.length ? await multi(slotK).catch(() => [null]) : [null];
       priceKntq(r0[0] && r0[0][0]);
       LB.tokens = tokenList(); LB.paused = true; LB.error = ''; LB.at = now();
@@ -289,7 +289,7 @@
     // coins: price from the pool, then what the logs say about the last day
     const t = now(), day = t - 86400;
     coins.forEach((c, i) => { const s0 = r[coinAt + 2 * i], held = r[coinAt + 2 * i + 1]; if (s0) c.sqrt = first160(s0[0]); if (held) c.heldQuote = held[0]; });
-    // a coin paired with another Ambrosia coin is priced after that coin, so HYPE and KNTQ pairs go first
+    // a coin paired with another KinetiqPump coin is priced after that coin, so HYPE and KNTQ pairs go first
     const priced = (c) => { const qd = dec(c.pairAddr), p = ratio(c.sqrt || 0n); if (!p) return; const is0 = BigInt(lc(c.addr)) < BigInt(lc(c.pairAddr)); c.priceQuote = (is0 ? p : 1 / p) * 10 ** (18 - qd); c.priceUsd = c.priceQuote * usdOf(c.pairAddr); c.mcap = c.priceUsd * SUPPLY; };
     coins.filter((c) => !S.coins.has(lc(c.pairAddr))).forEach(priced); coins.filter((c) => S.coins.has(lc(c.pairAddr))).forEach(priced);
     for (const c of coins) { c.vol24 = c.volAll = c.fees24 = c.paid24 = c.paidAll = c.trades24 = 0; c.trades = []; c.payouts = []; }
@@ -319,11 +319,11 @@
     LB.memes = LB.loot ? [{ sym: OWN, name: (C.brand || {}).name || OWN, usd: (S.coins.get(lc(LB.loot)) || {}).priceUsd || 0, addr: LB.loot }] : [];
     LB.platform = { volumeAll: volAll, paidHolders: paidAll, payments: S.paid.reduce((n, x) => n + x.wallets, 0), coins: LB.coins.length, traders: new Set(S.trades.map((x) => lc(x.wallet))).size };
 
-    // the trader airdrop: the pot, and this round's volume through the Ambrosia router by wallet
+    // the trader airdrop: the pot, and this round's volume through the KinetiqPump router by wallet
     const A = LB.airdrop;
     if (aPot) { A.pot = Number(E.formatEther(aPot[0])); A.potUsd = A.pot * LB.kntqUsd; }
     A.endsAt = aNext ? Number(aNext[0]) : 0;
-    // until the full board has been worked out (leaderboard()), the trades through Ambrosia's own router stand in
+    // until the full board has been worked out (leaderboard()), the trades through KinetiqPump's own router stand in
     if (!S.boardFull) { A.board = [...traders.entries()].map(([wallet, vol]) => ({ wallet, vol })).sort((a, b) => b.vol - a.vol); A.traders = A.board.length; A.volume = roundVol; }
     A.rounds = S.posted.slice().reverse();
 
@@ -333,7 +333,7 @@
     if (bPot) B.pot = Number(E.formatEther(bPot[0]));
     if (G.bMint) { B.perMintKntq = Number(E.formatEther(G.bMint[0])); B.perMintKntqWei = G.bMint[0]; }
     if (G.bToBags) B.toBagsKntq = Number(E.formatEther(G.bToBags[0]));
-    // minting is open on the site only when the Jars contract burns the coin the site calls $AMBROSIA
+    // minting is open on the site only when the Jars contract burns the coin the site calls $KPUMP
     B.lootSet = !!(bLoot && !eq(bLoot[0], ZERO) && LB.loot && eq(bLoot[0], LB.loot));
     B.rotation = days.map(sym); B.dayAddrs = days;
     if (bToday) B.today = sym(bToday[0]);
@@ -413,7 +413,7 @@
     c.holderList = (d.top || []).map((h) => ({ wallet: h.wallet, pct: (Number(E.formatEther(h.bal)) / SUPPLY) * 100, creator: eq(h.wallet, c.creator), earnedUsd: units(h.earned, c.pairAddr) * qUsd }));
   }
 
-  /** Every wallet that has ever held `addr` (a Ambrosia coin), read up to the newest block. */
+  /** Every wallet that has ever held `addr` (a KinetiqPump coin), read up to the newest block. */
   async function wallets(addr) {
     await refresh();
     const c = await coinDetail(addr);
@@ -421,7 +421,7 @@
   }
 
   // ---------------------------------------------------------------- the trader airdrop's board
-  /** This round's volume by trader, from every swap in every Ambrosia coin's pool: [{ wallet, vol }], biggest first. */
+  /** This round's volume by trader, from every swap in every KinetiqPump coin's pool: [{ wallet, vol }], biggest first. */
   async function leaderboard() {
     const coins = [...S.coins.values()].sort((a, b) => b.volAll - a.volAll).slice(0, 60);
     await Promise.all(coins.map((c) => coinDetail(c.addr).catch(() => null)));
@@ -477,7 +477,7 @@
   /** Simulates on a public RPC (so a failure reads as a sentence), then sends through the wallet and waits. */
   async function send(to, k, fn, args, value = 0n, note) {
     if (!signer) throw new Error('Connect a wallet first.');
-    if (!DEPLOYED) throw new Error(`Ambrosia is not live on ${C.chainName} yet.`);
+    if (!DEPLOYED) throw new Error(`KinetiqPump is not live on ${C.chainName} yet.`);
     const data = I[k].encodeFunctionData(fn, args);
     let gas;
     try { gas = await rpc((p) => p.estimateGas({ from: me, to, data, value })); } catch (e) { throw new Error(explain(e)); }
@@ -515,7 +515,7 @@
   async function sell(coin, amount, bps, note) {
     const tk = new E.Contract(coin, ABI.token);
     const allowed = await rpc((p) => tk.connect(p).allowance(me, K.router));
-    if (allowed < amount) { if (note) note('First, let the Ambrosia router move this coin…'); await send(coin, 'token', 'approve', [K.router, E.MaxUint256], 0n, note); }
+    if (allowed < amount) { if (note) note('First, let the KinetiqPump router move this coin…'); await send(coin, 'token', 'approve', [K.router, E.MaxUint256], 0n, note); }
     let out; try { out = I.router.decodeFunctionResult('sell', await rpc((p) => p.call({ from: me, to: K.router, data: I.router.encodeFunctionData('sell', [coin, amount, 0, me]) })))[0]; } catch (e) { throw new Error(explain(e)); }
     const rc = await send(K.router, 'router', 'sell', [coin, amount, slip(out, bps), me], 0n, note);
     const ev = rc.logs.map((l) => parse('router', l)).find((p) => p && p.name === 'Sold');
@@ -540,9 +540,9 @@
   }
   const claim = (coin, note) => send(K.payout, 'payout', 'claim', [coin], 0n, note);
   async function mintBag(note) {
-    const B = LB.bags; if (!B.lootSet) throw new Error('Minting opens when $AMBROSIA launches.');
+    const B = LB.bags; if (!B.lootSet) throw new Error('Minting opens when $KPUMP launches.');
     if (!B.perMintKntqWei) throw new Error('The mint price could not be read. Try again.');
-    for (const [tok, need, label] of [[LB.loot, E.parseEther(String(B.perMintLoot)), '$AMBROSIA'], [KNTQ, B.perMintKntqWei, 'KNTQ']]) {
+    for (const [tok, need, label] of [[LB.loot, E.parseEther(String(B.perMintLoot)), '$KPUMP'], [KNTQ, B.perMintKntqWei, 'KNTQ']]) {
       const tk = new E.Contract(tok, ABI.token), [bal, allowed] = await Promise.all([rpc((p) => tk.connect(p).balanceOf(me)), rpc((p) => tk.connect(p).allowance(me, K.bags))]);
       if (bal < need) throw new Error(`You need ${E.formatEther(need)} ${label} to mint.`);
       if (allowed < need) { if (note) note(`First, let the Jars contract take your ${label}…`); await send(tok, 'token', 'approve', [K.bags, need], 0n, note); }
