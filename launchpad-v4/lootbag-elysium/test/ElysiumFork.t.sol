@@ -152,7 +152,7 @@ contract ElysiumForkTest is Test {
 
         vm.startPrank(owner);
         hook.init(address(factory), address(payout), bagPot, airdropPot, treasury);
-        payout.init(address(factory), address(hook), address(swapper));
+        payout.init(address(factory), address(hook), address(swapper), WHYPE);
         payout.setKeeper(keeper, true);
         factory.setQuote(KNTQ, true, KNTQ_TICK, MIN_DEV_KNTQ);
         factory.setQuote(WHYPE, true, WHYPE_TICK, MIN_DEV_WHYPE);
@@ -282,12 +282,19 @@ contract ElysiumForkTest is Test {
         _buy(bob, key, coin, 200 ether * KX);
         vm.warp(block.timestamp + 5 minutes);
         assertEq(payout.currentReward(coin), WHYPE);
+        uint256 aHype = alice.balance;
+        uint256 bHype = bob.balance;
         vm.prank(keeper);
         uint256 out = payout.pay(coin, hs, 1);
         assertGt(out, 0);
-        assertGt(IERC20T(WHYPE).balanceOf(alice), 0);
-        assertGt(IERC20T(WHYPE).balanceOf(bob), 0);
-        emit log_named_decimal_uint("WHYPE paid", out, 18);
+        // a WHYPE round arrives as HYPE itself: nothing to claim and nothing to unwrap
+        assertEq(alice.balance - aHype + bob.balance - bHype, out, "the whole round reached the two wallets as HYPE");
+        assertGt(alice.balance, aHype);
+        assertGt(bob.balance, bHype);
+        assertEq(IERC20T(WHYPE).balanceOf(alice), 0);
+        assertEq(IERC20T(WHYPE).balanceOf(address(payout)), 0);
+        assertEq(address(payout).balance, 0);
+        emit log_named_decimal_uint("HYPE paid", out, 18);
     }
 
     function test_onlyKeepersRunRoundsButHoldersCanAlwaysClaim() public {
@@ -964,5 +971,80 @@ contract ElysiumForkTest is Test {
         vm.expectCall(address(100), abi.encodeWithSignature("arbBlockNumber()"), 0);
         _buy(bob, key, coin, 10 ether * KX);
         assertFalse(t.excluded(bob));
+    }
+
+    // ------------------------------------------------------------------ HYPE straight to the wallet
+
+    /// @dev a WHYPE-paired coin: rounds and claims both pay HYPE itself
+    function test_whypeRewardsArriveAsHype() public {
+        _giveW(creator, 2 ether);
+        _giveW(alice, 20 ether);
+        _giveW(bob, 20 ether);
+        address[] memory r = new address[](1);
+        r[0] = WHYPE;
+        (address coin, PoolKey memory kw) = _launchQ(WHYPE, "PAYHYPE", 1 ether, r);
+        vm.roll(block.number + 1);
+        _swapRaw(alice, kw, WHYPE, coin, -int256(5 ether), 5 ether);
+        _swapRaw(bob, kw, WHYPE, coin, -int256(5 ether), 5 ether);
+        LootbagToken t = LootbagToken(coin);
+
+        // alice is paid by a keeper's round: HYPE lands in her wallet without her doing anything
+        uint256 ea = t.earned(alice);
+        assertGt(ea, 0);
+        address[] memory hs = new address[](1);
+        hs[0] = alice;
+        uint256 a0 = alice.balance;
+        uint256 w0 = IERC20T(WHYPE).balanceOf(alice);
+        vm.prank(keeper);
+        payout.pay(coin, hs, 0);
+        assertApproxEqAbs(alice.balance - a0, ea, 1);
+        assertEq(IERC20T(WHYPE).balanceOf(alice), w0, "no WHYPE to unwrap");
+
+        // bob claims his own part instead: HYPE too
+        _swapRaw(alice, kw, WHYPE, coin, -int256(5 ether), 5 ether);
+        uint256 eb = t.earned(bob);
+        assertGt(eb, 0);
+        uint256 b0 = bob.balance;
+        vm.prank(bob);
+        payout.claim(coin);
+        assertApproxEqAbs(bob.balance - b0, eb, 1);
+        assertEq(address(payout).balance, 0, "the payout contract keeps no HYPE");
+    }
+
+    /// @dev a holder that is a contract with no way to receive HYPE is paid in WHYPE, and the round carries on
+    function test_aWalletThatCannotTakeHypeGetsWhype() public {
+        _giveW(creator, 2 ether);
+        _giveW(alice, 20 ether);
+        _giveW(bob, 20 ether);
+        address[] memory r = new address[](1);
+        r[0] = WHYPE;
+        (address coin, PoolKey memory kw) = _launchQ(WHYPE, "NOHYPE", 1 ether, r);
+        vm.roll(block.number + 1);
+        (, uint256 got) = _swapRaw(alice, kw, WHYPE, coin, -int256(5 ether), 5 ether);
+        // an airdrop pot stands in for such a holder: it has no receive function
+        address stone = address(new LootbagAirdrop(KNTQ, address(swapper), owner));
+        vm.prank(alice);
+        IERC20T(coin).transfer(stone, got / 2);
+        _swapRaw(bob, kw, WHYPE, coin, -int256(5 ether), 5 ether);
+        LootbagToken t = LootbagToken(coin);
+        uint256 es = t.earned(stone);
+        uint256 ea = t.earned(alice);
+        assertGt(es, 0);
+
+        address[] memory hs = new address[](2);
+        hs[0] = stone;
+        hs[1] = alice;
+        uint256 a0 = alice.balance;
+        vm.prank(keeper);
+        payout.pay(coin, hs, 0);
+        assertApproxEqAbs(IERC20T(WHYPE).balanceOf(stone), es, 1, "paid in WHYPE instead");
+        assertEq(stone.balance, 0);
+        assertApproxEqAbs(alice.balance - a0, ea, 1, "the next holder still got HYPE");
+        assertEq(address(payout).balance, 0);
+
+        // HYPE sent to the payout contract by anyone but WHYPE is refused
+        vm.deal(address(this), 1 ether);
+        (bool sent,) = address(payout).call{value: 1}("");
+        assertFalse(sent);
     }
 }

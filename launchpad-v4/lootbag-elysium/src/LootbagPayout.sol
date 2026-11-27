@@ -23,12 +23,19 @@ interface IERC20P {
     function balanceOf(address a) external view returns (uint256);
 }
 
+interface IWrappedP {
+    function deposit() external payable;
+    function withdraw(uint256 amount) external;
+}
+
 /// @title LootbagPayout
 /// @notice Holds every Lootbag coin's holder rewards and pays them out. The hook sends the holders' share of each
 ///         trade's fee here (in the coin's quote currency) and the coin records each holder's part of it. Every five
 ///         minutes, counted from the coin's launch, a payout round turns the holders' parts into that round's reward
 ///         token (KNTQ or WHYPE) and sends it straight to their wallets. Rounds take turns through the rewards the
 ///         creator picked. A holder never has to claim, but always can: `claim` sends their part in the quote currency.
+///         Whatever is paid in WHYPE is unwrapped first, so the holder receives HYPE itself in their wallet and has
+///         nothing to unwrap. A wallet that cannot take HYPE (a contract with no way to receive it) gets the WHYPE.
 /// @dev Rounds are run by keepers (the swap needs a minimum out, which a keeper prices off-chain). If keepers stop,
 ///      nothing is stuck: every holder's part stays in their coin's books and `claim` pays it. A recipient that can't
 ///      receive the reward (a token that blocks the transfer) has it kept here for them to withdraw.
@@ -41,6 +48,8 @@ contract LootbagPayout {
     error WrongReward();
     error ZeroAddress();
     error AlreadySet();
+    error Reentered();
+    error NotWrapped();
 
     event Registered(address indexed coin, address quote, address[] rewards, uint64 launchedAt);
     event Credited(address indexed coin, uint256 amount);
@@ -56,7 +65,10 @@ contract LootbagPayout {
     address public factory;
     address public hook;
     ISwapper public swapper;
+    /// @notice the wrapped native coin (WHYPE): what is paid in it is unwrapped and sent as HYPE
+    address public weth;
     mapping(address => bool) public keeper;
+    uint256 private _lock = 1;
 
     struct Coin {
         address quote;
@@ -76,13 +88,27 @@ contract LootbagPayout {
 
     // ------------------------------------------------------------------ setup
 
-    function init(address factory_, address hook_, address swapper_) external {
+    function init(address factory_, address hook_, address swapper_, address weth_) external {
         if (msg.sender != owner) revert NotOwner();
         if (factory != address(0)) revert AlreadySet();
-        if (factory_ == address(0) || hook_ == address(0) || swapper_ == address(0)) revert ZeroAddress();
+        if (factory_ == address(0) || hook_ == address(0) || swapper_ == address(0) || weth_ == address(0)) revert ZeroAddress();
         factory = factory_;
         hook = hook_;
         swapper = ISwapper(swapper_);
+        weth = weth_;
+    }
+
+    /// @dev HYPE only arrives here from WHYPE, when a payment is unwrapped
+    receive() external payable {
+        if (msg.sender != weth) revert NotWrapped();
+    }
+
+    /// @dev paying HYPE hands control to the wallet being paid: it can't come back in while a payment is under way
+    modifier once() {
+        if (_lock != 1) revert Reentered();
+        _lock = 2;
+        _;
+        _lock = 1;
     }
 
     function setKeeper(address k, bool on) external {
@@ -148,7 +174,7 @@ contract LootbagPayout {
 
     /// @notice Pays `holders` their part of `coin`'s rewards in the current round's reward token. A keeper calls it
     ///         with the holders worth paying (others wait for a later round) and the least the swap may return.
-    function pay(address c, address[] calldata holders, uint256 minOut) external returns (uint256 out) {
+    function pay(address c, address[] calldata holders, uint256 minOut) external once returns (uint256 out) {
         if (!keeper[msg.sender]) revert NotKeeper();
         Coin storage x = _coins[c];
         if (x.quote == address(0)) revert UnknownCoin();
@@ -180,7 +206,7 @@ contract LootbagPayout {
     }
 
     /// @notice A holder takes their own part of `coin`'s rewards now, in the coin's quote currency
-    function claim(address c) external returns (uint256 amount) {
+    function claim(address c) external once returns (uint256 amount) {
         Coin storage x = _coins[c];
         if (x.quote == address(0)) revert UnknownCoin();
         amount = ICoin(c).take(msg.sender);
@@ -192,7 +218,7 @@ contract LootbagPayout {
     }
 
     /// @notice Takes rewards that could not be sent to the caller earlier
-    function withdrawUnsent(address token) external {
+    function withdrawUnsent(address token) external once {
         uint256 a = unsent[token][msg.sender];
         unsent[token][msg.sender] = 0;
         require(a != 0 && _send(token, msg.sender, a), "unsent");
@@ -200,6 +226,14 @@ contract LootbagPayout {
 
     function _give(address token, address to, uint256 a) internal {
         if (a == 0) return;
+        if (token == weth) {
+            // HYPE itself, straight to the wallet. The gas is capped so one wallet can't make a round too costly;
+            // a wallet that won't take it has the HYPE wrapped again and gets the WHYPE below instead.
+            IWrappedP(weth).withdraw(a);
+            (bool paid,) = to.call{value: a, gas: 50_000}("");
+            if (paid) return;
+            IWrappedP(weth).deposit{value: a}();
+        }
         if (!_send(token, to, a)) {
             unsent[token][to] += a;
             emit Held(token, to, a);

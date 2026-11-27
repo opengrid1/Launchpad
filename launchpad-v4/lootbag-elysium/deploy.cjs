@@ -20,7 +20,8 @@
 //
 // Optional env: ELYSIUM_RPC, HYPEREVM_RPC, LOOTBAG_OWNER, LOOTBAG_TREASURY, LOOTBAG_KEEPER, HYPE_USD (else read from
 // Hyperliquid), START_MCAP_USD (5000), MIN_DEV_BUY_USD (8.5), LAUNCH_FEE (0.025 HYPE), COPY_FEE (1.25 HYPE),
-// BAG_MINT_KNTQ (400), ALLOW_CHAIN=1 (a local fork that reports another chain id; nothing is posted to HyperEVM).
+// BAG_MINT_KNTQ (400), QUOTES (KNTQ,WHYPE: what a coin can be paired with; WHYPE alone lists HYPE pairs only, and the
+// owner can list KNTQ later with factory.setQuote), ALLOW_CHAIN=1 (a local fork that reports another chain id; nothing is posted to HyperEVM).
 const fs = require('fs'), path = require('path');
 const { ethers } = require(fs.existsSync(path.join(__dirname, 'node_modules/ethers')) ? 'ethers' : path.join(__dirname, '../node_modules/ethers'));
 
@@ -35,6 +36,9 @@ const MIN_DEV_BUY_USD = Number(process.env.MIN_DEV_BUY_USD || 8.5);
 const LAUNCH_FEE = ethers.parseEther(process.env.LAUNCH_FEE || '0.025'); // HYPE, fixed in the factory
 const COPY_FEE = ethers.parseEther(process.env.COPY_FEE || '1.25'); // HYPE, fixed in the factory
 const BAG_MINT_KNTQ = ethers.parseEther(process.env.BAG_MINT_KNTQ || '400'); // KNTQ, fixed in the Bags
+// what a coin can be paired with at deploy. Both stay rewards either way, and KNTQ still runs the Bags and the airdrop.
+const QUOTES = (process.env.QUOTES || 'KNTQ,WHYPE').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+if (!QUOTES.length || QUOTES.some((q) => q !== 'KNTQ' && q !== 'WHYPE')) throw new Error('QUOTES takes KNTQ, WHYPE or both');
 const SEND = process.argv.includes('--send');
 
 const A = {
@@ -135,7 +139,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   if (prog.deployer !== me) throw new Error('the progress file belongs to another deployer: ' + PROG);
   const save = () => { fs.mkdirSync(DEP, { recursive: true }); fs.writeFileSync(PROG, JSON.stringify(prog, null, 1)); };
   // quotes are worked out once and kept, so a run that is continued later sets the same ticks as it started with
-  const quotes = prog.quotes ? prog.quotes.map((q) => ({ ...q, minDevBuy: BigInt(q.minDevBuy) })) : [quoteCfg('KNTQ', A.kntq, kntqUsd), quoteCfg('WHYPE', A.whype, hypeUsd)];
+  const quotes = prog.quotes ? prog.quotes.map((q) => ({ ...q, minDevBuy: BigInt(q.minDevBuy) })) : [quoteCfg('KNTQ', A.kntq, kntqUsd), quoteCfg('WHYPE', A.whype, hypeUsd)].filter((q) => QUOTES.includes(q.sym));
   for (const q of quotes) console.log(`quote ${q.sym.padEnd(5)} opens at tick ${q.tick}: 1B coins worth ${q.opensAt.toFixed(q.sym === 'KNTQ' ? 0 : 2)} ${q.sym} (~$${Math.round(q.opensAtUsd)}), min dev buy ${ethers.formatEther(q.minDevBuy)} ${q.sym}`);
   console.log(`fees, fixed in the contracts: launch ${ethers.formatEther(LAUNCH_FEE)} HYPE (~$${(Number(ethers.formatEther(LAUNCH_FEE)) * hypeUsd).toFixed(2)}), copied ticker ${ethers.formatEther(COPY_FEE)} HYPE more (~$${(Number(ethers.formatEther(COPY_FEE)) * hypeUsd).toFixed(0)}), Bag mint ${ethers.formatEther(BAG_MINT_KNTQ)} KNTQ (~$${(Number(ethers.formatEther(BAG_MINT_KNTQ)) * kntqUsd).toFixed(0)}) and 100,000 $LOOT burned`);
   const bySym = { KNTQ: A.kntq, WHYPE: A.whype };
@@ -251,7 +255,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   const router = (await step('LootbagRouter', { data: init(Router, ['address', 'address', 'address', 'address'], [A.pm, factory, swapper, A.whype]) })).address;
 
   await call('hook.init', hook, Hook, 'init', [factory, payout, bags, airdrop, TREASURY]);
-  await call('payout.init', payout, Payout, 'init', [factory, hook, swapper]);
+  await call('payout.init', payout, Payout, 'init', [factory, hook, swapper, A.whype]);
   await call('payout.setKeeper', payout, Payout, 'setKeeper', [KEEPER, true]);
   await call('bags.setKeeper', bags, Bags, 'setKeeper', [KEEPER, true]);
   await call('airdrop.setKeeper', airdrop, Airdrop, 'setKeeper', [KEEPER, true]);

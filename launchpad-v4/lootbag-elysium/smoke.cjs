@@ -26,7 +26,11 @@ const abi = (n) => JSON.parse(fs.readFileSync(`${D}/out/${n}.sol/${n}.json`, "ut
   ok((await bags.kntq()).toLowerCase() === K.toLowerCase() && (await bags.MINT_KNTQ()) === ethers.parseEther(dep.fees.bagMintKntq), `Bags are priced in KNTQ: ${dep.fees.bagMintKntq} a mint`);
   ok((await hook.bagPot()) === C.bags && (await hook.airdropPot()) === C.airdrop, "the hook pays the Bag pot and the airdrop pot");
 
-  for (const [sym, quote] of [["KLOOT", K], ["WLOOT", W]]) {
+  // A round is sent with gas to spare, as a keeper must: the swap runs through another protocol's pool, whose first
+  // trade in a new second costs more than an estimate made a block earlier, and an exact estimate then runs out.
+  const ROUND_GAS = { gasLimit: 1_500_000 };
+  const listed = new Set(dep.quotes.map((q) => q.token.toLowerCase()));
+  for (const [sym, quote] of [["KLOOT", K], ["WLOOT", W]].filter(([, q]) => listed.has(q.toLowerCase()))) {
     const p = { name: "Smoke " + sym, symbol: sym, quote, rewards: [K, W], devBuy: 0, minCoinsOut: 1 }, fee = await f.launchFee(sym);
     const rc = await (await f.connect(dev).launchWithEth(p, ["", "smoke test", "", "", ""], 1, { value: fee + ethers.parseEther("0.5") })).wait();
     const coin = rc.logs.map((l) => { try { return f.interface.parseLog(l); } catch { return null; } }).find((e) => e && e.name === "Launched").args.coin;
@@ -43,9 +47,19 @@ const abi = (n) => JSON.parse(fs.readFileSync(`${D}/out/${n}.sol/${n}.json`, "ut
     await (await t.connect(alice).approve(C.router, have / 2n)).wait();
     const b0 = await P.getBalance(alice.address); const r2 = await (await router.connect(alice).sell(coin, have / 2n, 1, alice.address)).wait();
     ok((await P.getBalance(alice.address)) + r2.gasUsed * r2.gasPrice > b0, "alice sold half back for HYPE");
-    const reward = await payout.currentReward(coin), rb0 = await erc(reward).balanceOf(alice.address);
-    await (await payout.connect(owner).pay(coin, [alice.address, bob.address], 1)).wait();
-    ok((await erc(reward).balanceOf(alice.address)) > rb0 && (await t.earned(alice.address)) === 0n, `the keeper's round paid alice in ${reward.toLowerCase() === K.toLowerCase() ? "KNTQ" : "WHYPE"}`);
+    // a KNTQ round arrives as KNTQ, a WHYPE round as HYPE itself; alice does nothing either way
+    const reward = await payout.currentReward(coin), inHype = reward.toLowerCase() === W.toLowerCase();
+    const bal = () => (inHype ? P.getBalance(alice.address) : erc(reward).balanceOf(alice.address)), rb0 = await bal(), wb0 = await erc(W).balanceOf(alice.address);
+    await (await payout.connect(owner).pay(coin, [alice.address, bob.address], 1, ROUND_GAS)).wait();
+    ok((await bal()) > rb0 && (await t.earned(alice.address)) === 0n && (await erc(W).balanceOf(alice.address)) === wb0, `the keeper's round paid alice in ${inHype ? "HYPE, straight to her wallet (no WHYPE)" : "KNTQ"}`);
+    if (!inHype) { // the next round is the other reward: WHYPE, which must arrive as HYPE
+      await (await router.connect(bob).buy(coin, 1, bob.address, { value: ethers.parseEther("1") })).wait();
+      await P.send("evm_increaseTime", [300]); await P.send("evm_mine", []);
+      ok((await payout.currentReward(coin)).toLowerCase() === W.toLowerCase(), "five minutes later the round's reward is WHYPE");
+      const h0 = await P.getBalance(alice.address);
+      await (await payout.connect(owner).pay(coin, [alice.address], 1, ROUND_GAS)).wait();
+      ok((await P.getBalance(alice.address)) > h0 && (await erc(W).balanceOf(alice.address)) === wb0, "and it reached alice as HYPE, with no WHYPE left to unwrap");
+    }
     await (await hook.connect(bob).split(quote)).wait();
     ok((await erc(quote).balanceOf(C.bags)) > 0n && (await erc(quote).balanceOf(C.airdrop)) > 0n, "the split reached the Bag pot and the airdrop pot");
     const [coins, q] = await f.connect(owner).collect.staticCall(coin, 1000, dep.owner);
