@@ -30,7 +30,7 @@ window.LB_CFG = {
   // true only when the factory in use cannot withdraw a pool's liquidity. This one can (collect), so it is false.
   liquidityLocked: false,
   // pre-launch addresses where the draft wording (written for the next contracts) shows by default, under its strip
-  draftHosts: ['lootbag-nu.vercel.app'],
+  draftHosts: [], // none: every address shows the wording that is true of the contracts in use
   // Lootbag's own coin, $LOOTBAG ("lootbag.fun", paired with ETH, pays ETH): the site shows this address as
   // official. The first one ($LOOT, 0x9eC35D5720603CcBBc2fbBDEf69181F046011f15, paired with VVV) is retired and
   // hidden below; the Bags contract still burns that first one, so minting stays closed on the site.
