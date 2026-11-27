@@ -5,7 +5,7 @@ window.LB_CFG = {
   // The name. It is an independent project named after the Kinetiq ecosystem it runs in, and is not Kinetiq's own:
   // the site says so in its footer. `coin` is the ticker of the platform's own coin (the address goes in `loot` below once it has
   // launched), `nft` and `nfts` are what the vault NFTs are called, `x` is the X handle (empty: no link is shown).
-  brand: { name: 'KinetiqPump', coin: 'KPUMP', nft: 'Jar', nfts: 'Jars', x: '' },
+  brand: { name: 'KinetiqPump', coin: 'KPUMP', nft: 'Jar', nfts: 'Jars', x: 'kinetiqpump_fun' },
   chainId: 99901,
   chainName: 'Elysium',
   // the chain's own coin, which every trade is paid in and received in
