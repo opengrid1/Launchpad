@@ -2,6 +2,9 @@
    The contract addresses come from deployments/lootbag-elysium.json once deploy.cjs has run on Elysium. Until then
    they are empty, and the site says that Lootbag is not live there yet and sends nothing. */
 window.LB_CFG = {
+  // The working name. `coin` is the ticker of the platform's own coin (the address goes in `loot` below once it has
+  // launched), `nft` and `nfts` are what the vault NFTs are called, `x` is the X handle (empty: no link is shown).
+  brand: { name: 'Ambrosia', coin: 'AMBROSIA', nft: 'Jar', nfts: 'Jars', x: '' },
   chainId: 99901,
   chainName: 'Elysium',
   // the chain's own coin, which every trade is paid in and received in

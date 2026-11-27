@@ -1,4 +1,4 @@
-/* Lootbag front-end, on Elysium: hash routes #/ (board), #/coin/<addr>, #/create, #/rewards, #/airdrops, #/bags,
+/* Ambrosia front-end, on Elysium: hash routes #/ (board), #/coin/<addr>, #/create, #/rewards, #/airdrops, #/bags,
    #/mint, #/coins, #/loot, #/how. Reads window.LB_DATA, which lb-live.js builds from the contracts, and sends every
    wallet action through window.LB_LIVE. Wallets connect through Reown. Coins pair with HYPE or KNTQ and pay their
    holders in either; every amount a person pays or receives is HYPE itself. */
@@ -6,7 +6,7 @@
   const D = window.LB_DATA, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const view = $('#view');
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const usd = (v, d) => { v = Number(v) || 0; const a = Math.abs(v); if (a >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B'; if (a >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M'; if (a >= 1e4) return '$' + (v / 1e3).toFixed(1) + 'K'; if (a >= 1000) return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 }); if (a >= 1) return '$' + v.toFixed(d ?? 2); if (a === 0) return '$0'; return '$' + v.toPrecision(3); };
+  const usd = (v, d) => { v = Number(v) || 0; const a = Math.abs(v); if (a >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B'; if (a >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M'; if (a >= 1e4) return '$' + (v / 1e3).toFixed(1) + 'K'; if (a >= 1000) return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 }); if (a >= 1) return '$' + v.toFixed(d ?? 2); if (a < 1e-10) return '$0'; return '$' + v.toPrecision(3); }; // under a ten-billionth of a dollar is rounding dust, not money
   const num = (v, d = 2) => Number(v).toLocaleString('en-US', { maximumFractionDigits: d });
   const pct = (v) => (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
   const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
@@ -15,14 +15,21 @@
   const toast = (m) => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), Math.min(9000, 2600 + String(m).length * 45)); };
 
   // ---------- marks: coin avatars and lettered token discs are drawn, not fetched
-  // a coin's picture: its uploaded image when it has one, otherwise a pixel sack drawn from its address
-  const av = (c, size = 44) => `<span class="av${c.official ? '' : ' art'}" style="width:${size}px;height:${size}px;${c.official ? 'background:var(--logo-bg)' : ''}">${c.official ? `<img src="/img/logo.svg?v=3" alt="" style="width:64%;height:64%">` : c.img ? `<img src="${esc(c.img)}" alt="">` : bagArt(2000 + parseInt(c.addr.slice(2, 9), 16) % 100000)}</span>`;
+  // a coin's picture: its uploaded image when it has one, otherwise a two-colour disc with its first letters; the
+  // platform's own coin wears the logo
+  const av = (c, size = 44) => {
+    const z = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px`;
+    if (c.official) return `<span class="av" style="${z};background:var(--sun)"><img src="/img/logo.svg?v=1" alt="" style="width:78%;height:78%;object-fit:contain"></span>`;
+    if (c.img) return `<span class="av" style="${z}"><img src="${esc(c.img)}" alt=""></span>`;
+    const h = parseInt(String(c.addr).slice(2, 8), 16) % 360;
+    return `<span class="av" style="${z};background:linear-gradient(135deg,hsl(${h} 95% 70%),hsl(${(h + 75) % 360} 95% 64%))">${esc(String(c.ticker).slice(0, 2))}</span>`;
+  };
   const stkHue = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
-  // HYPE and KNTQ have their own marks; a Lootbag coin used as a pair or a reward gets a lettered disc
+  // HYPE and KNTQ have their own marks; a Ambrosia coin used as a pair or a reward gets a lettered disc
   const TOK_LOGO = new Set(['HYPE', 'KNTQ']);
   const tokenBadge = (s, size = 20) => {
     const z = `width:${size}px;height:${size}px`;
-    if (s === 'LOOT') return `<img class="tkl" src="/img/logo.svg?v=3" alt="" style="${z};border-radius:50%;background:var(--logo-bg);padding:${Math.round(size * 0.14)}px">`;
+    if (s === OWN) return `<img class="tkl" src="/img/logo.svg?v=1" alt="" style="${z};border-radius:50%">`;
     if (TOK_LOGO.has(s)) return `<span class="stk lg" style="${z}" title="${esc(s)}"><img src="/img/tok/${esc(s)}.png" alt="" loading="lazy"></span>`;
     return `<span class="stk" style="${z};background:hsl(${stkHue(s)} 55% 42%);font-size:${Math.max(7, Math.round(size * 0.3))}px">${esc(s.slice(0, 4))}</span>`;
   };
@@ -30,6 +37,7 @@
   const label = (s) => s;
   const pays = (c) => c.rewards.map(label).join(', ');
   const CRYPTO = ['HYPE', 'KNTQ'];
+  const BRAND = (window.LB_CFG || {}).brand || {}, OWN = BRAND.coin || 'COIN';
 
   // ---------- nav
   // nav icons: one 24px grid, 1.75 stroke, round caps and joins
@@ -44,9 +52,11 @@
     book: svg('<path d="M12 6.8v13.7"/><path d="M3.5 5.2c2.9-.9 5.7-.6 8.5 1.6 2.8-2.2 5.6-2.5 8.5-1.6v13.3c-2.9-.9-5.7-.6-8.5 1.6-2.8-2.2-5.6-2.5-8.5-1.6z"/>'),
     plus: svg('<path d="M12 5v14M5 12h14"/>'),
   };
-  const NAV = [['Trade', [['#/', 'Board', 'home'], ['#/coins', 'Lootbag coins', 'sack'], ['#/bags', 'Bags', 'grid']]], ['Earn', [['#/rewards', 'Rewards', 'gift'], ['#/airdrops', 'Airdrops', 'chute'], ['#/mint', 'Mint', 'mint']]], ['Learn', [['#/how', 'How it works', 'book']]]];
-  $('#nav').innerHTML = NAV.map(([g, items]) => `<h6>${g}</h6>` + items.map(([h, l, i]) => `<a href="${h}" data-r="${h}">${I[i]}<span>${l}</span></a>`).join('')).join('');
-  $('#tabbar').innerHTML = [['#/', 'Board', 'home'], ['#/create', 'Create', 'plus', 'plus'], ['#/coins', 'Lootbag coins', 'sack'], ['#/bags', 'Bags', 'grid'], ['#/rewards', 'Rewards', 'gift'], ['#/airdrops', 'Airdrops', 'chute'], ['#/mint', 'Mint', 'mint'], ['#/how', 'How it works', 'book']].map(([h, l, i, c]) => `<a href="${h}" data-r="${h}" class="${c || ''}" aria-label="${l}">${I[i]}</a>`).join('');
+  const NAV = [['#/', 'Markets', 'home'], ['#/rewards', 'Rewards', 'gift'], ['#/airdrops', 'Airdrops', 'chute'], ['#/jars', 'Jars', 'grid'], ['#/mint', 'Mint', 'mint'], ['#/how', 'Docs', 'book']];
+  $('#nav').innerHTML = NAV.map(([h, l]) => `<a href="${h}" data-r="${h}">${l}</a>`).join('');
+  $('#tabbar').innerHTML = [NAV[0], ['#/create', 'Launch', 'plus', 'plus'], ...NAV.slice(1)].map(([h, l, i, c]) => `<a href="${h}" data-r="${h}" class="${c || ''}" aria-label="${l}">${I[i]}</a>`).join('');
+  $('#brand').textContent = BRAND.name || '';
+  if (BRAND.x) { const x = $('#xlink'); x.href = 'https://x.com/' + BRAND.x; x.hidden = false; }
   // ---------- wallet: Reown AppKit (LB_CFG.walletConnect.projectId), loaded the first time someone connects.
   // The connected wallet's provider goes to LB_LIVE, which sends every transaction.
   const CFG = window.LB_CFG || {}, WC_ID = (CFG.walletConnect || {}).projectId || '', LIVE = window.LB_LIVE, K = CFG.contracts;
@@ -76,7 +86,7 @@
       const net = { id: CFG.chainId, name: CFG.chainName, nativeCurrency: CFG.native || { name: 'HYPE', symbol: 'HYPE', decimals: 18 }, rpcUrls: { default: { http: [CFG.rpc] } }, blockExplorers: { default: { name: CFG.explorerName || 'Explorer', url: CFG.explorer } } };
       const kit = createAppKit({
         adapters: [new EthersAdapter()], networks: [net], defaultNetwork: net, projectId: WC_ID,
-        metadata: { name: 'Lootbag', description: 'Coins that pay their holders', url: location.origin, icons: [location.origin + '/img/apple-icon.png'] },
+        metadata: { name: 'Ambrosia', description: 'Coins that pay their holders', url: location.origin, icons: [location.origin + '/img/apple-icon.png'] },
         features: { analytics: false, email: false, socials: false, swaps: false, onramp: false, send: false, history: false },
         themeMode: 'dark', themeVariables: { '--w3m-accent': '#f4b740', '--w3m-font-family': "'Space Grotesk', system-ui, sans-serif", '--w3m-border-radius-master': '2px' },
       });
@@ -117,7 +127,7 @@
   // AppKit restores an earlier session by itself and reports it through subscribeAccount
   try { if (WC_ID && !basicUi() && Object.keys(localStorage).some((k) => /^(@appkit|wc@2|@w3m)/.test(k))) appKit().catch(() => {}); } catch (e) { /* storage unavailable */ }
 
-  // the strip under the header says what state Lootbag is in; the $LOOTBAG chip shows its price once it exists
+  // the strip under the header says what state Ambrosia is in; the $AMBROSIA chip shows its price once it exists
   const tkn = (v, d = 4) => { v = Number(v) || 0; const min = 10 ** -d; return v === 0 ? '0' : v >= 1000 ? num(v, 0) : v >= 1 ? num(v, 2) : v < min ? '<' + min.toFixed(d) : num(v, d); };
   const ex = (kind, a) => `${CFG.explorer}/${kind}/${a}`;
   // whether a pool's liquidity can be withdrawn is a fact of the contracts in use; ?draft=1 previews the next ones' text
@@ -125,15 +135,15 @@
   function status() {
     const bar = $('.preview-bar');
     if (bar && DRAFT) { bar.innerHTML = 'Draft text for the next contracts. It is not what is live today. <a href="/?draft=0" style="text-decoration:underline">Turn off</a>'; bar.hidden = false; }
-    else if (bar) { const m = D.error ? `Can't reach ${CHAIN} right now. Retrying…` : !D.deployed ? `Lootbag is not live on ${CHAIN} yet: its contracts have not been deployed. Nothing can be launched or traded here until they are.` : D.paused ? `Lootbag's contracts are live on ${CHAIN}. Launches are not open yet.` : ''; bar.textContent = m; bar.hidden = !m; }
+    else if (bar) { const m = D.error ? `Can't reach ${CHAIN} right now. Retrying…` : !D.deployed ? `Ambrosia is not live on ${CHAIN} yet: its contracts have not been deployed. Nothing can be launched or traded here until they are.` : D.paused ? `Ambrosia's contracts are live on ${CHAIN}. Launches are not open yet.` : ''; bar.textContent = m; bar.hidden = !m; }
     const chip = $('.chip-price'), loot = D.coins.find((x) => x.official);
     if (chip) {
-      chip.innerHTML = loot ? `<a href="#/loot"><b>$LOOTBAG</b> <span class="px">${usd(loot.priceUsd)}</span></a><i class="sep"></i><button class="ca" data-copyloot>${short(loot.addr)}</button>` : `<a href="#/loot"><b>$LOOTBAG</b> <span class="px mute">not launched yet</span></a>`;
-      const b = $('[data-copyloot]'); if (b) b.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(loot.addr); toast('$LOOTBAG address copied'); };
+      chip.innerHTML = loot ? `<a href="#/loot"><b>$AMBROSIA</b> <span class="px">${usd(loot.priceUsd)}</span></a><i class="sep"></i><button class="ca" data-copyloot>${short(loot.addr)}</button>` : `<a href="#/loot"><b>$AMBROSIA</b> <span class="px mute">not launched yet</span></a>`;
+      const b = $('[data-copyloot]'); if (b) b.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(loot.addr); toast('$AMBROSIA address copied'); };
     }
   }
 
-  const foot = () => `<footer class="foot"><div class="fr"><b>© ${new Date().getFullYear()} Lootbag</b><span><a href="#/how#contracts">Contracts</a><a href="#" data-pv>Terms</a><a href="#" data-pv>Privacy</a><a href="https://x.com/lootbag_fun" target="_blank" rel="noopener">X</a></span></div><p>Tokens on Lootbag are launched by their creators, not by Lootbag. They are highly risky and can lose all their value. Nothing here is financial advice.</p></footer>`;
+  const foot = () => `<footer class="foot"><div class="fr"><b>© ${new Date().getFullYear()} Ambrosia</b><span><a href="#/how#contracts">Contracts</a><a href="#" data-pv>Terms</a><a href="#" data-pv>Privacy</a>${BRAND.x ? `<a href="https://x.com/${esc(BRAND.x)}" target="_blank" rel="noopener">X</a>` : ''}</span></div><p>Tokens on Ambrosia are launched by their creators, not by Ambrosia. They are highly risky and can lose all their value. Nothing here is financial advice.</p></footer>`;
   const hms = (s) => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm ' + (s % 60) + 's'; };
   let timers = [];
   const every = (ms, f) => timers.push(setInterval(f, ms));
@@ -142,27 +152,37 @@
   // what a coin can be paired with right now: the factory's listed pairs, or every known token before it is deployed
   const pairSyms = () => { const l = (D.tokens || []).filter((t) => t.quote).map((t) => t.sym); return l.length ? l : D.deployed ? ['HYPE'] : Object.keys(CFG.tokens); };
   const pairWords = () => pairSyms().join(' or ');
-  const none = () => (D.coins.length ? 'No coins match.' : !D.deployed ? `No coins yet. Lootbag is not live on ${CHAIN} yet.` : D.paused ? 'No coins yet. Launches are not open yet.' : 'No coins yet. Be the first to launch one.');
+  const none = () => (D.coins.length ? 'No coins match.' : !D.deployed ? `No coins yet. Ambrosia is not live on ${CHAIN} yet.` : D.paused ? 'No coins yet. Launches are not open yet.' : 'No coins yet. Be the first to launch one.');
   const state = { tab: 'trending', chip: '', q: '' };
   function board() {
-    const cs = D.coins;
     view.innerHTML = `
       <section class="hero">
-        <svg class="waves" viewBox="0 0 1200 150" preserveAspectRatio="none" fill="none" stroke="var(--blue)" stroke-opacity=".45" stroke-width="2"><path d="M0 95C150 20 250 20 400 95S650 170 800 95 1050 20 1200 95"/><path d="M0 125C150 50 250 50 400 125S650 200 800 125 1050 50 1200 125"/></svg>
         <div>
-          <h1>Hold the bag.<br><span>Get paid in HYPE.</span></h1>
-          <p>Launch a coin on ${CHAIN}, paired with ${pairWords()}. Every trade pays your holders in HYPE or KNTQ, sent straight to their wallets, and traders earn KNTQ airdrops.</p>
-          <div class="acts"><a class="btn blue pill" href="#/create">Launch a coin</a></div>
+          <span class="kick">On ${CHAIN} · built on Uniswap v4</span>
+          <h1>Coins that <mark>feed</mark> their holders.</h1>
+          <p>Launch a coin paired with ${pairWords()}. Every trade pays the people who hold it in HYPE or KNTQ, sent straight to their wallets. Nothing to claim, nowhere to log in.</p>
+          <div class="acts"><a class="btn blue pill" href="#/create">Launch a coin</a><a class="btn pill" href="#/how">How it works</a></div>
         </div>
+        <div class="feed"><h4><i></i>Paid to holders</h4><div id="feed"></div></div>
       </section>
-      <div class="bar">${[['trending', 'Trending'], ['new', 'New'], ['paying', 'Paying now'], ['top', 'Top']].map(([k, l]) => `<button class="tab ${state.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}<span class="live">${cs.length} live</span></div>
+      <div class="stats" id="stats"></div>
+      <div class="bar"><h2>Markets</h2>${[['trending', 'Trending'], ['new', 'New'], ['paying', 'Paying now'], ['top', 'Top']].map(([k, l]) => `<button class="tab ${state.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}<span class="live"></span></div>
       <div class="chips">${[...(pairSyms().length > 1 ? pairSyms().map((p) => ['p' + p, 'Paired with ' + p]) : []), ['yHYPE', 'Pays HYPE'], ['yKNTQ', 'Pays KNTQ']].map(([k, l]) => `<button class="fchip ${state.chip === k ? 'on' : ''}" data-chip="${k}">${l}</button>`).join('')}</div>
-      <div class="grid" id="grid"></div>${foot()}`;
+      <div class="card mk"><div class="mk-h"><span>Coin</span><span>Pair</span><span>Pays holders in</span><span class="r">Market cap</span><span class="r">24h volume</span><span class="r">Paid, 24h</span><span class="r">Next round</span></div><div id="grid"></div></div>${foot()}`;
     $$('[data-tab]').forEach((b) => (b.onclick = () => { state.tab = b.dataset.tab; board(); }));
     $$('[data-chip]').forEach((b) => (b.onclick = () => { state.chip = state.chip === b.dataset.chip ? '' : b.dataset.chip; board(); }));
-    drawGrid();
+    const top = () => {
+      // the newest payouts across every coin: rounds sent to wallets, and claims
+      const paid = D.coins.flatMap((c) => c.payouts.map((x) => ({ ...x, c }))).sort((x, y) => y.ts - x.ts).slice(0, 4);
+      $('#feed').innerHTML = paid.map((x) => `<a class="tk" href="#/coin/${x.c.addr}">${av(x.c, 36)}<span class="grow"><b>$${esc(x.c.ticker)}</b> paid ${num(x.wallets, 0)} ${x.wallets === 1 ? 'holder' : 'holders'}<small>${x.claim ? 'claimed by the holder' : 'sent to their wallets'} · ${ago(x.ts)} ago</small></span><span class="amt">${usd(x.usd)} in ${esc(payTok(x.token))}</span></a>`).join('')
+        || `<div class="empty">${!D.deployed ? `Payouts show here once Ambrosia is live on ${CHAIN}.` : 'No payouts yet. The first one shows here the moment it is sent.'}</div>`;
+      const P = D.platform || {};
+      $('#stats').innerHTML = [['Paid to holders', usd(P.paidHolders || 0)], ['Coins', num(D.coins.length, 0)], ['Volume', usd(P.volumeAll || 0)], ['Traders', num(P.traders || 0, 0)]].map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
+      $('.bar .live').textContent = D.coins.length + ' live';
+    };
+    drawGrid(); top();
     every(1000, tickCards);
-    onData = () => { drawGrid(); const l = $('.bar .live'); if (l) l.textContent = D.coins.length + ' live'; };
+    onData = () => { if (!$('#grid')) return; drawGrid(); top(); };
   }
   function filtered() {
     let cs = D.coins.slice();
@@ -173,30 +193,28 @@
     const sort = { trending: (a, b) => b.vol24 - a.vol24, new: (a, b) => b.createdAt - a.createdAt, paying: (a, b) => b.paid24 - a.paid24, top: (a, b) => b.mcap - a.mcap }[state.tab];
     return cs.sort(sort);
   }
-  function card(c) {
-    return `<a class="card coin" href="#/coin/${c.addr}">
-      <span class="ghost">${av(c, 170)}</span>${c.official ? '<span class="badge">Lootbag</span>' : ''}
-      <span class="in">${av(c, 44)}
-        <div class="tkl"><b>$${esc(c.ticker)}</b><span>${esc(c.name)}</span></div>
-        <div class="mc">${usd(c.mcap)}</div>
-        <div class="l1">${c.official ? 'Lootbag coin' : `Paired to ${tokenBadge(c.pair, 16)} <b>${esc(CRYPTO.includes(c.pair) ? c.pair : '$' + label(c.pair))}</b>`}</div>
-        <div class="l2">Pays ${esc(c.rewards.slice(0, 2).map(payTok).join(' · '))}${c.rewards.length > 2 ? ' +' + (c.rewards.length - 2) : ''}</div>
-      </span></a>`;
+  function row(c) {
+    return `<a class="mkr" href="#/coin/${c.addr}">
+      <span class="who">${av(c, 42)}<span><b>$${esc(c.ticker)}${c.official ? '<span class="tag">Official</span>' : ''}</b><small>${esc(c.name)}</small></span></span>
+      <span class="c pair">${tokenBadge(c.pair, 20)}${esc(payTok(c.pair))}</span>
+      <span class="c pays">${stack(c.rewards)}<span>${esc(c.rewards.slice(0, 2).map(payTok).join(' · '))}${c.rewards.length > 2 ? ' +' + (c.rewards.length - 2) : ''}</span></span>
+      <span class="n r mc">${usd(c.mcap)}</span><span class="n r vol">${usd(c.vol24)}</span><span class="n r paid${c.paid24 ? ' up' : ''}">${usd(c.paid24)}</span>
+      <span class="nx" data-next="${c.addr}">${mmss(c.nextPayout)}</span></a>`;
   }
-  function drawGrid() { const g = $('#grid'); if (g) g.innerHTML = filtered().map(card).join('') || `<p class="mute">${none()}</p>`; }
+  function drawGrid() { const g = $('#grid'); if (g) g.innerHTML = filtered().map(row).join('') || `<p class="none">${none()}</p>`; }
   function tickCards() {
     for (const c of D.coins) c.nextPayout = c.nextPayout <= 1 ? 300 : c.nextPayout - 1;
-    $$('[data-next]').forEach((el) => { const c = D.coins.find((x) => x.addr === el.dataset.next); if (c) el.textContent = 'Next drop ' + mmss(c.nextPayout); });
+    $$('[data-next]').forEach((el) => { const c = D.coins.find((x) => x.addr === el.dataset.next); if (c) el.textContent = mmss(c.nextPayout); });
   }
 
   // ---------- coin page
   function coin(a) {
     const c = (D.allCoins || D.coins).find((x) => x.addr.toLowerCase() === String(a).toLowerCase()); // a hidden coin still has its page
-    if (!c) { view.innerHTML = `<a class="back" href="#/">← Board</a><h1>${a ? 'Coin not found' : '$LOOTBAG has not launched yet'}</h1><p class="mute">${a ? 'No Lootbag coin has this address.' : 'Its address will be shown here and in the header when it does.'}</p>`; return; }
+    if (!c) { view.innerHTML = `<a class="back" href="#/">← Markets</a><h1>${a ? 'Coin not found' : '$AMBROSIA has not launched yet'}</h1><p class="mute">${a ? 'No Ambrosia coin has this address.' : 'Its address will be shown here and in the header when it does.'}</p>`; return; }
     const pairL = CRYPTO.includes(c.pair) ? c.pair : '$' + label(c.pair), key = c.addr.toLowerCase();
     const routeTxt = c.pair === N ? `Trades straight against <b>${N}</b>` : `You pay and receive ${N}. Route: ${N} → ${esc(pairL)} → $${esc(c.ticker)}`;
     const rewardsTxt = esc(c.rewards.map(payTok).join(', '));
-    view.innerHTML = `<a class="back" href="#/">← Board</a>
+    view.innerHTML = `<a class="back" href="#/">← Markets</a>
       <div class="cp">
         <div>
       <div class="chead"><div class="lg">${av(c, 64)}<span class="pb">${tokenBadge(c.pair, 24)}</span></div>
@@ -221,8 +239,8 @@
             <button class="btn green block" style="height:50px" id="go">Connect wallet</button>
           </div>
           <div class="rs"><div class="rh"><b>Waiting for holders</b><span class="blue" id="potv"></span></div><p>Fees kept for this coin's holders and not paid out yet. The coin trades in its own Uniswap v4 pool.</p></div>
-          <div class="rs"><b class="rt">Details</b><div class="kv"><span>Address</span><b>${short(c.addr)}</b></div><div class="kv"><span>Creator</span><b>${short(c.creator)}</b></div><div class="kv"><span>Paired with</span><b>${esc(pairL)}</b></div><div class="kv"><span>Supply</span><b>1,000,000,000</b></div><div class="kv"><span>Trading fee</span><b>2%</b></div><div class="kv"><span>Liquidity</span><b>${LOCKED ? 'Locked' : 'Held by Lootbag, not locked'}</b></div>
-            <h4 class="rt2">Where every fee goes</h4><div class="kv"><span><i class="drop-dot" style="background:var(--buy)"></i>Holders</span><b>0.5%</b></div><div class="kv"><span><i class="drop-dot" style="background:var(--blue)"></i>Lootbag</span><b>1.5%</b></div></div>
+          <div class="rs"><b class="rt">Details</b><div class="kv"><span>Address</span><b>${short(c.addr)}</b></div><div class="kv"><span>Creator</span><b>${short(c.creator)}</b></div><div class="kv"><span>Paired with</span><b>${esc(pairL)}</b></div><div class="kv"><span>Supply</span><b>1,000,000,000</b></div><div class="kv"><span>Trading fee</span><b>2%</b></div><div class="kv"><span>Liquidity</span><b>${LOCKED ? 'Locked' : 'Held by Ambrosia, not locked'}</b></div>
+            <h4 class="rt2">Where every fee goes</h4><div class="kv"><span><i class="drop-dot" style="background:var(--buy)"></i>Holders</span><b>0.5%</b></div><div class="kv"><span><i class="drop-dot" style="background:var(--blue)"></i>Ambrosia</span><b>1.5%</b></div></div>
         </div>
       </div>${foot()}`;
     $('[data-copy]').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(c.addr); toast('Address copied'); };
@@ -324,7 +342,7 @@
     const el = $('#cv'); if (!el || !window.LightweightCharts) return;
     if (chart) { chart.remove(); chart = null; }
     const V = (k) => getComputedStyle(document.documentElement).getPropertyValue(k).trim(), up = V('--buy'), dn = V('--sell'), ar = (c, o) => { const h = c.replace('#', ''); return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${o})`; };
-    chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: V('--mute'), fontFamily: 'Space Grotesk', fontSize: 11 }, grid: { vertLines: { color: ar(V('--line2'), 0.35) }, horzLines: { color: ar(V('--line2'), 0.35) } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.2 } }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 4, barSpacing: 6 }, crosshair: { mode: 1, vertLine: { color: V('--line3'), labelBackgroundColor: V('--chip') }, horzLine: { color: V('--line3'), labelBackgroundColor: V('--chip') } }, autoSize: true });
+    chart = LightweightCharts.createChart(el, { layout: { background: { color: 'transparent' }, textColor: V('--mute'), fontFamily: 'DM Sans', fontSize: 11 }, grid: { vertLines: { color: ar(V('--line2'), 0.35) }, horzLines: { color: ar(V('--line2'), 0.35) } }, rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.2 } }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 4, barSpacing: 6 }, crosshair: { mode: 1, vertLine: { color: V('--line3'), labelBackgroundColor: V('--chip') }, horzLine: { color: V('--line3'), labelBackgroundColor: V('--chip') } }, autoSize: true });
     const s = chart.addCandlestickSeries({ upColor: up, downColor: dn, borderVisible: false, wickUpColor: up, wickDownColor: dn, priceLineColor: V('--blue'), priceLineStyle: 2, priceFormat: { type: 'custom', minMove: mode === 'px' ? 1e-12 : 0.01, formatter: (v) => usd(v) } });
     const vol = chart.addHistogramSeries({ priceScaleId: 'vol', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 }, visible: false });
@@ -360,7 +378,7 @@
     const pairs = pairSyms(), F = { pair: pairs.includes('HYPE') ? 'HYPE' : pairs[0], rewards: [], img: '', taken: false };
     const toks = D.tokens && D.tokens.length ? D.tokens : Object.entries(CFG.tokens).map(([sym, [addr, , name]]) => ({ sym, name: name || sym, usd: 0, reward: true }));
     const memes = D.memes || [];
-    // what holders can be paid in: a listed reward, the coin's own pair, or Lootbag's coin once it is a reward
+    // what holders can be paid in: a listed reward, the coin's own pair, or Ambrosia's coin once it is a reward
     const payable = () => [...toks.filter((t) => !D.deployed || t.reward || t.sym === F.pair), ...memes];
     // The dev buy is paid in HYPE whatever the pair. The least and the most it can be come from the factory: its
     // minimum for the pair (with room for the swap into KNTQ) and 2% of the supply at the opening price.
@@ -396,7 +414,7 @@
     const rw = () => { $('#rw').innerHTML = payable().map((s) => { const i = F.rewards.indexOf(s.sym); return listBtn(s, i >= 0, i >= 0 ? i + 1 : 0); }).join(''); $$('#rw [data-t]').forEach((b) => (b.onclick = () => { const s = b.dataset.t, i = F.rewards.indexOf(s); if (i >= 0) F.rewards.splice(i, 1); else if (F.rewards.length < 10) F.rewards.push(s); else toast('Up to 10 rewards'); rw(); pv(); })); };
     const devUi = () => {
       const steps = devSteps();
-      $('#dev-p').textContent = `Required: ${minDev()} ${N} or more, up to 2% of the supply (around ${maxDev()} ${N} at launch). It is bought inside the launch, so nobody can buy before you. Creators can't hold more than that at launch, on every coin on Lootbag, and the creator's wallet earns no holder rewards.`;
+      $('#dev-p').textContent = `Required: ${minDev()} ${N} or more, up to 2% of the supply (around ${maxDev()} ${N} at launch). It is bought inside the launch, so nobody can buy before you. Creators can't hold more than that at launch, on every coin on Ambrosia, and the creator's wallet earns no holder rewards.`;
       $('#devp').innerHTML = steps.map((v) => `<button data-dev="${v}" class="${String(v) === $('#f-dev').value.trim() ? 'on' : ''}">${v} ${N}</button>`).join('');
       $$('[data-dev]').forEach((b) => (b.onclick = () => { $('#f-dev').value = b.dataset.dev; $$('[data-dev]').forEach((x) => x.classList.toggle('on', x === b)); pv(); }));
     };
@@ -417,14 +435,15 @@
         .then((r) => { if (r && r.coin) location.hash = '#/coin/' + r.coin; });
     };
     let feeT = 0;
+    const hy = (v) => String(Number(Number(v).toFixed(4)));
     const pv = () => {
       const tk = $('#f-tk').value.trim().toUpperCase(), dev = Number($('#f-dev').value.replace(',', '.')) || 0;
       $('#n-n').textContent = $('#f-name').value.length + '/32'; $('#t-n').textContent = $('#f-tk').value.length + '/10'; $('#dev-usd').textContent = D.hypeUsd ? '≈ ' + usd(dev * D.hypeUsd) : '';
       $('#pair-h').textContent = 'Trades in its own Uniswap v4 pool against ' + F.pair;
       const taken = F.taken === tk || (tk && D.coins.some((c) => c.ticker.toUpperCase() === tk));
       const fee = D.fees.launch + (taken ? D.fees.copy : 0);
-      $('#pv').innerHTML = `${taken ? `<p class="note warn" style="margin:0 0 12px">$${esc(tk)} is already on Lootbag: a copy costs ${D.fees.copy} ${N} on top, refunded if your coin reaches $70K within 48 hours.</p>` : ''}
-        ${D.deployed && D.fees.launch ? `<p class="note" style="margin:0 0 12px">You pay ${tkn(fee + dev, 4)} ${N} in one transaction: the ${tkn(fee, 4)} ${N} launch fee and your ${tkn(dev, 4)} ${N} dev buy, plus gas.</p>` : ''}
+      $('#pv').innerHTML = `${taken ? `<p class="note warn" style="margin:0 0 12px">$${esc(tk)} is already on Ambrosia: a copy costs ${D.fees.copy} ${N} on top, refunded if your coin reaches $70K within 48 hours.</p>` : ''}
+        ${D.deployed && D.fees.launch ? `<p class="note" style="margin:0 0 12px">You pay ${hy(fee + dev)} ${N} in one transaction: the ${hy(fee)} ${N} launch fee and your ${hy(dev)} ${N} dev buy, plus gas.</p>` : ''}
         <button class="btn blue block" style="height:50px" id="launch">Connect wallet</button>`;
       if (!D.deployed) { const b = $('#launch'); b.textContent = `Not live on ${CHAIN} yet`; b.disabled = true; }
       else if (D.paused) { const b = $('#launch'); b.textContent = 'Launches are not open yet'; b.disabled = true; }
@@ -452,12 +471,12 @@
   // ---------- rewards
   function rewards() {
     const paying = D.coins.filter((c) => c.pot > 0 || c.paid24 > 0).sort((a, b) => b.paid24 + b.pot - (a.paid24 + a.pot)).slice(0, 8), total24 = D.coins.reduce((s, c) => s + c.paid24, 0), P = D.platform;
-    view.innerHTML = `<div class="ph1"><h1>Rewards</h1><p>Hold a coin launched on Lootbag and you earn from every trade made in it. Payout rounds send rewards straight to holders' wallets: you don't have to claim, or even open this site. Whatever you have earned can also be claimed here at any time.</p></div>
-      ${statsRow([['All payouts', usd(P.paidHolders + D.bags.paidUsd), 'holders + Bag vaults'], ['Paid to holders', usd(P.paidHolders), num(P.payments, 0) + ' payments'], ['Last 24 hours', usd(total24), 'to holders'], ["You're earning on", '<span id="mine-n">–</span>', '']])}
+    view.innerHTML = `<div class="ph1"><h1>Rewards</h1><p>Hold a coin launched on Ambrosia and you earn from every trade made in it. Payout rounds send rewards straight to holders' wallets: you don't have to claim, or even open this site. Whatever you have earned can also be claimed here at any time.</p></div>
+      ${statsRow([['All payouts', usd(P.paidHolders + D.bags.paidUsd), 'holders + Jar vaults'], ['Paid to holders', usd(P.paidHolders), num(P.payments, 0) + ' payments'], ['Last 24 hours', usd(total24), 'to holders'], ["You're earning on", '<span id="mine-n">–</span>', '']])}
       <div class="lookup"><button class="btn blue" data-connect2>Connect wallet</button><span class="mute">or</span><input class="inp t" id="rq" placeholder="Paste any wallet address"><button class="btn" id="rgo">Look up</button></div><div id="rres"></div>
       <div class="lh"><h3>Earning now</h3><span>Coins with fees kept for their holders</span></div>
       <div>${paying.map((c) => `<a class="prow" href="#/coin/${c.addr}">${av(c, 40)}<div class="grow"><b>$${esc(c.ticker)}</b><div class="mute">${usd(c.pot)} waiting for holders · ${usd(c.paid24)} paid in 24h · ${usd(c.mcap)} market cap</div></div><div class="pays"><span class="mute">Pays in</span>${tokenBadge(c.rewards[0], 20)}<b>${esc(payTok(c.rewards[0]))}</b>${c.rewards.length > 1 ? `<span class="dim">+${c.rewards.length - 1}</span>` : ''}</div></a>`).join('') || '<p class="mute">No coin has earned fees for its holders yet.</p>'}</div>
-      <p class="fine">Every coin has a payout round every 5 minutes, counted from its launch. A round swaps the holders' share of the coin's trading fees into that round's reward token and sends it to holders by how much they hold. Rounds are run by Lootbag, when enough has built up to be worth the swap. Between rounds your share stays in the coin's own contract, and you can claim it yourself in the coin's pair token. HYPE is always paid as HYPE itself, with nothing to unwrap.</p>${foot()}`;
+      <p class="fine">Every coin has a payout round every 5 minutes, counted from its launch. A round swaps the holders' share of the coin's trading fees into that round's reward token and sends it to holders by how much they hold. Rounds are run by Ambrosia, when enough has built up to be worth the swap. Between rounds your share stays in the coin's own contract, and you can claim it yourself in the coin's pair token. HYPE is always paid as HYPE itself, with nothing to unwrap.</p>${foot()}`;
     bindConnect();
     // what a wallet holds and has earned, coin by coin; the connected wallet can claim
     const show = async (who, mine) => {
@@ -466,7 +485,7 @@
       if (!$('#rres')) return;
       const rows = D.coins.map((c) => [c, a.coins[c.addr.toLowerCase()]]).filter(([, m]) => m && (m.bal > 0n || m.earned > 0n));
       if (mine) $('#mine-n').textContent = rows.length + (rows.length === 1 ? ' coin' : ' coins');
-      box.innerHTML = rows.length ? `<div style="margin:-18px 0 30px">${rows.map(([c, m]) => `<div class="prow">${av(c, 40)}<div class="grow"><a href="#/coin/${c.addr}"><b>$${esc(c.ticker)}</b></a><div class="mute">Holding ${tkn(ethers.formatEther(m.bal), 2)} · earned ${tkn(m.earnedAmount, 6)} ${esc(payTok(m.earnedIn))} (≈ ${usd(m.earnedUsd)})</div></div>${mine && m.earned > 0n ? `<button class="btn blue" data-claim="${c.addr}">Claim</button>` : ''}</div>`).join('')}</div>` : `<p class="note" style="margin:-18px 0 30px">No Lootbag coins in ${mine ? 'your' : 'this'} wallet yet.</p>`;
+      box.innerHTML = rows.length ? `<div style="margin:-18px 0 30px">${rows.map(([c, m]) => `<div class="prow">${av(c, 40)}<div class="grow"><a href="#/coin/${c.addr}"><b>$${esc(c.ticker)}</b></a><div class="mute">Holding ${tkn(ethers.formatEther(m.bal), 2)} · earned ${tkn(m.earnedAmount, 6)} ${esc(payTok(m.earnedIn))} (≈ ${usd(m.earnedUsd)})</div></div>${mine && m.earned > 0n ? `<button class="btn blue" data-claim="${c.addr}">Claim</button>` : ''}</div>`).join('')}</div>` : `<p class="note" style="margin:-18px 0 30px">No Ambrosia coins in ${mine ? 'your' : 'this'} wallet yet.</p>`;
       $$('[data-claim]').forEach((b) => (b.onclick = () => run(b, (note) => LIVE.claim(b.dataset.claim, note), 'Claimed. It is in your wallet.')));
     };
     $('#rgo').onclick = () => { const v = $('#rq').value.trim(); if (/^0x[0-9a-fA-F]{40}$/.test(v)) show(v, false); else $('#rres').innerHTML = '<p class="note" style="margin:-18px 0 30px">Paste a full 0x address.</p>'; };
@@ -480,13 +499,13 @@
     // #1 to #3 take fixed shares, #4 to #20 split 13% by volume, everyone after splits what is left
     const share = (x, i) => pct[i] || 0;
     const last = A.rounds[0], when = (ts) => new Date(ts * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-    view.innerHTML = `<div class="ph1"><h1>Airdrops</h1><p>Trade any coin launched on Lootbag. 10% of Lootbag's share of every fee goes into a KNTQ pot, and each round the pot is split between the top 500 traders by volume. #1, #2 and #3 get 5.3%, 4%, 3% of the pot, places 4–20 share 13%, and everyone else shares the rest. Places 4 and down go by volume: the more volume, the bigger the share. Rounds are posted by Lootbag, about every 10 hours.</p></div>
-      <div class="srow big"><div><span>In the pot</span><b>${num(A.pot, A.pot >= 100 ? 1 : 4)} KNTQ</b><small>≈ ${usd(A.potUsd)}</small></div><div><span>Next airdrop</span><b id="acd">${A.endsAt ? hms(A.endsAt - Date.now() / 1000) : 'First round soon'}</b><small>${num(A.traders, 0)} traders · ${usd(A.volume)} volume this round</small></div><div><span>Last airdrop${last ? ' · round ' + (last.id + 1) : ''}</span><b>${last ? num(last.total, 2) + ' KNTQ' : 'None yet'}</b><small>${last ? when(last.ts) : 'Lootbag has not posted the first round yet'}</small></div></div>
+    view.innerHTML = `<div class="ph1"><h1>Airdrops</h1><p>Trade any coin launched on Ambrosia. 10% of Ambrosia's share of every fee goes into a KNTQ pot, and each round the pot is split between the top 500 traders by volume. #1, #2 and #3 get 5.3%, 4%, 3% of the pot, places 4–20 share 13%, and everyone else shares the rest. Places 4 and down go by volume: the more volume, the bigger the share. Rounds are posted by Ambrosia, about every 10 hours.</p></div>
+      <div class="srow big"><div><span>In the pot</span><b>${num(A.pot, A.pot >= 100 ? 1 : 4)} KNTQ</b><small>≈ ${usd(A.potUsd)}</small></div><div><span>Next airdrop</span><b id="acd">${A.endsAt ? hms(A.endsAt - Date.now() / 1000) : 'First round soon'}</b><small>${num(A.traders, 0)} traders · ${usd(A.volume)} volume this round</small></div><div><span>Last airdrop${last ? ' · round ' + (last.id + 1) : ''}</span><b>${last ? num(last.total, 2) + ' KNTQ' : 'None yet'}</b><small>${last ? when(last.ts) : 'Ambrosia has not posted the first round yet'}</small></div></div>
       <div class="lookup" style="margin-top:28px"><span id="myrank">Connect your wallet to see your rank and payout.</span><button class="btn blue" data-connect2>Connect wallet</button></div>
-      <div class="lh"><h3>Leaderboard</h3><span>Top 50 shown · volume traded in Lootbag coins this round</span></div>
+      <div class="lh"><h3>Leaderboard</h3><span>Top 50 shown · volume traded in Ambrosia coins this round</span></div>
       ${b.length ? `<div class="tw"><table class="t lb"><tr><th>#</th><th>Wallet</th><th class="r">Volume</th><th class="r">Share</th><th class="r">Payout</th></tr>${b.map((x, i) => `<tr><td class="dim">${i + 1}</td><td>${short(x.wallet)}</td><td class="r">${usd(x.vol)}</td><td class="r mute">${share(x, i).toFixed(2)}%</td><td class="r up">${num((A.pot * share(x, i)) / 100, 4)} KNTQ</td></tr>`).join('')}</table></div>` : '<p class="mute">No trades this round yet.</p>'}
       <div class="lh"><h3>Past airdrops</h3></div>${A.rounds.map((r) => `<div class="past"><span class="mute">Round ${r.id + 1}</span><span class="mute">${when(r.ts)}</span><b>${num(r.total, 2)} KNTQ</b><span class="sp"></span>${r.listUri ? `<a class="mute" href="${esc(r.listUri)}" target="_blank" rel="noopener">Every wallet</a>` : ''}<a class="mute" href="${ex('tx', r.tx)}" target="_blank" rel="noopener">Transaction</a></div>`).join('') || '<p class="mute">No airdrop has been paid yet.</p>'}
-      <p class="fine">Payouts above are what the pot would pay right now; they grow as fees come in and change with every trade. The final list for a round is posted on-chain by Lootbag with the round.</p>${foot()}`;
+      <p class="fine">Payouts above are what the pot would pay right now; they grow as fees come in and change with every trade. The final list for a round is posted on-chain by Ambrosia with the round.</p>${foot()}`;
     bindConnect();
     onWallet = () => { const el = $('#myrank'); if (!el) return; const i = wallet ? A.board.findIndex((x) => x.wallet === wallet.toLowerCase()) : -1; el.textContent = !wallet ? 'Connect your wallet to see your rank and payout.' : i < 0 ? 'You have no volume in this round yet.' : `You are #${i + 1} with ${usd(A.board[i].vol)} of volume: about ${num((A.pot * share(A.board[i], i)) / 100, 4)} KNTQ right now.`; };
     onWallet();
@@ -497,42 +516,41 @@
     if (A.endsAt) every(1000, () => { const e = $('#acd'); if (e) e.textContent = A.endsAt > Date.now() / 1000 ? hms(A.endsAt - Date.now() / 1000) : 'Due now'; });
   }
 
-  // ---------- Bags (NFT vaults): pixel art, drawn from the Bag's number
+  // ---------- the vault NFTs: a jar drawn from its number, in flat colour with an ink outline
   function bagArt(id) {
-    let x = id * 2654435761 % 4294967296; const r = () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
-    const bgs = ['#fde68a', '#ddd6fe', '#fdba74', '#1e3a8a', '#c4b5fd', '#a7f3d0', '#fecdd3', '#bae6fd', '#e9d5ff', '#fef3c7'];
-    const bodies = [['#e8484f', '#b32d36'], ['#3d7bff', '#2456c7'], ['#f59e0b', '#b86f06'], ['#22c55e', '#15803d'], ['#e5e7eb', '#9ca3af'], ['#a855f7', '#7e22ce'], ['#ec4899', '#be185d'], ['#374151', '#1f2937']];
-    const bg = bgs[Math.floor(r() * bgs.length)], [b1, b2] = bodies[Math.floor(r() * bodies.length)], tie = ['#fbbf24', '#f8fafc', '#34d399', '#f472b6'][Math.floor(r() * 4)];
-    const eyes = Math.floor(r() * 4), hat = Math.floor(r() * 5), mouth = Math.floor(r() * 3), px = [];
-    const P = (cx, cy, c, w = 1, h = 1) => px.push(`<rect x="${cx}" y="${cy}" width="${w}" height="${h}" fill="${c}"/>`);
-    // the sack: neck, tie, round body (16x16 grid)
-    P(6, 3, b1, 4, 1); P(5, 4, tie, 6, 1); P(6, 5, b1, 4, 1);
-    [[4, 6, 8], [3, 7, 10], [2, 8, 12], [2, 9, 12], [2, 10, 12], [2, 11, 12], [3, 12, 10], [4, 13, 8]].forEach(([sx, y, w]) => P(sx, y, b1, w, 1));
-    [[3, 12, 10], [4, 13, 8]].forEach(([sx, y, w]) => P(sx, y, b2, w, 1)); P(2, 8, b2, 1, 4); P(13, 8, b2, 1, 4);
-    P(4, 14, 'rgba(0,0,0,.18)', 8, 1);
-    if (eyes === 0) { P(5, 9, '#111'); P(10, 9, '#111'); } else if (eyes === 1) { P(5, 9, '#fff', 2, 2); P(6, 10, '#111'); P(9, 9, '#fff', 2, 2); P(10, 10, '#111'); } else if (eyes === 2) { P(4, 9, '#111', 3, 1); P(9, 9, '#111', 3, 1); } else { P(4, 9, '#111', 8, 1); P(4, 9, '#3d7bff', 3, 1); P(9, 9, '#3d7bff', 3, 1); }
-    if (mouth === 0) P(7, 11, '#111', 2, 1); else if (mouth === 1) { P(6, 11, '#111'); P(7, 12, '#111', 2, 1); P(9, 11, '#111'); } else P(7, 11, '#7f1d1d', 2, 2);
-    if (hat === 1) { P(5, 1, '#111827', 6, 2); P(4, 3, '#111827', 8, 1); } else if (hat === 2) { P(7, 0, '#ef4444', 2, 1); P(6, 1, '#f59e0b', 4, 1); P(5, 2, '#3b82f6', 6, 1); } else if (hat === 3) { P(6, 1, '#22c55e', 1, 2); P(9, 1, '#22c55e', 1, 2); P(7, 2, '#16a34a', 2, 1); } else if (hat === 4) { P(4, 2, '#fde047', 8, 1); P(5, 1, '#fde047'); P(8, 1, '#fde047'); P(10, 1, '#fde047'); }
-    if (r() < 0.3) { P(13, 2, '#fff'); P(12, 3, '#fff', 3, 1); P(13, 4, '#fff'); }
-    return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="${bg}"/>${px.join('')}</svg>`;
+    let x = (id * 2654435761) % 4294967296; const r = () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
+    const pick = (a) => a[Math.floor(r() * a.length)], ink = '#17132b';
+    const bg = pick(['#ffd23f', '#cfc2ff', '#b9f3d4', '#ff8fb1', '#9ad7ff', '#ffb37a', '#fff5e4', '#e8ff8a']);
+    const body = pick(['#ff7a1a', '#7c5cff', '#12b76a', '#f04438', '#2b8cff', '#ffffff', '#ff4d8d', '#00c2a8']);
+    const lid = pick([ink, '#ffffff', '#ffd23f', '#ff7a1a', '#7c5cff']), band = pick(['#ffffff', '#ffd23f', ink, '#b9f3d4', '#ff8fb1']);
+    const kind = Math.floor(r() * 4), shape = 'M21 23c-7 4-11 10-11 17 0 9 8 15 22 15s22-6 22-15c0-7-4-13-11-17z';
+    const deco = kind === 0 ? `<rect x="6" y="35" width="52" height="8" fill="${band}"/><path d="M6 35h52M6 43h52" stroke="${ink}" stroke-width="2"/>`
+      : kind === 1 ? [18, 28, 38, 48].map((cx, i) => `<circle cx="${cx - 1}" cy="${i % 2 ? 44 : 35}" r="3.200" fill="${band}" stroke="${ink}" stroke-width="1.600"/>`).join('')
+        : kind === 2 ? `<path d="M8 41l7-7 7 7 7-7 7 7 7-7 7 7 7-7" fill="none" stroke="${band}" stroke-width="4.500" stroke-linejoin="round"/>`
+          : `<rect x="23" y="32" width="18" height="13" rx="3" fill="${band}" stroke="${ink}" stroke-width="2"/><path d="M27 37h10M27 41h6" stroke="${ink}" stroke-width="1.800" stroke-linecap="round"/>`;
+    const drops = r() < 0.55 ? `<path d="M52 9c2.400 3 4 5 4 7.200a4 4 0 0 1-8 0C48 14 49.600 12 52 9z" fill="#ff7a1a" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>` : '';
+    return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" fill="${bg}"/><ellipse cx="32" cy="57" rx="19" ry="3" fill="${ink}" opacity=".16"/>
+      <clipPath id="jar${id}"><path d="${shape}"/></clipPath><path d="${shape}" fill="${body}"/><g clip-path="url(#jar${id})">${deco}</g><path d="${shape}" fill="none" stroke="${ink}" stroke-width="2.600" stroke-linejoin="round"/>
+      <rect x="22" y="16" width="20" height="8" fill="${body}" stroke="${ink}" stroke-width="2.600"/><rect x="18" y="9" width="28" height="8.500" rx="3" fill="${lid}" stroke="${ink}" stroke-width="2.600"/>
+      <path d="M16.500 39c0-4.500 1.800-8 4.500-10.500" fill="none" stroke="#fff" stroke-width="2.600" stroke-linecap="round" opacity=".75"/>${drops}</svg>`;
   }
   const isMine = (x) => !!wallet && String(x.owner).toLowerCase() === wallet.toLowerCase();
-  const bagCard = (x) => `<div class="nft"><div class="art">${bagArt(x.id)}</div><div class="nb"><b>Bag #${x.id}</b><span>${usd(x.earned)} <i>in its vault</i></span>${isMine(x) ? `<button class="btn blue block" data-wd="${x.id}" ${x.vault.length ? '' : 'disabled'}>${x.vault.length ? 'Withdraw' : 'Vault empty'}</button>` : `<a class="btn block" href="${ex('address', x.owner)}" target="_blank" rel="noopener">Owner ↗</a>`}</div></div>`;
+  const bagCard = (x) => `<div class="nft"><div class="art">${bagArt(x.id)}</div><div class="nb"><b>Jar #${x.id}</b><span>${usd(x.earned)} <i>in its vault</i></span>${isMine(x) ? `<button class="btn blue block" data-wd="${x.id}" ${x.vault.length ? '' : 'disabled'}>${x.vault.length ? 'Withdraw' : 'Vault empty'}</button>` : `<a class="btn block" href="${ex('address', x.owner)}" target="_blank" rel="noopener">Owner ↗</a>`}</div></div>`;
   const bindWithdraw = (after) => $$('[data-wd]').forEach((b) => (b.onclick = () => run(b, (note) => LIVE.withdrawBag(Number(b.dataset.wd), note), 'Withdrawn to your wallet.').then((r) => { if (r) after(); })));
   function bags() {
     const B = D.bags; let only = false;
     const inVaults = B.list.reduce((s, x) => s + x.earned, 0), drop = B.pot * 0.05;
-    view.innerHTML = `<div class="ph1"><h1>Bags</h1><p>Every Bag minted so far, and what each one holds in its vault.</p></div>
-      <div class="card scard">${[['Minted', `${B.minted}<span> / ${num(B.total, 0)}</span>`, `<div class="meter thin"><i style="width:${(B.minted / B.total) * 100}%"></i></div>`], ['$LOOTBAG burned', num(B.minted * B.perMintLoot, 0), num(B.perMintLoot, 0) + ' per mint'], ['Paid out so far', usd(B.paidUsd), B.drops + (B.drops === 1 ? ' round' : ' rounds')], ['In all vaults now', usd(inVaults), 'across ' + B.minted + ' Bags']].map(([k, v, s]) => `<div><span>${k}</span><b>${v}</b><small>${s}</small></div>`).join('')}</div>
-      <div class="card nextp"><span class="mute">Next payout</span>${B.minted ? `<b id="bcd"></b><span class="mute">${B.today === 'KNTQ' ? 'sends' : 'buys'} ${tokenBadge(B.today, 20)} <b>${esc(payTok(B.today))}</b> with ≈ ${tkn(drop, 4)} KNTQ, 5% of the ${tkn(B.pot, 4)} KNTQ pot, split across ${B.minted} Bags (≈ ${tkn(drop / B.minted, 5)} KNTQ each)</span>` : `<b>After the first mint</b><span class="mute">The pot holds ${tkn(B.pot, 4)} KNTQ. Once Bags exist, 5% of it is paid into their vaults each hour a round is run.</span>`}</div>
+    view.innerHTML = `<div class="ph1"><h1>Jars</h1><p>Every Jar minted so far, and what each one holds in its vault.</p></div>
+      <div class="card scard">${[['Minted', `${B.minted}<span> / ${num(B.total, 0)}</span>`, `<div class="meter thin"><i style="width:${(B.minted / B.total) * 100}%"></i></div>`], ['$AMBROSIA burned', num(B.minted * B.perMintLoot, 0), num(B.perMintLoot, 0) + ' per mint'], ['Paid out so far', usd(B.paidUsd), B.drops + (B.drops === 1 ? ' round' : ' rounds')], ['In all vaults now', usd(inVaults), 'across ' + B.minted + ' Jars']].map(([k, v, s]) => `<div><span>${k}</span><b>${v}</b><small>${s}</small></div>`).join('')}</div>
+      <div class="card nextp"><span class="mute">Next payout</span>${B.minted ? `<b id="bcd"></b><span class="mute">${B.today === 'KNTQ' ? 'sends' : 'buys'} ${tokenBadge(B.today, 20)} <b>${esc(payTok(B.today))}</b> with ≈ ${tkn(drop, 4)} KNTQ, 5% of the ${tkn(B.pot, 4)} KNTQ pot, split across ${B.minted} Jars (≈ ${tkn(drop / B.minted, 5)} KNTQ each)</span>` : `<b>After the first mint</b><span class="mute">The pot holds ${tkn(B.pot, 4)} KNTQ. Once Jars exist, 5% of it is paid into their vaults each hour a round is run.</span>`}</div>
       <div class="metal"><span>Collection and pot ${K.bags ? `<a href="${ex('address', K.bags)}" target="_blank" rel="noopener">${short(K.bags)}</a>` : `not deployed on ${CHAIN} yet`}</span><span>5% royalty on resales</span></div>
-      <div class="card gridcard"><div class="gh"><div class="cats"><button class="on" data-f="all">All <i>${B.minted}</i></button><button data-f="mine">Yours <i id="mine-c">0</i></button></div><div class="srch" style="margin:0;max-width:290px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" id="bq" placeholder="Bag # or owner wallet"></div></div>
+      <div class="card gridcard"><div class="gh"><div class="cats"><button class="on" data-f="all">All <i>${B.minted}</i></button><button data-f="mine">Yours <i id="mine-c">0</i></button></div><div class="srch" style="margin:0;max-width:290px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" id="bq" placeholder="Jar # or owner wallet"></div></div>
         <div class="nftgrid" id="bgrid"></div></div>${foot()}`;
     const draw = () => {
       if (!$('#bgrid')) return;
       const q = $('#bq').value.trim().toLowerCase().replace(/^#/, ''), list = B.list.filter((x) => (!only || isMine(x)) && (!q || String(x.id) === q || String(x.owner).toLowerCase().includes(q)));
       $('#mine-c').textContent = B.list.filter(isMine).length;
-      $('#bgrid').innerHTML = list.map(bagCard).join('') || `<p class="mute" style="grid-column:1/-1;padding:30px 8px;text-align:center">${!B.minted ? 'No Bags have been minted yet.' : only && !wallet ? 'Connect your wallet to see your Bags.' : 'No Bags match.'}</p>`;
+      $('#bgrid').innerHTML = list.map(bagCard).join('') || `<p class="mute" style="grid-column:1/-1;padding:30px 8px;text-align:center">${!B.minted ? 'No Jars have been minted yet.' : only && !wallet ? 'Connect your wallet to see your Jars.' : 'No Jars match.'}</p>`;
       bindWithdraw(draw);
     };
     $$('[data-f]').forEach((b) => (b.onclick = () => { only = b.dataset.f === 'mine'; $$('[data-f]').forEach((x) => x.classList.toggle('on', x === b)); if (only && !wallet) openWallet(); draw(); }));
@@ -542,37 +560,37 @@
   }
   function mint() {
     const B = D.bags, left = B.total - B.minted;
-    view.innerHTML = `<div class="ph1"><h1>Mint a Bag</h1><p>A Bag is an NFT with its own vault that only the NFT controls. Minting burns $LOOTBAG and gives you the next numbered Bag. Each payout round, the Bag pot spends 5% of what it holds on the day's token and splits it equally between all Bags, straight into their vaults. Sell or send the NFT and its whole vault goes with it.</p></div>
+    view.innerHTML = `<div class="ph1"><h1>Mint a Jar</h1><p>A Jar is an NFT with its own vault that only the NFT controls. Minting burns $AMBROSIA and gives you the next numbered Jar. Each payout round, the Jar pot spends 5% of what it holds on the day's token and splits it equally between all Jars, straight into their vaults. Sell or send the NFT and its whole vault goes with it.</p></div>
       <div class="mintgrid"><div class="card mintc">
-          <div class="ms"><h4>You send</h4><div class="mrow"><span><b>$LOOTBAG</b> <i>burned</i></span><b class="big">${num(B.perMintLoot, 0)}</b></div><div class="mrow" style="border:0"><span>${tokenBadge('KNTQ', 18)} <b>KNTQ</b> <i>${B.perMintKntq ? `${num(B.toBagsKntq, 2)} KNTQ goes to the Bags already minted, ${num(B.perMintKntq - B.toBagsKntq, 2)} KNTQ to Lootbag` : '90% goes to the Bags already minted, 10% to Lootbag'}</i></span><b class="big">${B.perMintKntq ? num(B.perMintKntq, 2) : '—'}</b></div></div>
+          <div class="ms"><h4>You send</h4><div class="mrow"><span><b>$AMBROSIA</b> <i>burned</i></span><b class="big">${num(B.perMintLoot, 0)}</b></div><div class="mrow" style="border:0"><span>${tokenBadge('KNTQ', 18)} <b>KNTQ</b> <i>${B.perMintKntq ? `${num(B.toBagsKntq, 2)} KNTQ goes to the Jars already minted, ${num(B.perMintKntq - B.toBagsKntq, 2)} KNTQ to Ambrosia` : '90% goes to the Jars already minted, 10% to Ambrosia'}</i></span><b class="big">${B.perMintKntq ? num(B.perMintKntq, 2) : '—'}</b></div></div>
           <div class="arrow">↓</div>
-          <div class="mr"><h4>You receive</h4><div class="recv"><div class="art">${bagArt(B.minted + 1)}</div><div><b style="font-size:20px">Bag #${B.minted + 1}</b><p class="mute" style="margin:4px 0 8px;font-size:14px">The next Bag in line. It earns ${B.rotation.length || 'its'} tokens in rotation, one a day. ${num(left, 0)} of ${num(B.total, 0)} are left.</p><span class="stack">${B.rotation.map((t) => tokenBadge(t, 22)).join('')}</span></div></div>
-          <p class="note">${B.lootSet ? 'Up to three approvals in your wallet: your $LOOTBAG, your KNTQ, then the mint.' : !D.deployed ? `Minting opens after Lootbag goes live on ${CHAIN}.` : D.loot ? 'Minting is not open yet.' : 'Minting opens when $LOOTBAG launches. $LOOTBAG has not launched yet.'}</p><button class="btn blue block pillish" id="mintgo">Connect wallet</button></div></div>
-        <div class="card yours"><h3>Your Bags</h3><div id="ybags"></div></div></div>
-      <div class="card how3"><h3>How it works</h3><div class="cols">${[['Mint', 'Your $LOOTBAG is burned and you get an NFT with a vault tied to it. Whoever holds the NFT owns everything in its vault.'], ['Earn', "Each round, the pot spends 5% of what it holds on the day's token and credits every Bag an equal share, straight into its vault."], ['Withdraw', 'Take what is in your Bag whenever you like. Sell or send the Bag and whatever is still in its vault goes with it.']].map(([t, d], i) => `<div><div class="ct"><span class="n">${i + 1}</span><b>${t}</b></div><p>${d}</p></div>`).join('')}</div></div>${foot()}`;
+          <div class="mr"><h4>You receive</h4><div class="recv"><div class="art">${bagArt(B.minted + 1)}</div><div><b style="font-size:20px">Jar #${B.minted + 1}</b><p class="mute" style="margin:4px 0 8px;font-size:14px">The next Jar in line. It earns ${B.rotation.length || 'its'} tokens in rotation, one a day. ${num(left, 0)} of ${num(B.total, 0)} are left.</p><span class="stack">${B.rotation.map((t) => tokenBadge(t, 22)).join('')}</span></div></div>
+          <p class="note">${B.lootSet ? 'Up to three approvals in your wallet: your $AMBROSIA, your KNTQ, then the mint.' : !D.deployed ? `Minting opens after Ambrosia goes live on ${CHAIN}.` : D.loot ? 'Minting is not open yet.' : 'Minting opens when $AMBROSIA launches. $AMBROSIA has not launched yet.'}</p><button class="btn blue block pillish" id="mintgo">Connect wallet</button></div></div>
+        <div class="card yours"><h3>Your Jars</h3><div id="ybags"></div></div></div>
+      <div class="card how3"><h3>How it works</h3><div class="cols">${[['Mint', 'Your $AMBROSIA is burned and you get an NFT with a vault tied to it. Whoever holds the NFT owns everything in its vault.'], ['Earn', "Each round, the pot spends 5% of what it holds on the day's token and credits every Jar an equal share, straight into its vault."], ['Withdraw', 'Take what is in your Jar whenever you like. Sell or send the Jar and whatever is still in its vault goes with it.']].map(([t, d], i) => `<div><div class="ct"><span class="n">${i + 1}</span><b>${t}</b></div><p>${d}</p></div>`).join('')}</div></div>${foot()}`;
     const go = $('#mintgo');
-    if (!B.lootSet) { go.textContent = !D.deployed ? `Not live on ${CHAIN} yet` : D.loot ? 'Minting is not open yet' : 'Opens when $LOOTBAG launches'; go.disabled = true; }
-    else if (left <= 0) { go.textContent = 'All Bags are minted'; go.disabled = true; }
-    else needsWallet(go, 'Mint a Bag', () => run(go, (note) => LIVE.mintBag(note), 'Your Bag is minted.').then((r) => { if (r) mint(); }));
+    if (!B.lootSet) { go.textContent = !D.deployed ? `Not live on ${CHAIN} yet` : D.loot ? 'Minting is not open yet' : 'Opens when $AMBROSIA launches'; go.disabled = true; }
+    else if (left <= 0) { go.textContent = 'All Jars are minted'; go.disabled = true; }
+    else needsWallet(go, 'Mint a Jar', () => run(go, (note) => LIVE.mintBag(note), 'Your Jar is minted.').then((r) => { if (r) mint(); }));
     const yours = () => {
       const el = $('#ybags'); if (!el) return;
       const list = B.list.filter(isMine);
-      el.innerHTML = !wallet ? '<div class="empty">Connect your wallet to see your Bags.</div>' : list.length ? `<div class="nftgrid" style="margin-top:14px">${list.map(bagCard).join('')}</div>` : '<div class="empty">This wallet holds no Bags.</div>';
+      el.innerHTML = !wallet ? '<div class="empty">Connect your wallet to see your Jars.</div>' : list.length ? `<div class="nftgrid" style="margin-top:14px">${list.map(bagCard).join('')}</div>` : '<div class="empty">This wallet holds no Jars.</div>';
       bindWithdraw(yours);
     };
     yours(); onWallet = yours; onData = yours;
   }
 
-  // ---------- Lootbag coins: square tiles
+  // ---------- Ambrosia coins: square tiles
   function lootCoins() {
     let sort = 'mcap';
     const draw = () => {
       if (!$('#tiles')) return;
       const q = ($('#lq') && $('#lq').value || '').toLowerCase();
       const cs = D.coins.filter((c) => !q || c.ticker.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)).sort((a, b) => (sort === 'mcap' ? b.mcap - a.mcap : b.vol24 - a.vol24));
-      $('#tiles').innerHTML = cs.map((c) => `<div class="tile"><a href="#/coin/${c.addr}" class="sq">${av(c, 210)}${c.official ? '<span class="tb gr">Lootbag</span>' : c.pair === 'LOOT' || c.rewards.includes('LOOT') ? '<span class="tb">LOOT</span>' : ''}</a><div class="tt"><b>$${esc(c.ticker)}</b> <span>${esc(c.name)}</span></div><div class="tm"><span class="up">${usd(c.mcap)}</span> · 24h vol ${usd(c.vol24)}</div><a class="btn block" href="#/coin/${c.addr}">Trade $${esc(c.ticker)}</a></div>`).join('') || `<p class="mute">${none()}</p>`;
+      $('#tiles').innerHTML = cs.map((c) => `<div class="tile"><a href="#/coin/${c.addr}" class="sq">${av(c, 210)}${c.official ? '<span class="tb gr">Official</span>' : c.pair === OWN || c.rewards.includes(OWN) ? `<span class="tb">${esc(OWN)}</span>` : ''}</a><div class="tt"><b>$${esc(c.ticker)}</b> <span>${esc(c.name)}</span></div><div class="tm"><span class="up">${usd(c.mcap)}</span> · 24h vol ${usd(c.vol24)}</div><a class="btn block" href="#/coin/${c.addr}">Trade $${esc(c.ticker)}</a></div>`).join('') || `<p class="mute">${none()}</p>`;
     };
-    view.innerHTML = `<div class="ph1 row"><div><h1>Lootbag coins</h1><p>Coins launched on Lootbag on ${CHAIN}, paired with ${pairWords()}.</p></div><div class="ph1r"><div class="tog"><button class="on" data-s="mcap">Market cap</button><button data-s="vol">Volume</button></div><div class="srch" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" id="lq" placeholder="Search Lootbag coins"></div></div></div><div class="tiles" id="tiles"></div>${foot()}`;
+    view.innerHTML = `<div class="ph1 row"><div><h1>Ambrosia coins</h1><p>Coins launched on Ambrosia on ${CHAIN}, paired with ${pairWords()}.</p></div><div class="ph1r"><div class="tog"><button class="on" data-s="mcap">Market cap</button><button data-s="vol">Volume</button></div><div class="srch" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp t" id="lq" placeholder="Search Ambrosia coins"></div></div></div><div class="tiles" id="tiles"></div>${foot()}`;
     $$('[data-s]').forEach((b) => (b.onclick = () => { sort = b.dataset.s; $$('[data-s]').forEach((x) => x.classList.toggle('on', x === b)); draw(); }));
     $('#lq').oninput = draw; draw();
     onData = draw;
@@ -584,20 +602,20 @@
     const Fz = D.fees, B = D.bags, pairs = pairSyms(), one = pairs.length === 1;
     // amounts the contracts fix are read from them; before they are deployed the text says so instead of a number
     const hype = (v) => (v ? `${tkn(v, 4)} ${N}` : `a fixed amount of ${N}`), minDevTxt = Fz.minDev.HYPE ? `${tkn(Fz.minDev.HYPE, 3)} ${N} or more` : `a small minimum`;
-    const mintTxt = B.perMintKntq ? `${num(B.perMintKntq, 2)} KNTQ, of which ${num(B.toBagsKntq, 2)} KNTQ goes to the Bags already minted and ${num(B.perMintKntq - B.toBagsKntq, 2)} KNTQ to Lootbag` : 'a fixed amount of KNTQ, of which 90% goes to the Bags already minted and 10% to Lootbag';
+    const mintTxt = B.perMintKntq ? `${num(B.perMintKntq, 2)} KNTQ, of which ${num(B.toBagsKntq, 2)} KNTQ goes to the Jars already minted and ${num(B.perMintKntq - B.toBagsKntq, 2)} KNTQ to Ambrosia` : 'a fixed amount of KNTQ, of which 90% goes to the Jars already minted and 10% to Ambrosia';
     const S = [
-      ['overview', 'Overview', `${D.deployed ? '' : `<p><b>Lootbag is not live on ${CHAIN} yet.</b> Its contracts have not been deployed, so nothing can be launched or traded here. This page describes how it works once they are.</p>`}<p>Lootbag is a coin launchpad on ${CHAIN}, built on Uniswap v4. Every coin launched on Lootbag shares its trading fees with the wallets that hold it: part of the fee on each trade is kept for them by the coin's own contract.</p><p>A creator makes two choices when launching a coin. The first is the pair, the token the coin is priced in: ${one ? `${pairs[0]} for now` : pairs.join(' or ')}. The second is the reward, the token its holders are paid in: HYPE, KNTQ or both in turn. After the launch, fees are collected on every trade. Payout rounds, run by Lootbag, send each holder's share straight to their wallet, and a holder can also claim what they have earned at any time.</p><p>Lootbag shares its own revenue as well. 10% of it goes to the traders of Lootbag coins as KNTQ airdrops, and 25% goes to Bags and is paid into vaults owned by their holders.</p>`],
-      ['launch', 'Launching a coin', `<p>A launch takes one form and one transaction, paid in ${N}.</p><ul><li><b>Pair.</b> ${one ? `${pairs[0]} for now.` : pairs.join(' or ') + '.'} Buyers always pay in ${N}: the route swaps it for them when the pair is not ${N}.</li><li><b>Reward.</b> The token holders are paid in. It defaults to the coin's pair; pick more than one and they take turns.</li><li><b>Launch transaction.</b> Creates the coin and opens its own Uniswap v4 pool with all 1,000,000,000 coins in it. ${LOCKED ? "The pool's liquidity is locked in Lootbag's factory contract." : "The pool's liquidity is held by Lootbag."} It costs ${hype(Fz.launch)} plus gas.</li><li><b>Dev buy.</b> Required, ${minDevTxt}, inside the launch transaction so nobody can buy before the creator. A creator can hold at most 2% at launch.</li><li><b>Picture and links.</b> Saved on-chain with the launch. They can't be changed afterwards.</li><li><b>Launch-block buyers earn nothing.</b> A wallet that receives the coin in the same ${CHAIN} block as its launch never earns holder rewards from it, and neither does the creator's wallet. Everyone who buys from the next block on earns.</li></ul>`],
-      ['trading', 'How a coin trades', `<p>Every coin trades in its own Uniswap v4 pool from the first block. There is no bonding curve and no graduation: the pool is the market from launch. On Lootbag you buy and sell with ${N} through Lootbag's router${one && pairs[0] === N ? '' : `, which swaps ${N} into the coin's pair and back for you`}.</p>${LOCKED ? `<p><b>Liquidity is locked.</b> Every coin's pool liquidity stays in Lootbag's factory contract for good. Nobody can withdraw it, Lootbag included. Holder rewards are kept apart from the pool and are always claimable.</p>` : `<p><b>Liquidity is not locked.</b> Every coin's pool liquidity is held by Lootbag's factory contract, and Lootbag can withdraw it. Holder rewards already earned are not part of the pool and stay claimable.</p>`}`],
-      ['fees', 'Fees', `<p>Every buy and sell pays a fee of 2%.</p><table><tr><th>Holders</th><th>Lootbag</th></tr><tr><td>0.5%</td><td>1.5%</td></tr></table><p>Lootbag's share is split as it is paid: 25% to the Bag pot, 10% to the trader airdrop pot, and the rest to Lootbag. Holders never receive Lootbag's share, and Lootbag never takes theirs. A coin's creator receives no share of the fee.</p>`],
-      ['rewards', 'Holder rewards', `<p>The holders' share of each fee is booked to holders as the trade happens, by the size of their balances. Each holder's share is kept by the coin's own contract, which updates it on every transfer, so it is exact and on-chain. Pools, launch-block buyers and the creator's wallet are left out.</p><p>Every coin has a payout round every five minutes, counted from its launch, and its rewards take turns round by round. A round is run by Lootbag: it turns the holders' share into that round's reward and sends it to the holders' wallets. Nothing has to be claimed and no site has to be opened: it arrives in the wallet. HYPE is sent as HYPE itself, not as a wrapped token. Lootbag runs a coin's round when enough has built up to be worth it, so not every five-minute round pays. You never have to wait for one: the Rewards page lets you claim your share at any time, paid in the coin's pair token.</p>`],
-      ['airdrops', 'Trader airdrops', `<p>10% of Lootbag's revenue goes into the airdrop pot, which is kept in KNTQ. About every 10 hours Lootbag posts a round that pays the pot to the 500 wallets that traded the most volume on Lootbag coins, sent straight to their wallets. #1, #2 and #3 get 5.3%, 4%, 3%; places 4–20 share 13%; everyone else up to #500 shares the rest by volume. Each round's list is posted on-chain and can be checked by anyone.</p>`],
+      ['overview', 'Overview', `${D.deployed ? '' : `<p><b>Ambrosia is not live on ${CHAIN} yet.</b> Its contracts have not been deployed, so nothing can be launched or traded here. This page describes how it works once they are.</p>`}<p>Ambrosia is a coin launchpad on ${CHAIN}, built on Uniswap v4. Every coin launched on Ambrosia shares its trading fees with the wallets that hold it: part of the fee on each trade is kept for them by the coin's own contract.</p><p>A creator makes two choices when launching a coin. The first is the pair, the token the coin is priced in: ${one ? `${pairs[0]} for now` : pairs.join(' or ')}. The second is the reward, the token its holders are paid in: HYPE, KNTQ or both in turn. After the launch, fees are collected on every trade. Payout rounds, run by Ambrosia, send each holder's share straight to their wallet, and a holder can also claim what they have earned at any time.</p><p>Ambrosia shares its own revenue as well. 10% of it goes to the traders of Ambrosia coins as KNTQ airdrops, and 25% goes to Jars and is paid into vaults owned by their holders.</p>`],
+      ['launch', 'Launching a coin', `<p>A launch takes one form and one transaction, paid in ${N}.</p><ul><li><b>Pair.</b> ${one ? `${pairs[0]} for now.` : pairs.join(' or ') + '.'} Buyers always pay in ${N}: the route swaps it for them when the pair is not ${N}.</li><li><b>Reward.</b> The token holders are paid in. It defaults to the coin's pair; pick more than one and they take turns.</li><li><b>Launch transaction.</b> Creates the coin and opens its own Uniswap v4 pool with all 1,000,000,000 coins in it. ${LOCKED ? "The pool's liquidity is locked in Ambrosia's factory contract." : "The pool's liquidity is held by Ambrosia."} It costs ${hype(Fz.launch)} plus gas.</li><li><b>Dev buy.</b> Required, ${minDevTxt}, inside the launch transaction so nobody can buy before the creator. A creator can hold at most 2% at launch.</li><li><b>Picture and links.</b> Saved on-chain with the launch. They can't be changed afterwards.</li><li><b>Launch-block buyers earn nothing.</b> A wallet that receives the coin in the same ${CHAIN} block as its launch never earns holder rewards from it, and neither does the creator's wallet. Everyone who buys from the next block on earns.</li></ul>`],
+      ['trading', 'How a coin trades', `<p>Every coin trades in its own Uniswap v4 pool from the first block. There is no bonding curve and no graduation: the pool is the market from launch. On Ambrosia you buy and sell with ${N} through Ambrosia's router${one && pairs[0] === N ? '' : `, which swaps ${N} into the coin's pair and back for you`}.</p>${LOCKED ? `<p><b>Liquidity is locked.</b> Every coin's pool liquidity stays in Ambrosia's factory contract for good. Nobody can withdraw it, Ambrosia included. Holder rewards are kept apart from the pool and are always claimable.</p>` : `<p><b>Liquidity is not locked.</b> Every coin's pool liquidity is held by Ambrosia's factory contract, and Ambrosia can withdraw it. Holder rewards already earned are not part of the pool and stay claimable.</p>`}`],
+      ['fees', 'Fees', `<p>Every buy and sell pays a fee of 2%.</p><table><tr><th>Holders</th><th>Ambrosia</th></tr><tr><td>0.5%</td><td>1.5%</td></tr></table><p>Ambrosia's share is split as it is paid: 25% to the Jar pot, 10% to the trader airdrop pot, and the rest to Ambrosia. Holders never receive Ambrosia's share, and Ambrosia never takes theirs. A coin's creator receives no share of the fee.</p>`],
+      ['rewards', 'Holder rewards', `<p>The holders' share of each fee is booked to holders as the trade happens, by the size of their balances. Each holder's share is kept by the coin's own contract, which updates it on every transfer, so it is exact and on-chain. Pools, launch-block buyers and the creator's wallet are left out.</p><p>Every coin has a payout round every five minutes, counted from its launch, and its rewards take turns round by round. A round is run by Ambrosia: it turns the holders' share into that round's reward and sends it to the holders' wallets. Nothing has to be claimed and no site has to be opened: it arrives in the wallet. HYPE is sent as HYPE itself, not as a wrapped token. Ambrosia runs a coin's round when enough has built up to be worth it, so not every five-minute round pays. You never have to wait for one: the Rewards page lets you claim your share at any time, paid in the coin's pair token.</p>`],
+      ['airdrops', 'Trader airdrops', `<p>10% of Ambrosia's revenue goes into the airdrop pot, which is kept in KNTQ. About every 10 hours Ambrosia posts a round that pays the pot to the 500 wallets that traded the most volume on Ambrosia coins, sent straight to their wallets. #1, #2 and #3 get 5.3%, 4%, 3%; places 4–20 share 13%; everyone else up to #500 shares the rest by volume. Each round's list is posted on-chain and can be checked by anyone.</p>`],
       ['tickers', 'Tickers', `<p>A ticker is 2 to 10 letters or digits; capitalization doesn't matter. Each ticker can be launched once for free. Launching an existing ticker again costs ${hype(Fz.copy)}, refunded if the new coin reaches $70K market cap within 48 hours.</p>`],
-      ['bags', 'Bags', `<p>A Bag is an NFT with its own vault. The collection is limited to 1,000. Minting burns 100,000 $LOOTBAG and costs ${mintTxt}. The Bag pot holds KNTQ. In a payout round, at most once an hour, the pot spends 5% of what it holds on the day's token and credits an equal amount to every Bag's vault. The holder of the Bag can withdraw its vault at any time; the vault moves with the Bag when it's sold.</p>`],
-      ['loot', '$LOOTBAG', `<p>$LOOTBAG is Lootbag's own coin on ${CHAIN}. ${D.loot ? `Its address is <a class="mono" href="${ex('address', D.loot)}" target="_blank" rel="noopener">${D.loot}</a>.` : '<b>It has not launched yet.</b> Until its address is shown here and in the header, any coin called $LOOTBAG is not Lootbag\'s.'} Minting a Bag burns 100,000 $LOOTBAG.</p>`],
-      ['contracts', 'Contracts', `<p>Lootbag's contracts on ${CHAIN}.${D.deployed ? '' : ' They have not been deployed yet.'}</p><div class="caddrs">${[['Factory', K.factory], ['Fee hook', K.hook], ['Payouts', K.payout], ['Router', K.router], ['Swapper', K.swapper], ['Bags', K.bags], ['Airdrop pot', K.airdrop]].map((r) => row(...r)).join('')}</div>`],
+      ['bags', 'Jars', `<p>A Jar is an NFT with its own vault. The collection is limited to 1,000. Minting burns 100,000 $AMBROSIA and costs ${mintTxt}. The Jar pot holds KNTQ. In a payout round, at most once an hour, the pot spends 5% of what it holds on the day's token and credits an equal amount to every Jar's vault. The holder of the Jar can withdraw its vault at any time; the vault moves with the Jar when it's sold.</p>`],
+      ['loot', '$AMBROSIA', `<p>$AMBROSIA is Ambrosia's own coin on ${CHAIN}. ${D.loot ? `Its address is <a class="mono" href="${ex('address', D.loot)}" target="_blank" rel="noopener">${D.loot}</a>.` : '<b>It has not launched yet.</b> Until its address is shown here and in the header, any coin called $AMBROSIA is not Ambrosia\'s.'} Minting a Jar burns 100,000 $AMBROSIA.</p>`],
+      ['contracts', 'Contracts', `<p>Ambrosia's contracts on ${CHAIN}.${D.deployed ? '' : ' They have not been deployed yet.'}</p><div class="caddrs">${[['Factory', K.factory], ['Fee hook', K.hook], ['Payouts', K.payout], ['Router', K.router], ['Swapper', K.swapper], ['Jars', K.bags], ['Airdrop pot', K.airdrop]].map((r) => row(...r)).join('')}</div>`],
     ];
-    view.innerHTML = `<div class="doc"><nav>${S.map(([id, t], i) => `<a href="#/how#${id}" data-to="${id}" class="${i ? '' : 'on'}">${t}</a>`).join('')}</nav><div><div class="ph1" style="margin-top:0"><h1>How it works</h1><p>How coins are launched and traded on Lootbag, how fees are divided, and how holders and traders are paid.</p></div>${S.map(([id, t, b]) => `<section id="d-${id}"><h2>${t}</h2>${b}</section>`).join('')}</div></div>${foot()}`;
+    view.innerHTML = `<div class="doc"><nav>${S.map(([id, t], i) => `<a href="#/how#${id}" data-to="${id}" class="${i ? '' : 'on'}">${t}</a>`).join('')}</nav><div><div class="ph1" style="margin-top:0"><h1>How it works</h1><p>How coins are launched and traded on Ambrosia, how fees are divided, and how holders and traders are paid.</p></div>${S.map(([id, t, b]) => `<section id="d-${id}"><h2>${t}</h2>${b}</section>`).join('')}</div></div>${foot()}`;
     $$('[data-to]').forEach((a) => (a.onclick = (e) => { e.preventDefault(); $$('[data-to]').forEach((x) => x.classList.toggle('on', x === a)); $('#d-' + a.dataset.to).scrollIntoView({ behavior: 'smooth' }); }));
     const frag = location.hash.split('#')[2]; if (frag) setTimeout(() => { const el = $('#d-' + frag); if (el) el.scrollIntoView(); }, 50);
   }
@@ -606,10 +624,10 @@
   function route() {
     timers.forEach(clearInterval); timers = []; onWallet = null; onData = null; if (chart) { chart.remove(); chart = null; }
     const h = location.hash.replace(/^#/, '') || '/', parts = h.split('#')[0].split('/').filter(Boolean), r = parts[0] || '';
-    const key = '#/' + (r === 'coin' ? '' : r);
+    const key = '#/' + (r === 'coin' || r === 'coins' || r === 'loot' ? '' : r === 'bags' ? 'jars' : r);
     $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === key));
     window.scrollTo(0, 0);
-    if (!r) board(); else if (r === 'coin') coin(parts[1] || ''); else if (r === 'create') create(); else if (r === 'rewards') rewards(); else if (r === 'airdrops') airdrops(); else if (r === 'bags') bags(); else if (r === 'mint') mint(); else if (r === 'coins') lootCoins(); else if (r === 'loot') coin((D.coins.find((x) => x.official) || {}).addr || ''); else if (r === 'how') how(); else board();
+    if (!r) board(); else if (r === 'jars') bags(); else if (r === 'coin') coin(parts[1] || ''); else if (r === 'create') create(); else if (r === 'rewards') rewards(); else if (r === 'airdrops') airdrops(); else if (r === 'bags') bags(); else if (r === 'mint') mint(); else if (r === 'coins') lootCoins(); else if (r === 'loot') coin((D.coins.find((x) => x.official) || {}).addr || ''); else if (r === 'how') how(); else board();
   }
   // search: live results under the box; arrows to move, Enter to open, Esc to close, "/" to focus
   const S = { list: [], ix: 0 }, sres = $('#sres'), qi = $('#q'), top = $('.top');
@@ -634,7 +652,7 @@
   document.addEventListener('mousedown', (e) => { if (!e.target.closest('#search')) shut(); });
   $('#msearch').onclick = () => { top.classList.add('searching'); qi.focus(); };
   $('#scancel').onclick = () => { qi.value = ''; shut(); top.classList.remove('searching'); };
-  if (matchMedia('(max-width: 900px)').matches) qi.placeholder = 'Search coins or addresses';
+  
   document.addEventListener('click', (e) => { const t = e.target.closest('[data-pv]'); if (t) { e.preventDefault(); toast('That page is not up yet.'); } });
   D.ready.then(() => { status(); route(); addEventListener('hashchange', route); LIVE.onUpdate(() => { status(); if (onData) onData(); }); });
 })();

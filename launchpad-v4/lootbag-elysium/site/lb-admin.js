@@ -1,10 +1,10 @@
-/* Lootbag admin: owner controls and the hand-run keeper rounds for the Lootbag contracts on Elysium.
+/* Ambrosia admin: owner controls and the hand-run keeper rounds for the Ambrosia contracts on Elysium.
    Reads go through Multicall3 in a few eth_calls; writes go through the connected wallet. The contracts enforce every
    permission: this page only disables controls for wallets that are not the owner or a keeper. Until the contract
    addresses are in lb-config.js it is a preview and sends nothing. */
 (function () {
   const C = window.LB_CFG, K = C.contracts, E = ethers;
-  const NAMES = { factory: 'Factory', hook: 'Fee hook', payout: 'Payouts', swapper: 'Route swapper', bags: 'Bags', airdrop: 'Airdrop pot' };
+  const NAMES = { factory: 'Factory', hook: 'Fee hook', payout: 'Payouts', swapper: 'Route swapper', bags: 'Jars', airdrop: 'Airdrop pot' };
   const LIVE = Object.keys(NAMES).every((k) => /^0x[0-9a-fA-F]{40}$/.test(K[k] || ''));
   const $ = (s, r = document) => r.querySelector(s), root = $('#ad-root');
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -13,7 +13,7 @@
   const link = (a) => `<a class="mono" href="${C.explorer}/address/${a}" target="_blank" rel="noopener">${short(a)}</a>`;
   const isAddr = (v) => /^0x[0-9a-fA-F]{40}$/.test(v);
   const TICK = 200, BATCH = 100;
-  // what a Bag mint costs in KNTQ, as the Bags contract has it (lb-live.js reads it)
+  // what a Jar mint costs in KNTQ, as the Jars contract has it (lb-live.js reads it)
   const mintKntq = () => { const v = ((window.LB_DATA || {}).bags || {}).perMintKntq; return v ? v.toLocaleString('en-US') : 'a fixed amount of'; };
 
   const ABI = {
@@ -152,7 +152,7 @@
       const net = { id: C.chainId, name: C.chainName, nativeCurrency: C.native || { name: 'HYPE', symbol: 'HYPE', decimals: 18 }, rpcUrls: { default: { http: [C.rpc] } }, blockExplorers: { default: { name: C.explorerName || 'Explorer', url: C.explorer } } };
       kit = createAppKit({
         adapters: [new EthersAdapter()], networks: [net], defaultNetwork: net, projectId: WC_ID,
-        metadata: { name: 'Lootbag', description: 'Coins that pay their holders', url: location.origin, icons: [location.origin + '/img/apple-icon.png'] },
+        metadata: { name: 'Ambrosia', description: 'Coins that pay their holders', url: location.origin, icons: [location.origin + '/img/apple-icon.png'] },
         features: { analytics: false, email: false, socials: false, swaps: false, onramp: false, send: false, history: false },
         themeMode: 'dark', themeVariables: { '--w3m-accent': '#f4b740', '--w3m-font-family': "'Space Grotesk', system-ui, sans-serif", '--w3m-border-radius-master': '2px' },
       });
@@ -306,17 +306,17 @@
     const stockQuotes = S.quotes.filter((q) => !isMain(q)), feeQuotes = S.quotes.filter((q) => isMain(q) || q.claims + q.owed + q.owedHolders > 0n);
     const coinOpts = S.coins.map((c) => `<option value="${c.addr}">${esc(c.name)} ($${esc(c.symbol)})</option>`).join('');
     const banner = !LIVE
-      ? `<div class="ad-banner"><b>Preview.</b> The Lootbag contracts are not deployed yet, so this page shows the deploy defaults and sends nothing. After the deploy, put the addresses from <span class="mono">deployments/lootbag-elysium.json</span> into <span class="mono">lb-config.js</span>.</div>`
+      ? `<div class="ad-banner"><b>Preview.</b> The Ambrosia contracts are not deployed yet, so this page shows the deploy defaults and sends nothing. After the deploy, put the addresses from <span class="mono">deployments/lootbag-elysium.json</span> into <span class="mono">lb-config.js</span>.</div>`
       : !me ? `<div class="ad-banner">Connect the owner wallet ${link(C.owner)} to use the controls. Reading works without a wallet.</div>`
         : anyPending ? `<div class="ad-banner"><b>Ownership is waiting for you.</b> This wallet has been offered ownership. Use "Accept all" under Ownership.</div>`
           : !owner ? `<div class="ad-banner bad"><b>This wallet does not own the contracts.</b> Owner and keeper controls are disabled. Sweeping fees still works for anyone.</div>` : '';
 
-    // $LOOT is launched but the Bags contract does not know it yet: the one-time button, where it cannot be missed
+    // $AMBROSIA is launched but the Jars contract does not know it yet: the one-time button, where it cannot be missed
     const mintBanner = LIVE && C.loot && eq(S.bags.loot, E.ZeroAddress)
-      ? `<div class="ad-banner"><b>Bag minting is closed.</b> $LOOT is launched, but it is not set on the Bags contract yet, so nobody can mint. <div style="margin-top:10px"><button class="btn s gold" data-act="bag-setloot"${dis(owner)}>Open the mint with $LOOT</button></div></div>` : '';
+      ? `<div class="ad-banner"><b>Jar minting is closed.</b> $AMBROSIA is launched, but it is not set on the Jars contract yet, so nobody can mint. <div style="margin-top:10px"><button class="btn s gold" data-act="bag-setloot"${dis(owner)}>Open the mint with $AMBROSIA</button></div></div>` : '';
 
     root.innerHTML = `
-      <div><h1>Admin</h1><p class="ad-sub">Owner controls and hand-run rounds for the Lootbag contracts on ${esc(C.chainName)}. Nothing here runs by itself: a payout, a Bag drop or a fee split happens when you press its button.</p></div>
+      <div><h1>Admin</h1><p class="ad-sub">Owner controls and hand-run rounds for the Ambrosia contracts on ${esc(C.chainName)}. Nothing here runs by itself: a payout, a Jar drop or a fee split happens when you press its button.</p></div>
       ${banner}
       ${mintBanner}
       <div class="ad-grid">
@@ -345,13 +345,13 @@
           <div class="ad-f" style="display:flex;align-items:flex-end;gap:8px"><button class="btn s gold" data-act="reward-on"${dis(owner)}>List</button><button class="btn s red" data-act="reward-off"${dis(owner)}>Remove</button></div>
         </div>
         <p class="note">A reward also needs a route on the swapper from each pair into it, or its payout rounds cannot run.</p>
-        <div class="ad-row" style="margin-top:12px"><div class="l">Treasury<small>Gets launch fees and Lootbag's 65% of trade fees</small></div><div class="r">${S.treasury ? link(S.treasury) : ''}</div></div>
+        <div class="ad-row" style="margin-top:12px"><div class="l">Treasury<small>Gets launch fees and Ambrosia's 65% of trade fees</small></div><div class="r">${S.treasury ? link(S.treasury) : ''}</div></div>
         <div class="ad-form two"><div class="ad-f"><input class="inp mono" id="t-new" placeholder="New treasury 0x…" aria-label="New treasury"></div><div class="ad-f" style="display:flex;align-items:center"><button class="btn s" data-act="treasury"${dis(owner)}>Move treasury</button></div></div>
       </section>
 
       <section class="card ad-card wide">
-        <div class="ad-h"><div><h2>Fees</h2><p class="ad-sub">Each trade's 2% waits in the pool. <b>Sweep</b> sends the holders' part to the payout contract. <b>Split</b> also divides Lootbag's part: 25% Bags, 10% airdrop pot, 65% treasury. Anyone can run these.</p></div></div>
-        <div class="ad-scroll"><table class="ad-table"><thead><tr><th>Pair</th><th>Waiting in the pool</th><th>Holders' part to send</th><th>Lootbag's part to split</th><th></th></tr></thead><tbody>
+        <div class="ad-h"><div><h2>Fees</h2><p class="ad-sub">Each trade's 2% waits in the pool. <b>Sweep</b> sends the holders' part to the payout contract. <b>Split</b> also divides Ambrosia's part: 25% Jars, 10% airdrop pot, 65% treasury. Anyone can run these.</p></div></div>
+        <div class="ad-scroll"><table class="ad-table"><thead><tr><th>Pair</th><th>Waiting in the pool</th><th>Holders' part to send</th><th>Ambrosia's part to split</th><th></th></tr></thead><tbody>
         ${feeQuotes.map((q) => `<tr><td><b>${esc(sym(q.token))}</b></td><td class="mono">${fmt(q.claims, dec(q.token))}</td><td class="mono">${fmt(q.owedHolders, dec(q.token))}</td><td class="mono">${fmt(q.owed, dec(q.token))}</td>
           <td><button class="btn s" data-act="flush" data-a="${q.token}">Sweep</button> <button class="btn s gold" data-act="split" data-a="${q.token}">Split</button></td></tr>`).join('')}
         </tbody></table></div>
@@ -368,14 +368,14 @@
       </section>
 
       <section class="card ad-card">
-        <div class="ad-h"><div><h2>Bags</h2><p class="ad-sub">Once an hour: 5% of the pot buys today's token and goes equally into every Bag's vault.</p></div>
+        <div class="ad-h"><div><h2>Jars</h2><p class="ad-sub">Once an hour: 5% of the pot buys today's token and goes equally into every Jar's vault.</p></div>
           <span class="ad-pill ${S.bags.keeper ? 'ok' : 'warn'}">${S.bags.keeper ? 'keeper' : 'keeper wallet needed'}</span></div>
         <div class="ad-row"><div class="l">Minted</div><div class="r mono">${S.bags.minted} / 1000</div></div>
         <div class="ad-row"><div class="l">In the pot</div><div class="r mono">${amt(S.bags.pot, C.tokens.KNTQ[0])}</div></div>
         <div class="ad-row"><div class="l">Today's token<small>Rotation: ${S.bags.days.map((d) => esc(sym(d))).join(' → ')}</small></div><div class="r"><b>${S.bags.today ? esc(sym(S.bags.today)) : ''}</b></div></div>
         <div class="ad-row"><div class="l">Next drop</div><div class="r mono" data-count="${Number(S.bags.lastDrop) + 3600}" data-ready="ready now">${Number(S.bags.lastDrop) + 3600 <= S.now ? 'ready now' : hms(Number(S.bags.lastDrop) + 3600 - S.now)}</div></div>
-        <div class="ad-row"><div class="l">Minting<small>A mint burns 100,000 $LOOT and takes ${mintKntq()} KNTQ. It opens once $LOOT is set on this contract, and that can be done only once.</small></div><div class="r">${eq(S.bags.loot, E.ZeroAddress) ? (C.loot ? `<button class="btn s gold" data-act="bag-setloot"${dis(owner)}>Open the mint with $LOOT</button>` : '<span class="ad-pill warn">closed: no $LOOT yet</span>') : `<span class="ad-pill ok">open</span> <span class="mono">${short(S.bags.loot)}</span>`}</div></div>
-        <div class="ad-end"><button class="btn s" data-act="bag-convert"${dis(S.bags.keeper)}>Convert fees to KNTQ</button><button class="btn s gold" data-act="bag-drop"${dis(S.bags.keeper || eq(S.bags.today, C.tokens.KNTQ[0]))}${S.bags.minted === 0n ? ' disabled title="No Bags minted yet"' : ''}>Run the drop</button></div>
+        <div class="ad-row"><div class="l">Minting<small>A mint burns 100,000 $AMBROSIA and takes ${mintKntq()} KNTQ. It opens once $AMBROSIA is set on this contract, and that can be done only once.</small></div><div class="r">${eq(S.bags.loot, E.ZeroAddress) ? (C.loot ? `<button class="btn s gold" data-act="bag-setloot"${dis(owner)}>Open the mint with $AMBROSIA</button>` : '<span class="ad-pill warn">closed: no $AMBROSIA yet</span>') : `<span class="ad-pill ok">open</span> <span class="mono">${short(S.bags.loot)}</span>`}</div></div>
+        <div class="ad-end"><button class="btn s" data-act="bag-convert"${dis(S.bags.keeper)}>Convert fees to KNTQ</button><button class="btn s gold" data-act="bag-drop"${dis(S.bags.keeper || eq(S.bags.today, C.tokens.KNTQ[0]))}${S.bags.minted === 0n ? ' disabled title="No Jars minted yet"' : ''}>Run the drop</button></div>
       </section>
 
       <section class="card ad-card">
@@ -384,7 +384,7 @@
         <div class="ad-row"><div class="l">In the pot</div><div class="r mono">${amt(S.airdrop.pot, C.tokens.KNTQ[0])}</div></div>
         <div class="ad-row"><div class="l">Rounds posted</div><div class="r mono">${S.airdrop.rounds}</div></div>
         <div class="ad-row"><div class="l">Next round</div><div class="r mono">${S.airdrop.nextAt === 0n || Number(S.airdrop.nextAt) <= S.now ? 'can be posted now' : hms(Number(S.airdrop.nextAt) - S.now)}</div></div>
-        <p class="note">Posting a round ranks every trader of this round by volume (every swap in every Lootbag coin's pool), sets each one's share of the pot, records the list on-chain and then sends the KNTQ to their wallets, in batches.</p>
+        <p class="note">Posting a round ranks every trader of this round by volume (every swap in every Ambrosia coin's pool), sets each one's share of the pot, records the list on-chain and then sends the KNTQ to their wallets, in batches.</p>
         <div class="ad-end">${airLeft() ? `<button class="btn s" data-act="air-rest"${dis(true)}>Pay the ${airLeft()} still unpaid</button>` : ''}<button class="btn s gold" data-act="air-post"${dis(S.airdrop.keeper)}${S.airdrop.pot === 0n || (S.airdrop.nextAt !== 0n && Number(S.airdrop.nextAt) > S.now) ? ' disabled title="Nothing in the pot, or the last round is less than 10 hours old"' : ''}>Post this round and pay it</button></div>
       </section>
 
@@ -476,10 +476,10 @@
     split: (b) => send('Split ' + sym(b.dataset.a), K.hook, 'hook', 'split', [b.dataset.a]),
     pay: (b) => payRound(b.dataset.a),
     'bag-drop': async () => {
-      if (!LIVE) return send('Bag drop');
+      if (!LIVE) return send('Jar drop');
       if (!signer && !(await connect())) return;
       let out; try { out = await simulate(K.bags, 'bags', 'drop', [0]); } catch (e) { return toast('The drop cannot run: ' + (e.shortMessage || e.reason || e.message).toString().slice(0, 140), true); }
-      await send('Bag drop', K.bags, 'bags', 'drop', [(out * 98n) / 100n]);
+      await send('Jar drop', K.bags, 'bags', 'drop', [(out * 98n) / 100n]);
     },
     'air-post': async () => {
       if (!signer && !(await connect())) return;
@@ -501,11 +501,11 @@
     },
     'air-rest': async () => { if (!signer && !(await connect())) return; await airPay(); },
     'bag-setloot': async () => {
-      const d = await dialog('Open the mint', `<p>This sets $LOOT <span class="mono">${esc(C.loot)}</span> on the Bags contract. From then on anyone can mint a Bag by burning 100,000 of it and paying ${mintKntq()} KNTQ.</p><p><b>It can be done only once.</b> The Bags contract will use this $LOOT for good; it cannot be changed or undone.</p>`, 'Open the mint', true);
+      const d = await dialog('Open the mint', `<p>This sets $AMBROSIA <span class="mono">${esc(C.loot)}</span> on the Jars contract. From then on anyone can mint a Jar by burning 100,000 of it and paying ${mintKntq()} KNTQ.</p><p><b>It can be done only once.</b> The Jars contract will use this $AMBROSIA for good; it cannot be changed or undone.</p>`, 'Open the mint', true);
       if (d) await send('Open the mint', K.bags, 'bags', 'setLoot', [C.loot]);
     },
     'bag-convert': async () => {
-      const d = await dialog('Convert fees to KNTQ', `<p>Turns fee income the Bag pot received in another token into KNTQ.</p><div class="ad-f" style="margin-top:12px"><label>Token to convert</label><input class="inp mono" id="b-token" value="${esc(C.tokens.HYPE[0])}"></div>`, 'Convert');
+      const d = await dialog('Convert fees to KNTQ', `<p>Turns fee income the Jar pot received in another token into KNTQ.</p><div class="ad-f" style="margin-top:12px"><label>Token to convert</label><input class="inp mono" id="b-token" value="${esc(C.tokens.HYPE[0])}"></div>`, 'Convert');
       if (!d) return; const t = $('#b-token', d).value.trim(); if (!isAddr(t)) return toast('Enter a token address.', true);
       if (!LIVE) return send('Convert');
       if (!signer && !(await connect())) return;
