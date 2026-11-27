@@ -19,7 +19,7 @@
   // platform's own coin wears the logo
   const av = (c, size = 44) => {
     const z = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px`;
-    if (c.official) return `<span class="av" style="${z};background:var(--sun)"><img src="/img/logo.svg?v=2" alt="" style="width:78%;height:78%;object-fit:contain"></span>`;
+    if (c.official) return `<span class="av" style="${z};background:var(--sun)"><img src="/img/logo.svg?v=3" alt="" style="width:78%;height:78%;object-fit:contain"></span>`;
     if (c.img) return `<span class="av" style="${z}"><img src="${esc(c.img)}" alt=""></span>`;
     const h = parseInt(String(c.addr).slice(2, 8), 16) % 360;
     return `<span class="av" style="${z};background:linear-gradient(135deg,hsl(${h} 95% 70%),hsl(${(h + 75) % 360} 95% 64%))">${esc(String(c.ticker).slice(0, 2))}</span>`;
@@ -29,7 +29,7 @@
   const TOK_LOGO = new Set(['HYPE', 'KNTQ']);
   const tokenBadge = (s, size = 20) => {
     const z = `width:${size}px;height:${size}px`;
-    if (s === OWN) return `<img class="tkl" src="/img/logo.svg?v=2" alt="" style="${z};border-radius:50%">`;
+    if (s === OWN) return `<img class="tkl" src="/img/logo.svg?v=3" alt="" style="${z};border-radius:50%">`;
     if (TOK_LOGO.has(s)) return `<span class="stk lg" style="${z}" title="${esc(s)}"><img src="/img/tok/${esc(s)}.png" alt="" loading="lazy"></span>`;
     return `<span class="stk" style="${z};background:hsl(${stkHue(s)} 55% 42%);font-size:${Math.max(7, Math.round(size * 0.3))}px">${esc(s.slice(0, 4))}</span>`;
   };
@@ -528,7 +528,8 @@
       : kind === 1 ? [18, 28, 38, 48].map((cx, i) => `<circle cx="${cx - 1}" cy="${i % 2 ? 44 : 35}" r="3.200" fill="${band}" stroke="${ink}" stroke-width="1.600"/>`).join('')
         : kind === 2 ? `<path d="M8 41l7-7 7 7 7-7 7 7 7-7 7 7 7-7" fill="none" stroke="${band}" stroke-width="4.500" stroke-linejoin="round"/>`
           : `<rect x="23" y="32" width="18" height="13" rx="3" fill="${band}" stroke="${ink}" stroke-width="2"/><path d="M27 37h10M27 41h6" stroke="${ink}" stroke-width="1.800" stroke-linecap="round"/>`;
-    const drops = r() < 0.55 ? `<path d="M52 9c2.400 3 4 5 4 7.200a4 4 0 0 1-8 0C48 14 49.600 12 52 9z" fill="#ff7a1a" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>` : '';
+    // some jars catch the light: a small four-point glint beside the lid
+    const drops = r() < 0.55 ? `<path d="M52 6c.700 4 1.800 5.200 5.500 6-3.700.800-4.800 2-5.500 6-.700-4-1.800-5.200-5.500-6 3.700-.800 4.800-2 5.500-6z" fill="#fff" stroke="${ink}" stroke-width="1.800" stroke-linejoin="round"/>` : '';
     return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" fill="${bg}"/><ellipse cx="32" cy="57" rx="19" ry="3" fill="${ink}" opacity=".16"/>
       <clipPath id="jar${id}"><path d="${shape}"/></clipPath><path d="${shape}" fill="${body}"/><g clip-path="url(#jar${id})">${deco}</g><path d="${shape}" fill="none" stroke="${ink}" stroke-width="2.600" stroke-linejoin="round"/>
       <rect x="22" y="16" width="20" height="8" fill="${body}" stroke="${ink}" stroke-width="2.600"/><rect x="18" y="9" width="28" height="8.500" rx="3" fill="${lid}" stroke="${ink}" stroke-width="2.600"/>
