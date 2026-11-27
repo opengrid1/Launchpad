@@ -16,12 +16,13 @@ window.CFG = {
       contracts: { factory: '0x0B3a2fAB5DE60128EEBF8783fACB46aeb17a934F', hook: '0xFb9008313CCBe0EDf42E0eEbeCd2d8Ed5C716044', locker: '0xA30e059e87e4987E88578f517eE3258BBEf80033', escrow: '0xbD8DEAe371D83DABcc0fB1be7C31610809C1D907', vault: '0x254fB4D89a5DFCC5a76b4663697E732C05f5C822', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1', positionManager: '0x114ee1499242a273ef8DD8Ec6c5462fD91Cb68e2', multicall: '0xcA11bde05977b3631167028862bE2a173976CA11', router: '0xA13f7611115752DEB2B13813BDDE16A5073e4b45', quoter: '0x379F556c5a748BD7Cc9baF0F7A344094Ac1814f5' } },
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
-  official: ['0x4c639097d3697f3713b82c0a5e478a250a3ace23'], // $KINEX (relaunched 2026-11-27, paired with HYPE), shown with an Official tag
-  // A fresh start (2026-11-27): the three tokens launched before it ($KCHAN, $KINEX, $KCAT) are left off the board,
-  // the ticker, the tape and search (their pages still open by link), and the flywheel counts from flyBase: its
-  // totals as they stood then. Tokens launched from now on are listed and counted as usual.
-  hidden: ['0xf99726e6159ed13c6d36e846d63eae1c82f88b2b', '0xe9f03e779b359dd3c2346847e09bc019c2f03cf6', '0x8b936972abc2be2bee3962e0c00783a984b78429'],
-  flyBase: { ts: 1795744470, toStaking: 0, toBuyback: 6.615196683598409, toTreasury: 9.900141987184925, burnedQuote: 6.615196683598409, burnedTokens: 45160889.80700789, rewards: 0 },
+  official: ['0x4c639097d3697f3713b82c0a5e478a250a3ace23'], // $KINEX (relaunched 2026-11-27, paired with HYPE; hidden since the second fresh start that day)
+  // A fresh start (2026-11-27, done twice that day): the four tokens launched before it ($KCHAN, $KCAT, the first
+  // $KINEX and the $KINEX relaunched that day) are left off the board, the ticker, the tape and search (their pages
+  // still open by link), and the flywheel counts from flyBase: its totals as they stood then. Tokens launched from
+  // now on are listed and counted as usual.
+  hidden: ['0xf99726e6159ed13c6d36e846d63eae1c82f88b2b', '0xe9f03e779b359dd3c2346847e09bc019c2f03cf6', '0x8b936972abc2be2bee3962e0c00783a984b78429', '0x4c639097d3697f3713b82c0a5e478a250a3ace23'],
+  flyBase: { ts: 1795746491, toStaking: 0, toBuyback: 6.620196683598409, toTreasury: 9.900141987184925, burnedQuote: 6.615196683598409, burnedTokens: 45160889.80700789, rewards: 0 },
   /* the fee flywheel: protocol fees -> splitter -> stakers / buyback and burn of $KINEX / treasury */
   // the $KINEX airdrop: 20% of the supply in three pools. Points: 1 HYPE traded on Kinex = tradePts (from minHype on),
   // a creator earns creatorPts per HYPE other wallets trade on their coin; trades on other Elysium launchpads earn
