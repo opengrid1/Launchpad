@@ -1,0 +1,17 @@
+$LOOTBAG is live on Base.
+
+It's the official coin of Lootbag, the launchpad where coins pay the people who hold them.
+
+CA: 0xab95ea56af63277D81679B1c63bAf04218fA8840
+
+What $LOOTBAG is:
+
+• Launched on Lootbag itself, like every other coin there
+• Paired with ETH, in its own Uniswap v4 pool
+• Every trade has a 2% fee, and a quarter of it is kept for $LOOTBAG holders
+• Holders are paid in ETH: payout rounds send it to wallets, and you can claim what you've earned at any time
+• 1,000,000,000 supply, no presale, no team allocation outside the launch buy
+
+Trade $LOOTBAG: https://www.lootbag.fun/#/loot
+
+Hold the bag.
