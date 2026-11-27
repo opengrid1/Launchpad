@@ -2,8 +2,8 @@
 pragma solidity 0.8.26;
 
 import {Test, stdStorage, StdStorage} from "forge-std/Test.sol";
-import {LootbagBags} from "../src/LootbagBags.sol";
-import {LootbagAirdrop} from "../src/LootbagAirdrop.sol";
+import {KinetiqPumpBags} from "../src/KinetiqPumpBags.sol";
+import {KinetiqPumpAirdrop} from "../src/KinetiqPumpAirdrop.sol";
 
 contract MockToken {
     string public name;
@@ -59,21 +59,21 @@ contract BagsAirdropTest is Test {
     MockToken loot = new MockToken("LOOT");
     MockToken nvda = new MockToken("NVDA");
     MockSwapper swapper = new MockSwapper();
-    address owner = makeAddr("lootbag.test.owner");
-    address treasury = makeAddr("lootbag.test.treasury");
-    address keeper = makeAddr("lootbag.test.keeper");
-    address a1 = makeAddr("lootbag.test.a1");
-    address a2 = makeAddr("lootbag.test.a2");
-    address a3 = makeAddr("lootbag.test.a3");
-    LootbagBags bags;
-    LootbagAirdrop air;
+    address owner = makeAddr("kpump.test.owner");
+    address treasury = makeAddr("kpump.test.treasury");
+    address keeper = makeAddr("kpump.test.keeper");
+    address a1 = makeAddr("kpump.test.a1");
+    address a2 = makeAddr("kpump.test.a2");
+    address a3 = makeAddr("kpump.test.a3");
+    KinetiqPumpBags bags;
+    KinetiqPumpAirdrop air;
 
     function setUp() public {
         address[] memory d = new address[](2);
         d[0] = address(kntq);
         d[1] = address(nvda);
-        bags = new LootbagBags(address(kntq), address(swapper), owner, treasury, d, 3e18); // a 3 KNTQ mint: 2.7 to the Bags, 0.3 to Lootbag
-        air = new LootbagAirdrop(address(kntq), address(swapper), owner);
+        bags = new KinetiqPumpBags(address(kntq), address(swapper), owner, treasury, d, 3e18); // a 3 KNTQ mint: 2.7 to the Bags, 0.3 to KinetiqPump
+        air = new KinetiqPumpAirdrop(address(kntq), address(swapper), owner);
         vm.startPrank(owner);
         bags.setLoot(address(loot));
         bags.setKeeper(keeper, true);
@@ -120,12 +120,12 @@ contract BagsAirdropTest is Test {
         bags.drop(0);
         assertEq(bags.vault(1, address(kntq)), 2.7e18 + (p * 5 / 100) / 2);
         assertEq(bags.vault(2, address(kntq)), (p * 5 / 100) / 2);
-        vm.expectRevert(LootbagBags.TooSoon.selector);
+        vm.expectRevert(KinetiqPumpBags.TooSoon.selector);
         bags.drop(0);
         // an NVDA day: keepers only, bought through the swapper
         vm.warp(block.timestamp + 1 days);
         assertEq(bags.today(), address(nvda));
-        vm.expectRevert(LootbagBags.NotKeeper.selector);
+        vm.expectRevert(KinetiqPumpBags.NotKeeper.selector);
         bags.drop(0);
         uint256 p2 = bags.pot();
         vm.prank(keeper);
@@ -141,7 +141,7 @@ contract BagsAirdropTest is Test {
         address[] memory t = new address[](1);
         t[0] = address(kntq);
         vm.prank(a2);
-        vm.expectRevert(LootbagBags.NotHolder.selector);
+        vm.expectRevert(KinetiqPumpBags.NotHolder.selector);
         bags.withdraw(1, t);
         vm.prank(a1);
         bags.transferFrom(a1, a3, 1);
@@ -163,7 +163,7 @@ contract BagsAirdropTest is Test {
         vm.startPrank(owner);
         address[] memory t = new address[](1);
         t[0] = address(kntq);
-        vm.expectRevert(LootbagBags.NotHolder.selector);
+        vm.expectRevert(KinetiqPumpBags.NotHolder.selector);
         bags.withdraw(1, t);
         vm.stopPrank();
         assertEq(bags.pot(), 102.7e18);
@@ -172,7 +172,7 @@ contract BagsAirdropTest is Test {
     function test_soldOutAtAThousand() public {
         stdstore.target(address(bags)).sig("minted()").checked_write(uint256(1000));
         vm.prank(a1);
-        vm.expectRevert(LootbagBags.SoldOut.selector);
+        vm.expectRevert(KinetiqPumpBags.SoldOut.selector);
         bags.mint();
     }
 
@@ -192,7 +192,7 @@ contract BagsAirdropTest is Test {
         bytes32 l2 = _leaf(a2, 40e18);
         bytes32 root = _pair(l1, l2);
         vm.prank(keeper);
-        vm.expectRevert(LootbagAirdrop.OverPot.selector);
+        vm.expectRevert(KinetiqPumpAirdrop.OverPot.selector);
         air.post(root, 101e18, "");
         vm.prank(keeper);
         air.post(root, 100e18, "ipfs://list");
@@ -200,13 +200,13 @@ contract BagsAirdropTest is Test {
         p1[0] = l2;
         air.pay(0, a1, 60e18, p1); // anyone pushes it
         assertEq(kntq.balanceOf(a1), 100e18 + 60e18);
-        vm.expectRevert(LootbagAirdrop.AlreadyPaid.selector);
+        vm.expectRevert(KinetiqPumpAirdrop.AlreadyPaid.selector);
         air.pay(0, a1, 60e18, p1);
-        vm.expectRevert(LootbagAirdrop.BadProof.selector);
+        vm.expectRevert(KinetiqPumpAirdrop.BadProof.selector);
         air.pay(0, a3, 40e18, p1);
         // the next round waits 10 hours; the unpaid part comes back after 30 days
         vm.prank(keeper);
-        vm.expectRevert(LootbagAirdrop.TooSoon.selector);
+        vm.expectRevert(KinetiqPumpAirdrop.TooSoon.selector);
         air.post(root, 0, "");
         vm.warp(block.timestamp + 31 days);
         air.expire(0);

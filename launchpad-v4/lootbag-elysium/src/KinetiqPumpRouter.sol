@@ -30,8 +30,8 @@ interface IERC20R {
     function approve(address s, uint256 v) external returns (bool);
 }
 
-/// @title LootbagRouter
-/// @notice Buys and sells Lootbag coins with plain HYPE, whatever the coin is paired with. `weth` is WHYPE and the
+/// @title KinetiqPumpRouter
+/// @notice Buys and sells KinetiqPump coins with plain HYPE, whatever the coin is paired with. `weth` is WHYPE and the
 ///         amounts named "eth" are HYPE.
 ///           buy:  HYPE -> WHYPE -> the coin's quote (through the route swapper; skipped when the quote is WHYPE)
 ///                 -> the coin, in its own Uniswap v4 pool
@@ -41,7 +41,7 @@ interface IERC20R {
 ///      the swap, and on a buy they come out of it straight to the buyer. That matters because the hook books each
 ///      trade's holder share at the moment of the swap: coins sitting in a router at that moment would earn part
 ///      of it, and nobody could ever claim it. No owner, no fees of its own, nothing to configure.
-contract LootbagRouter is IUnlockCallback {
+contract KinetiqPumpRouter is IUnlockCallback {
     error NotPoolManager();
     error UnknownCoin();
     error ZeroAmount();

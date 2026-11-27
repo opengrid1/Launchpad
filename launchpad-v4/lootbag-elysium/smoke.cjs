@@ -4,17 +4,17 @@
 // and a collect simulated.
 //   anvil --fork-url https://rpc.elysium.kinetiq.xyz --port 8547 --chain-id 31337
 //   ELYSIUM_RPC=http://127.0.0.1:8547 ALLOW_CHAIN=1 KEYFILE=<a file with one of anvil's test keys> node deploy.cjs --send
-//   node smoke.cjs            (then delete deployments/lootbag-elysium*.json: they describe the fork, not Elysium)
+//   node smoke.cjs            (then delete deployments/kinetiqpump-elysium*.json: they describe the fork, not Elysium)
 const fs = require("fs"), path = require("path");
 const { ethers } = require(fs.existsSync(path.join(__dirname, "node_modules/ethers")) ? "ethers" : path.join(__dirname, "../node_modules/ethers"));
-const D = __dirname, dep = JSON.parse(fs.readFileSync(D + "/deployments/lootbag-elysium.json", "utf8")), C = dep.contracts;
+const D = __dirname, dep = JSON.parse(fs.readFileSync(D + "/deployments/kinetiqpump-elysium.json", "utf8")), C = dep.contracts;
 const abi = (n) => JSON.parse(fs.readFileSync(`${D}/out/${n}.sol/${n}.json`, "utf8")).abi;
 (async () => {
   if (dep.chainId === 99901) throw new Error("this deployment record is Elysium's own: the smoke test runs on a local fork only");
   const P = new ethers.JsonRpcProvider(process.env.FORK_RPC || "http://127.0.0.1:8547", undefined, { staticNetwork: true, cacheTimeout: -1 });
   const as = async (addr) => { await P.send("anvil_impersonateAccount", [addr]); await P.send("anvil_setBalance", [addr, "0x" + (10n ** 21n).toString(16)]); return P.getSigner(addr); };
   const owner = await as(dep.owner), alice = await as("0x00000000000000000000000000000000000a11ce"), bob = await as("0x0000000000000000000000000000000000000b0b"), dev = await as("0x000000000000000000000000000000000000de11");
-  const f = new ethers.Contract(C.factory, abi("LootbagFactory"), P), hook = new ethers.Contract(C.hook, abi("LootbagHook"), P), payout = new ethers.Contract(C.payout, abi("LootbagPayout"), P), router = new ethers.Contract(C.router, abi("LootbagRouter"), P);
+  const f = new ethers.Contract(C.factory, abi("KinetiqPumpFactory"), P), hook = new ethers.Contract(C.hook, abi("KinetiqPumpHook"), P), payout = new ethers.Contract(C.payout, abi("KinetiqPumpPayout"), P), router = new ethers.Contract(C.router, abi("KinetiqPumpRouter"), P);
   const erc = (a) => new ethers.Contract(a, ["function balanceOf(address) view returns (uint256)", "function approve(address,uint256) returns (bool)"], P);
   const K = dep.tokens.kntq, W = dep.tokens.whype, fmt = ethers.formatEther, ok = (c, m) => { if (!c) throw new Error("CHECK FAILED: " + m); console.log("  ok:", m); };
   for (const n of ["factory", "hook", "payout", "swapper", "bags", "airdrop"]) await (await new ethers.Contract(C[n], ["function acceptOwnership()", "function owner() view returns (address)"], owner).acceptOwnership()).wait();
@@ -22,7 +22,7 @@ const abi = (n) => JSON.parse(fs.readFileSync(`${D}/out/${n}.sol/${n}.json`, "ut
   ok(await f.paused(), "the factory is deployed paused");
   await (await f.connect(owner).setPaused(false)).wait();
   ok((await f.LAUNCH_FEE()) === ethers.parseEther(dep.fees.launchFeeHype) && (await f.COPY_FEE()) === ethers.parseEther(dep.fees.copyFeeHype), `fees fixed at ${dep.fees.launchFeeHype} and ${dep.fees.copyFeeHype} HYPE`);
-  const bags = new ethers.Contract(C.bags, abi("LootbagBags"), P);
+  const bags = new ethers.Contract(C.bags, abi("KinetiqPumpBags"), P);
   ok((await bags.kntq()).toLowerCase() === K.toLowerCase() && (await bags.MINT_KNTQ()) === ethers.parseEther(dep.fees.bagMintKntq), `Bags are priced in KNTQ: ${dep.fees.bagMintKntq} a mint`);
   ok((await hook.bagPot()) === C.bags && (await hook.airdropPot()) === C.airdrop, "the hook pays the Bag pot and the airdrop pot");
 
@@ -34,7 +34,7 @@ const abi = (n) => JSON.parse(fs.readFileSync(`${D}/out/${n}.sol/${n}.json`, "ut
     const p = { name: "Smoke " + sym, symbol: sym, quote, rewards: [K, W], devBuy: 0, minCoinsOut: 1 }, fee = await f.launchFee(sym);
     const rc = await (await f.connect(dev).launchWithEth(p, ["", "smoke test", "", "", ""], 1, { value: fee + ethers.parseEther("0.5") })).wait();
     const coin = rc.logs.map((l) => { try { return f.interface.parseLog(l); } catch { return null; } }).find((e) => e && e.name === "Launched").args.coin;
-    const t = new ethers.Contract(coin, abi("LootbagToken"), P), devCoins = await t.balanceOf(dev.address);
+    const t = new ethers.Contract(coin, abi("KinetiqPumpToken"), P), devCoins = await t.balanceOf(dev.address);
     ok(devCoins > 0n && devCoins <= 20_000_000n * 10n ** 18n, `${sym} launched with 0.5 HYPE: dev got ${(Number(devCoins) / 1e24).toFixed(2)}M coins (${(Number(devCoins) / 1e25).toFixed(2)}% of supply), gas ${rc.gasUsed}`);
     ok(await t.excluded(dev.address), "the creator is excluded from rewards");
     await P.send("evm_mine", []);

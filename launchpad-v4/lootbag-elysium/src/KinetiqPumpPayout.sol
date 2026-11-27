@@ -28,8 +28,8 @@ interface IWrappedP {
     function withdraw(uint256 amount) external;
 }
 
-/// @title LootbagPayout
-/// @notice Holds every Lootbag coin's holder rewards and pays them out. The hook sends the holders' share of each
+/// @title KinetiqPumpPayout
+/// @notice Holds every KinetiqPump coin's holder rewards and pays them out. The hook sends the holders' share of each
 ///         trade's fee here (in the coin's quote currency) and the coin records each holder's part of it. Every five
 ///         minutes, counted from the coin's launch, a payout round turns the holders' parts into that round's reward
 ///         token (KNTQ or WHYPE) and sends it straight to their wallets. Rounds take turns through the rewards the
@@ -39,7 +39,7 @@ interface IWrappedP {
 /// @dev Rounds are run by keepers (the swap needs a minimum out, which a keeper prices off-chain). If keepers stop,
 ///      nothing is stuck: every holder's part stays in their coin's books and `claim` pays it. A recipient that can't
 ///      receive the reward (a token that blocks the transfer) has it kept here for them to withdraw.
-contract LootbagPayout {
+contract KinetiqPumpPayout {
     error NotOwner();
     error NotHook();
     error NotFactory();

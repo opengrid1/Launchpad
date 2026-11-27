@@ -34,7 +34,7 @@
       'function rewardListed(address) view returns (bool)', 'function launchFee(string symbol) view returns (uint256)', 'function LAUNCH_FEE() view returns (uint256)', 'function COPY_FEE() view returns (uint256)',
       'function launchWithEth((string name, string symbol, address quote, address[] rewards, uint256 devBuy, uint256 minCoinsOut) p, (string image, string description, string x, string telegram, string website) m, uint256 minQuoteOut) payable returns (address coin)',
     ],
-    hook: ['event Fee(address indexed coin, address indexed quote, uint256 holders, uint256 lootbag)'],
+    hook: ['event Fee(address indexed coin, address indexed quote, uint256 holders, uint256 platform)'],
     payout: [
       'event Paid(address indexed coin, uint256 indexed round, address reward, uint256 quoteIn, uint256 rewardOut, uint256 holders)',
       'event Claimed(address indexed coin, address indexed account, uint256 amount)',
@@ -224,7 +224,7 @@
         else if (p.name === 'Paid') S.paid.push({ ts, coin: lc(p.args.coin), reward: p.args.reward, quoteIn: p.args.quoteIn, wallets: Number(p.args.holders), tx: l.tx });
         else if (p.name === 'Claimed') S.paid.push({ ts, coin: lc(p.args.coin), reward: '', quoteIn: p.args.amount, wallets: 1, tx: l.tx, claim: true });
       } else if (l.address === lc(K.hook)) {
-        const p = parse('hook', l); if (p && p.name === 'Fee') S.fees.push({ ts, coin: lc(p.args.coin), fee: p.args.holders + p.args.lootbag });
+        const p = parse('hook', l); if (p && p.name === 'Fee') S.fees.push({ ts, coin: lc(p.args.coin), fee: p.args.holders + p.args.platform });
       } else if (l.address === lc(K.router)) {
         const p = parse('router', l); if (!p) continue;
         if (p.name === 'Bought') S.trades.push({ ts, coin: lc(p.args.coin), wallet: p.args.to, buy: true, eth: Number(E.formatEther(p.args.ethIn)), tokens: Number(E.formatEther(p.args.coinsOut)), tx: l.tx });

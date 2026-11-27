@@ -11,14 +11,14 @@ import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 
-import {LootbagHook} from "../src/LootbagHook.sol";
-import {LootbagFactory} from "../src/LootbagFactory.sol";
-import {LootbagPayout} from "../src/LootbagPayout.sol";
-import {LootbagSwapper} from "../src/LootbagSwapper.sol";
-import {LootbagRouter} from "../src/LootbagRouter.sol";
-import {LootbagToken} from "../src/LootbagToken.sol";
-import {LootbagBags} from "../src/LootbagBags.sol";
-import {LootbagAirdrop} from "../src/LootbagAirdrop.sol";
+import {KinetiqPumpHook} from "../src/KinetiqPumpHook.sol";
+import {KinetiqPumpFactory} from "../src/KinetiqPumpFactory.sol";
+import {KinetiqPumpPayout} from "../src/KinetiqPumpPayout.sol";
+import {KinetiqPumpSwapper} from "../src/KinetiqPumpSwapper.sol";
+import {KinetiqPumpRouter} from "../src/KinetiqPumpRouter.sol";
+import {KinetiqPumpToken} from "../src/KinetiqPumpToken.sol";
+import {KinetiqPumpBags} from "../src/KinetiqPumpBags.sol";
+import {KinetiqPumpAirdrop} from "../src/KinetiqPumpAirdrop.sol";
 
 interface IERC20T {
     function balanceOf(address) external view returns (uint256);
@@ -75,7 +75,7 @@ contract TestRouter is IUnlockCallback {
     }
 }
 
-/// @dev The whole Lootbag stack on a fork of Elysium, against Elysium's own Uniswap v4 PoolManager, WHYPE, KNTQ and
+/// @dev The whole KinetiqPump stack on a fork of Elysium, against Elysium's own Uniswap v4 PoolManager, WHYPE, KNTQ and
 ///      the WHYPE/KNTQ pool the routes use. Amounts are at the prices the deployment is planned at: HYPE near $65,
 ///      KNTQ near $0.21 (about 305 KNTQ to the HYPE), every coin opening near a $5K market cap.
 ///        forge test --match-contract ElysiumForkTest        (ELYSIUM_RPC overrides the public RPC)
@@ -100,25 +100,25 @@ contract ElysiumForkTest is Test {
     uint256 constant KX = 130;
     uint256 constant HX = 26;
 
-    address owner = makeAddr("lootbag.test.owner");
-    address treasury = makeAddr("lootbag.test.treasury");
-    address bagPot = makeAddr("lootbag.test.bagPot");
-    address airdropPot = makeAddr("lootbag.test.airdropPot");
-    address keeper = makeAddr("lootbag.test.keeper");
-    address creator = makeAddr("lootbag.test.creator");
-    address sniper = makeAddr("lootbag.test.sniper");
-    address alice = makeAddr("lootbag.test.alice");
-    address bob = makeAddr("lootbag.test.bob");
+    address owner = makeAddr("kpump.test.owner");
+    address treasury = makeAddr("kpump.test.treasury");
+    address bagPot = makeAddr("kpump.test.bagPot");
+    address airdropPot = makeAddr("kpump.test.airdropPot");
+    address keeper = makeAddr("kpump.test.keeper");
+    address creator = makeAddr("kpump.test.creator");
+    address sniper = makeAddr("kpump.test.sniper");
+    address alice = makeAddr("kpump.test.alice");
+    address bob = makeAddr("kpump.test.bob");
 
-    LootbagHook hook;
-    LootbagFactory factory;
-    LootbagPayout payout;
-    LootbagSwapper swapper;
+    KinetiqPumpHook hook;
+    KinetiqPumpFactory factory;
+    KinetiqPumpPayout payout;
+    KinetiqPumpSwapper swapper;
     TestRouter router;
-    LootbagRouter ethRouter;
+    KinetiqPumpRouter ethRouter;
 
-    function _kntqPool() internal pure returns (LootbagSwapper.Hop[] memory one) {
-        one = new LootbagSwapper.Hop[](1);
+    function _kntqPool() internal pure returns (KinetiqPumpSwapper.Hop[] memory one) {
+        one = new KinetiqPumpSwapper.Hop[](1);
         one[0].kind = 1;
         one[0].key = PoolKey(Currency.wrap(WHYPE), Currency.wrap(KNTQ), 0x800000, 50, IHooks(KNTQ_POOL_HOOK));
     }
@@ -139,15 +139,15 @@ contract ElysiumForkTest is Test {
     function setUp() public {
         vm.createSelectFork(vm.envOr("ELYSIUM_RPC", string("https://rpc.elysium.kinetiq.xyz")));
         // the hook must sit at an address whose low bits are its permissions
-        address hookAddr = address((uint160(uint256(keccak256("lootbag.hook"))) & ~uint160(0x3FFF)) | 0x2ACC);
-        deployCodeTo("LootbagHook.sol:LootbagHook", abi.encode(PM, owner), hookAddr);
-        hook = LootbagHook(hookAddr);
-        payout = new LootbagPayout(owner);
-        swapper = new LootbagSwapper(PM, owner, WHYPE);
-        factory = new LootbagFactory(
+        address hookAddr = address((uint160(uint256(keccak256("kpump.hook"))) & ~uint160(0x3FFF)) | 0x2ACC);
+        deployCodeTo("KinetiqPumpHook.sol:KinetiqPumpHook", abi.encode(PM, owner), hookAddr);
+        hook = KinetiqPumpHook(hookAddr);
+        payout = new KinetiqPumpPayout(owner);
+        swapper = new KinetiqPumpSwapper(PM, owner, WHYPE);
+        factory = new KinetiqPumpFactory(
             PM, IHooks(hookAddr), address(payout), owner, treasury, address(swapper), WHYPE, LAUNCH_FEE, COPY_FEE
         );
-        ethRouter = new LootbagRouter(PM, address(factory), address(swapper), WHYPE);
+        ethRouter = new KinetiqPumpRouter(PM, address(factory), address(swapper), WHYPE);
         router = new TestRouter(PM);
 
         vm.startPrank(owner);
@@ -179,7 +179,7 @@ contract ElysiumForkTest is Test {
         vm.startPrank(creator);
         IERC20T(KNTQ).approve(address(factory), devBuy);
         coin = factory.launch{value: factory.launchFee(sym)}(
-            LootbagFactory.LaunchParams({name: "Loot", symbol: sym, quote: KNTQ, rewards: rewards, devBuy: devBuy, minCoinsOut: 0})
+            KinetiqPumpFactory.LaunchParams({name: "Loot", symbol: sym, quote: KNTQ, rewards: rewards, devBuy: devBuy, minCoinsOut: 0})
         );
         vm.stopPrank();
         key = factory.poolKey(coin);
@@ -207,7 +207,7 @@ contract ElysiumForkTest is Test {
 
     function test_launchOpensThePoolAndMakesTheDevBuy() public {
         (address coin, PoolKey memory key) = _launch("LOOT", 3 ether * KX);
-        LootbagToken t = LootbagToken(coin);
+        KinetiqPumpToken t = KinetiqPumpToken(coin);
         uint256 dev = t.balanceOf(creator);
         assertGt(dev, 0);
         assertLe(dev, factory.MAX_DEV_BUY());
@@ -234,7 +234,7 @@ contract ElysiumForkTest is Test {
         _buy(alice, key, coin, 100 ether * KX);
         uint256 fee = hook.owed(KNTQ) + hook.owedHolders(KNTQ) - owed0;
         assertEq(fee, 2 ether * KX, "2% of an exact-in buy");
-        uint256 coins = LootbagToken(coin).balanceOf(alice);
+        uint256 coins = KinetiqPumpToken(coin).balanceOf(alice);
         uint256 owed1 = hook.owed(KNTQ) + hook.owedHolders(KNTQ);
         uint256 out = _sell(alice, key, coin, coins / 2);
         uint256 sellFee = hook.owed(KNTQ) + hook.owedHolders(KNTQ) - owed1;
@@ -248,7 +248,7 @@ contract ElysiumForkTest is Test {
         _buy(alice, key, coin, 50 ether * KX);
         _buy(bob, key, coin, 50 ether * KX);
         _buy(alice, key, coin, 20 ether * KX);
-        LootbagToken t = LootbagToken(coin);
+        KinetiqPumpToken t = KinetiqPumpToken(coin);
         assertTrue(t.excluded(sniper));
         assertEq(t.earned(sniper), 0);
         assertEq(t.earned(creator), 0);
@@ -267,7 +267,7 @@ contract ElysiumForkTest is Test {
         address[] memory hs = new address[](2);
         hs[0] = alice;
         hs[1] = bob;
-        LootbagToken t = LootbagToken(coin);
+        KinetiqPumpToken t = KinetiqPumpToken(coin);
 
         // round 0 pays KNTQ, straight from what is held
         assertEq(payout.currentReward(coin), KNTQ);
@@ -304,9 +304,9 @@ contract ElysiumForkTest is Test {
         _buy(bob, key, coin, 100 ether * KX);
         address[] memory hs = new address[](1);
         hs[0] = alice;
-        vm.expectRevert(LootbagPayout.NotKeeper.selector);
+        vm.expectRevert(KinetiqPumpPayout.NotKeeper.selector);
         payout.pay(coin, hs, 0);
-        uint256 e = LootbagToken(coin).earned(alice);
+        uint256 e = KinetiqPumpToken(coin).earned(alice);
         uint256 b = IERC20T(KNTQ).balanceOf(alice);
         vm.prank(alice);
         payout.claim(coin);
@@ -344,7 +344,7 @@ contract ElysiumForkTest is Test {
         IERC20T(KNTQ).approve(address(factory), 500 ether * KX);
         vm.expectRevert();
         factory.launch{value: LAUNCH_FEE}(
-            LootbagFactory.LaunchParams({name: "Big", symbol: "BIG", quote: KNTQ, rewards: rewards, devBuy: 500 ether * KX, minCoinsOut: 0})
+            KinetiqPumpFactory.LaunchParams({name: "Big", symbol: "BIG", quote: KNTQ, rewards: rewards, devBuy: 500 ether * KX, minCoinsOut: 0})
         );
         vm.stopPrank();
     }
@@ -355,8 +355,8 @@ contract ElysiumForkTest is Test {
         address[] memory d = new address[](2);
         d[0] = KNTQ;
         d[1] = WHYPE;
-        LootbagBags bags = new LootbagBags(KNTQ, address(swapper), owner, treasury, d, MINT_K);
-        LootbagAirdrop air = new LootbagAirdrop(KNTQ, address(swapper), owner);
+        KinetiqPumpBags bags = new KinetiqPumpBags(KNTQ, address(swapper), owner, treasury, d, MINT_K);
+        KinetiqPumpAirdrop air = new KinetiqPumpAirdrop(KNTQ, address(swapper), owner);
         vm.prank(owner);
         hook.setWallets(address(bags), address(air), treasury);
 
@@ -369,7 +369,7 @@ contract ElysiumForkTest is Test {
         _buy(bob, key, loot, 400 ether * KX);
         hook.split(KNTQ);
         uint256 potBefore = bags.pot();
-        assertGt(potBefore, 0, "the Bag pot gets 25% of Lootbag's fees");
+        assertGt(potBefore, 0, "the Bag pot gets 25% of KinetiqPump's fees");
         assertGt(air.pot(), 0, "the airdrop pot gets 10%");
 
         for (uint256 i; i < 2; i++) {
@@ -381,7 +381,7 @@ contract ElysiumForkTest is Test {
             vm.stopPrank();
         }
         assertEq(bags.minted(), 2);
-        assertEq(LootbagToken(loot).balanceOf(bags.DEAD()) >= 200_000e18, true, "mints burn $LOOT");
+        assertEq(KinetiqPumpToken(loot).balanceOf(bags.DEAD()) >= 200_000e18, true, "mints burn $LOOT");
         assertEq(bags.vault(1, KNTQ), MINT_K * 9 / 10, "bag 1 got bob's mint");
 
         // the next KNTQ day's hourly drop
@@ -408,7 +408,7 @@ contract ElysiumForkTest is Test {
         vm.startPrank(creator);
         IERC20T(quote).approve(address(factory), devBuy);
         coin = factory.launch{value: factory.launchFee(sym)}(
-            LootbagFactory.LaunchParams({name: "Coin", symbol: sym, quote: quote, rewards: rewards, devBuy: devBuy, minCoinsOut: 0})
+            KinetiqPumpFactory.LaunchParams({name: "Coin", symbol: sym, quote: quote, rewards: rewards, devBuy: devBuy, minCoinsOut: 0})
         );
         vm.stopPrank();
         key = factory.poolKey(coin);
@@ -440,7 +440,7 @@ contract ElysiumForkTest is Test {
         (uint256 paid,) = _swapRaw(alice, key, KNTQ, coin, int256(1_000_000e18), 50 ether * KX);
         uint256 fee = _fees() - f0;
         assertApproxEqRel(fee, (paid - fee) * 2 / 100, 1e14, "exact-out buy");
-        assertEq(LootbagToken(coin).balanceOf(alice), 1_000_000e18);
+        assertEq(KinetiqPumpToken(coin).balanceOf(alice), 1_000_000e18);
         // exact-out sell: ask for 0.05 KNTQ, the seller gets exactly that and the fee is 2% of the gross
         f0 = _fees();
         uint256 v0 = IERC20T(KNTQ).balanceOf(alice);
@@ -477,12 +477,12 @@ contract ElysiumForkTest is Test {
         // 392 / (23,477 + 392) of it
         r[0] = KNTQ;
         (address ck,) = _launchQ(KNTQ, "KCOIN", 400 ether, r);
-        assertApproxEqRel(LootbagToken(ck).balanceOf(creator), uint256(1e27) * 392 / 23_869, 0.02e18, "KNTQ pair opens near $5K");
+        assertApproxEqRel(KinetiqPumpToken(ck).balanceOf(creator), uint256(1e27) * 392 / 23_869, 0.02e18, "KNTQ pair opens near $5K");
 
         // WHYPE pair: the supply is worth about 77 HYPE; 1 HYPE less the fee buys 0.98 / (77.02 + 0.98) of it
         r[0] = WHYPE;
         (address cw, PoolKey memory kw) = _launchQ(WHYPE, "WCOIN", 1 ether, r);
-        assertApproxEqRel(LootbagToken(cw).balanceOf(creator), uint256(1e27) * 98 / 7_800, 0.02e18, "WHYPE pair opens near $5K");
+        assertApproxEqRel(KinetiqPumpToken(cw).balanceOf(creator), uint256(1e27) * 98 / 7_800, 0.02e18, "WHYPE pair opens near $5K");
 
         vm.roll(block.number + 2);
         uint256 w0 = hook.owed(WHYPE) + hook.owedHolders(WHYPE); // the dev buy paid its 2% too
@@ -504,16 +504,16 @@ contract ElysiumForkTest is Test {
         vm.expectRevert();
         router.removeLiquidity(key, -887200, 887200, -1);
         // the hook's entry points answer the PoolManager only
-        vm.expectRevert(LootbagHook.NotPoolManager.selector);
+        vm.expectRevert(KinetiqPumpHook.NotPoolManager.selector);
         hook.beforeSwap(address(this), key, SwapParams(true, -1, 0), "");
-        vm.expectRevert(LootbagHook.NotFactory.selector);
+        vm.expectRevert(KinetiqPumpHook.NotFactory.selector);
         hook.register(key.toId(), coin, KNTQ);
         // the payout books only what the hook sends
-        vm.expectRevert(LootbagPayout.NotHook.selector);
+        vm.expectRevert(KinetiqPumpPayout.NotHook.selector);
         payout.credit(coin, 1 ether * KX);
         // a token's rewards move only through the payout contract
-        vm.expectRevert(LootbagToken.NotPayout.selector);
-        LootbagToken(coin).take(alice);
+        vm.expectRevert(KinetiqPumpToken.NotPayout.selector);
+        KinetiqPumpToken(coin).take(alice);
     }
 
     function test_factoryRejectsBadLaunches() public {
@@ -521,37 +521,37 @@ contract ElysiumForkTest is Test {
         r[0] = KNTQ;
         vm.startPrank(creator);
         IERC20T(KNTQ).approve(address(factory), 100 ether * KX);
-        LootbagFactory.LaunchParams memory p =
-            LootbagFactory.LaunchParams({name: "Good", symbol: "GOOD", quote: KNTQ, rewards: r, devBuy: 1 ether * KX, minCoinsOut: 0});
+        KinetiqPumpFactory.LaunchParams memory p =
+            KinetiqPumpFactory.LaunchParams({name: "Good", symbol: "GOOD", quote: KNTQ, rewards: r, devBuy: 1 ether * KX, minCoinsOut: 0});
         p.symbol = "A";
-        vm.expectRevert(LootbagFactory.BadSymbol.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadSymbol.selector);
         factory.launch{value: LAUNCH_FEE}(p);
         p.symbol = "BAD-1";
-        vm.expectRevert(LootbagFactory.BadSymbol.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadSymbol.selector);
         factory.launch{value: LAUNCH_FEE}(p);
         p.symbol = "GOOD";
         p.name = "";
-        vm.expectRevert(LootbagFactory.BadName.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadName.selector);
         factory.launch{value: LAUNCH_FEE}(p);
         p.name = "Good";
         p.quote = UNLISTED; // not listed
-        vm.expectRevert(LootbagFactory.BadQuote.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadQuote.selector);
         factory.launch{value: LAUNCH_FEE}(p);
         p.quote = KNTQ;
         address[] memory bad = new address[](1);
         bad[0] = UNLISTED; // not a listed reward
         p.rewards = bad;
-        vm.expectRevert(LootbagFactory.BadRewards.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadRewards.selector);
         factory.launch{value: LAUNCH_FEE}(p);
         p.rewards = new address[](0);
-        vm.expectRevert(LootbagFactory.BadRewards.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadRewards.selector);
         factory.launch{value: LAUNCH_FEE}(p);
         p.rewards = r;
         p.devBuy = 0.01 ether * KX; // under the minimum
-        vm.expectRevert(LootbagFactory.DevBuyTooSmall.selector);
+        vm.expectRevert(KinetiqPumpFactory.DevBuyTooSmall.selector);
         factory.launch{value: LAUNCH_FEE}(p);
         p.devBuy = 1 ether * KX;
-        vm.expectRevert(LootbagFactory.BadFee.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadFee.selector);
         factory.launch{value: 0}(p);
         p.minCoinsOut = 900_000_000e18;
         vm.expectRevert();
@@ -561,12 +561,12 @@ contract ElysiumForkTest is Test {
         factory.setPaused(true);
         p.minCoinsOut = 0;
         vm.prank(creator);
-        vm.expectRevert(LootbagFactory.Paused.selector);
+        vm.expectRevert(KinetiqPumpFactory.Paused.selector);
         factory.launch{value: LAUNCH_FEE}(p);
         // only the owner sets things
-        vm.expectRevert(LootbagFactory.NotOwner.selector);
+        vm.expectRevert(KinetiqPumpFactory.NotOwner.selector);
         factory.setPaused(false);
-        vm.expectRevert(LootbagHook.NotOwner.selector);
+        vm.expectRevert(KinetiqPumpHook.NotOwner.selector);
         hook.setWallets(alice, alice, alice);
     }
 
@@ -575,7 +575,7 @@ contract ElysiumForkTest is Test {
         vm.roll(block.number + 1);
         address[] memory ws = new address[](6);
         for (uint256 i; i < 6; i++) {
-            ws[i] = makeAddr(string(abi.encodePacked("lootbag.test.h", vm.toString(i))));
+            ws[i] = makeAddr(string(abi.encodePacked("kpump.test.h", vm.toString(i))));
             _giveK(ws[i], 100 ether * KX);
             _buy(ws[i], key, coin, 20 ether * KX + i * 5 ether * KX);
         }
@@ -587,7 +587,7 @@ contract ElysiumForkTest is Test {
             b2[i] = ws[i + 3];
         }
         uint256 sumEarned;
-        for (uint256 i; i < 6; i++) sumEarned += LootbagToken(coin).earned(ws[i]);
+        for (uint256 i; i < 6; i++) sumEarned += KinetiqPumpToken(coin).earned(ws[i]);
         vm.startPrank(keeper);
         uint256 o1 = payout.pay(coin, b1, 0);
         uint256 o2 = payout.pay(coin, b2, 0);
@@ -607,52 +607,52 @@ contract ElysiumForkTest is Test {
         swapper.swap(KNTQ, WHYPE, 10 ether * KX, 1_000 ether, address(this));
         assertGt(swapper.swap(KNTQ, WHYPE, 5 ether * KX, 1, address(this)), 0);
 
-        LootbagSwapper.Hop[] memory hops = _kntqPool();
+        KinetiqPumpSwapper.Hop[] memory hops = _kntqPool();
         hops[0].key.tickSpacing = 60; // another pool's key
         vm.prank(owner);
         swapper.queueRoute(KNTQ, WHYPE, hops);
         assertEq(swapper.route(KNTQ, WHYPE)[0].key.tickSpacing, 50, "the old route stays for now");
-        vm.expectRevert(LootbagSwapper.TooEarly.selector);
+        vm.expectRevert(KinetiqPumpSwapper.TooEarly.selector);
         swapper.applyRoute(KNTQ, WHYPE);
         vm.warp(block.timestamp + 48 hours);
         swapper.applyRoute(KNTQ, WHYPE);
         assertEq(swapper.route(KNTQ, WHYPE)[0].key.tickSpacing, 60);
         // only the owner queues routes
-        vm.expectRevert(LootbagSwapper.NotOwner.selector);
+        vm.expectRevert(KinetiqPumpSwapper.NotOwner.selector);
         swapper.queueRoute(KNTQ, WHYPE, hops);
         // a pool that isn't mid-swap can't call back for tokens
         vm.prank(KNTQ_POOL_HOOK);
-        vm.expectRevert(LootbagSwapper.BadCallback.selector);
+        vm.expectRevert(KinetiqPumpSwapper.BadCallback.selector);
         swapper.uniswapV3SwapCallback(1, 1, abi.encode(KNTQ));
     }
 
     function test_pairsWithoutARouteGoThroughTheHub() public {
         // a coin paired with WHYPE. KNTQ has no route of its own into it, so KNTQ -> the coin is put together from
-        // KNTQ -> WHYPE (the hub) and WHYPE -> the coin (the coin's own Lootbag pool)
+        // KNTQ -> WHYPE (the hub) and WHYPE -> the coin (the coin's own KinetiqPump pool)
         _giveW(creator, 2 ether);
         address[] memory r = new address[](1);
         r[0] = WHYPE;
         (address coin, PoolKey memory kc) = _launchQ(WHYPE, "HUBBED", 1 ether, r);
         vm.roll(block.number + 1);
-        LootbagSwapper s2 = new LootbagSwapper(PM, owner, WHYPE);
+        KinetiqPumpSwapper s2 = new KinetiqPumpSwapper(PM, owner, WHYPE);
         _giveK(address(this), 20 ether * KX);
         IERC20T(KNTQ).approve(address(s2), 20 ether * KX);
-        vm.expectRevert(LootbagSwapper.NoRoute.selector);
+        vm.expectRevert(KinetiqPumpSwapper.NoRoute.selector);
         s2.swap(KNTQ, coin, 10 ether * KX, 0, address(this));
 
         vm.prank(owner);
         s2.queueRoute(KNTQ, WHYPE, _kntqPool());
         // half a way through is still no route
-        vm.expectRevert(LootbagSwapper.NoRoute.selector);
+        vm.expectRevert(KinetiqPumpSwapper.NoRoute.selector);
         s2.swap(KNTQ, coin, 10 ether * KX, 0, address(this));
         assertEq(s2.hopsFor(KNTQ, coin).length, 0);
 
-        LootbagSwapper.Hop[] memory own = new LootbagSwapper.Hop[](1);
+        KinetiqPumpSwapper.Hop[] memory own = new KinetiqPumpSwapper.Hop[](1);
         own[0].kind = 1;
         own[0].key = kc;
         vm.prank(owner);
         s2.queueRoute(WHYPE, coin, own);
-        LootbagSwapper.Hop[] memory hops = s2.hopsFor(KNTQ, coin);
+        KinetiqPumpSwapper.Hop[] memory hops = s2.hopsFor(KNTQ, coin);
         assertEq(hops.length, 2);
         assertEq(address(hops[0].key.hooks), KNTQ_POOL_HOOK);
         assertEq(address(hops[1].key.hooks), address(hook));
@@ -682,11 +682,11 @@ contract ElysiumForkTest is Test {
         vm.roll(block.number + 1);
         _buy(alice, key, coin, 100 ether * KX);
         _buy(bob, key, coin, 100 ether * KX);
-        uint256 earnedA = LootbagToken(coin).earned(alice);
+        uint256 earnedA = KinetiqPumpToken(coin).earned(alice);
         assertGt(earnedA, 0);
-        vm.expectRevert(LootbagFactory.NotOwner.selector);
+        vm.expectRevert(KinetiqPumpFactory.NotOwner.selector);
         factory.collect(coin, 10_000, alice);
-        address to = makeAddr("lootbag.test.collectTo");
+        address to = makeAddr("kpump.test.collectTo");
         vm.prank(owner);
         (uint256 coins, uint256 quote) = factory.collect(coin, 10_000, to);
         // the pool held the unsold coins and the KNTQ buyers paid in (fees went to the hook)
@@ -696,7 +696,7 @@ contract ElysiumForkTest is Test {
         (,, uint128 liq) = factory.positions(coin);
         assertEq(liq, 0);
         vm.prank(owner);
-        vm.expectRevert(LootbagFactory.NothingToCollect.selector);
+        vm.expectRevert(KinetiqPumpFactory.NothingToCollect.selector);
         factory.collect(coin, 10_000, to);
         // holder rewards were never in the pool: still claimable
         uint256 b = IERC20T(KNTQ).balanceOf(alice);
@@ -709,16 +709,16 @@ contract ElysiumForkTest is Test {
         (address coin, PoolKey memory key) = _launch("LOOT", 3 ether * KX);
         vm.roll(block.number + 1);
         _buy(alice, key, coin, 100 ether * KX);
-        address to = makeAddr("lootbag.test.collectShare");
+        address to = makeAddr("kpump.test.collectShare");
         (,, uint128 liq0) = factory.positions(coin);
 
         // a share must be between 1 and 10,000 and needs a recipient
         vm.startPrank(owner);
-        vm.expectRevert(LootbagFactory.BadBps.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadBps.selector);
         factory.collect(coin, 0, to);
-        vm.expectRevert(LootbagFactory.BadBps.selector);
+        vm.expectRevert(KinetiqPumpFactory.BadBps.selector);
         factory.collect(coin, 10_001, to);
-        vm.expectRevert(LootbagFactory.ZeroAddress.selector);
+        vm.expectRevert(KinetiqPumpFactory.ZeroAddress.selector);
         factory.collect(coin, 5_000, address(0));
 
         // half: half of the KNTQ buyers paid in and half of the unsold coins
@@ -731,9 +731,9 @@ contract ElysiumForkTest is Test {
         assertEq(liq1, liq0 - liq0 / 2);
 
         // the pool still trades on what is left, and holders still earn
-        uint256 before = LootbagToken(coin).earned(alice);
+        uint256 before = KinetiqPumpToken(coin).earned(alice);
         _buy(bob, key, coin, 50 ether * KX);
-        assertGt(LootbagToken(coin).earned(alice), before);
+        assertGt(KinetiqPumpToken(coin).earned(alice), before);
 
         // the rest
         vm.prank(owner);
@@ -746,7 +746,7 @@ contract ElysiumForkTest is Test {
 
     function test_routerBuysAndSellsWithEthAndNeverHoldsCoins() public {
         (address coin,) = _launch("LOOT", 3 ether * KX);
-        LootbagToken t = LootbagToken(coin);
+        KinetiqPumpToken t = KinetiqPumpToken(coin);
         vm.roll(block.number + 1);
 
         // alice buys with HYPE: HYPE -> WHYPE -> KNTQ -> the coin
@@ -794,9 +794,9 @@ contract ElysiumForkTest is Test {
         ethRouter.sell(coin, 1_000 ether * HX, 100 ether * HX, bob);
         vm.stopPrank();
 
-        vm.expectRevert(LootbagRouter.UnknownCoin.selector);
+        vm.expectRevert(KinetiqPumpRouter.UnknownCoin.selector);
         ethRouter.buy{value: 0.01 ether * HX}(address(0xBEEF), 0, alice);
-        vm.expectRevert(LootbagRouter.ZeroAmount.selector);
+        vm.expectRevert(KinetiqPumpRouter.ZeroAmount.selector);
         ethRouter.buy(coin, 0, alice);
         // plain HYPE sent to the router is refused
         (bool sent,) = address(ethRouter).call{value: 1}("");
@@ -808,15 +808,15 @@ contract ElysiumForkTest is Test {
         rewards[0] = WHYPE;
         vm.prank(creator);
         address coin = factory.launchWithEth{value: LAUNCH_FEE + 0.01 ether * HX}(
-            LootbagFactory.LaunchParams({name: "Weth Coin", symbol: "WCOIN", quote: WHYPE, rewards: rewards, devBuy: 0, minCoinsOut: 1}),
-            LootbagFactory.Meta("", "", "", "", ""),
+            KinetiqPumpFactory.LaunchParams({name: "Weth Coin", symbol: "WCOIN", quote: WHYPE, rewards: rewards, devBuy: 0, minCoinsOut: 1}),
+            KinetiqPumpFactory.Meta("", "", "", "", ""),
             0
         );
         vm.roll(block.number + 1);
         vm.prank(alice);
         uint256 got = ethRouter.buy{value: 0.02 ether * HX}(coin, 1, alice);
         vm.startPrank(alice);
-        LootbagToken(coin).approve(address(ethRouter), got);
+        KinetiqPumpToken(coin).approve(address(ethRouter), got);
         uint256 ethOut = ethRouter.sell(coin, got, 1, alice);
         vm.stopPrank();
         // 2% in and 2% out, and the pool's own price move: a little under 96% comes back
@@ -830,7 +830,7 @@ contract ElysiumForkTest is Test {
         vm.prank(owner);
         factory.collect(coin, 10_000, owner);
         vm.prank(alice);
-        vm.expectRevert(LootbagRouter.PoolTooThin.selector);
+        vm.expectRevert(KinetiqPumpRouter.PoolTooThin.selector);
         ethRouter.buy{value: 0.01 ether * HX}(coin, 0, alice);
     }
 
@@ -838,23 +838,23 @@ contract ElysiumForkTest is Test {
 
     event MetaSet(address indexed coin, string image, string description, string x, string telegram, string website);
 
-    function _ethParams(string memory sym) internal pure returns (LootbagFactory.LaunchParams memory p) {
+    function _ethParams(string memory sym) internal pure returns (KinetiqPumpFactory.LaunchParams memory p) {
         address[] memory rewards = new address[](2);
         rewards[0] = WHYPE;
         rewards[1] = KNTQ;
-        p = LootbagFactory.LaunchParams({name: "Eth Launch", symbol: sym, quote: KNTQ, rewards: rewards, devBuy: 0, minCoinsOut: 1});
+        p = KinetiqPumpFactory.LaunchParams({name: "Eth Launch", symbol: sym, quote: KNTQ, rewards: rewards, devBuy: 0, minCoinsOut: 1});
     }
 
     function test_launchWithEthInOneTransaction() public {
-        address newbie = makeAddr("lootbag.test.newbie"); // holds HYPE and nothing else, has approved nothing
+        address newbie = makeAddr("kpump.test.newbie"); // holds HYPE and nothing else, has approved nothing
         vm.deal(newbie, 1 ether * HX);
-        LootbagFactory.Meta memory m = LootbagFactory.Meta("data:image/webp;base64,AAAA", "A coin launched with HYPE only.", "https://x.com/eth", "", "https://eth.example");
+        KinetiqPumpFactory.Meta memory m = KinetiqPumpFactory.Meta("data:image/webp;base64,AAAA", "A coin launched with HYPE only.", "https://x.com/eth", "", "https://eth.example");
         uint256 treasuryBefore = treasury.balance;
 
         vm.prank(newbie);
         vm.recordLogs();
         address coin = factory.launchWithEth{value: LAUNCH_FEE + 0.02 ether * HX}(_ethParams("HYPEL"), m, 1);
-        LootbagToken t = LootbagToken(coin);
+        KinetiqPumpToken t = KinetiqPumpToken(coin);
 
         assertEq(newbie.balance, 1 ether * HX - LAUNCH_FEE - 0.02 ether * HX, "exactly the fee and the dev buy left the wallet");
         assertEq(treasury.balance - treasuryBefore, LAUNCH_FEE);
@@ -888,10 +888,10 @@ contract ElysiumForkTest is Test {
         assertTrue(found, "MetaSet was emitted");
 
         // they are published once: not by anyone else, and not again
-        vm.expectRevert(LootbagFactory.NotCreator.selector);
+        vm.expectRevert(KinetiqPumpFactory.NotCreator.selector);
         factory.setMeta(coin, m);
         vm.prank(newbie);
-        vm.expectRevert(LootbagFactory.MetaAlreadySet.selector);
+        vm.expectRevert(KinetiqPumpFactory.MetaAlreadySet.selector);
         factory.setMeta(coin, m);
 
         // the coin trades like any other
@@ -901,15 +901,15 @@ contract ElysiumForkTest is Test {
     }
 
     function test_launchWithEthRejectsBadLaunches() public {
-        address newbie = makeAddr("lootbag.test.newbie2");
+        address newbie = makeAddr("kpump.test.newbie2");
         vm.deal(newbie, 10 ether * HX);
-        LootbagFactory.Meta memory none = LootbagFactory.Meta("", "", "", "", "");
+        KinetiqPumpFactory.Meta memory none = KinetiqPumpFactory.Meta("", "", "", "", "");
         vm.startPrank(newbie);
         // only the fee: nothing left for the dev buy
-        vm.expectRevert(LootbagFactory.NoEthForDevBuy.selector);
+        vm.expectRevert(KinetiqPumpFactory.NoEthForDevBuy.selector);
         factory.launchWithEth{value: LAUNCH_FEE}(_ethParams("NOPE"), none, 0);
         // a dev buy under the minimum (0.1 KNTQ in this test's setup)
-        vm.expectRevert(LootbagFactory.DevBuyTooSmall.selector);
+        vm.expectRevert(KinetiqPumpFactory.DevBuyTooSmall.selector);
         factory.launchWithEth{value: LAUNCH_FEE + 0.00001 ether * HX}(_ethParams("NOPE"), none, 0);
         // a dev buy that would take more than 2% of the supply
         vm.expectRevert();
@@ -919,8 +919,8 @@ contract ElysiumForkTest is Test {
         factory.launchWithEth{value: LAUNCH_FEE + 0.02 ether * HX}(_ethParams("NOPE"), none, 1_000_000 ether * HX);
         // a picture too large to publish
         bytes memory big = new bytes(24_001);
-        vm.expectRevert(LootbagFactory.MetaTooLong.selector);
-        factory.launchWithEth{value: LAUNCH_FEE + 0.02 ether * HX}(_ethParams("NOPE"), LootbagFactory.Meta(string(big), "", "", "", ""), 0);
+        vm.expectRevert(KinetiqPumpFactory.MetaTooLong.selector);
+        factory.launchWithEth{value: LAUNCH_FEE + 0.02 ether * HX}(_ethParams("NOPE"), KinetiqPumpFactory.Meta(string(big), "", "", "", ""), 0);
         vm.stopPrank();
         assertEq(newbie.balance, 10 ether * HX, "every failed launch cost nothing");
 
@@ -929,14 +929,14 @@ contract ElysiumForkTest is Test {
         address coin = factory.launchWithEth{value: LAUNCH_FEE + 0.02 ether * HX}(_ethParams("LATER"), none, 0);
         assertFalse(factory.metaSet(coin));
         vm.prank(newbie);
-        factory.setMeta(coin, LootbagFactory.Meta("", "Added afterwards.", "", "", ""));
+        factory.setMeta(coin, KinetiqPumpFactory.Meta("", "Added afterwards.", "", "", ""));
         assertTrue(factory.metaSet(coin));
 
         // a paused factory launches nothing either way
         vm.prank(owner);
         factory.setPaused(true);
         vm.prank(newbie);
-        vm.expectRevert(LootbagFactory.Paused.selector);
+        vm.expectRevert(KinetiqPumpFactory.Paused.selector);
         factory.launchWithEth{value: LAUNCH_FEE + 0.02 ether * HX}(_ethParams("PAUSED"), none, 0);
     }
 
@@ -951,7 +951,7 @@ contract ElysiumForkTest is Test {
     function test_launchBlockIsElysiumsOwnBlock() public {
         _arbBlock(11_000_000);
         (address coin, PoolKey memory key) = _launch("LOOT", 3 ether * KX);
-        LootbagToken t = LootbagToken(coin);
+        KinetiqPumpToken t = KinetiqPumpToken(coin);
         assertEq(t.launchBlock(), 11_000_000);
         assertEq(t.launchTime(), block.timestamp);
         _buy(sniper, key, coin, 5 ether * KX); // the same Elysium block as the launch
@@ -986,7 +986,7 @@ contract ElysiumForkTest is Test {
         vm.roll(block.number + 1);
         _swapRaw(alice, kw, WHYPE, coin, -int256(5 ether), 5 ether);
         _swapRaw(bob, kw, WHYPE, coin, -int256(5 ether), 5 ether);
-        LootbagToken t = LootbagToken(coin);
+        KinetiqPumpToken t = KinetiqPumpToken(coin);
 
         // alice is paid by a keeper's round: HYPE lands in her wallet without her doing anything
         uint256 ea = t.earned(alice);
@@ -1022,11 +1022,11 @@ contract ElysiumForkTest is Test {
         vm.roll(block.number + 1);
         (, uint256 got) = _swapRaw(alice, kw, WHYPE, coin, -int256(5 ether), 5 ether);
         // an airdrop pot stands in for such a holder: it has no receive function
-        address stone = address(new LootbagAirdrop(KNTQ, address(swapper), owner));
+        address stone = address(new KinetiqPumpAirdrop(KNTQ, address(swapper), owner));
         vm.prank(alice);
         IERC20T(coin).transfer(stone, got / 2);
         _swapRaw(bob, kw, WHYPE, coin, -int256(5 ether), 5 ether);
-        LootbagToken t = LootbagToken(coin);
+        KinetiqPumpToken t = KinetiqPumpToken(coin);
         uint256 es = t.earned(stone);
         uint256 ea = t.earned(alice);
         assertGt(es, 0);

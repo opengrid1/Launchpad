@@ -1,6 +1,6 @@
-/* Lootbag on Elysium: deployment config, read by the site, the admin page, the log cache and the wallet connection.
-   The contract addresses come from deployments/lootbag-elysium.json once deploy.cjs has run on Elysium. Until then
-   they are empty, and the site says that Lootbag is not live there yet and sends nothing. */
+/* KinetiqPump on Elysium: deployment config, read by the site, the admin page, the log cache and the wallet connection.
+   The contract addresses come from deployments/kinetiqpump-elysium.json once deploy.cjs has run on Elysium. Until then
+   they are empty, and the site says that KinetiqPump is not live there yet and sends nothing. */
 window.LB_CFG = {
   // The name. It is an independent project named after the Kinetiq ecosystem it runs in, and is not Kinetiq's own:
   // the site says so in its footer. `coin` is the ticker of the platform's own coin (the address goes in `loot` below once it has
@@ -27,7 +27,7 @@ window.LB_CFG = {
   // the project's allowlist in the Reown dashboard, or mobile wallets will refuse the connection.
   walletConnect: { projectId: 'e1bda672d5deb56579fe084dddfb9174' },
   startBlock: 0,
-  // empty until Lootbag is deployed on Elysium
+  // empty until KinetiqPump is deployed on Elysium
   contracts: { factory: '', hook: '', payout: '', swapper: '', bags: '', airdrop: '', router: '', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1' },
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
   // HYPE's dollar price is Hyperliquid's mid price. KNTQ's is read from Elysium's WHYPE/KNTQ Uniswap v4 pool (the
@@ -35,11 +35,11 @@ window.LB_CFG = {
   prices: { api: 'https://api.hyperliquid.xyz/info', hype: 'HYPE', kntq: '@334', kntqPoolId: '0xa3f234a829d1c4a980e9776ccddf4b0c12070e03a0558d1eed2e9c0090d3cd7a' },
   // true only when the factory in use cannot withdraw a pool's liquidity. This one can (collect), so it is false.
   liquidityLocked: false,
-  // Lootbag's own coin on Elysium, shown as official once it has launched and its address is put here
+  // KinetiqPump's own coin on Elysium, shown as official once it has launched and its address is put here
   loot: '',
   // coins left off the board, the coin lists and search; their own page still opens from a direct link
   hidden: [],
-  // what a coin can be paired with or pay, besides Lootbag coins: [address, decimals, name]. HYPE is WHYPE on-chain:
+  // what a coin can be paired with or pay, besides KinetiqPump coins: [address, decimals, name]. HYPE is WHYPE on-chain:
   // buyers pay and receive HYPE itself, and holders paid in it receive HYPE itself.
   tokens: {
     HYPE: ['0xbA876237B0F021A6c6D852d6c26E107997cC5E81', 18, 'Hyperliquid'],

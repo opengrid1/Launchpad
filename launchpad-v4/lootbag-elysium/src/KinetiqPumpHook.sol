@@ -17,26 +17,26 @@ interface IERC20Min {
     function balanceOf(address a) external view returns (uint256);
 }
 
-interface ILootbagPayout {
+interface IKinetiqPumpPayout {
     function credit(address coin, uint256 amount) external;
 }
 
 
-/// @title LootbagHook
-/// @notice The one Uniswap v4 hook every Lootbag pool uses. It takes a 2% fee on every buy and sell, always in the pool's
+/// @title KinetiqPumpHook
+/// @notice The one Uniswap v4 hook every KinetiqPump pool uses. It takes a 2% fee on every buy and sell, always in the pool's
 ///         quote currency (KNTQ or WHYPE). Only the factory can add or remove a pool's liquidity.
 ///         Of every fee, a quarter (0.5% of the trade) goes to the coin's holders through the payout contract, at once.
-///         The rest (1.5%) is Lootbag's: it collects here and anyone can split it, 25% to the Bag pot, 10% to the trader
+///         The rest (1.5%) is KinetiqPump's: it collects here and anyone can split it, 25% to the Bag pot, 10% to the trader
 ///         airdrop pot and 65% to the treasury.
 /// @dev The fee is taken on the quote side of the swap whichever way it goes: in beforeSwap when the quote is the
 ///      amount the swapper specified (exact-in buys, exact-out sells), in afterSwap when it is the other side
 ///      (exact-out buys, exact-in sells). During the swap the fee is kept as PoolManager claims (ERC-6909), since the
 ///      swapper pays the PoolManager only after the swap; `flush` turns the claims into tokens, sends the holders' part
-///      to the payout contract and leaves Lootbag's part here for `split`. The holders' part is booked to the coin's
+///      to the payout contract and leaves KinetiqPump's part here for `split`. The holders' part is booked to the coin's
 ///      holders at the moment of the trade, so who earns it never depends on when it is flushed. Liquidity can only be added by the factory, in the launch, and only the factory
-///      can remove it (the factory owner's `collect`, disclosed on the site). The owner can point the three shares of Lootbag's fee at new wallets, nothing else: no fee
+///      can remove it (the factory owner's `collect`, disclosed on the site). The owner can point the three shares of KinetiqPump's fee at new wallets, nothing else: no fee
 ///      change, no pause, no access to the holders' share or the swaps.
-contract LootbagHook is IHooks, IUnlockCallback {
+contract KinetiqPumpHook is IHooks, IUnlockCallback {
     error NotPoolManager();
     error NotFactory();
     error NotOwner();
@@ -45,7 +45,7 @@ contract LootbagHook is IHooks, IUnlockCallback {
     error ZeroAddress();
     error FactorySet();
 
-    event Fee(address indexed coin, address indexed quote, uint256 holders, uint256 lootbag);
+    event Fee(address indexed coin, address indexed quote, uint256 holders, uint256 platform);
     event Split(address indexed quote, uint256 bags, uint256 airdrop, uint256 treasury);
     event Wallets(address bagPot, address airdropPot, address treasury);
     event OwnerChanged(address owner);
@@ -59,7 +59,7 @@ contract LootbagHook is IHooks, IUnlockCallback {
     address public factory;
     address public owner;
     address public pendingOwner;
-    ILootbagPayout public payout;
+    IKinetiqPumpPayout public payout;
     address public bagPot;
     address public airdropPot;
     address public treasury;
@@ -70,7 +70,7 @@ contract LootbagHook is IHooks, IUnlockCallback {
     }
 
     mapping(PoolId => Pool) public pools;
-    /// @notice Lootbag's share of the fees, per quote currency, waiting to be split
+    /// @notice KinetiqPump's share of the fees, per quote currency, waiting to be split
     mapping(address => uint256) public owed;
     /// @notice the holders' share of the fees, per quote currency, not yet sent to the payout contract
     mapping(address => uint256) public owedHolders;
@@ -114,11 +114,11 @@ contract LootbagHook is IHooks, IUnlockCallback {
         if (factory != address(0)) revert FactorySet();
         if (factory_ == address(0) || payout_ == address(0)) revert ZeroAddress();
         factory = factory_;
-        payout = ILootbagPayout(payout_);
+        payout = IKinetiqPumpPayout(payout_);
         _setWallets(bagPot_, airdropPot_, treasury_);
     }
 
-    /// @notice Points Lootbag's three shares at new wallets (fees already owed follow the new wallets)
+    /// @notice Points KinetiqPump's three shares at new wallets (fees already owed follow the new wallets)
     function setWallets(address bagPot_, address airdropPot_, address treasury_) external {
         if (msg.sender != owner) revert NotOwner();
         _setWallets(bagPot_, airdropPot_, treasury_);
@@ -150,7 +150,7 @@ contract LootbagHook is IHooks, IUnlockCallback {
         pools[id] = Pool(coin, quote);
     }
 
-    /// @notice Splits Lootbag's collected fees in `quote`: 25% Bag pot, 10% airdrop pot, 65% treasury. Anyone can call.
+    /// @notice Splits KinetiqPump's collected fees in `quote`: 25% Bag pot, 10% airdrop pot, 65% treasury. Anyone can call.
     function split(address quote) external {
         flush(quote);
         uint256 amt = owed[quote];
@@ -202,7 +202,7 @@ contract LootbagHook is IHooks, IUnlockCallback {
         return IHooks.beforeAddLiquidity.selector;
     }
 
-    /// @notice Only the factory removes liquidity from a Lootbag pool (its owner's disclosed `collect`); nobody else can
+    /// @notice Only the factory removes liquidity from a KinetiqPump pool (its owner's disclosed `collect`); nobody else can
     function beforeRemoveLiquidity(address sender, PoolKey calldata, ModifyLiquidityParams calldata, bytes calldata)
         external
         view

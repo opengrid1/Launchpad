@@ -12,7 +12,7 @@ import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/Pool
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-periphery/src/libraries/LiquidityAmounts.sol";
 
-import {LootbagToken} from "./LootbagToken.sol";
+import {KinetiqPumpToken} from "./KinetiqPumpToken.sol";
 import {Clones} from "./lib/Clones.sol";
 
 interface IHookReg {
@@ -40,8 +40,8 @@ interface IWETHF {
     function deposit() external payable;
 }
 
-/// @title LootbagFactory
-/// @notice Launches Lootbag coins on Elysium. One transaction creates the coin (1,000,000,000 supply, no owner, no
+/// @title KinetiqPumpFactory
+/// @notice Launches KinetiqPump coins on Elysium. One transaction creates the coin (1,000,000,000 supply, no owner, no
 ///         mint), opens its own Uniswap v4 pool against the chosen quote (KNTQ or WHYPE, wrapped HYPE) with the
 ///         whole supply in it, and makes the creator's dev buy in the same transaction, so nobody can buy before them.
 ///         The factory holds every pool's liquidity. It is not locked: the owner can withdraw any share of a pool's
@@ -59,7 +59,7 @@ interface IWETHF {
 ///      The owner can: list quotes and rewards, set their opening ticks and minimum dev buys, pause new launches, and
 ///      move the fee wallet, and collect a pool's liquidity. The owner can't change a launched coin, its fee, or the
 ///      holders' rewards.
-contract LootbagFactory is IUnlockCallback {
+contract KinetiqPumpFactory is IUnlockCallback {
     error NotOwner();
     error NotPoolManager();
     error Paused();
@@ -113,7 +113,7 @@ contract LootbagFactory is IUnlockCallback {
     IPoolManager public immutable poolManager;
     IHooks public immutable hook;
     address public immutable payout;
-    LootbagToken public immutable implementation;
+    KinetiqPumpToken public immutable implementation;
     /// @notice the route swapper that turns a creator's wrapped HYPE into the quote for `launchWithEth`
     ISwapperF public immutable swapper;
     /// @notice the wrapped native coin: WHYPE on Elysium
@@ -175,7 +175,7 @@ contract LootbagFactory is IUnlockCallback {
         owner = owner_;
         treasury = treasury_;
         paused = true; // launches open only when the owner says so
-        implementation = new LootbagToken();
+        implementation = new KinetiqPumpToken();
     }
 
     // ------------------------------------------------------------------ owner
@@ -341,9 +341,9 @@ contract LootbagFactory is IUnlockCallback {
 
         // the coin
         coin = Clones.cloneDeterministic(address(implementation), keccak256(abi.encode(msg.sender, nonce++)));
-        LootbagToken(coin).initialize(p.name, p.symbol, SUPPLY, payout, msg.sender);
-        LootbagToken(coin).exclude(address(poolManager));
-        LootbagToken(coin).exclude(address(hook));
+        KinetiqPumpToken(coin).initialize(p.name, p.symbol, SUPPLY, payout, msg.sender);
+        KinetiqPumpToken(coin).exclude(address(poolManager));
+        KinetiqPumpToken(coin).exclude(address(hook));
         creatorOf[coin] = msg.sender;
 
         // its pool

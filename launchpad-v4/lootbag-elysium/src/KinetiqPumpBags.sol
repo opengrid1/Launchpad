@@ -18,20 +18,20 @@ interface IERC721Receiver {
     function onERC721Received(address operator, address from, uint256 id, bytes calldata data) external returns (bytes4);
 }
 
-/// @title LootbagBags
+/// @title KinetiqPumpBags
 /// @notice 1,000 NFTs, each with its own vault. Minting one burns 100,000 $LOOT and costs a fixed amount of KNTQ
 ///         (`MINT_KNTQ`, set at deployment): 90% of it is split equally into the vaults of the Bags already minted,
-///         10% goes to Lootbag. This contract is also the Bag pot: 25% of Lootbag's fee income lands here. Once an hour
+///         10% goes to KinetiqPump. This contract is also the Bag pot: 25% of KinetiqPump's fee income lands here. Once an hour
 ///         the pot spends 5% of its KNTQ on the day's token (the days take turns through a short list, KNTQ among
 ///         them) and puts an equal amount into every Bag's vault.
 ///         Only a Bag's holder can withdraw its vault, at any time, and the vault goes with the Bag when it changes
-///         hands. Resales pay a 5% royalty to Lootbag.
+///         hands. Resales pay a 5% royalty to KinetiqPump.
 /// @dev Vaults are kept per token as an amount-per-Bag accumulator: a Bag's vault in a token is everything added per
 ///      Bag since it was minted (or last withdrawn). The pot is whatever this contract holds beyond the vaults. The
 ///      hourly drop and fee conversions need a swap with a minimum out, so keepers run them; a drop of KNTQ itself
 ///      needs no swap and anyone can run it. The owner can change the day list, the keepers, the treasury and the
 ///      metadata URI. The owner can't take the pot or any vault.
-contract LootbagBags {
+contract KinetiqPumpBags {
     error NotOwner();
     error NotKeeper();
     error SoldOut();
@@ -288,7 +288,7 @@ contract LootbagBags {
         return i == 0x01ffc9a7 || i == 0x80ac58cd || i == 0x5b5e139f || i == 0x2a55205a;
     }
 
-    /// @notice ERC-2981: 5% of a resale to Lootbag
+    /// @notice ERC-2981: 5% of a resale to KinetiqPump
     function royaltyInfo(uint256, uint256 price) external view returns (address, uint256) {
         return (treasury, (price * ROYALTY_BPS) / 10_000);
     }

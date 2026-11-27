@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-/// @title LootbagToken
-/// @notice The coin every Lootbag launch deploys (an EIP-1167 clone): a fixed-supply ERC-20 that keeps its holders'
+/// @title KinetiqPumpToken
+/// @notice The coin every KinetiqPump launch deploys (an EIP-1167 clone): a fixed-supply ERC-20 that keeps its holders'
 ///         rewards. Every trade's holder share (paid in the coin's quote currency) is added to a reward-per-token
 ///         accumulator, so each holder's share is exact and follows their balance through every transfer. The payout
 ///         contract then pays it out (in the coin's current reward token) without the holder claiming anything; a
@@ -15,7 +15,7 @@ pragma solidity 0.8.26;
 ///      Elysium is an Arbitrum Orbit rollup: `block.number` there is the parent chain's (HyperEVM's) block number,
 ///      which stands still for about 15 seconds and some 75 Elysium blocks at a time. The launch block is therefore
 ///      Elysium's own block number, read from the ArbSys precompile, so the rule covers one Elysium block and no more.
-contract LootbagToken {
+contract KinetiqPumpToken {
     error AlreadyInitialized();
     error InsufficientBalance();
     error InsufficientAllowance();
@@ -38,7 +38,7 @@ contract LootbagToken {
     address private constant ARB_SYS = address(100);
 
     uint8 public constant decimals = 18;
-    /// @notice the factory that launches every Lootbag coin (the same for every clone: it deployed the implementation)
+    /// @notice the factory that launches every KinetiqPump coin (the same for every clone: it deployed the implementation)
     address public immutable factory;
 
     string public name;

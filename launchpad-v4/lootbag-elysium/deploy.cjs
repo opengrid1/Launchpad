@@ -1,4 +1,4 @@
-// Deploys Lootbag on Elysium (chain 99901, gas in HYPE): the route swapper, the payout contract, the hook at a CREATE2
+// Deploys KinetiqPump on Elysium (chain 99901, gas in HYPE): the route swapper, the payout contract, the hook at a CREATE2
 // address carrying its permission flags, the factory, the Bags, the airdrop pot and the HYPE trade router (which has
 // no owner). Wires them, lists KNTQ and WHYPE both as quotes a coin can be paired with (each at an opening tick worked
 // out from live prices) and as rewards holders can be paid in, sets the KNTQ <-> WHYPE routes through Elysium's
@@ -11,14 +11,14 @@
 //
 //   forge build --skip test
 //   node deploy.cjs                  dry run: prices, opening ticks, the plan and a gas estimate; sends nothing
-//   KEYFILE=../../contracts/.env.deployer.kinex node deploy.cjs --send
+//   node deploy.cjs --send                 (the deployer key is read from .env.deployer.kinetiqpump here, or KEYFILE)
 //
 // Elysium is an Arbitrum Orbit chain on HyperEVM. Its public RPC refuses large transactions ("parent gas estimate
 // exceeds cap"); those are posted to the rollup's Inbox on HyperEVM instead, paid in HYPE from the same address on
 // HyperEVM, so the deployer needs a little HYPE on both chains. Every transaction is signed and saved before it is
-// sent, and steps done are kept in deployments/lootbag-elysium.progress.json, so a run that stops can be run again.
+// sent, and steps done are kept in deployments/kinetiqpump-elysium.progress.json, so a run that stops can be run again.
 //
-// Optional env: ELYSIUM_RPC, HYPEREVM_RPC, LOOTBAG_OWNER, LOOTBAG_TREASURY, LOOTBAG_KEEPER, HYPE_USD (else read from
+// Optional env: ELYSIUM_RPC, HYPEREVM_RPC, KPUMP_OWNER, KPUMP_TREASURY, KPUMP_KEEPER, HYPE_USD (else read from
 // Hyperliquid), START_MCAP_USD (5000), MIN_DEV_BUY_USD (8.5), LAUNCH_FEE (0.025 HYPE), COPY_FEE (1.25 HYPE),
 // BAG_MINT_KNTQ (400), QUOTES (KNTQ,WHYPE: what a coin can be paired with; WHYPE alone lists HYPE pairs only, and the
 // owner can list KNTQ later with factory.setQuote), ALLOW_CHAIN=1 (a local fork that reports another chain id; nothing is posted to HyperEVM).
@@ -28,9 +28,9 @@ const { ethers } = require(fs.existsSync(path.join(__dirname, 'node_modules/ethe
 const RPC = process.env.ELYSIUM_RPC || 'https://rpc.elysium.kinetiq.xyz';
 const PARENT = { rpc: process.env.HYPEREVM_RPC || 'https://rpc.hyperliquid.xyz/evm', chainId: 999, inbox: '0xce59f8b65ad41c9dae4c07a0571a39824bd92cff' };
 // the Kinex admin wallet, which owns this repo's other Elysium deployment
-const OWNER = ethers.getAddress(process.env.LOOTBAG_OWNER || '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b');
-const TREASURY = ethers.getAddress(process.env.LOOTBAG_TREASURY || OWNER);
-const KEEPER = ethers.getAddress(process.env.LOOTBAG_KEEPER || OWNER);
+const OWNER = ethers.getAddress(process.env.KPUMP_OWNER || '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b');
+const TREASURY = ethers.getAddress(process.env.KPUMP_TREASURY || OWNER);
+const KEEPER = ethers.getAddress(process.env.KPUMP_KEEPER || OWNER);
 const START_MCAP_USD = Number(process.env.START_MCAP_USD || 5000);
 const MIN_DEV_BUY_USD = Number(process.env.MIN_DEV_BUY_USD || 8.5);
 const LAUNCH_FEE = ethers.parseEther(process.env.LAUNCH_FEE || '0.025'); // HYPE, fixed in the factory
@@ -53,10 +53,10 @@ const KNTQ_POOL = { currency0: A.whype, currency1: A.kntq, fee: 0x800000, tickSp
 // beforeInitialize | beforeAddLiquidity | beforeRemoveLiquidity | beforeSwap | afterSwap | both swap return deltas
 const HOOK_FLAGS = 0x2accn, FLAG_MASK = 0x3fffn;
 const TICK_SPACING = 200, SUPPLY_WHOLE = 1e9;
-// the Bag pot's day list at deploy; $LOOT joins it once it has launched (bags.setDays)
+// the Bag pot's day list at deploy; $KPUMP joins it once it has launched (bags.setDays)
 const BAG_DAYS = ['KNTQ', 'WHYPE'];
 // gas measured on a fork of Elysium, used only when the RPC will not estimate ("Live reader is not ready")
-const MEASURED = { LootbagSwapper: 1_628_221n, LootbagPayout: 1_123_822n, LootbagHook: 1_428_765n, LootbagFactory: 4_674_201n, LootbagBags: 2_259_932n, LootbagAirdrop: 964_848n, LootbagRouter: 1_036_271n, call: 230_000n };
+const MEASURED = { KinetiqPumpSwapper: 1_628_221n, KinetiqPumpPayout: 1_123_822n, KinetiqPumpHook: 1_428_765n, KinetiqPumpFactory: 4_674_201n, KinetiqPumpBags: 2_259_932n, KinetiqPumpAirdrop: 964_848n, KinetiqPumpRouter: 1_036_271n, call: 230_000n };
 
 const AC = ethers.AbiCoder.defaultAbiCoder();
 const eq = (a, b) => a.toLowerCase() === b.toLowerCase();
@@ -67,7 +67,7 @@ const art = (n) => {
   return { abi: j.abi, bytecode: j.bytecode.object, iface: new ethers.Interface(j.abi) };
 };
 const DEP = path.join(__dirname, 'deployments');
-const PROG = path.join(DEP, 'lootbag-elysium.progress.json'), OUT = path.join(DEP, 'lootbag-elysium.json');
+const PROG = path.join(DEP, 'kinetiqpump-elysium.progress.json'), OUT = path.join(DEP, 'kinetiqpump-elysium.json');
 
 // The public Elysium RPC rate-limits and at times is "not ready"; such a request is tried again. A resent raw
 // transaction the node already has resolves to its own hash, so a send that was cut off is safe to repeat.
@@ -94,7 +94,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   }
 
   let w = null, me = OWNER;
-  const keyFile = process.env.KEYFILE || path.join(__dirname, '../../contracts/.env.deployer.kinex');
+  const keyFile = process.env.KEYFILE || path.join(__dirname, '.env.deployer.kinetiqpump');
   if (SEND || fs.existsSync(keyFile)) {
     const m = fs.existsSync(keyFile) && fs.readFileSync(keyFile, 'utf8').match(/PRIVATE_KEY=(0x)?([0-9a-fA-F]{64})/);
     if (!m) throw new Error('no PRIVATE_KEY=... in ' + keyFile);
@@ -141,7 +141,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   // quotes are worked out once and kept, so a run that is continued later sets the same ticks as it started with
   const quotes = prog.quotes ? prog.quotes.map((q) => ({ ...q, minDevBuy: BigInt(q.minDevBuy) })) : [quoteCfg('KNTQ', A.kntq, kntqUsd), quoteCfg('WHYPE', A.whype, hypeUsd)].filter((q) => QUOTES.includes(q.sym));
   for (const q of quotes) console.log(`quote ${q.sym.padEnd(5)} opens at tick ${q.tick}: 1B coins worth ${q.opensAt.toFixed(q.sym === 'KNTQ' ? 0 : 2)} ${q.sym} (~$${Math.round(q.opensAtUsd)}), min dev buy ${ethers.formatEther(q.minDevBuy)} ${q.sym}`);
-  console.log(`fees, fixed in the contracts: launch ${ethers.formatEther(LAUNCH_FEE)} HYPE (~$${(Number(ethers.formatEther(LAUNCH_FEE)) * hypeUsd).toFixed(2)}), copied ticker ${ethers.formatEther(COPY_FEE)} HYPE more (~$${(Number(ethers.formatEther(COPY_FEE)) * hypeUsd).toFixed(0)}), Bag mint ${ethers.formatEther(BAG_MINT_KNTQ)} KNTQ (~$${(Number(ethers.formatEther(BAG_MINT_KNTQ)) * kntqUsd).toFixed(0)}) and 100,000 $LOOT burned`);
+  console.log(`fees, fixed in the contracts: launch ${ethers.formatEther(LAUNCH_FEE)} HYPE (~$${(Number(ethers.formatEther(LAUNCH_FEE)) * hypeUsd).toFixed(2)}), copied ticker ${ethers.formatEther(COPY_FEE)} HYPE more (~$${(Number(ethers.formatEther(COPY_FEE)) * hypeUsd).toFixed(0)}), Bag mint ${ethers.formatEther(BAG_MINT_KNTQ)} KNTQ (~$${(Number(ethers.formatEther(BAG_MINT_KNTQ)) * kntqUsd).toFixed(0)}) and 100,000 $KPUMP burned`);
   const bySym = { KNTQ: A.kntq, WHYPE: A.whype };
   const days = BAG_DAYS.map((s) => bySym[s]);
   const rewards = [['KNTQ', A.kntq], ['WHYPE', A.whype]];
@@ -150,7 +150,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   console.log(`plan: 7 contracts, ${quotes.length} quotes, ${rewards.length} rewards, ${routes.length} routes${eq(me, OWNER) ? '' : ', 6 ownership offers'}`);
 
   // ---------------------------------------------------------------- contracts
-  const Swapper = art('LootbagSwapper'), Payout = art('LootbagPayout'), Hook = art('LootbagHook'), Factory = art('LootbagFactory'), Bags = art('LootbagBags'), Airdrop = art('LootbagAirdrop'), Router = art('LootbagRouter');
+  const Swapper = art('KinetiqPumpSwapper'), Payout = art('KinetiqPumpPayout'), Hook = art('KinetiqPumpHook'), Factory = art('KinetiqPumpFactory'), Bags = art('KinetiqPumpBags'), Airdrop = art('KinetiqPumpAirdrop'), Router = art('KinetiqPumpRouter');
   const init = (a, types, args) => a.bytecode + AC.encode(types, args).slice(2);
   const hookInit = init(Hook, ['address', 'address'], [A.pm, me]);
   if (!prog.hookSalt) {
@@ -167,10 +167,10 @@ class RetryProvider extends ethers.JsonRpcProvider {
   if (!SEND) {
     let gas = 0n, big = 0;
     for (const [n, data, to] of [
-      ['LootbagSwapper', init(Swapper, ['address', 'address', 'address'], [A.pm, me, A.whype])],
-      ['LootbagPayout', init(Payout, ['address'], [me])],
-      ['LootbagHook', prog.hookSalt + hookInit.slice(2), A.create2],
-      ['LootbagAirdrop', init(Airdrop, ['address', 'address', 'address'], [A.kntq, A.multicall, me])],
+      ['KinetiqPumpSwapper', init(Swapper, ['address', 'address', 'address'], [A.pm, me, A.whype])],
+      ['KinetiqPumpPayout', init(Payout, ['address'], [me])],
+      ['KinetiqPumpHook', prog.hookSalt + hookInit.slice(2), A.create2],
+      ['KinetiqPumpAirdrop', init(Airdrop, ['address', 'address', 'address'], [A.kntq, A.multicall, me])],
     ]) {
       const est = await P.estimateGas({ from: me, to, data }).catch(() => MEASURED[n]);
       gas += est;
@@ -244,15 +244,15 @@ class RetryProvider extends ethers.JsonRpcProvider {
   prog.quotes = prog.quotes || quotes.map((q) => ({ ...q, minDevBuy: q.minDevBuy.toString() }));
   save();
 
-  const swapper = (await step('LootbagSwapper', { data: init(Swapper, ['address', 'address', 'address'], [A.pm, me, A.whype]) })).address;
-  const payout = (await step('LootbagPayout', { data: init(Payout, ['address'], [me]) })).address;
-  await step('LootbagHook', { to: A.create2, data: prog.hookSalt + hookInit.slice(2) });
+  const swapper = (await step('KinetiqPumpSwapper', { data: init(Swapper, ['address', 'address', 'address'], [A.pm, me, A.whype]) })).address;
+  const payout = (await step('KinetiqPumpPayout', { data: init(Payout, ['address'], [me]) })).address;
+  await step('KinetiqPumpHook', { to: A.create2, data: prog.hookSalt + hookInit.slice(2) });
   const hook = prog.hook;
   if ((await P.getCode(hook)) === '0x') throw new Error('the hook did not land at ' + hook);
-  const factory = (await step('LootbagFactory', { data: init(Factory, ['address', 'address', 'address', 'address', 'address', 'address', 'address', 'uint256', 'uint256'], [A.pm, hook, payout, me, TREASURY, swapper, A.whype, LAUNCH_FEE, COPY_FEE]) })).address;
-  const bags = (await step('LootbagBags', { data: init(Bags, ['address', 'address', 'address', 'address', 'address[]', 'uint256'], [A.kntq, swapper, me, TREASURY, days, BAG_MINT_KNTQ]) })).address;
-  const airdrop = (await step('LootbagAirdrop', { data: init(Airdrop, ['address', 'address', 'address'], [A.kntq, swapper, me]) })).address;
-  const router = (await step('LootbagRouter', { data: init(Router, ['address', 'address', 'address', 'address'], [A.pm, factory, swapper, A.whype]) })).address;
+  const factory = (await step('KinetiqPumpFactory', { data: init(Factory, ['address', 'address', 'address', 'address', 'address', 'address', 'address', 'uint256', 'uint256'], [A.pm, hook, payout, me, TREASURY, swapper, A.whype, LAUNCH_FEE, COPY_FEE]) })).address;
+  const bags = (await step('KinetiqPumpBags', { data: init(Bags, ['address', 'address', 'address', 'address', 'address[]', 'uint256'], [A.kntq, swapper, me, TREASURY, days, BAG_MINT_KNTQ]) })).address;
+  const airdrop = (await step('KinetiqPumpAirdrop', { data: init(Airdrop, ['address', 'address', 'address'], [A.kntq, swapper, me]) })).address;
+  const router = (await step('KinetiqPumpRouter', { data: init(Router, ['address', 'address', 'address', 'address'], [A.pm, factory, swapper, A.whype]) })).address;
 
   await call('hook.init', hook, Hook, 'init', [factory, payout, bags, airdrop, TREASURY]);
   await call('payout.init', payout, Payout, 'init', [factory, hook, swapper, A.whype]);
@@ -280,7 +280,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   const gasUsed = Object.values(prog.steps).reduce((s, x) => s + BigInt(x.gas || 0), 0n);
   const out = {
     chainId, deployer: me, owner: OWNER, ownershipAccepted: eq(me, OWNER), treasury: TREASURY, keeper: KEEPER,
-    startBlock: prog.steps.LootbagFactory.block,
+    startBlock: prog.steps.KinetiqPumpFactory.block,
     launchesPaused: 'set by the owner from the admin page; read factory.paused() for the current value',
     liquidity: 'held by the factory; the owner can withdraw any share of a pool with collect(coin, bps, to)',
     launchBlock: "a coin's launch block is Elysium's own block number, read from ArbSys",
@@ -300,6 +300,6 @@ class RetryProvider extends ethers.JsonRpcProvider {
   console.log(`\ndone: ${Object.keys(prog.steps).length} transactions, ${gasUsed} gas. Saved ${path.relative(process.cwd(), OUT)}`);
   console.log('\nStill to do, from the owner wallet:');
   if (!eq(me, OWNER)) console.log(`  1. acceptOwnership() on all six contracts (until then ${me} is still their owner)`);
-  console.log('  2. launch $LOOT, then bags.setLoot, bags.setDays with $LOOT in it, factory.setReward($LOOT) and a WHYPE>$LOOT route');
+  console.log('  2. launch $KPUMP, then bags.setLoot, bags.setDays with $KPUMP in it, factory.setReward($KPUMP) and a WHYPE>$KPUMP route');
   console.log('  3. factory.setPaused(false) to open launches');
 })().catch((e) => { console.error('\nFAILED:', e.message || e); process.exit(1); });

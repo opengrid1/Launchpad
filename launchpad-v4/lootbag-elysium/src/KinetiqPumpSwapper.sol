@@ -23,7 +23,7 @@ interface IV3Pool {
         returns (int256 amount0, int256 amount1);
 }
 
-/// @title LootbagSwapper
+/// @title KinetiqPumpSwapper
 /// @notice Turns one token into another along a fixed route of pools, for the payout contract (a coin's quote into
 ///         the round's reward), the Bags (the pot's KNTQ into the day's token) and the airdrop pot (fees into KNTQ).
 ///         Routes are set by the owner and every change waits 48 hours, so a route can't be swapped for a bad one
@@ -31,9 +31,9 @@ interface IV3Pool {
 ///         A pair with no route of its own goes through the hub (WHYPE): tokenIn -> hub, then hub -> tokenOut. So
 ///         each token needs only a route into the hub and one out of it to be swappable with every other token.
 /// @dev A hop is either a v3-style pool (Uniswap v3 or Aerodrome Slipstream, swapped directly with the pool's
-///      callback) or a Uniswap v4 pool (a Lootbag coin's own pool, or any other v4 pool). It holds nothing between
+///      callback) or a Uniswap v4 pool (a KinetiqPump coin's own pool, or any other v4 pool). It holds nothing between
 ///      calls: every swap pulls its input from the caller and sends the output to the recipient.
-contract LootbagSwapper is IUnlockCallback {
+contract KinetiqPumpSwapper is IUnlockCallback {
     error NotOwner();
     error NoRoute();
     error TooEarly();
@@ -65,7 +65,7 @@ contract LootbagSwapper is IUnlockCallback {
     mapping(bytes32 => uint256) public eta;
 
     /// @dev transient slot: the v3-style pool allowed to call back during the current hop
-    bytes32 private constant EXPECTED = keccak256("lootbag.swapper.expected");
+    bytes32 private constant EXPECTED = keccak256("kpump.swapper.expected");
 
     constructor(IPoolManager pm, address owner_, address hub_) {
         poolManager = pm;

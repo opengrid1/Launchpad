@@ -13,15 +13,15 @@ interface ISwapperA {
         returns (uint256);
 }
 
-/// @title LootbagAirdrop
-/// @notice The trader airdrop pot. 10% of Lootbag's fee income lands here. Every 10 hours a keeper posts a round: the
-///         list of the top 500 traders by volume on Lootbag coins and what each gets, as a Merkle root, with the full
+/// @title KinetiqPumpAirdrop
+/// @notice The trader airdrop pot. 10% of KinetiqPump's fee income lands here. Every 10 hours a keeper posts a round: the
+///         list of the top 500 traders by volume on KinetiqPump coins and what each gets, as a Merkle root, with the full
 ///         list published so anyone can check it. The pot pays it in KNTQ, pushed straight to the wallets (anyone can
 ///         push a payment with its proof, and a trader can claim their own). A round can pay out at most the pot.
 ///         Payments not made within 30 days go back to the pot.
 /// @dev Who traded what is computed off-chain from the hook's swap events, so the keeper is trusted to post the
 ///      right list; the list and the code that makes it are public, and the contract caps every round at the pot.
-contract LootbagAirdrop {
+contract KinetiqPumpAirdrop {
     error NotOwner();
     error NotKeeper();
     error TooSoon();
