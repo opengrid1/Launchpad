@@ -27,7 +27,7 @@
       'function collect(address coin, uint16 bps, address to) returns (uint256 coins, uint256 quote)',
       'event Launched(address indexed coin, address indexed creator, address indexed quote, bytes32 poolId, string name, string symbol, address[] rewards, uint256 devBuyQuote, uint256 devBuyCoins)',
       ],
-    hook: ['function claims(address) view returns (uint256)', 'function owed(address) view returns (uint256)', 'function owedHolders(address) view returns (uint256)', 'function flush(address quote)', 'function split(address quote)'],
+    hook: ['function claims(address) view returns (uint256)', 'function owed(address) view returns (uint256)', 'function owedHolders(address) view returns (uint256)', 'function flush(address quote)', 'function split(address quote)', 'function bagPot() view returns (address)', 'function airdropPot() view returns (address)', 'function treasury() view returns (address)', 'function setWallets(address bagPot_, address airdropPot_, address treasury_)'],
     payout: [
       'function keeper(address) view returns (bool)', 'function held(address) view returns (uint256)', 'function currentReward(address) view returns (address)',
       'function nextRoundAt(address) view returns (uint256)', 'function pay(address c, address[] holders, uint256 minOut) returns (uint256 out)', 'function setKeeper(address k, bool on)',
@@ -278,6 +278,7 @@
       [K.payout, 'payout', 'keeper', [who]], [K.bags, 'bags', 'keeper', [who]], [K.airdrop, 'airdrop', 'keeper', [who]],
       [K.bags, 'bags', 'minted'], [K.bags, 'bags', 'pot'], [K.bags, 'bags', 'today'], [K.bags, 'bags', 'lastDrop'], [K.bags, 'bags', 'dayTokens'], [K.bags, 'bags', 'loot'],
       [K.airdrop, 'airdrop', 'pot'], [K.airdrop, 'airdrop', 'roundCount'], [K.airdrop, 'airdrop', 'nextRoundAt'],
+      [K.hook, 'hook', 'bagPot'], [K.hook, 'hook', 'airdropPot'], [K.hook, 'hook', 'treasury'],
       ...quoteTokens.flatMap((q) => [[K.factory, 'factory', 'quotes', [q]], [K.hook, 'hook', 'claims', [q]], [K.hook, 'hook', 'owed', [q]], [K.hook, 'hook', 'owedHolders', [q]]]),
       ...coins.flatMap((c) => [[K.payout, 'payout', 'held', [c.addr]], [K.payout, 'payout', 'currentReward', [c.addr]], [K.payout, 'payout', 'nextRoundAt', [c.addr]], [K.factory, 'factory', 'positions', [c.addr]], [K.factory, 'factory', 'copyFeeHeld', [c.addr]]]),
     ];
@@ -287,11 +288,13 @@
     const paused = r[i++], treasury = r[i++], payoutKeeper = !!r[i++], bagsKeeper = !!r[i++], airKeeper = !!r[i++];
     const bags = { minted: r[i++] ?? 0n, pot: r[i++] ?? 0n, today: r[i++], lastDrop: r[i++] ?? 0n, days: [...(r[i++] || [])], loot: r[i++], keeper: bagsKeeper };
     const airdrop = { pot: r[i++] ?? 0n, rounds: r[i++] ?? 0n, nextAt: r[i++] ?? 0n, keeper: airKeeper };
+    // where the hook sends the Jar share, the airdrop share and the treasury share of fees
+    const hookW = { bagPot: r[i++], airdropPot: r[i++], treasury: r[i++] };
     const quotes = quoteTokens.map((q) => { const cfg = r[i++], claims = r[i++] ?? 0n, owed = r[i++] ?? 0n, oh = r[i++] ?? 0n; return { token: q, listed: !!(cfg && cfg.listed), tick: cfg ? Number(cfg.startTick) : null, minDevBuy: cfg ? cfg.minDevBuy : null, claims, owed, owedHolders: oh }; });
     for (const c of coins) { c.held = r[i++] ?? 0n; c.reward = r[i++]; c.nextAt = r[i++] ?? 0n; const pos = r[i++]; c.liquidity = pos ? pos.liquidity : 0n; c.copyFee = r[i++] ?? 0n; }
     await learnTokens([bags.today, ...bags.days].filter(Boolean));
     const now = (await rpc((p) => p.getBlock('latest'))).timestamp;
-    return { owners, paused, treasury, quotes, rewards: rewardTokens, coins, bags, airdrop, payoutKeeper, now };
+    return { owners, paused, treasury, quotes, rewards: rewardTokens, coins, bags, airdrop, hookW, payoutKeeper, now };
   }
 
   // ---------------------------------------------------------------- render
@@ -315,10 +318,15 @@
     const mintBanner = LIVE && C.loot && eq(S.bags.loot, E.ZeroAddress)
       ? `<div class="ad-banner"><b>Jar minting is closed.</b> $KPUMP is launched, but it is not set on the Jars contract yet, so nobody can mint. <div style="margin-top:10px"><button class="btn s gold" data-act="bag-setloot"${dis(owner)}>Open the mint with $KPUMP</button></div></div>` : '';
 
+    // the fee hook still sends the Jar share somewhere other than the Jars contract in use (the Jars were replaced)
+    const hookOwner = eq((S.owners.find((o) => o.key === 'hook') || {}).owner, me);
+    const potBanner = LIVE && S.hookW && S.hookW.bagPot && !eq(S.hookW.bagPot, K.bags)
+      ? `<div class="ad-banner"><b>The Jar share of fees is not reaching the Jars.</b> The fee hook still sends it to ${link(S.hookW.bagPot)}, not to the Jars contract in use. <div style="margin-top:10px"><button class="btn s gold" data-act="hook-jars"${dis(hookOwner)}>Send the Jar share to the Jars</button></div></div>` : '';
+
     root.innerHTML = `
       <div><h1>Admin</h1><p class="ad-sub">Owner controls and hand-run rounds for the KinetiqPump contracts on ${esc(C.chainName)}. Nothing here runs by itself: a payout, a Jar drop or a fee split happens when you press its button.</p></div>
       ${banner}
-      ${mintBanner}
+      ${mintBanner}${potBanner}
       <div class="ad-grid">
 
       <section class="card ad-card">
@@ -472,6 +480,7 @@
     'reward-on': () => (isAddr(val('#r-token')) ? send('List reward', K.factory, 'factory', 'setReward', [val('#r-token'), true]) : toast('Enter the reward token address.', true)),
     'reward-off': () => (isAddr(val('#r-token')) ? send('Remove reward', K.factory, 'factory', 'setReward', [val('#r-token'), false]) : toast('Enter the reward token address.', true)),
     treasury: () => (isAddr(val('#t-new')) ? send('Move treasury', K.factory, 'factory', 'setTreasury', [val('#t-new')]) : toast('Enter the new treasury address.', true)),
+    'hook-jars': () => send('Send the Jar share to the Jars', K.hook, 'hook', 'setWallets', [K.bags, S.hookW.airdropPot, S.hookW.treasury]),
     flush: (b) => send('Sweep ' + sym(b.dataset.a), K.hook, 'hook', 'flush', [b.dataset.a]),
     split: (b) => send('Split ' + sym(b.dataset.a), K.hook, 'hook', 'split', [b.dataset.a]),
     pay: (b) => payRound(b.dataset.a),

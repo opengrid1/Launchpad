@@ -2,16 +2,37 @@
  "chainId": 99901,
  "name": "kinetiqpump.fun",
  "symbol": "KPUMP",
- "coin": "0x56bc3848551F532DacD85751Acaf66Dc1b93766a",
- "pair": "KNTQ",
+ "coin": "0x42b9A580CDfb289F5499eDca821149Ba1762DDf2",
+ "pair": "HYPE",
  "rewards": [
-  "KNTQ",
-  "HYPE"
+  "HYPE",
+  "KNTQ"
  ],
  "creator": "0x32928c59e5C4C3523248773C60A61E9ed193c7aD",
- "tx": "0x2d284fb6664defd6b3336a4aa61dbac72c1c2d3539a02e0b8ec652b8f04fb554",
- "block": 11739053,
+ "tx": "0xb22e95b8bc9b9629bb580818a574e7664ff7349a04380d8f0471ec9ef77a71c9",
+ "block": 11741610,
+ "feeHype": "1.275",
+ "copyFeeHeld": true,
  "devBuyHype": "0.15",
- "devCoins": "1846539.581855606983507102",
- "gasUsed": "1549065"
+ "devCoins": "1867274.319702021863163075",
+ "gasUsed": "1369949",
+ "withdrawn": [
+  {
+   "chainId": 99901,
+   "name": "kinetiqpump.fun",
+   "symbol": "KPUMP",
+   "coin": "0x56bc3848551F532DacD85751Acaf66Dc1b93766a",
+   "pair": "KNTQ",
+   "rewards": [
+    "KNTQ",
+    "HYPE"
+   ],
+   "creator": "0x32928c59e5C4C3523248773C60A61E9ed193c7aD",
+   "tx": "0x2d284fb6664defd6b3336a4aa61dbac72c1c2d3539a02e0b8ec652b8f04fb554",
+   "block": 11739053,
+   "devBuyHype": "0.15",
+   "devCoins": "1846539.581855606983507102",
+   "gasUsed": "1549065"
+  }
+ ]
 }

@@ -15,7 +15,7 @@
   "hook": "0x1bCD52feAFda10C6411768600C5F143E997BeacC",
   "payout": "0x24556E0DAF51e680FD43fF28D55569ff10E37E92",
   "swapper": "0x270d6775F9b6ed018C65C2E4c8C912d43d2d8972",
-  "bags": "0xE742c1732ac1770aca0dC9D7e5fdF9DDaf6d9743",
+  "bags": "0xAEB640052a7F5b6731c1359A3f0D319bD5e77873",
   "airdrop": "0x35cC2A6B4fE19c10F8Ccd2B63c19F88d3B46b210",
   "router": "0x0896Cb3b92C1E5Cbb6bbE263f16f346d4a993067",
   "poolManager": "0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1"
@@ -67,5 +67,16 @@
   "WHYPE"
  ],
  "routes": 2,
- "gasUsed": "14603057"
+ "gasUsed": "14603057",
+ "replaced": {
+  "bags": {
+   "address": "0xE742c1732ac1770aca0dC9D7e5fdF9DDaf6d9743",
+   "why": "its coin was set to the withdrawn KNTQ-paired $KPUMP, and that can be set only once; nothing was minted on it"
+  }
+ },
+ "officialCoin": "0x42b9A580CDfb289F5499eDca821149Ba1762DDf2",
+ "toDoByOwner": [
+  "acceptOwnership() on the new Jars contract",
+  "hook.setWallets(0xAEB640052a7F5b6731c1359A3f0D319bD5e77873, airdrop pot, treasury): until then the Jar share of fees still goes to the first Jars contract"
+ ]
 }

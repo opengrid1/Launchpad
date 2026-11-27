@@ -34,7 +34,7 @@ window.LB_CFG = {
     hook: '0x1bCD52feAFda10C6411768600C5F143E997BeacC',
     payout: '0x24556E0DAF51e680FD43fF28D55569ff10E37E92',
     swapper: '0x270d6775F9b6ed018C65C2E4c8C912d43d2d8972',
-    bags: '0xE742c1732ac1770aca0dC9D7e5fdF9DDaf6d9743',
+    bags: '0xAEB640052a7F5b6731c1359A3f0D319bD5e77873', // the second Jars contract: the first had the withdrawn coin set on it
     airdrop: '0x35cC2A6B4fE19c10F8Ccd2B63c19F88d3B46b210',
     router: '0x0896Cb3b92C1E5Cbb6bbE263f16f346d4a993067',
     poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1',
@@ -45,9 +45,9 @@ window.LB_CFG = {
   prices: { api: 'https://api.hyperliquid.xyz/info', hype: 'HYPE', kntq: '@334', kntqPoolId: '0xa3f234a829d1c4a980e9776ccddf4b0c12070e03a0558d1eed2e9c0090d3cd7a' },
   // true only when the factory in use cannot withdraw a pool's liquidity. This one can (collect), so it is false.
   liquidityLocked: false,
-  // KinetiqPump's own coin on Elysium, shown as official once its address is put here. The first $KPUMP was paired
-  // with KNTQ and is withdrawn (hidden below); the official coin is to be paired with HYPE.
-  loot: '',
+  // KinetiqPump's own coin on Elysium, $KPUMP (kinetiqpump.fun), paired with HYPE: shown as official. The first
+  // $KPUMP was paired with KNTQ and is withdrawn (hidden below).
+  loot: '0x42b9A580CDfb289F5499eDca821149Ba1762DDf2',
   // coins left off the board, the coin lists and search; their own page still opens from a direct link
   hidden: ['0x56bc3848551f532dacd85751acaf66dc1b93766a'],
   // what a coin can be paired with or pay, besides KinetiqPump coins: [address, decimals, name]. HYPE is WHYPE on-chain:
