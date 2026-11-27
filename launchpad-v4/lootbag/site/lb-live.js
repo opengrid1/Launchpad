@@ -376,6 +376,13 @@
     c.holderList = (d.top || []).map((h) => ({ wallet: h.wallet, pct: (Number(E.formatEther(h.bal)) / SUPPLY) * 100, creator: eq(h.wallet, c.creator), earnedUsd: units(h.earned, c.pairAddr) * qUsd }));
   }
 
+  /** Every wallet that has ever held `addr` (a Lootbag coin), read up to the newest block. */
+  async function wallets(addr) {
+    await refresh();
+    const c = await coinDetail(addr);
+    return c ? [...c._d.bal.keys()].filter((a) => a !== ZERO) : [];
+  }
+
   // ---------------------------------------------------------------- the trader airdrop's board
   /** This round's volume by trader, from every swap in every Lootbag coin's pool: [{ wallet, vol }], biggest first. */
   async function leaderboard() {
@@ -508,7 +515,7 @@
   async function withdrawBag(id, note) { const rc = await send(K.bags, 'bags', 'withdraw', [id, [...new Set([VVV, ...(LB.bags.dayAddrs || [])].map(lc))]], 0n, note); S.minted = -1; await refresh().catch(() => {}); return rc; }
 
   // ---------------------------------------------------------------- start, and keep fresh
-  window.LB_LIVE = { refresh, coinDetail, leaderboard, airdropShares, account, setProvider, quoteBuy, quoteSell, buy, sell, launch, launchFee, claim, mintBag, withdrawBag, explain, addrOf, usdOf, sym, onUpdate: (f) => subs.push(f), get me() { return me; }, contracts: K };
+  window.LB_LIVE = { refresh, coinDetail, wallets, leaderboard, airdropShares, account, setProvider, quoteBuy, quoteSell, buy, sell, launch, launchFee, claim, mintBag, withdrawBag, explain, addrOf, usdOf, sym, onUpdate: (f) => subs.push(f), get me() { return me; }, contracts: K };
   LB.ready = fetch('/stocks.json').then((r) => r.json()).then((rows) => {
     stockList = rows.map(([s, name, usd, addr, , d, pool]) => ({ sym: s, name, usd, listed: usd, addr, dec: d || 18, pool: pool || '' }));
     for (const s of stockList) TOK.set(lc(s.addr), { sym: s.sym, dec: s.dec });

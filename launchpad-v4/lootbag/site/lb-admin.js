@@ -77,12 +77,6 @@
     }
     return out;
   }
-  async function logs(address, topics, from) {
-    const head = await rpc((p) => p.getBlockNumber()), step = C.logStep || 9000, out = [];
-    for (let a = from; a <= head; a += step + 1) out.push(...(await rpc((p) => p.getLogs({ address, topics, fromBlock: a, toBlock: Math.min(head, a + step) }))));
-    return out;
-  }
-
   // ---------------------------------------------------------------- small UI helpers
   function toast(msg, bad) {
     const t = document.createElement('div');
@@ -267,11 +261,10 @@
     const listing = await multi(known.flatMap((t) => [[K.factory, 'factory', 'quotes', [t]], [K.factory, 'factory', 'rewardListed', [t]]]));
     const quoteTokens = known.filter((t, i) => listing[i * 2] && listing[i * 2].listed);
     const rewardTokens = known.filter((t, i) => listing[i * 2 + 1] === true);
-    const coins = [];
-    for (const l of await logs(K.factory, [I.factory.getEvent('Launched').topicHash], C.startBlock || 0)) {
-      let p; try { p = I.factory.parseLog(l); } catch { p = null; }
-      if (p && p.name === 'Launched') coins.push({ addr: p.args.coin, creator: p.args.creator, quote: p.args.quote, name: p.args.name, symbol: p.args.symbol, rewards: [...p.args.rewards], block: l.blockNumber });
-    }
+    // the coins come from lb-live.js, which reads the launch history in parallel windows through the log cache
+    await window.LB_DATA.ready;
+    if (!window.LB_DATA.at) await window.LB_LIVE.refresh();
+    const coins = (window.LB_DATA.allCoins || []).map((c) => ({ addr: c.addr, creator: c.creator, quote: c.pairAddr, name: c.name, symbol: c.ticker, rewards: [...c.rewardAddrs], block: c.block }));
     await learnTokens([...quoteTokens, ...coins.flatMap((c) => [c.quote, ...c.rewards])]);
     for (const c of coins) meta[c.addr.toLowerCase()] = { sym: c.symbol, dec: 18 };
     const calls = [
@@ -445,8 +438,7 @@
     if (!LIVE) return send('Payout');
     if (!signer && !(await connect())) return;
     toast('Reading holders of ' + c.symbol + '…');
-    const tl = await logs(c.addr, [I.token.getEvent('Transfer').topicHash], c.block);
-    const seen = [...new Set(tl.map((l) => E.getAddress('0x' + l.topics[2].slice(26))))];
+    let seen; try { seen = (await window.LB_LIVE.wallets(c.addr)).map((a) => E.getAddress(a)); } catch (e) { return toast('Could not read the holders: ' + (e.shortMessage || e.message || e).toString().slice(0, 120), true); }
     const earned = await multi(seen.map((a) => [c.addr, 'token', 'earned', [a]]));
     const all = seen.map((a, i) => ({ a, e: earned[i] ?? 0n })).filter((x) => x.e > 0n).sort((x, y) => (y.e > x.e ? 1 : y.e < x.e ? -1 : 0));
     if (!all.length) return toast('Nobody is owed anything on this coin right now.');
