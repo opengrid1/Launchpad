@@ -354,14 +354,16 @@
 
 
   // ---------- create: one form card, the launch button at its foot
-  // A coin's picture is stored on-chain with the launch, so it is cut square and squeezed under the contract's limit.
-  const IMG_MAX = 23500;
+  // A coin's picture is stored on-chain with the launch, so it is cut square and squeezed small. The contract takes
+  // 24,000 bytes, but Elysium's public RPC refuses a transaction much over 6,000 bytes, and the launch carries the
+  // name, description and links too: the picture gets 3,800.
+  const IMG_MAX = 3800;
   function shrink(file) {
     return new Promise((res, rej) => {
       const url = URL.createObjectURL(file), im = new Image();
       im.onload = () => {
         const s = Math.min(im.naturalWidth, im.naturalHeight), sx = (im.naturalWidth - s) / 2, sy = (im.naturalHeight - s) / 2;
-        for (const size of [256, 192, 144, 112, 96, 72]) for (const q of [0.82, 0.65, 0.5, 0.35]) for (const type of ['image/webp', 'image/jpeg']) {
+        for (const size of [192, 144, 128, 112, 96, 80, 64, 48]) for (const q of [0.82, 0.65, 0.5, 0.35]) for (const type of ['image/webp', 'image/jpeg']) {
           const cv = document.createElement('canvas'); cv.width = cv.height = Math.min(size, s);
           const g = cv.getContext('2d'); if (type === 'image/jpeg') { g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); }
           g.drawImage(im, sx, sy, s, s, 0, 0, cv.width, cv.height);
