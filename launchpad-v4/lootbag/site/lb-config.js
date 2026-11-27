@@ -31,10 +31,12 @@ window.LB_CFG = {
   liquidityLocked: false,
   // pre-launch addresses where the draft wording (written for the next contracts) shows by default, under its strip
   draftHosts: ['lootbag-nu.vercel.app'],
-  // $LOOT, Lootbag's own coin ("lootbag.fun"). The Bags contract reports it too once the mint is opened with it.
-  loot: '0x9eC35D5720603CcBBc2fbBDEf69181F046011f15',
-  // coins left off the board, the coin lists and search (a test launch). They still exist and trade on-chain.
-  hidden: ['0x8cc1840e2757fec8712bC4A05a755512b0640101'],
+  // $LOOT, Lootbag's own coin: the site shows this address as official. Empty while it is being relaunched
+  // (the first one, 0x9eC35D5720603CcBBc2fbBDEf69181F046011f15, paired with VVV, is retired and hidden below).
+  loot: '',
+  // coins left off the board, the coin lists and search. They still exist and trade on-chain, and their own page
+  // still opens from a direct link: the test launch, the first $LOOT, and LCAT.
+  hidden: ['0x8cc1840e2757fec8712bC4A05a755512b0640101', '0x9eC35D5720603CcBBc2fbBDEf69181F046011f15', '0x80483881BDFA1F795fc92EF33187F4F8fa3E5a7F'],
   tokens: {
     VVV: ['0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf', 18],
     WETH: ['0x4200000000000000000000000000000000000006', 18],

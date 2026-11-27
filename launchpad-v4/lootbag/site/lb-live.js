@@ -249,7 +249,7 @@
       S.pricesAt = now();
     }
     LB.stocks = stockList.filter((s) => !S.listed || (S.listed.get(lc(s.addr)) || {}).reward);
-    LB.loot = bLoot && !eq(bLoot[0], ZERO) ? bLoot[0] : (C.loot || '');
+    LB.loot = C.loot || ''; // the config names the official coin
 
     // coins: price from the pool, then what the logs say about the last day
     const t = now(), day = t - 86400;
@@ -296,7 +296,8 @@
     const B = LB.bags, days = bDays ? [...bDays[0]] : [];
     if (bMinted) B.minted = Number(bMinted[0]);
     if (bPot) B.pot = Number(E.formatEther(bPot[0]));
-    B.lootSet = !!(bLoot && !eq(bLoot[0], ZERO));
+    // minting is open on the site only when the Bags contract burns the coin the site calls $LOOT
+    B.lootSet = !!(bLoot && !eq(bLoot[0], ZERO) && LB.loot && eq(bLoot[0], LB.loot));
     B.rotation = days.map(sym); B.dayAddrs = days;
     if (bToday) B.today = sym(bToday[0]);
     B.lastDrop = bLast ? Number(bLast[0]) : 0; B.nextHour = Math.max(0, B.lastDrop + 3600 - t);
