@@ -95,6 +95,20 @@ input, textarea, select { font: inherit; color: var(--ink); }
   .tabbar a.on { background: var(--ink); color: #fff; }
   .tabbar a.plus { background: var(--blue); color: var(--ink); border: 2px solid var(--ink); }
 }
+/* Phones: the name, the search button and the wallet button have to share one row, so each gives a little. Below
+   400px the wallet button says "Connect" alone. Nothing may push the page wider than the screen. */
+@media (max-width: 1020px) { html, body { overflow-x: clip; } }
+@media (max-width: 560px) {
+  .top { padding: 0 12px; gap: 8px; }
+  .brand { gap: 8px; flex: 0 1 auto; min-width: 0; }
+  .brand img { width: 30px; height: 30px; flex: none; }
+  .brand b { font-size: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .top .btn { height: 38px; padding: 0 12px; font-size: 13.5px; }
+  .msearch { width: 38px; height: 38px; }
+  .tabbar a { flex: 0 1 42px; width: auto; min-width: 34px; }
+}
+@media (max-width: 400px) { .top .cw { display: none; } }
+@media (max-width: 340px) { .brand b { font-size: 18px; } .top { gap: 6px; padding: 0 10px; } }
 
 /* the front page: the pitch on the left, the newest payouts on the right, then the numbers */
 .hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 28px; align-items: center; padding: 18px 0 8px; }
@@ -553,3 +567,8 @@ footer.foot .fr b { font-family: var(--fd); color: var(--ink); }
 .gh .cats { border-radius: 999px; } .gh .cats button { border-radius: 999px; }
 .stk.lg { background: var(--card); }
 .av.art { background: var(--card2); }
+@media (max-width: 560px) {
+  .devrow .cats { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; border-radius: 16px; }
+  .devrow .cats button { border-radius: 11px; }
+  .devrow .amt-in { width: 100%; }
+}

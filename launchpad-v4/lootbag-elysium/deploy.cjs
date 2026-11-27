@@ -71,7 +71,7 @@ const PROG = path.join(DEP, 'kinetiqpump-elysium.progress.json'), OUT = path.joi
 
 // The public Elysium RPC rate-limits and at times is "not ready"; such a request is tried again. A resent raw
 // transaction the node already has resolves to its own hash, so a send that was cut off is safe to repeat.
-const RATE = /rate.?limit|429|too many|-32005|not ready|timeout|ECONNRESET|socket hang up|50[234]|missing response/i;
+const RATE = /invalid block height|rate.?limit|429|too many|-32005|not ready|timeout|ECONNRESET|socket hang up|50[234]|missing response/i;
 class RetryProvider extends ethers.JsonRpcProvider {
   async send(method, params) {
     for (let i = 0; ; i++) {

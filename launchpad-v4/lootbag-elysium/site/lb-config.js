@@ -1,6 +1,6 @@
 /* KinetiqPump on Elysium: deployment config, read by the site, the admin page, the log cache and the wallet connection.
-   The contract addresses come from deployments/kinetiqpump-elysium.json once deploy.cjs has run on Elysium. Until then
-   they are empty, and the site says that KinetiqPump is not live there yet and sends nothing. */
+   The contract addresses come from deployments/kinetiqpump-elysium.json, written by deploy.cjs. With them empty the
+   site says that KinetiqPump is not live on Elysium yet and sends nothing. */
 window.LB_CFG = {
   // The name. It is an independent project named after the Kinetiq ecosystem it runs in, and is not Kinetiq's own:
   // the site says so in its footer. `coin` is the ticker of the platform's own coin (the address goes in `loot` below once it has
@@ -26,9 +26,19 @@ window.LB_CFG = {
   // Reown (WalletConnect) project id: public, it only identifies the site to Reown. The site's domain must be on
   // the project's allowlist in the Reown dashboard, or mobile wallets will refuse the connection.
   walletConnect: { projectId: 'e1bda672d5deb56579fe084dddfb9174' },
-  startBlock: 0,
-  // empty until KinetiqPump is deployed on Elysium
-  contracts: { factory: '', hook: '', payout: '', swapper: '', bags: '', airdrop: '', router: '', poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1' },
+  // the block the contracts were deployed at: history is read from here
+  startBlock: 11729933,
+  // from deployments/kinetiqpump-elysium.json
+  contracts: {
+    factory: '0x97723998d192487F4615619E34253Ad754050bFB',
+    hook: '0x1bCD52feAFda10C6411768600C5F143E997BeacC',
+    payout: '0x24556E0DAF51e680FD43fF28D55569ff10E37E92',
+    swapper: '0x270d6775F9b6ed018C65C2E4c8C912d43d2d8972',
+    bags: '0xE742c1732ac1770aca0dC9D7e5fdF9DDaf6d9743',
+    airdrop: '0x35cC2A6B4fE19c10F8Ccd2B63c19F88d3B46b210',
+    router: '0x0896Cb3b92C1E5Cbb6bbE263f16f346d4a993067',
+    poolManager: '0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1',
+  },
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
   // HYPE's dollar price is Hyperliquid's mid price. KNTQ's is read from Elysium's WHYPE/KNTQ Uniswap v4 pool (the
   // pool the routes use) and turned into dollars with HYPE's; Hyperliquid's KNTQ spot market stands in if that fails.

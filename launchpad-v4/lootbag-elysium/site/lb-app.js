@@ -65,7 +65,7 @@
   const basicUi = () => { try { return localStorage.getItem('wallet-ui') === 'basic'; } catch (e) { return false; } };
   let kitP = null, wallet = '', acct = null, onWallet = null, onData = null;
   const paintWallet = () => {
-    $$('[data-connect], [data-connect2]').forEach((b) => { b.textContent = wallet ? short(wallet) : 'Connect wallet'; });
+    $$('[data-connect], [data-connect2]').forEach((b) => { if (wallet) b.textContent = short(wallet); else b.innerHTML = 'Connect<span class="cw"> wallet</span>'; });
     // buttons that need a wallet (trade, launch, mint): "Connect wallet" until one is connected, then what they do
     $$('[data-wallet]').forEach((b) => { b.textContent = wallet ? b.dataset.label : 'Connect wallet'; });
   };
