@@ -77,16 +77,19 @@
     path(); g.strokeStyle = color; g.lineWidth = 1.8; g.lineJoin = 'round'; g.stroke();
   }
   const drawSparks = (ts) => $$('[data-spark]').forEach((cv) => { const t = ts.find((x) => x.addr === cv.dataset.spark); if (t) spark(cv, t, cv.clientWidth || 90, cv.clientHeight || 30); });
+  // the tokens the site lists: none with CFG.hideTokens, and never those in CFG.hidden. A hidden token still exists
+  // on-chain and its page still opens from a direct link; the airdrop, flywheel and profile figures still count it.
+  const LISTED = () => { if (C.hideTokens) return []; const hid = (C.hidden || []).map((a) => String(a).toLowerCase()); return DATA.tokens().filter((t) => !hid.includes(String(t.addr).toLowerCase())); };
   function ticker() {
-    const el = $('#ticker'); if (!el) return; const preview = C.demo && !C.liveChains().length; const ts = [...DATA.tokens()].sort((a, b) => b.vol24 - a.vol24).slice(0, 14); if (!ts.length) { el.innerHTML = ''; el.style.display = 'none'; return; } el.style.display = '';
+    const el = $('#ticker'); if (!el) return; const preview = C.demo && !C.liveChains().length; const ts = [...LISTED()].sort((a, b) => b.vol24 - a.vol24).slice(0, 14); if (!ts.length) { el.innerHTML = ''; el.style.display = 'none'; return; } el.style.display = '';
     const items = ts.map((t) => `<a class="it" href="${link(t)}"><span class="av">${APP.img(t)}</span><b>${esc(t.symbol)}</b><span class="num">${fmtUsd(t.mcapUsd)}</span>${chip(t.c24)}</a>`).join('');
     el.innerHTML = `${preview ? '<span class="pv">Preview · sample coins</span>' : ''}<div class="run">${items}${items}</div>`;
   }
-  const allTrades = () => DATA.tokens().flatMap((t) => DATA.trades(t.addr).map((x) => ({ ...x, token: t })));
+  const allTrades = () => LISTED().flatMap((t) => DATA.trades(t.addr).map((x) => ({ ...x, token: t })));
 
   // ---- home (explore)
   function home(live) {
-    const ts = DATA.tokens(), sort = state.sort || 'trending', q = state.q || '', pf = state.pf || 'all', hasStocks = (C.chain.pairs || []).some((p) => p.kind === 'stock');
+    const ts = LISTED(), sort = state.sort || 'trending', q = state.q || '', pf = state.pf || 'all', hasStocks = (C.chain.pairs || []).some((p) => p.kind === 'stock');
     const vol = ts.reduce((a, t) => a + t.vol24, 0), volAll = ts.reduce((a, t) => a + t.volAll, 0), traders = new Set(allTrades().map((x) => low(x.wallet))).size, trades24 = ts.reduce((a, t) => a + t.buys24 + t.sells24, 0);
     const lead = [...ts].sort((a, b) => b.mcapUsd - a.mcapUsd).slice(0, 4), tide = ST.token ? DATA.token(low(ST.token)) : null;
     const list = ts.filter((t) => !q || (t.name + t.symbol + t.addr).toLowerCase().includes(q)).filter((t) => pf === 'all' || (pf === 'hype' ? !DATA.pairOf(t.addr) : pf === 'stock' ? (DATA.pairOf(t.addr) || {}).kind === 'stock' : (DATA.pairOf(t.addr) || {}).key === pf)).sort((a, b) => sort === 'new' ? b.createdAt - a.createdAt : sort === 'top' ? b.mcapUsd - a.mcapUsd : b.vol24 - a.vol24);
@@ -545,7 +548,7 @@
     const i = $('#m-in', ov); if (i) i.onclick = () => { close(); W.connect(); };
     const o = $('#m-out', ov); if (o) o.onclick = () => { W.disconnect(); close(); };
   }
-  function searchDialog() { const ov = APP.dialog('Search', `<div class="picker"><input class="inp" id="sq" placeholder="Name, ticker or address" autocomplete="off"><div class="list" id="sq-list"></div></div>`); const draw = (s) => { const ls = DATA.tokens().filter((t) => s && (t.name.toLowerCase().includes(s) || t.symbol.toLowerCase().includes(s) || t.addr.includes(s))).slice(0, 8); $('#sq-list', ov).innerHTML = ls.map((t) => `<a class="row" href="${link(t)}"><span class="av">${APP.img(t)}</span><span><b>${esc(t.name)}</b><small>$${esc(t.symbol)} · ${fmtUsd(t.mcapUsd)}</small></span></a>`).join(''); $$('a', ov).forEach((a) => a.onclick = () => ov.remove()); }; $('#sq', ov).oninput = (e) => draw(e.target.value.trim().toLowerCase()); setTimeout(() => $('#sq', ov).focus(), 30); }
+  function searchDialog() { const ov = APP.dialog('Search', `<div class="picker"><input class="inp" id="sq" placeholder="Name, ticker or address" autocomplete="off"><div class="list" id="sq-list"></div></div>`); const draw = (s) => { const ls = LISTED().filter((t) => s && (t.name.toLowerCase().includes(s) || t.symbol.toLowerCase().includes(s) || t.addr.includes(s))).slice(0, 8); $('#sq-list', ov).innerHTML = ls.map((t) => `<a class="row" href="${link(t)}"><span class="av">${APP.img(t)}</span><span><b>${esc(t.name)}</b><small>$${esc(t.symbol)} · ${fmtUsd(t.mcapUsd)}</small></span></a>`).join(''); $$('a', ov).forEach((a) => a.onclick = () => ov.remove()); }; $('#sq', ov).oninput = (e) => draw(e.target.value.trim().toLowerCase()); setTimeout(() => $('#sq', ov).focus(), 30); }
   function footer() { const f = $('#foot-art'); if (f) f.innerHTML = `<img class="pano" src="/img/etch-forum.webp" srcset="/img/etch-forum-sm.webp 900w, /img/etch-forum.webp 1800w" sizes="100vw" alt="" decoding="async">`; const y = $('#f-year'); if (y) y.textContent = new Date().getFullYear(); }
   APP.boot(async () => {
     $('#n-search').onclick = searchDialog; const nm = $('#n-menu'); if (nm) nm.onclick = menuSheet; footer();

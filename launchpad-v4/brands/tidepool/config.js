@@ -17,6 +17,7 @@ window.CFG = {
   ],
   admin: '0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b',
   official: ['0xe9f03e779b359dd3c2346847e09bc019c2f03cf6'], // $KINEX, shown with an Official tag
+  hideTokens: true, // every token is left off the board, the ticker, the tape and search (their pages still open by link)
   /* the fee flywheel: protocol fees -> splitter -> stakers / buyback and burn of $KINEX / treasury */
   // the $KINEX airdrop: 20% of the supply in three pools. Points: 1 HYPE traded on Kinex = tradePts (from minHype on),
   // a creator earns creatorPts per HYPE other wallets trade on their coin; trades on other Elysium launchpads earn
