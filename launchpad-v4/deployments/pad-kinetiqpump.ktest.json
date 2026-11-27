@@ -1,0 +1,14 @@
+{
+ "record": "kinetiqpump",
+ "name": "KinetiqPump Test",
+ "symbol": "KTEST",
+ "token": "0xa4182285739af8F258aF9EACf9CEc0E649f37042",
+ "poolId": "0x6085fe42cbbad97942e0785548656748c85b98ad2195e7dd68d4e93e442d19ce",
+ "tx": "0xd4a1b4c7c6dd20f393a926a550d12361e297bf838f4fb2e9d509e77013d2cacc",
+ "block": 11759095,
+ "creator": "0x3E09AaDfc09a4fe29f13B8D9Bf7c797B905AB8bD",
+ "feeRecipient": "0x3E09AaDfc09a4fe29f13B8D9Bf7c797B905AB8bD",
+ "official": false,
+ "openingBuyHype": "0.0",
+ "gasUsed": "1132347"
+}

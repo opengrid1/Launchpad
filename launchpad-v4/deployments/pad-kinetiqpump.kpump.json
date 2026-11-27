@@ -1,0 +1,14 @@
+{
+ "record": "kinetiqpump",
+ "name": "kinetiqpump.fun",
+ "symbol": "KPUMP",
+ "token": "0x22927760360Be337e9f1b67369C2AC28210C3e4B",
+ "poolId": "0x7ef24ae5222c6a4fa83319bf988337055ca4dab666fc7722f3b565542350db8a",
+ "tx": "0x59f7a0aa3c1abcfe9670d3ac3d5b94fff5ee7a8d62e52a2a7c5cf9fc7a32dd70",
+ "block": 11759905,
+ "creator": "0x3E09AaDfc09a4fe29f13B8D9Bf7c797B905AB8bD",
+ "feeRecipient": "0xD00264A15561E75c5903e332A3EF7fB093810302",
+ "official": true,
+ "openingBuyHype": "0.0",
+ "gasUsed": "1110683"
+}

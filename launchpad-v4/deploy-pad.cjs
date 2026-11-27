@@ -37,6 +37,10 @@ const NET = {
   // a local Hardhat fork of any chain: FORK_OF=elysium|hyperevm|ethereum (addresses are the forked chain's)
   local: { chainId: null, rpc: process.env.FORK_RPC || "http://127.0.0.1:8547", native: "HYPE" },
 };
+// PAD_NAME names the deployment record (deployments/pad-<name>.json) when a second brand deploys its own stack on a
+// network that already has one; without it the record is named after the network, as Kinex's is.
+const PAD_NAME = process.env.PAD_NAME || "";
+if (PAD_NAME && !/^[a-z0-9-]+$/.test(PAD_NAME)) throw new Error("PAD_NAME takes lower-case letters, digits and dashes");
 const OWNER = process.env.PAD_OWNER || "0x5DdDEa56774f01fc9d207BBD7B7633596a2f4A0b"; // protocol owner and fee recipient
 const SNIPE_SECONDS = Number(process.env.SNIPE_SECONDS || 10);
 const HOOK_FEE_BPS = Number(process.env.HOOK_FEE_BPS || 250); // the pool fee on every trade (2.5%), split protocol / creator
@@ -69,6 +73,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
 
 (async () => {
   const netName = process.argv.includes("--network") ? process.argv[process.argv.indexOf("--network") + 1] : "elysium";
+  const REC = PAD_NAME || netName; // the name of the deployment record and its progress file
   let N = NET[netName]; if (!N) throw new Error("unknown network " + netName);
   if (netName === "local") N = { ...NET[process.env.FORK_OF || "elysium"], rpc: NET.local.rpc, chainId: null, parent: null };
   const send = process.argv.includes("--send");
@@ -95,7 +100,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   // Every transaction is signed here and its raw bytes saved before broadcast, so an RPC that times out or drops a
   // send is answered by re-sending the very same transaction (same nonce, same hash) until its receipt shows up.
   // The progress file makes the deploy resumable: a rerun skips confirmed steps and re-sends a pending one.
-  const progFile = path.join(__dirname, "deployments", `pad-${netName}.progress.json`);
+  const progFile = path.join(__dirname, "deployments", `pad-${REC}.progress.json`);
   const prog = send && fs.existsSync(progFile) ? JSON.parse(fs.readFileSync(progFile, "utf8")) : { deployer: me, steps: {} };
   if (prog.deployer !== me) throw new Error("progress file belongs to another deployer: " + progFile);
   const save = () => { fs.mkdirSync(path.dirname(progFile), { recursive: true }); fs.writeFileSync(progFile, JSON.stringify(prog, null, 2) + "\n"); };
@@ -148,12 +153,12 @@ class RetryProvider extends ethers.JsonRpcProvider {
 
   if (process.argv.includes("--staking")) {
     const token = ethers.getAddress(process.argv[process.argv.indexOf("--staking") + 1]);
-    const rec = JSON.parse(fs.readFileSync(path.join(__dirname, "deployments", `pad-${netName}.json`), "utf8"));
+    const rec = JSON.parse(fs.readFileSync(path.join(__dirname, "deployments", `pad-${REC}.json`), "utf8"));
     const STAKE_DAYS = Number(process.env.STAKE_DAYS || 7);
     console.log(`staking for ${token}: owner ${OWNER}, distributor (splitter) ${rec.splitter}, stream ${STAKE_DAYS} days`);
     const staking = await deploy("PadStaking", [OWNER, token, rec.splitter, STAKE_DAYS * 86400]);
     for (const [l, g] of steps) console.log(`  ${l.padEnd(28)} ${g.toString().padStart(9)} gas`);
-    if (send) { rec.staking = staking; rec.platformToken = token; fs.writeFileSync(path.join(__dirname, "deployments", `pad-${netName}.json`), JSON.stringify(rec, null, 2) + "\n"); console.log(`written; next: the owner sets splitter.setStaking(${staking}) and splitter.setToken(${token}, key) from the admin page`); } else console.log("dry run: add --send");
+    if (send) { rec.staking = staking; rec.platformToken = token; fs.writeFileSync(path.join(__dirname, "deployments", `pad-${REC}.json`), JSON.stringify(rec, null, 2) + "\n"); console.log(`written; next: the owner sets splitter.setStaking(${staking}) and splitter.setToken(${token}, key) from the admin page`); } else console.log("dry run: add --send");
     return;
   }
   // 1. the official v4 PositionManager where the chain has none (descriptor unset: the locker only needs ownerOf)
@@ -226,7 +231,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   console.log(`  total ${total} gas = ${ethers.formatEther(total * gasPrice)} ${N.native} at ${ethers.formatUnits(gasPrice, "gwei")} gwei`);
   if (send) {
     const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookFeeBps: HOOK_FEE_BPS, pairs: pairCfgs, protocolShareBps: PROTOCOL_SHARE_BPS, maxCreatorTaxBps: MAX_CREATOR_TAX_BPS, volExtraBps: VOL_EXTRA_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, splitFarmBps: SPLIT_FARM_BPS, ammFactory, ammRouter, farm, wnative: N.weth9, ammLpFeeBps: AMM_LP_FEE_BPS, ammProtocolFeeBps: AMM_PROTOCOL_FEE_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
-    const file = path.join(__dirname, "deployments", `pad-${netName}.json`);
+    const file = path.join(__dirname, "deployments", `pad-${REC}.json`);
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
     console.log("written " + path.relative(__dirname, file));
     if (out.ownershipPending) console.log(`next: ${OWNER} calls acceptOwnership() on the hook, factory, locker, vault, splitter, AMM factory and farm, then factory.setLaunchEnabled(true); after the platform token launches: node deploy-pad.cjs --staking <token> and splitter.setStaking / setToken from the admin page`);
