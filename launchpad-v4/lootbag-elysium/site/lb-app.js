@@ -19,7 +19,7 @@
   // platform's own coin wears the logo
   const av = (c, size = 44) => {
     const z = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px`;
-    if (c.official) return `<span class="av" style="${z};background:var(--sun)"><img src="/img/logo.svg?v=3" alt="" style="width:78%;height:78%;object-fit:contain"></span>`;
+    if (c.official) return `<span class="av" style="${z};border:0"><img src="/img/logo.svg?v=4" alt=""></span>`;
     if (c.img) return `<span class="av" style="${z}"><img src="${esc(c.img)}" alt=""></span>`;
     const h = parseInt(String(c.addr).slice(2, 8), 16) % 360;
     return `<span class="av" style="${z};background:linear-gradient(135deg,hsl(${h} 95% 70%),hsl(${(h + 75) % 360} 95% 64%))">${esc(String(c.ticker).slice(0, 2))}</span>`;
@@ -29,7 +29,7 @@
   const TOK_LOGO = new Set(['HYPE', 'KNTQ']);
   const tokenBadge = (s, size = 20) => {
     const z = `width:${size}px;height:${size}px`;
-    if (s === OWN) return `<img class="tkl" src="/img/logo.svg?v=3" alt="" style="${z};border-radius:50%">`;
+    if (s === OWN) return `<img class="tkl" src="/img/logo.svg?v=4" alt="" style="${z};border-radius:50%">`;
     if (TOK_LOGO.has(s)) return `<span class="stk lg" style="${z}" title="${esc(s)}"><img src="/img/tok/${esc(s)}.png" alt="" loading="lazy"></span>`;
     return `<span class="stk" style="${z};background:hsl(${stkHue(s)} 55% 42%);font-size:${Math.max(7, Math.round(size * 0.3))}px">${esc(s.slice(0, 4))}</span>`;
   };
