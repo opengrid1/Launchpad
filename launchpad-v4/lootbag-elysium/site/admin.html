@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin | Lootbag</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b0906">
+<link rel="icon" href="/img/favicon.svg?v=3" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/lb.css?v=18">
+<style>
+/* Admin page layout. Colors and type come from lb.css. */
+body { min-height: 100vh; }
+.ad-top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px; height: 60px; padding: 0 16px; border-bottom: 1px solid var(--line); background: rgba(11,9,6,.92); backdrop-filter: blur(10px); }
+.ad-top a.home { display: flex; align-items: center; gap: 10px; font: 700 17px/1 var(--f); letter-spacing: .12em; }
+.ad-top a.home img { width: 26px; height: 26px; }
+.ad-top .tag { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: var(--chip); color: var(--blue2); letter-spacing: .04em; }
+.ad-top .sp { flex: 1; }
+.ad-wrap { max-width: 1120px; margin: 0 auto; padding: 22px 16px 80px; display: flex; flex-direction: column; gap: 16px; }
+.ad-wrap h1 { margin: 0; font: 700 30px/1.1 var(--f); letter-spacing: -.01em; }
+.ad-wrap h2 { margin: 0; font: 600 18px/1.2 var(--f); }
+.ad-wrap h3 { margin: 0; font: 600 15px/1.3 var(--f); }
+.ad-sub { color: var(--mute); font-size: 13.5px; margin: 4px 0 0; }
+.ad-banner { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--acc-line); background: rgba(var(--acc-rgb), .08); color: var(--acc-soft); font-size: 13.5px; line-height: 1.45; }
+.ad-banner.bad { border-color: var(--sell); background: rgba(242,96,107,.08); color: #ffc9cd; }
+.ad-grid { display: grid; gap: 16px; }
+@media (min-width: 900px) { .ad-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } .ad-grid > .wide { grid-column: 1 / -1; } }
+.ad-card { padding: 18px; }
+.ad-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.ad-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.ad-row:first-child { border-top: 0; }
+.ad-row .l { min-width: 0; }
+.ad-row .l small { display: block; color: var(--dim); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+.ad-row .r { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; text-align: right; }
+.ad-form { display: grid; gap: 10px; margin-top: 12px; }
+@media (min-width: 560px) { .ad-form.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ad-form.three { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ad-f label { display: block; font-size: 12.5px; color: var(--mute); margin-bottom: 5px; }
+.ad-f .inp { height: 44px; font-size: 15px; padding: 0 12px; }
+.ad-f small { display: block; color: var(--dim); font-size: 12px; margin-top: 4px; }
+.ad-end { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.btn.s { height: 36px; padding: 0 14px; font-size: 13.5px; border-radius: 9px; }
+.btn.red { background: transparent; border: 1px solid var(--sell); color: var(--sell); }
+.btn.redfill { background: var(--sell); color: var(--sell-ink); border: 0; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.ad-sw { position: relative; width: 46px; height: 28px; flex: none; border-radius: 999px; background: var(--line3); transition: background .15s; }
+.ad-sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.ad-sw.on { background: var(--buy); }
+.ad-sw.on::after { transform: translateX(18px); }
+.ad-pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--chip); color: var(--ink2); white-space: nowrap; }
+.ad-pill.ok { color: var(--buy); } .ad-pill.warn { color: var(--blue2); } .ad-pill.bad { color: var(--sell); }
+.ad-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.ad-table th { text-align: left; font-weight: 600; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); padding: 6px 8px 8px 0; white-space: nowrap; }
+.ad-table td { padding: 9px 8px 9px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+.ad-table td:last-child, .ad-table th:last-child { text-align: right; padding-right: 0; }
+.ad-scroll { overflow-x: auto; }
+.ad-box { border: 1px solid var(--line2); border-radius: 12px; padding: 14px; }
+.ad-box.danger { border-color: var(--sell); }
+.ad-dlg { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0,0,0,.6); padding: 16px; }
+.ad-dlg > div { width: 100%; max-width: 440px; padding: 20px; border-radius: 16px; background: var(--card); border: 1px solid var(--line2); }
+.ad-dlg p { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--ink2); }
+select.inp { appearance: auto; }
+  .ad-t { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0 4px; }
+  .ad-t th, .ad-t td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line2); }
+  .ad-t th { color: var(--mute); font-weight: 500; }
+</style>
+</head>
+<body>
+<header class="ad-top">
+  <a class="home" href="/"><img src="/img/logo.svg?v=3" alt="">LOOTBAG</a>
+  <span class="tag">ADMIN</span>
+  <span class="sp"></span>
+  <span class="mono mute" id="ad-chain" style="font-size:12.5px"></span>
+  <button class="btn s gold" id="ad-connect">Connect wallet</button>
+</header>
+<main class="ad-wrap" id="ad-root"><p class="mute">Loading…</p></main>
+<script src="/vendor/ethers.umd.min.js"></script>
+<script src="/lb-config.js?v=1"></script>
+<script src="/lb-live.js?v=1"></script>
+<script src="/lb-admin.js?v=7"></script>
+</body>
+</html>
