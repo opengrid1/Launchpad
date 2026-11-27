@@ -80,6 +80,14 @@
   // the tokens the site lists: none with CFG.hideTokens, and never those in CFG.hidden. A hidden token still exists
   // on-chain and its page still opens from a direct link; the airdrop, flywheel and profile figures still count it.
   const LISTED = () => { if (C.hideTokens) return []; const hid = (C.hidden || []).map((a) => String(a).toLowerCase()); return DATA.tokens().filter((t) => !hid.includes(String(t.addr).toLowerCase())); };
+  const HID = (a) => !!C.hideTokens || (C.hidden || []).map((x) => String(x).toLowerCase()).includes(String(a || '').toLowerCase());
+  // the flywheel's figures since CFG.flyBase (its totals as they stood at a fresh start, and when), else since the
+  // beginning. The chain keeps the full history; this only moves where the site starts counting.
+  const FLY = () => {
+    const f = (DATA.raw() || {}).flywheel, b = C.flyBase; if (!f || !b) return f;
+    const since = (k) => Math.max(0, (f[k] || 0) - (b[k] || 0));
+    return { ...f, toStaking: since('toStaking'), toBuyback: since('toBuyback'), toTreasury: since('toTreasury'), burnedQuote: since('burnedQuote'), burnedTokens: since('burnedTokens'), rewards: since('rewards'), events: (f.events || []).filter((e) => e.ts > b.ts) };
+  };
   function ticker() {
     const el = $('#ticker'); if (!el) return; const preview = C.demo && !C.liveChains().length; const ts = [...LISTED()].sort((a, b) => b.vol24 - a.vol24).slice(0, 14); if (!ts.length) { el.innerHTML = ''; el.style.display = 'none'; return; } el.style.display = '';
     const items = ts.map((t) => `<a class="it" href="${link(t)}"><span class="av">${APP.img(t)}</span><b>${esc(t.symbol)}</b><span class="num">${fmtUsd(t.mcapUsd)}</span>${chip(t.c24)}</a>`).join('');
@@ -94,7 +102,7 @@
     const lead = [...ts].sort((a, b) => b.mcapUsd - a.mcapUsd).slice(0, 4), tide = ST.token ? DATA.token(low(ST.token)) : null;
     const list = ts.filter((t) => !q || (t.name + t.symbol + t.addr).toLowerCase().includes(q)).filter((t) => pf === 'all' || (pf === 'hype' ? !DATA.pairOf(t.addr) : pf === 'stock' ? (DATA.pairOf(t.addr) || {}).kind === 'stock' : (DATA.pairOf(t.addr) || {}).key === pf)).sort((a, b) => sort === 'new' ? b.createdAt - a.createdAt : sort === 'top' ? b.mcapUsd - a.mcapUsd : b.vol24 - a.vol24);
     const tape = allTrades().sort((a, b) => b.ts - a.ts).slice(0, 12), byVol = [...ts].sort((a, b) => b.vol24 - a.vol24).slice(0, 6);
-    const creatorPaid = ts.reduce((a, t) => a + t.feesAll * (t.creatorShareBps / 10000), 0), fly = (DATA.raw() || {}).flywheel, adPct = AD ? AD.pools.reduce((a, p) => a + p.pct, 0) : 0;
+    const creatorPaid = ts.reduce((a, t) => a + t.feesAll * (t.creatorShareBps / 10000), 0), fly = FLY(), adPct = AD ? AD.pools.reduce((a, p) => a + p.pct, 0) : 0;
     const flies = tape.slice(0, 3).map((x, i) => `<a class="fly" href="${link(x.token)}" style="left:${[6, 54, 24][i]}%;top:${[18, 40, 72][i]}%"><span class="av">${APP.img(x.token)}</span><span class="${x.buy ? 'up' : 'dn'}">${x.buy ? 'Buy' : 'Sell'}</span> $${esc(x.token.symbol)} ${fmtUsd(x.hype * APP.hypeUsd)} · ${ago(x.ts)}</a>`).join('');
     const html = `<div class="page">
       <section class="hero"><div><span class="eyebrow">The launchpad on Elysium, on Uniswap v4</span>
@@ -388,7 +396,7 @@
 
   // ---- flywheel
   function flywheel() {
-    const ts = DATA.tokens(), fly = (DATA.raw() || {}).flywheel, tide = ST.token ? DATA.token(low(ST.token)) : null, px = tide ? tide.pxUsd : 0, S = C.econ.supply, T = sym();
+    const ts = LISTED(), fly = FLY(), tide = ST.token && !HID(ST.token) ? DATA.token(low(ST.token)) : null, px = tide ? tide.pxUsd : 0, S = C.econ.supply, T = sym();
     const proto = ts.reduce((a, t) => a + t.feesAll * (1 - t.creatorShareBps / 10000), 0), own = tide ? tide.feesAll * (tide.creatorShareBps / 10000) : 0, bb = (ST.burnBps || 0) / 100;
     const spent = fly ? fly.burnedQuote : 0, burned = fly ? fly.burnedTokens : 0, queued = fly ? fly.toBuyback - fly.burnedQuote : 0, burns = fly ? fly.events.filter((e) => e.kind === 'burn') : [];
     const range = state.fwr || 'all', now = Math.floor(Date.now() / 1000), span = range === '1d' ? 86400 : range === '7d' ? 7 * 86400 : range === '30d' ? 30 * 86400 : Infinity, inRange = burns.filter((e) => now - e.ts <= span);
