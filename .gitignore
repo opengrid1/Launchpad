@@ -26,3 +26,7 @@ launchpad-v4/lootbag/out/
 launchpad-v4/lootbag/cache/
 launchpad-v4/lootbag/deployments/*.progress.json
 launchpad-v4/lootbag/site/.vercel/
+launchpad-v4/lootbag-elysium/lib/
+launchpad-v4/lootbag-elysium/out/
+launchpad-v4/lootbag-elysium/cache/
+launchpad-v4/lootbag-elysium/deployments/*.progress.json
