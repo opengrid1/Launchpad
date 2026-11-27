@@ -1,0 +1,14 @@
+{
+ "record": "elysium",
+ "name": "kinex.fun",
+ "symbol": "KINEX",
+ "token": "0x761140CD24F46c2fAa29ED1B0795d4281e08E60b",
+ "poolId": "0xcb731ed0ded0ef1865f4ba1bdf584ed49e80c42f437d2e9b840602db833727b4",
+ "tx": "0x4168626108b3780f35135d1b679e6062b114f6528b96608ad04327c2af8ccc0c",
+ "block": 11762463,
+ "creator": "0x3E09AaDfc09a4fe29f13B8D9Bf7c797B905AB8bD",
+ "feeRecipient": "0xc69A9cc1d7FdC59997C7831a9D0b70A93d09A8BC",
+ "official": true,
+ "openingBuyHype": "0.0",
+ "gasUsed": "1084474"
+}
