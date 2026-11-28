@@ -1,6 +1,6 @@
 // Compiles the Pad launchpad stack (contracts/src/pad): token, hook, locker, factory, fee escrow, buyback vault,
 // splitter and staking, with the settings the hook lineage was verified with (solc 0.8.35, viaIR, optimizer 200,
-// cancun) and writes artifacts/<Name>.json.
+// cancun) and writes artifacts/<Name>.json. PadHookFixed is the hook with its fee fixed at deployment (KinetiqPump).
 //   node build/compile-pad.cjs
 const fs = require("fs"), path = require("path");
 const solc = require("solc");
@@ -8,7 +8,7 @@ const ROOT = path.join(__dirname, "..");
 const CONTRACTS = path.join(ROOT, "contracts");
 const S = JSON.parse(fs.readFileSync(path.join(__dirname, "verified-settings.json"), "utf8"));
 const hookSettings = Object.values(S).find((s) => /MemeHook/.test(s.fullyQualifiedName)).settings;
-const FILES = ["PadToken", "PadHook", "PadLocker", "PadFactory", "PadFeeEscrow", "PadBuybackVault", "PadSplitter", "PadStaking", "PadAmmFactory", "PadAmmPair", "PadAmmRouter", "PadFarm"];
+const FILES = ["PadToken", "PadHook", "PadHookFixed", "PadLocker", "PadFactory", "PadFeeEscrow", "PadBuybackVault", "PadSplitter", "PadStaking", "PadAmmFactory", "PadAmmPair", "PadAmmRouter", "PadFarm"];
 const sources = Object.fromEntries(FILES.map((f) => [`src/pad/${f}.sol`, { content: fs.readFileSync(path.join(CONTRACTS, "src/pad", f + ".sol"), "utf8") }]));
 const findImports = (p) => { const f = [path.join(CONTRACTS, p), path.join(ROOT, p)].find((x) => fs.existsSync(x)); return f ? { contents: fs.readFileSync(f, "utf8") } : { error: "not found: " + p }; };
 const settings = { ...hookSettings, outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object"] } } };

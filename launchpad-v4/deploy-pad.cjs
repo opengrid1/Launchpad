@@ -50,6 +50,10 @@ const VOL_EXTRA_BPS = Number(process.env.VOL_EXTRA_BPS || 0); // no volatility s
 const SPLIT_STAKING_BPS = Number(process.env.SPLIT_STAKING_BPS || 0), SPLIT_BURN_BPS = Number(process.env.SPLIT_BURN_BPS || 5000), SPLIT_FARM_BPS = Number(process.env.SPLIT_FARM_BPS || 0); // the rest (50%) to the treasury: platform revenue
 const AMM_LP_FEE_BPS = Number(process.env.AMM_LP_FEE_BPS || 25), AMM_PROTOCOL_FEE_BPS = Number(process.env.AMM_PROTOCOL_FEE_BPS || 5); // 0.30% per swap on the AMM
 const FARM_DAYS = Number(process.env.FARM_DAYS || 7);
+// HOOK_ARTIFACT=PadHookFixed deploys the hook whose pool fee is fixed in its constructor (HOOK_FEE_BPS) and which has no
+// volatility surcharge and no setter for either: KinetiqPump's. The default is Kinex's hook, whose owner sets both.
+const HOOK_ART = process.env.HOOK_ARTIFACT || "PadHook", FIXED = HOOK_ART === "PadHookFixed";
+if (FIXED && VOL_EXTRA_BPS) throw new Error("PadHookFixed has no volatility surcharge: leave VOL_EXTRA_BPS at 0");
 const art = (n) => JSON.parse(fs.readFileSync(path.join(__dirname, "artifacts", n + ".json"), "utf8"));
 const HOOK_FLAGS = (1n << 13n) | (1n << 6n) | (1n << 2n), FLAG_MASK = (1n << 14n) - 1n; // beforeInitialize, afterSwap, afterSwapReturnDelta
 // gas measured on the fork test, for the dry run where estimates against placeholder addresses revert
@@ -57,7 +61,7 @@ const MEASURED = { PadSplitter: 1_659_648n, PadStaking: 1_047_238n, PadAmmFactor
 
 // The public Elysium RPC rate-limits (429 / -32005 "rate limited"); retry with backoff. A resent raw transaction the node
 // already has ("already known", "nonce too low") resolves to its own hash so the deploy carries on.
-const RATE = /rate.?limit|429|too many|-32005|not ready|timeout|ECONNRESET|socket hang up/i;
+const RATE = /invalid block height|rate.?limit|429|too many|-32005|not ready|timeout|ECONNRESET|socket hang up/i;
 class RetryProvider extends ethers.JsonRpcProvider {
   async send(method, params) {
     for (let i = 0; ; i++) {
@@ -170,7 +174,7 @@ class RetryProvider extends ethers.JsonRpcProvider {
   }
   // 2. the stack
   const escrow = await deploy("PadFeeEscrow", []);
-  const hookInit = art("PadHook").bytecode + ethers.AbiCoder.defaultAbiCoder().encode(["address", "address", "address", "address"], [N.poolManager, escrow, OWNER, me]).slice(2);
+  const hookInit = art(HOOK_ART).bytecode + ethers.AbiCoder.defaultAbiCoder().encode(["address", "address", "address", "address", ...(FIXED ? ["uint256"] : [])], [N.poolManager, escrow, OWNER, me, ...(FIXED ? [HOOK_FEE_BPS] : [])]).slice(2);
   const initHash = ethers.keccak256(hookInit); let salt, hookAddr;
   for (let i = 0; ; i++) { salt = ethers.zeroPadValue(ethers.toBeHex(i), 32); hookAddr = ethers.getCreate2Address(N.create2, salt, initHash); if ((BigInt(hookAddr) & FLAG_MASK) === HOOK_FLAGS) break; }
   await tx("PadHook", { to: N.create2, data: salt + hookInit.slice(2) }, MEASURED.PadHook);
@@ -186,15 +190,15 @@ class RetryProvider extends ethers.JsonRpcProvider {
   const ammRouter = await deploy("PadAmmRouter", [ammFactory, N.weth9]);
   const farm = await deploy("PadFarm", [me, splitter, FARM_DAYS * 86400]);
   // 3. wiring and launch settings (launching stays off until the owner turns it on)
-  await call("hook.setFactory", hookAddr, "PadHook", "setFactory", [factory]);
-  await call("hook.setProtocolFeeRecipient", hookAddr, "PadHook", "setProtocolFeeRecipient", [splitter]);
-  if (HOOK_FEE_BPS !== 100) await call("hook.setHookFeeBps", hookAddr, "PadHook", "setHookFeeBps", [HOOK_FEE_BPS]);
-  if (PROTOCOL_SHARE_BPS !== 3000) await call("hook.setProtocolFeeShareBps", hookAddr, "PadHook", "setProtocolFeeShareBps", [PROTOCOL_SHARE_BPS]);
-  if (VOL_EXTRA_BPS !== 200) await call("hook.setVolatilityTerms", hookAddr, "PadHook", "setVolatilityTerms", [VOL_EXTRA_BPS ? 1000 : 0, 60, VOL_EXTRA_BPS, 120]);
+  await call("hook.setFactory", hookAddr, HOOK_ART, "setFactory", [factory]);
+  await call("hook.setProtocolFeeRecipient", hookAddr, HOOK_ART, "setProtocolFeeRecipient", [splitter]);
+  if (!FIXED && HOOK_FEE_BPS !== 100) await call("hook.setHookFeeBps", hookAddr, "PadHook", "setHookFeeBps", [HOOK_FEE_BPS]);
+  if (PROTOCOL_SHARE_BPS !== 3000) await call("hook.setProtocolFeeShareBps", hookAddr, HOOK_ART, "setProtocolFeeShareBps", [PROTOCOL_SHARE_BPS]);
+  if (!FIXED && VOL_EXTRA_BPS !== 200) await call("hook.setVolatilityTerms", hookAddr, "PadHook", "setVolatilityTerms", [VOL_EXTRA_BPS ? 1000 : 0, 60, VOL_EXTRA_BPS, 120]);
   await call("splitter.setFarm", splitter, "PadSplitter", "setFarm", [farm]);
   await call("splitter.setAmmRouter", splitter, "PadSplitter", "setAmmRouter", [ammRouter]);
   await call("splitter.setShares", splitter, "PadSplitter", "setShares", [SPLIT_STAKING_BPS, SPLIT_BURN_BPS, SPLIT_FARM_BPS]);
-  await call("hook.setBuybackVault", hookAddr, "PadHook", "setBuybackVault", [vault]);
+  await call("hook.setBuybackVault", hookAddr, HOOK_ART, "setBuybackVault", [vault]);
   await call("vault.setFactory", vault, "PadBuybackVault", "setFactory", [factory]);
   await call("locker.setFactory", locker, "PadLocker", "setFactory", [factory]);
   await call("factory.addLaunchConfig", factory, "PadFactory", "addLaunchConfig", [CONFIG]);
@@ -224,13 +228,13 @@ class RetryProvider extends ethers.JsonRpcProvider {
   if (MAX_CREATOR_TAX_BPS !== 1000) await call("factory.setMaxCreatorTaxBps", factory, "PadFactory", "setMaxCreatorTaxBps", [MAX_CREATOR_TAX_BPS]);
   // 4. offer ownership to the protocol owner (two-step)
   if (OWNER.toLowerCase() !== me.toLowerCase()) {
-    for (const [n, a, abi] of [["hook", hookAddr, "PadHook"], ["factory", factory, "PadFactory"], ["locker", locker, "PadLocker"], ["vault", vault, "PadBuybackVault"], ["splitter", splitter, "PadSplitter"], ["ammFactory", ammFactory, "PadAmmFactory"], ["farm", farm, "PadFarm"]]) await call(`${n}.transferOwnership`, a, abi, "transferOwnership", [OWNER]);
+    for (const [n, a, abi] of [["hook", hookAddr, HOOK_ART], ["factory", factory, "PadFactory"], ["locker", locker, "PadLocker"], ["vault", vault, "PadBuybackVault"], ["splitter", splitter, "PadSplitter"], ["ammFactory", ammFactory, "PadAmmFactory"], ["farm", farm, "PadFarm"]]) await call(`${n}.transferOwnership`, a, abi, "transferOwnership", [OWNER]);
   }
   const total = steps.reduce((s, [, g]) => s + g, 0n);
   for (const [l, g] of steps) console.log(`  ${l.padEnd(28)} ${g.toString().padStart(9)} gas`);
   console.log(`  total ${total} gas = ${ethers.formatEther(total * gasPrice)} ${N.native} at ${ethers.formatUnits(gasPrice, "gwei")} gwei`);
   if (send) {
-    const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookFeeBps: HOOK_FEE_BPS, pairs: pairCfgs, protocolShareBps: PROTOCOL_SHARE_BPS, maxCreatorTaxBps: MAX_CREATOR_TAX_BPS, volExtraBps: VOL_EXTRA_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, splitFarmBps: SPLIT_FARM_BPS, ammFactory, ammRouter, farm, wnative: N.weth9, ammLpFeeBps: AMM_LP_FEE_BPS, ammProtocolFeeBps: AMM_PROTOCOL_FEE_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
+    const out = { network: netName, chainId: Number(chainId), deployer: me, owner: OWNER, ownershipPending: OWNER.toLowerCase() !== me.toLowerCase(), feeSweepOperator: me, hookArtifact: HOOK_ART, hookFeeBps: HOOK_FEE_BPS, pairs: pairCfgs, protocolShareBps: PROTOCOL_SHARE_BPS, maxCreatorTaxBps: MAX_CREATOR_TAX_BPS, volExtraBps: VOL_EXTRA_BPS, splitter, splitStakingBps: SPLIT_STAKING_BPS, splitBurnBps: SPLIT_BURN_BPS, splitFarmBps: SPLIT_FARM_BPS, ammFactory, ammRouter, farm, wnative: N.weth9, ammLpFeeBps: AMM_LP_FEE_BPS, ammProtocolFeeBps: AMM_PROTOCOL_FEE_BPS, poolManager: N.poolManager, positionManager: posm, permit2: N.permit2, feeEscrow: escrow, hook: hookAddr, hookSalt: salt, buybackVault: vault, locker, tokenImplementation: impl, factory, launchConfig: Object.fromEntries(Object.entries(CONFIG).map(([k, v]) => [k, typeof v === "bigint" ? v.toString() : v])), launchFee: LAUNCH_FEE.toString(), snipeTaxSeconds: SNIPE_SECONDS, launchEnabled: false, transactions: Object.fromEntries(Object.entries(prog.steps).map(([k, v]) => [k, v.hash])), deployedAt: new Date().toISOString() };
     const file = path.join(__dirname, "deployments", `pad-${REC}.json`);
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
     console.log("written " + path.relative(__dirname, file));

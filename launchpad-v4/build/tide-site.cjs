@@ -26,12 +26,13 @@ if (spec.tide || spec.tideCss) {
   if (missed.length) console.warn("tide rules that matched nothing (the front-end text changed?):\n  " + missed.join("\n  "));
 }
 // the admin page's contract interfaces come from the compiled pad contracts (one position per launch, the pair in the
-// launch config), laid over the shared abi.js, so the owner tools match the deployed code
+// launch config), laid over the shared abi.js, so the owner tools match the deployed code; a brand names its hook's
+// artifact in brand.json (`hookArtifact`) when it is not Kinex's (KinetiqPump's has its fee fixed at deployment)
 {
   const { ethers } = require(path.join(ROOT, "node_modules/ethers"));
   const src = fs.readFileSync(path.join(OUT, "abi.js"), "utf8"), w = {}; new Function("window", src)(w);
   const art = (n) => new ethers.Interface(JSON.parse(fs.readFileSync(path.join(ROOT, "artifacts", n + ".json"), "utf8")).abi).format();
-  Object.assign(w.ABI, { factory: art("PadFactory"), hook: art("PadHook"), locker: art("PadLocker"), vault: art("PadBuybackVault"), escrow: art("PadFeeEscrow") });
+  Object.assign(w.ABI, { factory: art("PadFactory"), hook: art(spec.hookArtifact || "PadHook"), locker: art("PadLocker"), vault: art("PadBuybackVault"), escrow: art("PadFeeEscrow") });
   fs.writeFileSync(path.join(OUT, "abi.js"), "window.ABI = " + JSON.stringify(w.ABI) + ";\n");
 }
 // the admin page is unlisted: no links to it, and search engines are told to skip it
