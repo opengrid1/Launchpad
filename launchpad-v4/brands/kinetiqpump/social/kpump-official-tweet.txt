@@ -2,6 +2,6 @@ $KPUMP is live on Elysium.
 
 The official token of KinetiqPump, paired with HYPE on Uniswap v4. Protocol fees from every trade on KinetiqPump buy $KPUMP back and burn it.
 
-CA: 0x22927760360Be337e9f1b67369C2AC28210C3e4B
+CA: 0x563d07ce6086c009109b80B13B3B8EedA1d1c96e
 
-Trade: https://kinetiqpump.fun/#/token/0x22927760360Be337e9f1b67369C2AC28210C3e4B
+Trade: https://kinetiqpump.fun/#/token/0x563d07ce6086c009109b80B13B3B8EedA1d1c96e

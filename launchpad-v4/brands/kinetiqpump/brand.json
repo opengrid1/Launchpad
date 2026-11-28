@@ -4,6 +4,10 @@
   "themeColor": "#fff5e4",
   "replace": [
     [
+      "Taken on every trade. Up to 10%.",
+      "Taken on every trade. Fixed in the hook when it was deployed: it cannot be changed."
+    ],
+    [
       "Pool fee 1.0%.",
       "Pool fee 3%."
     ],
@@ -136,5 +140,6 @@
       "<meta name=\"theme-color\" content=\"#fff5e4\">"
     ]
   ],
-  "tideCss": ":root{--bg:#fff5e4;--s2:#fbeeda;--s3:#f3e3c8;--line:#ecdcc0;--line2:#d9c5a3;--ink:#17132b;--ink2:#3a3554;--mute:#77708c;--dim:#a39db3;--deep:#17132b;--deep2:#241f3d;--acc:#f06a08;--acc2:#c95500;--mint:#ffb066;--mint-ink:#3a1a00;--acc-dim:rgba(240,106,8,.12);--warn:#a8650f}::selection{background:rgba(255,176,102,.4)}.etch,.heroart img,.pano{filter:grayscale(1) sepia(.32) contrast(1.04)}"
+  "tideCss": ":root{--bg:#fff5e4;--s2:#fbeeda;--s3:#f3e3c8;--line:#ecdcc0;--line2:#d9c5a3;--ink:#17132b;--ink2:#3a3554;--mute:#77708c;--dim:#a39db3;--deep:#17132b;--deep2:#241f3d;--acc:#f06a08;--acc2:#c95500;--mint:#ffb066;--mint-ink:#3a1a00;--acc-dim:rgba(240,106,8,.12);--warn:#a8650f}::selection{background:rgba(255,176,102,.4)}.etch,.heroart img,.pano{filter:grayscale(1) sepia(.32) contrast(1.04)}",
+  "hookArtifact": "PadHookFixed"
 }
